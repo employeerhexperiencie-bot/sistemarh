@@ -478,7 +478,8 @@ export default function PainelProfissional() {
           <CardTitle>Detalhamento por Profissional - {competencia}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Loja</TableHead>
@@ -519,20 +520,21 @@ export default function PainelProfissional() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-emerald-500/5 border-emerald-500/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-emerald-400" />
-              <div>
-                <p className="text-2xl font-bold text-emerald-400">
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-emerald-400 truncate">
                   {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.vales, 0))}
                 </p>
-                <p className="text-sm text-muted-foreground">Total em Vales</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total em Vales</p>
               </div>
             </div>
           </CardContent>
@@ -541,12 +543,12 @@ export default function PainelProfissional() {
         <Card className="bg-blue-500/5 border-blue-500/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-blue-400" />
-              <div>
-                <p className="text-2xl font-bold text-blue-400">
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-blue-400 truncate">
                   {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.adiantamentos, 0))}
                 </p>
-                <p className="text-sm text-muted-foreground">Total em Adiantamentos</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total em Adiantamentos</p>
               </div>
             </div>
           </CardContent>
@@ -555,12 +557,12 @@ export default function PainelProfissional() {
         <Card className="bg-red-500/5 border-red-500/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-red-400" />
-              <div>
-                <p className="text-2xl font-bold text-red-400">
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-red-400 truncate">
                   {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
                 </p>
-                <p className="text-sm text-muted-foreground">Total em Descontos</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total em Descontos</p>
               </div>
             </div>
           </CardContent>
@@ -569,10 +571,10 @@ export default function PainelProfissional() {
         <Card className="bg-accent/5 border-accent/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Users className="h-8 w-8 text-accent" />
-              <div>
-                <p className="text-2xl font-bold text-accent">{dadosFiltrados.length}</p>
-                <p className="text-sm text-muted-foreground">Profissionais</p>
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-accent truncate">{dadosFiltrados.length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Profissionais</p>
               </div>
             </div>
           </CardContent>

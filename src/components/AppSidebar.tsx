@@ -31,12 +31,12 @@ const mainItems = [
 ];
 
 const painelItems = [
-  { title: 'Por Loja', url: '/painel/loja', icon: Building2 },
-  { title: 'Por Profissional', url: '/painel/profissional', icon: User },
+  { title: 'Por Loja', url: '/painel-loja', icon: Building2 },
+  { title: 'Por Profissional', url: '/painel-profissional', icon: User },
 ];
 
 const configItems = [
-  { title: 'Configurações', url: '/config', icon: Settings },
+  { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ];
 
 export function AppSidebar() {

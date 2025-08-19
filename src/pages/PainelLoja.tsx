@@ -232,7 +232,7 @@ export default function PainelLoja() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 items-end">
+          <div className="flex gap-4 items-end flex-wrap">
             <div className="space-y-2">
               <Label htmlFor="competencia">Competência</Label>
               <Input
@@ -240,13 +240,13 @@ export default function PainelLoja() {
                 placeholder="2025-08"
                 value={competencia}
                 onChange={(e) => setCompetencia(e.target.value)}
-                className="w-32"
+                className="w-32 sm:w-40"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label htmlFor="loja">Loja (opcional)</Label>
               <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Todas as lojas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -267,9 +267,10 @@ export default function PainelLoja() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={exportCSV} variant="outline">
+            <Button onClick={exportCSV} variant="outline" className="w-full sm:w-auto">
               <FileText className="h-4 w-4 mr-2" />
-              Exportar CSV
+              <span className="hidden sm:inline">Exportar CSV</span>
+              <span className="sm:hidden">CSV</span>
             </Button>
           </div>
         </CardContent>
@@ -280,7 +281,8 @@ export default function PainelLoja() {
           <CardTitle>Resumo Financeiro por Loja - {competencia}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Loja</TableHead>
@@ -333,20 +335,23 @@ export default function PainelLoja() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-emerald-500/5 border-emerald-500/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-emerald-400" />
-              <div>
-                <p className="text-2xl font-bold text-emerald-400">
-                  {formatCurrency(mockDados.reduce((acc, item) => acc + item.vales, 0))}
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-emerald-400 truncate">
+                  {formatCurrency(mockDados
+                    .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
+                    .reduce((acc, item) => acc + item.vales, 0))}
                 </p>
-                <p className="text-sm text-muted-foreground">Total em Vales</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total em Vales</p>
               </div>
             </div>
           </CardContent>
@@ -355,12 +360,14 @@ export default function PainelLoja() {
         <Card className="bg-blue-500/5 border-blue-500/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-blue-400" />
-              <div>
-                <p className="text-2xl font-bold text-blue-400">
-                  {formatCurrency(mockDados.reduce((acc, item) => acc + item.adiantamentos, 0))}
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-blue-400 truncate">
+                  {formatCurrency(mockDados
+                    .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
+                    .reduce((acc, item) => acc + item.adiantamentos, 0))}
                 </p>
-                <p className="text-sm text-muted-foreground">Total em Adiantamentos</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total em Adiantamentos</p>
               </div>
             </div>
           </CardContent>
@@ -369,12 +376,14 @@ export default function PainelLoja() {
         <Card className="bg-red-500/5 border-red-500/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-red-400" />
-              <div>
-                <p className="text-2xl font-bold text-red-400">
-                  {formatCurrency(mockDados.reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-red-400 truncate">
+                  {formatCurrency(mockDados
+                    .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
+                    .reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
                 </p>
-                <p className="text-sm text-muted-foreground">Total em Descontos</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total em Descontos</p>
               </div>
             </div>
           </CardContent>
@@ -383,12 +392,14 @@ export default function PainelLoja() {
         <Card className="bg-accent/5 border-accent/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-accent" />
-              <div>
-                <p className="text-2xl font-bold text-accent">
-                  {formatCurrency(mockDados.reduce((acc, item) => acc + item.totalReceber, 0))}
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
+              <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl font-bold text-accent truncate">
+                  {formatCurrency(mockDados
+                    .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
+                    .reduce((acc, item) => acc + item.totalReceber, 0))}
                 </p>
-                <p className="text-sm text-muted-foreground">Total a Receber</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total a Receber</p>
               </div>
             </div>
           </CardContent>

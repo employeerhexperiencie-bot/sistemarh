@@ -159,13 +159,3 @@ Dark clean com toques verde/cyan - Escalável e profissional
     transition: var(--transition-smooth);
   }
 }
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}

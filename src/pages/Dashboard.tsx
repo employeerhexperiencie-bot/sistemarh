@@ -27,14 +27,14 @@ export function Dashboard() {
       </div>
 
       {/* KPIs principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=vales')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Vales</CardTitle>
             <CreditCard className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{kpis.vales.value}</div>
+            <div className="text-xl sm:text-2xl font-bold text-primary">{kpis.vales.value}</div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
                 {kpis.vales.count} lançamentos
@@ -55,7 +55,7 @@ export function Dashboard() {
             <TrendingUp className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-accent">{kpis.adiantamentos.value}</div>
+            <div className="text-xl sm:text-2xl font-bold text-accent">{kpis.adiantamentos.value}</div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
                 {kpis.adiantamentos.count} lançamentos
@@ -76,7 +76,7 @@ export function Dashboard() {
             <Users className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-warning">{kpis.descFaltas.value}</div>
+            <div className="text-xl sm:text-2xl font-bold text-warning">{kpis.descFaltas.value}</div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
                 {kpis.descFaltas.count} ocorrências
@@ -97,7 +97,7 @@ export function Dashboard() {
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{kpis.descDSR.value}</div>
+            <div className="text-xl sm:text-2xl font-bold text-destructive">{kpis.descDSR.value}</div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
                 {kpis.descDSR.count} descontos
@@ -118,7 +118,7 @@ export function Dashboard() {
             <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{kpis.totalReceber.value}</div>
+            <div className="text-xl sm:text-2xl font-bold text-primary">{kpis.totalReceber.value}</div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
                 {kpis.totalReceber.count} colaboradores
@@ -161,13 +161,13 @@ export function Dashboard() {
       </div>
 
       {/* Gráfico de tendências */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card className="card-shadow">
           <CardHeader>
             <CardTitle>Evolução Mensal</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
+            <div className="h-48 sm:h-64 flex items-center justify-center text-muted-foreground">
               Gráfico de evolução será implementado aqui
             </div>
           </CardContent>
