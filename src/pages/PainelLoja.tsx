@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Store, TrendingUp, FileText, Filter } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const mockDados = [
   {
-    loja: 'BROOKLIN',
+    loja: 'REI DO GADO',
     vales: 45300,
     adiantamentos: 89500,
     descFaltas: 2150,
@@ -21,7 +22,7 @@ const mockDados = [
     holeritesA: 3,
   },
   {
-    loja: 'TATUAPÉ',
+    loja: 'BIG OSASCO',
     vales: 38200,
     adiantamentos: 67800,
     descFaltas: 1750,
@@ -32,7 +33,7 @@ const mockDados = [
     holeritesA: 4,
   },
   {
-    loja: 'VILA MADALENA',
+    loja: 'BOSQUE SAUDE',
     vales: 29100,
     adiantamentos: 54200,
     descFaltas: 890,
@@ -42,11 +43,131 @@ const mockDados = [
     holeritesE: 6,
     holeritesA: 2,
   },
+  {
+    loja: 'BROOKLYN',
+    vales: 32400,
+    adiantamentos: 59300,
+    descFaltas: 1200,
+    descDSR: 980,
+    totalReceber: 315000,
+    holeritesG: 9,
+    holeritesE: 7,
+    holeritesA: 5,
+  },
+  {
+    loja: 'ITAPECERICA',
+    vales: 28900,
+    adiantamentos: 48700,
+    descFaltas: 750,
+    descDSR: 560,
+    totalReceber: 275000,
+    holeritesG: 7,
+    holeritesE: 5,
+    holeritesA: 3,
+  },
+  {
+    loja: 'LAJEDO',
+    vales: 31200,
+    adiantamentos: 52800,
+    descFaltas: 980,
+    descDSR: 720,
+    totalReceber: 295000,
+    holeritesG: 8,
+    holeritesE: 6,
+    holeritesA: 4,
+  },
+  {
+    loja: 'MATEO BEI',
+    vales: 35600,
+    adiantamentos: 61200,
+    descFaltas: 1350,
+    descDSR: 1100,
+    totalReceber: 340000,
+    holeritesG: 10,
+    holeritesE: 8,
+    holeritesA: 6,
+  },
+  {
+    loja: 'MUTINGA',
+    vales: 27800,
+    adiantamentos: 46500,
+    descFaltas: 680,
+    descDSR: 450,
+    totalReceber: 265000,
+    holeritesG: 6,
+    holeritesE: 4,
+    holeritesA: 2,
+  },
+  {
+    loja: 'RAGUEB',
+    vales: 33100,
+    adiantamentos: 57900,
+    descFaltas: 1150,
+    descDSR: 890,
+    totalReceber: 320000,
+    holeritesG: 9,
+    holeritesE: 7,
+    holeritesA: 5,
+  },
+  {
+    loja: 'SBC',
+    vales: 39800,
+    adiantamentos: 72400,
+    descFaltas: 1580,
+    descDSR: 1230,
+    totalReceber: 385000,
+    holeritesG: 11,
+    holeritesE: 9,
+    holeritesA: 7,
+  },
+  {
+    loja: 'SUPER LAPA',
+    vales: 36900,
+    adiantamentos: 64300,
+    descFaltas: 1420,
+    descDSR: 1080,
+    totalReceber: 355000,
+    holeritesG: 10,
+    holeritesE: 8,
+    holeritesA: 6,
+  },
+  {
+    loja: 'TABOÃO',
+    vales: 30500,
+    adiantamentos: 53600,
+    descFaltas: 920,
+    descDSR: 710,
+    totalReceber: 285000,
+    holeritesG: 8,
+    holeritesE: 6,
+    holeritesA: 4,
+  },
+  {
+    loja: 'COMERCIAL',
+    vales: 41200,
+    adiantamentos: 78600,
+    descFaltas: 1680,
+    descDSR: 1340,
+    totalReceber: 395000,
+    holeritesG: 12,
+    holeritesE: 10,
+    holeritesA: 8,
+  },
 ];
 
 export default function PainelLoja() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [competencia, setCompetencia] = useState('2025-08');
   const [lojaFiltro, setLojaFiltro] = useState('');
+  const tipoFiltro = searchParams.get('tipo') || '';
+
+  useEffect(() => {
+    if (tipoFiltro) {
+      // Scroll to top when navigating with tipo filter
+      window.scrollTo(0, 0);
+    }
+  }, [tipoFiltro]);
 
   const formatCurrency = (centavos: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -89,7 +210,14 @@ export default function PainelLoja() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Painel por Loja</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Painel por Loja</h1>
+          {tipoFiltro && (
+            <p className="text-muted-foreground">
+              Filtrado por: <span className="capitalize font-medium">{tipoFiltro}</span>
+            </p>
+          )}
+        </div>
         <Badge variant="outline" className="bg-accent/10">
           <Store className="h-4 w-4 mr-2" />
           Resumo financeiro
@@ -123,9 +251,19 @@ export default function PainelLoja() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas as lojas</SelectItem>
-                  <SelectItem value="BROOKLIN">Brooklin</SelectItem>
-                  <SelectItem value="TATUAPÉ">Tatuapé</SelectItem>
-                  <SelectItem value="VILA MADALENA">Vila Madalena</SelectItem>
+                  <SelectItem value="REI DO GADO">Rei do Gado</SelectItem>
+                  <SelectItem value="BIG OSASCO">Big Osasco</SelectItem>
+                  <SelectItem value="BOSQUE SAUDE">Bosque Saúde</SelectItem>
+                  <SelectItem value="BROOKLYN">Brooklyn</SelectItem>
+                  <SelectItem value="ITAPECERICA">Itapecerica</SelectItem>
+                  <SelectItem value="LAJEDO">Lajedo</SelectItem>
+                  <SelectItem value="MATEO BEI">Mateo Bei</SelectItem>
+                  <SelectItem value="MUTINGA">Mutinga</SelectItem>
+                  <SelectItem value="RAGUEB">Ragueb</SelectItem>
+                  <SelectItem value="SBC">SBC</SelectItem>
+                  <SelectItem value="SUPER LAPA">Super Lapa</SelectItem>
+                  <SelectItem value="TABOÃO">Taboão</SelectItem>
+                  <SelectItem value="COMERCIAL">Comercial</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -159,7 +297,7 @@ export default function PainelLoja() {
               {mockDados
                 .filter(item => !lojaFiltro || item.loja === lojaFiltro)
                 .map((item, index) => (
-                <TableRow key={index}>
+                <TableRow key={index} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/painel-profissional?loja=${item.loja}`)}>
                   <TableCell className="font-medium">{item.loja}</TableCell>
                   <TableCell className="text-right text-emerald-400">
                     {formatCurrency(item.vales)}

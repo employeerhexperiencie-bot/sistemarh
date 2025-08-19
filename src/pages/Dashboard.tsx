@@ -1,8 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CreditCard, TrendingUp, Users, FileText, AlertTriangle, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function Dashboard() {
+  const navigate = useNavigate();
+  
   // Mock data para demonstração
   const kpis = {
     vales: { value: 'R$ 45.300', count: 23, trend: '+12%' },
@@ -24,7 +28,7 @@ export function Dashboard() {
 
       {/* KPIs principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="card-shadow smooth-transition hover:shadow-financial">
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=vales')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Vales</CardTitle>
             <CreditCard className="h-4 w-4 text-primary" />
@@ -39,10 +43,13 @@ export function Dashboard() {
                 {kpis.vales.trend}
               </Badge>
             </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por loja
+            </Button>
           </CardContent>
         </Card>
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial">
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=adiantamentos')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Adiantamentos</CardTitle>
             <TrendingUp className="h-4 w-4 text-accent" />
@@ -57,10 +64,13 @@ export function Dashboard() {
                 {kpis.adiantamentos.trend}
               </Badge>
             </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por loja
+            </Button>
           </CardContent>
         </Card>
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial">
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=faltas')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Desc. Faltas</CardTitle>
             <Users className="h-4 w-4 text-warning" />
@@ -75,10 +85,13 @@ export function Dashboard() {
                 {kpis.descFaltas.trend}
               </Badge>
             </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por loja
+            </Button>
           </CardContent>
         </Card>
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial">
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=dsr')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Desc. DSR</CardTitle>
             <AlertTriangle className="h-4 w-4 text-destructive" />
@@ -93,10 +106,13 @@ export function Dashboard() {
                 {kpis.descDSR.trend}
               </Badge>
             </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por loja
+            </Button>
           </CardContent>
         </Card>
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial">
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total a Receber</CardTitle>
             <DollarSign className="h-4 w-4 text-primary" />
@@ -111,10 +127,13 @@ export function Dashboard() {
                 {kpis.totalReceber.trend}
               </Badge>
             </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por loja
+            </Button>
           </CardContent>
         </Card>
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial">
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/holerites')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Holerites</CardTitle>
             <FileText className="h-4 w-4 text-accent" />
@@ -134,6 +153,9 @@ export function Dashboard() {
                 <Badge className="bg-success text-success-foreground">{kpis.holerites.assinados}</Badge>
               </div>
             </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver detalhes
+            </Button>
           </CardContent>
         </Card>
       </div>

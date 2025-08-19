@@ -6,6 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { Lancamentos } from "@/pages/Lancamentos";
+import Faltas from "@/pages/Faltas";
+import Holerites from "@/pages/Holerites";
+import Pendencias from "@/pages/Pendencias";
+import PainelLoja from "@/pages/PainelLoja";
+import PainelProfissional from "@/pages/PainelProfissional";
+import Configuracoes from "@/pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +36,36 @@ const App = () => (
           <Route path="/lancamentos" element={
             <Layout>
               <Lancamentos />
+            </Layout>
+          } />
+          <Route path="/faltas" element={
+            <Layout>
+              <Faltas />
+            </Layout>
+          } />
+          <Route path="/holerites" element={
+            <Layout>
+              <Holerites />
+            </Layout>
+          } />
+          <Route path="/pendencias" element={
+            <Layout>
+              <Pendencias />
+            </Layout>
+          } />
+          <Route path="/painel-loja" element={
+            <Layout>
+              <PainelLoja />
+            </Layout>
+          } />
+          <Route path="/painel-profissional" element={
+            <Layout>
+              <PainelProfissional />
+            </Layout>
+          } />
+          <Route path="/configuracoes" element={
+            <Layout>
+              <Configuracoes />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
