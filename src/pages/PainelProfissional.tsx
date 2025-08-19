@@ -390,7 +390,7 @@ export default function PainelProfissional() {
   };
 
   const dadosFiltrados = mockDados.filter(item => {
-    if (lojaFiltro && item.loja !== lojaFiltro) return false;
+    if (lojaFiltro && lojaFiltro !== 'TODAS' && item.loja !== lojaFiltro) return false;
     if (profissionalFiltro && !item.nome.toLowerCase().includes(profissionalFiltro.toLowerCase())) return false;
     return true;
   });
@@ -438,7 +438,7 @@ export default function PainelProfissional() {
                   <SelectValue placeholder="Todas as lojas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as lojas</SelectItem>
+                  <SelectItem value="TODAS">Todas as lojas</SelectItem>
                   <SelectItem value="REI DO GADO">Rei do Gado</SelectItem>
                   <SelectItem value="BIG OSASCO">Big Osasco</SelectItem>
                   <SelectItem value="BOSQUE SAUDE">Bosque Saúde</SelectItem>

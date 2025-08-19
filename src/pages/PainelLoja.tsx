@@ -250,7 +250,7 @@ export default function PainelLoja() {
                   <SelectValue placeholder="Todas as lojas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as lojas</SelectItem>
+                  <SelectItem value="TODAS">Todas as lojas</SelectItem>
                   <SelectItem value="REI DO GADO">Rei do Gado</SelectItem>
                   <SelectItem value="BIG OSASCO">Big Osasco</SelectItem>
                   <SelectItem value="BOSQUE SAUDE">Bosque Saúde</SelectItem>
@@ -295,7 +295,7 @@ export default function PainelLoja() {
             </TableHeader>
             <TableBody>
               {mockDados
-                .filter(item => !lojaFiltro || item.loja === lojaFiltro)
+                .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
                 .map((item, index) => (
                 <TableRow key={index} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/painel-profissional?loja=${item.loja}`)}>
                   <TableCell className="font-medium">{item.loja}</TableCell>
