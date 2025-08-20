@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, FileText, Filter } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { Users, TrendingUp, FileText, Filter, CreditCard, DollarSign } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -335,6 +335,7 @@ const mockDados = [
 
 export default function PainelProfissional() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [competencia, setCompetencia] = useState('2025-08');
   const [lojaFiltro, setLojaFiltro] = useState('');
   const [profissionalFiltro, setProfissionalFiltro] = useState('');
@@ -381,9 +382,9 @@ export default function PainelProfissional() {
       case 'GERADO':
         return <Badge variant="secondary">Gerado</Badge>;
       case 'ENVIADO':
-        return <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20">Enviado</Badge>;
+        return <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">Enviado</Badge>;
       case 'ASSINADO':
-        return <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Assinado</Badge>;
+        return <Badge className="bg-success/10 text-success border-success/20">Assinado</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -410,6 +411,105 @@ export default function PainelProfissional() {
           <Users className="h-4 w-4 mr-2" />
           Detalhamento individual
         </Badge>
+      </div>
+
+      {/* Cards resumo seguindo modelo do Dashboard */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" 
+              onClick={() => navigate(`/historico-profissional?profissional=Todos&loja=${lojaFiltro}&tipo=vales`)}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Vales</CardTitle>
+            <CreditCard className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl sm:text-2xl font-bold text-primary">
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.vales, 0))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {dadosFiltrados.length} profissionais
+              </p>
+              <Badge variant="outline" className="text-success">
+                +12%
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver histórico
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" 
+              onClick={() => navigate(`/historico-profissional?profissional=Todos&loja=${lojaFiltro}&tipo=adiantamentos`)}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Adiantamentos</CardTitle>
+            <TrendingUp className="h-4 w-4 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl sm:text-2xl font-bold text-accent">
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.adiantamentos, 0))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {dadosFiltrados.length} profissionais
+              </p>
+              <Badge variant="outline" className="text-success">
+                +8%
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver histórico
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" 
+              onClick={() => navigate(`/historico-profissional?profissional=Todos&loja=${lojaFiltro}&tipo=descontos`)}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Descontos</CardTitle>
+            <Users className="h-4 w-4 text-warning" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl sm:text-2xl font-bold text-warning">
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {dadosFiltrados.length} profissionais
+              </p>
+              <Badge variant="outline" className="text-success">
+                -5%
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver histórico
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" 
+              onClick={() => navigate(`/historico-profissional?profissional=Todos&loja=${lojaFiltro}`)}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total a Receber</CardTitle>
+            <DollarSign className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl sm:text-2xl font-bold text-primary">
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.totalReceber, 0))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {dadosFiltrados.length} profissionais
+              </p>
+              <Badge variant="outline" className="text-success">
+                +7%
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver histórico
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="bg-card/50 border-border/50">
@@ -495,23 +595,24 @@ export default function PainelProfissional() {
             </TableHeader>
             <TableBody>
               {dadosFiltrados.map((item, index) => (
-                <TableRow key={index}>
+                <TableRow key={index} className="cursor-pointer hover:bg-muted/50" 
+                         onClick={() => navigate(`/historico-profissional?profissional=${item.nome}&loja=${item.loja}`)}>
                   <TableCell className="font-medium">{item.loja}</TableCell>
                   <TableCell>{item.matricula}</TableCell>
                   <TableCell>{item.nome}</TableCell>
-                  <TableCell className="text-right text-emerald-400">
+                  <TableCell className="text-right text-primary">
                     {item.vales > 0 ? formatCurrency(item.vales) : '-'}
                   </TableCell>
-                  <TableCell className="text-right text-blue-400">
+                  <TableCell className="text-right text-accent">
                     {item.adiantamentos > 0 ? formatCurrency(item.adiantamentos) : '-'}
                   </TableCell>
-                  <TableCell className="text-right text-red-400">
+                  <TableCell className="text-right text-destructive">
                     {item.descFaltas > 0 ? `-${formatCurrency(item.descFaltas)}` : '-'}
                   </TableCell>
-                  <TableCell className="text-right text-red-400">
+                  <TableCell className="text-right text-destructive">
                     {item.descDSR > 0 ? `-${formatCurrency(item.descDSR)}` : '-'}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-accent">
+                  <TableCell className="text-right font-bold text-success">
                     {formatCurrency(item.totalReceber)}
                   </TableCell>
                   <TableCell className="text-center">
@@ -524,62 +625,6 @@ export default function PainelProfissional() {
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-emerald-500/5 border-emerald-500/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-400" />
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-bold text-emerald-400 truncate">
-                  {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.vales, 0))}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total em Vales</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-blue-500/5 border-blue-500/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-bold text-blue-400 truncate">
-                  {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.adiantamentos, 0))}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total em Adiantamentos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-red-500/5 border-red-500/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-bold text-red-400 truncate">
-                  {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total em Descontos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-accent/5 border-accent/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-bold text-accent truncate">{dadosFiltrados.length}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Profissionais</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

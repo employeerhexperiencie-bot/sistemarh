@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Store, TrendingUp, FileText, Filter } from 'lucide-react';
+import { Store, TrendingUp, FileText, Filter, CreditCard, Users, AlertTriangle, DollarSign } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -201,11 +201,13 @@ export default function PainelLoja() {
 
   const getHoleriteBadge = (gerados: number, enviados: number, assinados: number) => {
     const total = gerados;
-    if (assinados === total) return <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Completo</Badge>;
-    if (enviados > 0) return <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20">Em andamento</Badge>;
+    if (assinados === total) return <Badge className="bg-success/10 text-success border-success/20">Completo</Badge>;
+    if (enviados > 0) return <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">Em andamento</Badge>;
     if (gerados > 0) return <Badge variant="secondary">Gerados</Badge>;
     return <Badge variant="outline">Pendente</Badge>;
   };
+
+  const dadosFiltrados = mockDados.filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro);
 
   return (
     <div className="space-y-6">
@@ -222,6 +224,105 @@ export default function PainelLoja() {
           <Store className="h-4 w-4 mr-2" />
           Resumo financeiro
         </Badge>
+      </div>
+
+      {/* Cards principais seguindo modelo do Dashboard */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" 
+              onClick={() => navigate(`/painel-profissional?tipo=vales&loja=${lojaFiltro || 'TODAS'}`)}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Vales</CardTitle>
+            <CreditCard className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl sm:text-2xl font-bold text-primary">
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.vales, 0))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {dadosFiltrados.length} lojas
+              </p>
+              <Badge variant="outline" className="text-success">
+                +12%
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por profissional
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" 
+              onClick={() => navigate(`/painel-profissional?tipo=adiantamentos&loja=${lojaFiltro || 'TODAS'}`)}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Adiantamentos</CardTitle>
+            <TrendingUp className="h-4 w-4 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl sm:text-2xl font-bold text-accent">
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.adiantamentos, 0))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {dadosFiltrados.length} lojas
+              </p>
+              <Badge variant="outline" className="text-success">
+                +8%
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por profissional
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" 
+              onClick={() => navigate(`/painel-profissional?tipo=descontos&loja=${lojaFiltro || 'TODAS'}`)}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Descontos</CardTitle>
+            <Users className="h-4 w-4 text-warning" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl sm:text-2xl font-bold text-warning">
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {dadosFiltrados.length} lojas
+              </p>
+              <Badge variant="outline" className="text-success">
+                -5%
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por profissional
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" 
+              onClick={() => navigate(`/painel-profissional?loja=${lojaFiltro || 'TODAS'}`)}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total a Receber</CardTitle>
+            <DollarSign className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl sm:text-2xl font-bold text-primary">
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.totalReceber, 0))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {dadosFiltrados.length} lojas
+              </p>
+              <Badge variant="outline" className="text-success">
+                +7%
+              </Badge>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver por profissional
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="bg-card/50 border-border/50">
@@ -296,24 +397,23 @@ export default function PainelLoja() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockDados
-                .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
-                .map((item, index) => (
-                <TableRow key={index} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/painel-profissional?loja=${item.loja}`)}>
+              {dadosFiltrados.map((item, index) => (
+                <TableRow key={index} className="cursor-pointer hover:bg-muted/50" 
+                         onClick={() => navigate(`/painel-profissional?loja=${item.loja}`)}>
                   <TableCell className="font-medium">{item.loja}</TableCell>
-                  <TableCell className="text-right text-emerald-400">
+                  <TableCell className="text-right text-primary">
                     {formatCurrency(item.vales)}
                   </TableCell>
-                  <TableCell className="text-right text-blue-400">
+                  <TableCell className="text-right text-accent">
                     {formatCurrency(item.adiantamentos)}
                   </TableCell>
-                  <TableCell className="text-right text-red-400">
+                  <TableCell className="text-right text-destructive">
                     -{formatCurrency(item.descFaltas)}
                   </TableCell>
-                  <TableCell className="text-right text-red-400">
+                  <TableCell className="text-right text-destructive">
                     -{formatCurrency(item.descDSR)}
                   </TableCell>
-                  <TableCell className="text-right font-bold text-accent">
+                  <TableCell className="text-right font-bold text-success">
                     {formatCurrency(item.totalReceber)}
                   </TableCell>
                   <TableCell className="text-center">
@@ -321,10 +421,10 @@ export default function PainelLoja() {
                       <Badge variant="secondary" className="text-xs">
                         G: {item.holeritesG}
                       </Badge>
-                      <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/20">
+                      <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-accent/20">
                         E: {item.holeritesE}
                       </Badge>
-                      <Badge className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                      <Badge className="text-xs bg-success/10 text-success border-success/20">
                         A: {item.holeritesA}
                       </Badge>
                     </div>
@@ -339,72 +439,6 @@ export default function PainelLoja() {
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-emerald-500/5 border-emerald-500/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-400" />
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-bold text-emerald-400 truncate">
-                  {formatCurrency(mockDados
-                    .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
-                    .reduce((acc, item) => acc + item.vales, 0))}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total em Vales</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-blue-500/5 border-blue-500/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-bold text-blue-400 truncate">
-                  {formatCurrency(mockDados
-                    .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
-                    .reduce((acc, item) => acc + item.adiantamentos, 0))}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total em Adiantamentos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-red-500/5 border-red-500/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-red-400" />
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-bold text-red-400 truncate">
-                  {formatCurrency(mockDados
-                    .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
-                    .reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total em Descontos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-accent/5 border-accent/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
-              <div className="min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl font-bold text-accent truncate">
-                  {formatCurrency(mockDados
-                    .filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro)
-                    .reduce((acc, item) => acc + item.totalReceber, 0))}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Total a Receber</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

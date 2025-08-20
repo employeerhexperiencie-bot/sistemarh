@@ -11,6 +11,7 @@ import Holerites from "@/pages/Holerites";
 import Pendencias from "@/pages/Pendencias";
 import PainelLoja from "@/pages/PainelLoja";
 import PainelProfissional from "@/pages/PainelProfissional";
+import HistoricoProfissional from "@/pages/HistoricoProfissional";
 import Configuracoes from "@/pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
@@ -61,6 +62,11 @@ const App = () => (
           <Route path="/painel-profissional" element={
             <Layout>
               <PainelProfissional />
+            </Layout>
+          } />
+          <Route path="/historico-profissional" element={
+            <Layout>
+              <HistoricoProfissional />
             </Layout>
           } />
           <Route path="/configuracoes" element={
