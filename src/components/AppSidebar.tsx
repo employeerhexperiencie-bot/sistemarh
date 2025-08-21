@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/sidebar';
 
 const mainItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Lançamentos', url: '/lancamentos', icon: CreditCard },
   { title: 'Faltas', url: '/faltas', icon: UserX },
   { title: 'Holerites', url: '/holerites', icon: FileText },
@@ -60,8 +60,8 @@ export function AppSidebar() {
     >
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-            <BarChart3 className="h-5 w-5 text-white" />
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <BarChart3 className="h-5 w-5 text-primary-foreground" />
           </div>
           {!collapsed && (
             <div>

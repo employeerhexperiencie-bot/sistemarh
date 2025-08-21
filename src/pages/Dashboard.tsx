@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CreditCard, TrendingUp, Users, FileText, AlertTriangle, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { OptimizedFinancialCard } from '@/components/OptimizedFinancialCard';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -28,110 +29,55 @@ export function Dashboard() {
 
       {/* KPIs principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=vales')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vales</CardTitle>
-            <CreditCard className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-primary">{kpis.vales.value}</div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {kpis.vales.count} lançamentos
-              </p>
-              <Badge variant="outline" className="text-success">
-                {kpis.vales.trend}
-              </Badge>
-            </div>
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              Ver por loja
-            </Button>
-          </CardContent>
-        </Card>
+        <OptimizedFinancialCard
+          title="Vales"
+          value={kpis.vales.value}
+          count={kpis.vales.count}
+          trend={kpis.vales.trend}
+          icon={CreditCard}
+          colorClass="text-primary"
+          onNavigate={() => navigate('/painel-loja?tipo=vales')}
+        />
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=adiantamentos')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Adiantamentos</CardTitle>
-            <TrendingUp className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-accent">{kpis.adiantamentos.value}</div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {kpis.adiantamentos.count} lançamentos
-              </p>
-              <Badge variant="outline" className="text-success">
-                {kpis.adiantamentos.trend}
-              </Badge>
-            </div>
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              Ver por loja
-            </Button>
-          </CardContent>
-        </Card>
+        <OptimizedFinancialCard
+          title="Adiantamentos"
+          value={kpis.adiantamentos.value}
+          count={kpis.adiantamentos.count}
+          trend={kpis.adiantamentos.trend}
+          icon={TrendingUp}
+          colorClass="text-accent"
+          onNavigate={() => navigate('/painel-loja?tipo=adiantamentos')}
+        />
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=faltas')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Desc. Faltas</CardTitle>
-            <Users className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-warning">{kpis.descFaltas.value}</div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {kpis.descFaltas.count} ocorrências
-              </p>
-              <Badge variant="outline" className="text-success">
-                {kpis.descFaltas.trend}
-              </Badge>
-            </div>
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              Ver por loja
-            </Button>
-          </CardContent>
-        </Card>
+        <OptimizedFinancialCard
+          title="Desc. Faltas"
+          value={kpis.descFaltas.value}
+          count={kpis.descFaltas.count}
+          trend={kpis.descFaltas.trend}
+          icon={Users}
+          colorClass="text-warning"
+          onNavigate={() => navigate('/painel-loja?tipo=faltas')}
+        />
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja?tipo=dsr')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Desc. DSR</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-destructive">{kpis.descDSR.value}</div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {kpis.descDSR.count} descontos
-              </p>
-              <Badge variant="outline" className="text-success">
-                {kpis.descDSR.trend}
-              </Badge>
-            </div>
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              Ver por loja
-            </Button>
-          </CardContent>
-        </Card>
+        <OptimizedFinancialCard
+          title="Desc. DSR"
+          value={kpis.descDSR.value}
+          count={kpis.descDSR.count}
+          trend={kpis.descDSR.trend}
+          icon={AlertTriangle}
+          colorClass="text-destructive"
+          onNavigate={() => navigate('/painel-loja?tipo=dsr')}
+        />
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/painel-loja')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total a Receber</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-primary">{kpis.totalReceber.value}</div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {kpis.totalReceber.count} colaboradores
-              </p>
-              <Badge variant="outline" className="text-success">
-                {kpis.totalReceber.trend}
-              </Badge>
-            </div>
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              Ver por loja
-            </Button>
-          </CardContent>
-        </Card>
+        <OptimizedFinancialCard
+          title="Total a Receber"
+          value={kpis.totalReceber.value}
+          count={kpis.totalReceber.count}
+          trend={kpis.totalReceber.trend}
+          icon={DollarSign}
+          colorClass="text-primary"
+          onNavigate={() => navigate('/painel-loja')}
+        />
 
         <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/holerites')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -150,7 +96,7 @@ export function Dashboard() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Assinados</span>
-                <Badge className="bg-success text-success-foreground">{kpis.holerites.assinados}</Badge>
+                <Badge className="bg-success/10 text-success border-success/20">{kpis.holerites.assinados}</Badge>
               </div>
             </div>
             <Button variant="outline" size="sm" className="w-full mt-2">
