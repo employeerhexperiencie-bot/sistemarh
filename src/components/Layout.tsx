@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Bell, User } from 'lucide-react';
+import { Bell, User, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -20,14 +20,16 @@ export function Layout({ children }: LayoutProps) {
         <div className="min-h-screen flex w-full">
           <AppSidebar />
           
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-w-0">
             {/* Header */}
-            <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm px-6 flex items-center justify-between sticky top-0 z-50">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger className="lg:hidden" />
-                <div>
-                  <h1 className="font-semibold text-lg">Agente Financeiro WhatsApp</h1>
-                  <p className="text-sm text-muted-foreground capitalize">
+            <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm px-4 sm:px-6 flex items-center justify-between sticky top-0 z-50">
+              <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                <SidebarTrigger className="flex-shrink-0">
+                  <Menu className="h-4 w-4" />
+                </SidebarTrigger>
+                <div className="min-w-0">
+                  <h1 className="font-semibold text-sm sm:text-lg truncate">Agente Financeiro WhatsApp</h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground capitalize truncate">
                     Competência: {currentMonth}
                   </p>
                 </div>
@@ -52,7 +54,7 @@ export function Layout({ children }: LayoutProps) {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 p-6 overflow-auto">
+            <main className="flex-1 p-4 sm:p-6 overflow-auto">
               {children}
             </main>
           </div>

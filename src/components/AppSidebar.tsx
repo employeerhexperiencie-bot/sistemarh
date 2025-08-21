@@ -55,20 +55,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={`border-r border-border ${collapsed ? 'w-14' : 'w-64'} smooth-transition`}
+      className="border-r border-border smooth-transition"
       collapsible="icon"
     >
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
             <BarChart3 className="h-5 w-5 text-primary-foreground" />
           </div>
-          {!collapsed && (
-            <div>
-              <h2 className="font-semibold text-sm">Agente Financeiro</h2>
-              <p className="text-xs text-muted-foreground">WhatsApp RH</p>
-            </div>
-          )}
+          <div className="group-data-[collapsible=icon]:hidden min-w-0">
+            <h2 className="font-semibold text-sm truncate">Agente Financeiro</h2>
+            <p className="text-xs text-muted-foreground truncate">WhatsApp RH</p>
+          </div>
         </div>
       </div>
 
@@ -81,8 +79,8 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden truncate">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -99,8 +97,8 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden truncate">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -117,8 +115,8 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden truncate">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
