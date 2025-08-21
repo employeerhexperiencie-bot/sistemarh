@@ -1,8 +1,9 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Bell, User, Menu } from 'lucide-react';
+import { Bell, User, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useSidebar } from '@/components/ui/sidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -22,36 +23,7 @@ export function Layout({ children }: LayoutProps) {
           
           <div className="flex-1 flex flex-col min-w-0">
             {/* Header */}
-            <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm px-4 sm:px-6 flex items-center justify-between sticky top-0 z-50">
-              <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                <SidebarTrigger className="flex-shrink-0">
-                  <Menu className="h-4 w-4" />
-                </SidebarTrigger>
-                <div className="min-w-0">
-                  <h1 className="font-semibold text-sm sm:text-lg truncate">Agente Financeiro WhatsApp</h1>
-                  <p className="text-xs sm:text-sm text-muted-foreground capitalize truncate">
-                    Competência: {currentMonth}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm" className="relative">
-                  <Bell className="h-4 w-4" />
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                  >
-                    3
-                  </Badge>
-                </Button>
-                
-                <Button variant="ghost" size="sm">
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline ml-2">Admin</span>
-                </Button>
-              </div>
-            </header>
+            <HeaderComponent currentMonth={currentMonth} />
 
             {/* Main Content */}
             <main className="flex-1 p-4 sm:p-6 overflow-auto">
@@ -61,5 +33,52 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </SidebarProvider>
     </div>
+  );
+}
+
+function HeaderComponent({ currentMonth }: { currentMonth: string }) {
+  const { state, toggleSidebar } = useSidebar();
+  const collapsed = state === 'collapsed';
+
+  return (
+    <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm px-4 sm:px-6 flex items-center justify-between sticky top-0 z-50">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleSidebar}
+          className="flex-shrink-0 hover:bg-primary/10 transition-colors"
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+        </Button>
+        <div className="min-w-0">
+          <h1 className="font-semibold text-sm sm:text-lg truncate">Agente Financeiro WhatsApp</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground capitalize truncate">
+            Competência: {currentMonth}
+          </p>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" className="relative">
+          <Bell className="h-4 w-4" />
+          <Badge 
+            variant="destructive" 
+            className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+          >
+            3
+          </Badge>
+        </Button>
+        
+        <Button variant="ghost" size="sm">
+          <User className="h-4 w-4" />
+          <span className="hidden sm:inline ml-2">Admin</span>
+        </Button>
+      </div>
+    </header>
   );
 }

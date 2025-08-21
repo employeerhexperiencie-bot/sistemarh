@@ -46,7 +46,6 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
 
   const isActive = (path: string) => currentPath === path;
-  const isExpanded = [...mainItems, ...painelItems, ...configItems].some((i) => isActive(i.url));
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
@@ -55,24 +54,24 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className="border-r border-border smooth-transition"
+      className="border-r border-border smooth-transition group/sidebar"
       collapsible="icon"
     >
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-border transition-all duration-300">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
             <BarChart3 className="h-5 w-5 text-primary-foreground" />
           </div>
-          <div className="group-data-[collapsible=icon]:hidden min-w-0">
-            <h2 className="font-semibold text-sm truncate">Agente Financeiro</h2>
-            <p className="text-xs text-muted-foreground truncate">WhatsApp RH</p>
+          <div className="group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 transition-all duration-300 overflow-hidden min-w-0">
+            <h2 className="font-semibold text-sm truncate whitespace-nowrap">Agente Financeiro</h2>
+            <p className="text-xs text-muted-foreground truncate whitespace-nowrap">WhatsApp RH</p>
           </div>
         </div>
       </div>
 
       <SidebarContent className="py-4">
         <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300">Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -80,7 +79,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="group-data-[collapsible=icon]:hidden truncate">{item.title}</span>
+                      <span className="group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 transition-all duration-300 overflow-hidden whitespace-nowrap">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -90,7 +89,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Painéis</SidebarGroupLabel>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300">Painéis</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {painelItems.map((item) => (
@@ -98,7 +97,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="group-data-[collapsible=icon]:hidden truncate">{item.title}</span>
+                      <span className="group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 transition-all duration-300 overflow-hidden whitespace-nowrap">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -108,7 +107,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300">Sistema</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {configItems.map((item) => (
@@ -116,7 +115,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="group-data-[collapsible=icon]:hidden truncate">{item.title}</span>
+                      <span className="group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 transition-all duration-300 overflow-hidden whitespace-nowrap">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

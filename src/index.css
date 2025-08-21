@@ -186,7 +186,30 @@ Dark clean com toques verde/cyan - Escalável e profissional
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  .smooth-hover:hover {
-    transform: translateY(-2px);
+  /* Sidebar animations */
+  .sidebar-expand {
+    animation: sidebar-expand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .sidebar-collapse {
+    animation: sidebar-collapse 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes sidebar-expand {
+    from {
+      width: 3rem;
+    }
+    to {
+      width: 16rem;
+    }
+  }
+  
+  @keyframes sidebar-collapse {
+    from {
+      width: 16rem;
+    }
+    to {
+      width: 3rem;
+    }
   }
 }
