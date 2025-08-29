@@ -12,6 +12,10 @@ import Pendencias from "@/pages/Pendencias";
 import PainelLoja from "@/pages/PainelLoja";
 import PainelProfissional from "@/pages/PainelProfissional";
 import HistoricoProfissional from "@/pages/HistoricoProfissional";
+import CadastroProfissionais from "@/pages/CadastroProfissionais";
+import GestaoASUS from "@/pages/GestaoASUS";
+import GestaoFerias from "@/pages/GestaoFerias";
+import GestaoEPI from "@/pages/GestaoEPI";
 import Configuracoes from "@/pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
@@ -67,6 +71,26 @@ const App = () => (
           <Route path="/historico-profissional" element={
             <Layout>
               <HistoricoProfissional />
+            </Layout>
+          } />
+          <Route path="/cadastro-profissionais" element={
+            <Layout>
+              <CadastroProfissionais />
+            </Layout>
+          } />
+          <Route path="/gestao-asus" element={
+            <Layout>
+              <GestaoASUS />
+            </Layout>
+          } />
+          <Route path="/gestao-ferias" element={
+            <Layout>
+              <GestaoFerias />
+            </Layout>
+          } />
+          <Route path="/gestao-epi" element={
+            <Layout>
+              <GestaoEPI />
             </Layout>
           } />
           <Route path="/configuracoes" element={

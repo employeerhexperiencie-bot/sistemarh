@@ -1,0 +1,421 @@
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, User } from 'lucide-react';
+import { useN8NAction } from '@/hooks/useN8NAction';
+
+interface Vacation {
+  matricula: string;
+  nome: string;
+  loja: string;
+  periodoAquisitivo: {
+    inicio: string;
+    fim: string;
+  };
+  dataInicioFerias?: string;
+  dataFimFerias?: string;
+  diasUsados: number;
+  diasDisponiveis: number;
+  status: 'PENDENTE' | 'AGENDADO' | 'EM_FERIAS' | 'FINALIZADO' | 'VENCENDO';
+  observacao?: string;
+}
+
+export default function GestaoFerias() {
+  const [vacations, setVacations] = useState<Vacation[]>([
+    {
+      matricula: '001',
+      nome: 'João Silva',
+      loja: 'CENTRO',
+      periodoAquisitivo: { inicio: '2024-01-15', fim: '2025-01-14' },
+      dataInicioFerias: '2025-03-01',
+      dataFimFerias: '2025-03-30',
+      diasUsados: 0,
+      diasDisponiveis: 30,
+      status: 'AGENDADO',
+    },
+    {
+      matricula: '002',
+      nome: 'Maria Santos',
+      loja: 'BROOKLIN',
+      periodoAquisitivo: { inicio: '2023-08-10', fim: '2024-08-09' },
+      diasUsados: 10,
+      diasDisponiveis: 20,
+      status: 'VENCENDO',
+    }
+  ]);
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingVacation, setEditingVacation] = useState<Vacation | null>(null);
+  const [formData, setFormData] = useState<Partial<Vacation>>({
+    diasDisponiveis: 30,
+    diasUsados: 0,
+    status: 'PENDENTE'
+  });
+
+  const { execute, loading } = useN8NAction();
+
+  const handleSave = async () => {
+    if (!formData.matricula || !formData.periodoAquisitivo?.inicio || !formData.periodoAquisitivo?.fim) return;
+
+    const payload = {
+      ...formData,
+    };
+
+    const action = editingVacation ? 'ferias_atualizar' : 'ferias_cadastrar';
+    
+    await execute(action, payload, {
+      successMessage: editingVacation ? 'Férias atualizadas!' : 'Período de férias cadastrado!',
+    });
+
+    if (editingVacation) {
+      setVacations(prev => 
+        prev.map(v => v.matricula === editingVacation.matricula ? { ...v, ...formData } as Vacation : v)
+      );
+    } else {
+      setVacations(prev => [...prev, formData as Vacation]);
+    }
+
+    handleCloseDialog();
+  };
+
+  const handleEdit = (vacation: Vacation) => {
+    setEditingVacation(vacation);
+    setFormData(vacation);
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingVacation(null);
+    setFormData({ diasDisponiveis: 30, diasUsados: 0, status: 'PENDENTE' });
+  };
+
+  const getStatusBadge = (status: Vacation['status']) => {
+    switch (status) {
+      case 'PENDENTE':
+        return <Badge variant="secondary">Pendente</Badge>;
+      case 'AGENDADO':
+        return <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">Agendado</Badge>;
+      case 'EM_FERIAS':
+        return <Badge className="bg-success/10 text-success border-success/20">Em Férias</Badge>;
+      case 'FINALIZADO':
+        return <Badge variant="outline">Finalizado</Badge>;
+      case 'VENCENDO':
+        return <Badge className="bg-warning/10 text-warning border-warning/20">Vencendo</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const calculateDaysRemaining = (vacation: Vacation) => {
+    const endDate = new Date(vacation.periodoAquisitivo.fim);
+    const today = new Date();
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
+  const pendentes = vacations.filter(v => v.status === 'PENDENTE').length;
+  const agendados = vacations.filter(v => v.status === 'AGENDADO').length;
+  const emFerias = vacations.filter(v => v.status === 'EM_FERIAS').length;
+  const vencendo = vacations.filter(v => v.status === 'VENCENDO').length;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Gestão de Férias</h1>
+          <p className="text-muted-foreground">Controle de períodos aquisitivos e agendamento de férias</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Cadastrar Férias
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingVacation ? 'Editar Férias' : 'Cadastrar Férias'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="matricula">Matrícula</Label>
+                <Input
+                  id="matricula"
+                  placeholder="001"
+                  value={formData.matricula || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, matricula: e.target.value }))}
+                  disabled={!!editingVacation}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nome">Nome</Label>
+                <Input
+                  id="nome"
+                  placeholder="João Silva"
+                  value={formData.nome || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="loja">Loja</Label>
+                <Input
+                  id="loja"
+                  placeholder="CENTRO"
+                  value={formData.loja || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, loja: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <select
+                  id="status"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as Vacation['status'] }))}
+                >
+                  <option value="PENDENTE">Pendente</option>
+                  <option value="AGENDADO">Agendado</option>
+                  <option value="EM_FERIAS">Em Férias</option>
+                  <option value="FINALIZADO">Finalizado</option>
+                  <option value="VENCENDO">Vencendo</option>
+                </select>
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Período Aquisitivo</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="periodoInicio" className="text-xs">Início</Label>
+                    <Input
+                      id="periodoInicio"
+                      type="date"
+                      value={formData.periodoAquisitivo?.inicio || ''}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        periodoAquisitivo: { ...prev.periodoAquisitivo, inicio: e.target.value, fim: prev.periodoAquisitivo?.fim || '' }
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="periodoFim" className="text-xs">Fim</Label>
+                    <Input
+                      id="periodoFim"
+                      type="date"
+                      value={formData.periodoAquisitivo?.fim || ''}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        periodoAquisitivo: { ...prev.periodoAquisitivo, inicio: prev.periodoAquisitivo?.inicio || '', fim: e.target.value }
+                      }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Agendamento de Férias (opcional)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="dataInicio" className="text-xs">Início</Label>
+                    <Input
+                      id="dataInicio"
+                      type="date"
+                      value={formData.dataInicioFerias || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dataInicioFerias: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dataFim" className="text-xs">Fim</Label>
+                    <Input
+                      id="dataFim"
+                      type="date"
+                      value={formData.dataFimFerias || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dataFimFerias: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="diasDisponiveis">Dias Disponíveis</Label>
+                <Input
+                  id="diasDisponiveis"
+                  type="number"
+                  value={formData.diasDisponiveis || 30}
+                  onChange={(e) => setFormData(prev => ({ ...prev, diasDisponiveis: parseInt(e.target.value) || 30 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="diasUsados">Dias Já Usados</Label>
+                <Input
+                  id="diasUsados"
+                  type="number"
+                  value={formData.diasUsados || 0}
+                  onChange={(e) => setFormData(prev => ({ ...prev, diasUsados: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="observacao">Observação</Label>
+                <Input
+                  id="observacao"
+                  placeholder="Informações adicionais"
+                  value={formData.observacao || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, observacao: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button onClick={handleCloseDialog} variant="outline" className="flex-1">
+                Cancelar
+              </Button>
+              <Button onClick={handleSave} disabled={loading} className="flex-1">
+                {loading ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-secondary/5 border-secondary/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <Clock className="h-8 w-8 text-secondary" />
+              <div>
+                <p className="text-2xl font-bold text-secondary">{pendentes}</p>
+                <p className="text-sm text-muted-foreground">Pendentes</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-500/5 border-blue-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-8 w-8 text-blue-400" />
+              <div>
+                <p className="text-2xl font-bold text-blue-400">{agendados}</p>
+                <p className="text-sm text-muted-foreground">Agendados</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-success/5 border-success/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <Plane className="h-8 w-8 text-success" />
+              <div>
+                <p className="text-2xl font-bold text-success">{emFerias}</p>
+                <p className="text-sm text-muted-foreground">Em férias</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-warning/5 border-warning/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-8 w-8 text-warning" />
+              <div>
+                <p className="text-2xl font-bold text-warning">{vencendo}</p>
+                <p className="text-sm text-muted-foreground">Vencendo</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Controle de Férias</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Matrícula</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Loja</TableHead>
+                <TableHead>Período Aquisitivo</TableHead>
+                <TableHead>Férias Agendadas</TableHead>
+                <TableHead>Dias</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {vacations.map((vacation, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-mono">{vacation.matricula}</TableCell>
+                  <TableCell className="font-medium">{vacation.nome}</TableCell>
+                  <TableCell>{vacation.loja}</TableCell>
+                  <TableCell className="text-sm">
+                    {new Date(vacation.periodoAquisitivo.inicio).toLocaleDateString('pt-BR')} até{' '}
+                    {new Date(vacation.periodoAquisitivo.fim).toLocaleDateString('pt-BR')}
+                    {vacation.status === 'VENCENDO' && (
+                      <div className="text-warning text-xs">
+                        Vence em {calculateDaysRemaining(vacation)} dias
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {vacation.dataInicioFerias && vacation.dataFimFerias ? (
+                      <div className="text-sm">
+                        {new Date(vacation.dataInicioFerias).toLocaleDateString('pt-BR')} até{' '}
+                        {new Date(vacation.dataFimFerias).toLocaleDateString('pt-BR')}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">Não agendado</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <span className="text-success">{vacation.diasDisponiveis - vacation.diasUsados}</span>/
+                      <span className="text-muted-foreground">{vacation.diasDisponiveis}</span>
+                      {vacation.diasUsados > 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          {vacation.diasUsados} já usados
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(vacation.status)}</TableCell>
+                  <TableCell>
+                    <Button size="sm" variant="ghost" onClick={() => handleEdit(vacation)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {vencendo > 0 && (
+        <Card className="border-warning/50 bg-warning/5">
+          <CardHeader>
+            <CardTitle className="text-warning flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Alertas de Vencimento de Férias
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-warning">
+              ⚠️ {vencendo} funcionário(s) com período aquisitivo vencendo em breve
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Agende as férias antes do vencimento para evitar perda de direitos
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

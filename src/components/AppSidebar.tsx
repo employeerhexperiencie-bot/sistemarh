@@ -7,7 +7,11 @@ import {
   BarChart3, 
   Settings,
   Building2,
-  User
+  User,
+  Users,
+  Heart,
+  Plane,
+  Package
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -28,6 +32,13 @@ const mainItems = [
   { title: 'Faltas', url: '/faltas', icon: UserX },
   { title: 'Holerites', url: '/holerites', icon: FileText },
   { title: 'Pendências', url: '/pendencias', icon: AlertTriangle },
+];
+
+const pessoasItems = [
+  { title: 'Cadastro Profissionais', url: '/cadastro-profissionais', icon: Users },
+  { title: 'Gestão ASUS', url: '/gestao-asus', icon: Heart },
+  { title: 'Gestão Férias', url: '/gestao-ferias', icon: Plane },
+  { title: 'Gestão EPI', url: '/gestao-epi', icon: Package },
 ];
 
 const painelItems = [
@@ -75,6 +86,24 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink to={item.url} end className={getNavCls}>
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 transition-all duration-300 overflow-hidden whitespace-nowrap">{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:opacity-0 transition-opacity duration-300">Gestão de Pessoas</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {pessoasItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
