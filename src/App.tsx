@@ -12,11 +12,12 @@ import Pendencias from "@/pages/Pendencias";
 import PainelLoja from "@/pages/PainelLoja";
 import PainelProfissional from "@/pages/PainelProfissional";
 import HistoricoProfissional from "@/pages/HistoricoProfissional";
-import CadastroProfissionais from "@/pages/CadastroProfissionais";
+import { CadastroProfissionais } from "@/pages/CadastroProfissionais";
 import GestaoASUS from "@/pages/GestaoASUS";
 import GestaoFerias from "@/pages/GestaoFerias";
 import GestaoEPI from "@/pages/GestaoEPI";
 import Configuracoes from "@/pages/Configuracoes";
+import { CadastroLojas } from "@/pages/CadastroLojas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -96,6 +97,11 @@ const App = () => (
           <Route path="/configuracoes" element={
             <Layout>
               <Configuracoes />
+            </Layout>
+          } />
+          <Route path="/cadastro-lojas" element={
+            <Layout>
+              <CadastroLojas />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -1,120 +1,368 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Plus, Edit, Trash2, MapPin, Calendar, DollarSign, Building2 } from 'lucide-react';
-import { useN8NAction } from '@/hooks/useN8NAction';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { DocumentUploader } from '@/components/DocumentUploader';
 import { formatCurrency, parseCurrencyToCentavos } from '@/lib/utils';
 
 interface Professional {
+  id: string;
   matricula: string;
   nome: string;
-  loja: string;
-  salario: string;
-  valeTransporte: string;
-  dataAdmissao: string;
-  dataInicioLoja: string;
-  status: 'ATIVO' | 'DEMITIDO';
-  cpf: string;
-  telefone: string;
-  email: string;
+  cpf?: string;
+  rg?: string;
+  loja_id?: string;
+  loja?: { nome: string };
+  cargo?: string;
+  salario: number; // em centavos
+  status: 'ativo' | 'demitido' | 'afastado';
+  data_admissao?: string;
+  data_demissao?: string;
+  created_at: string;
 }
 
-export default function CadastroProfissionais() {
-  const [professionals, setProfessionals] = useState<Professional[]>([
-    {
-      matricula: '001',
-      nome: 'João Silva',
-      loja: 'CENTRO',
-      salario: 'R$ 2.500,00',
-      valeTransporte: 'R$ 220,00',
-      dataAdmissao: '2023-01-15',
-      dataInicioLoja: '2023-01-15',
-      status: 'ATIVO',
-      cpf: '123.456.789-00',
-      telefone: '(11) 99999-9999',
-      email: 'joao@email.com'
-    }
-  ]);
+interface Loja {
+  id: string;
+  nome: string;
+}
 
+export const CadastroProfissionais: React.FC = () => {
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [lojas, setLojas] = useState<Loja[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProfessional, setEditingProfessional] = useState<Professional | null>(null);
-  const [formData, setFormData] = useState<Partial<Professional>>({
-    status: 'ATIVO'
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('dados');
+  const [formData, setFormData] = useState({
+    matricula: '',
+    nome: '',
+    cpf: '',
+    rg: '',
+    loja_id: '',
+    cargo: '',
+    salario: '',
+    status: 'ativo' as 'ativo' | 'demitido' | 'afastado',
+    data_admissao: ''
   });
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const { execute, loading } = useN8NAction();
+  const loadProfessionals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profissionais')
+        .select(`
+          *,
+          loja:lojas(nome)
+        `)
+        .order('created_at', { ascending: false });
 
-  const lojas = ['CENTRO', 'BROOKLIN', 'TATUAPÉ', 'MORUMBI', 'VILA MADALENA', 'PERDIZES'];
+      if (error) throw error;
+      setProfessionals((data || []) as Professional[]);
+    } catch (error) {
+      console.error('Load professionals error:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar profissionais",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const loadLojas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lojas')
+        .select('id, nome')
+        .order('nome');
+
+      if (error) throw error;
+      setLojas(data || []);
+    } catch (error) {
+      console.error('Load lojas error:', error);
+    }
+  };
 
   const handleSave = async () => {
-    if (!formData.nome || !formData.matricula || !formData.loja) return;
-
-    const payload = {
-      ...formData,
-      salarioCentavos: parseCurrencyToCentavos(formData.salario || '0'),
-      valeTransporteCentavos: parseCurrencyToCentavos(formData.valeTransporte || '0'),
-    };
-
-    const action = editingProfessional ? 'profissional_atualizar' : 'profissional_cadastrar';
-    
-    await execute(action, payload, {
-      successMessage: editingProfessional ? 'Profissional atualizado!' : 'Profissional cadastrado!',
-    });
-
-    if (editingProfessional) {
-      setProfessionals(prev => 
-        prev.map(p => p.matricula === editingProfessional.matricula ? { ...p, ...formData } as Professional : p)
-      );
-    } else {
-      setProfessionals(prev => [...prev, formData as Professional]);
+    if (!formData.nome || !formData.matricula) {
+      toast({
+        title: "Erro",
+        description: "Preencha os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
     }
 
-    handleCloseDialog();
+    setLoading(true);
+    try {
+      const professionalData = {
+        ...formData,
+        salario: parseCurrencyToCentavos(formData.salario),
+        loja_id: formData.loja_id || null
+      };
+
+      if (editingProfessional) {
+        // Update existing professional
+        const { error } = await supabase
+          .from('profissionais')
+          .update(professionalData)
+          .eq('id', editingProfessional.id);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Sucesso",
+          description: "Profissional atualizado com sucesso"
+        });
+      } else {
+        // Create new professional
+        const { error } = await supabase
+          .from('profissionais')
+          .insert([professionalData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Profissional cadastrado com sucesso"
+        });
+      }
+
+      handleCloseDialog();
+      loadProfessionals();
+    } catch (error) {
+      console.error('Save professional error:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar profissional",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (professional: Professional) => {
     setEditingProfessional(professional);
-    setFormData(professional);
+    setFormData({
+      matricula: professional.matricula,
+      nome: professional.nome,
+      cpf: professional.cpf || '',
+      rg: professional.rg || '',
+      loja_id: professional.loja_id || '',
+      cargo: professional.cargo || '',
+      salario: formatCurrency((professional.salario || 0).toString()),
+      status: professional.status as 'ativo' | 'demitido' | 'afastado',
+      data_admissao: professional.data_admissao || ''
+    });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (matricula: string) => {
-    await execute('profissional_deletar', { matricula }, {
-      successMessage: 'Profissional removido!'
-    });
-    
-    setProfessionals(prev => prev.filter(p => p.matricula !== matricula));
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este profissional?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('profissionais')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Profissional excluído com sucesso"
+      });
+
+      loadProfessionals();
+    } catch (error) {
+      console.error('Delete professional error:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir profissional",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingProfessional(null);
-    setFormData({ status: 'ATIVO' });
+    setFormData({
+      matricula: '',
+      nome: '',
+      cpf: '',
+      rg: '',
+      loja_id: '',
+      cargo: '',
+      salario: '',
+      status: 'ativo',
+      data_admissao: ''
+    });
+  };
+
+  const handleViewDocuments = (professionalId: string) => {
+    setSelectedProfessionalId(professionalId);
   };
 
   const getStatusBadge = (status: string) => {
-    return status === 'ATIVO' 
-      ? <Badge className="bg-success/10 text-success border-success/20">Ativo</Badge>
-      : <Badge variant="destructive">Demitido</Badge>;
+    switch (status) {
+      case 'ativo':
+        return <Badge className="bg-success/10 text-success border-success/20">Ativo</Badge>;
+      case 'demitido':
+        return <Badge variant="destructive">Demitido</Badge>;
+      case 'afastado':
+        return <Badge variant="secondary">Afastado</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
+  useEffect(() => {
+    loadProfessionals();
+    loadLojas();
+  }, []);
+
+  const activeProfessionals = professionals.filter(p => p.status === 'ativo');
+  const dismissedProfessionals = professionals.filter(p => p.status === 'demitido');
+  const uniqueStores = new Set(professionals.map(p => p.loja?.nome).filter(Boolean)).size;
+
+  if (selectedProfessionalId) {
+    const selectedProfessional = professionals.find(p => p.id === selectedProfessionalId);
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Pasta do Profissional</h1>
+            <p className="text-muted-foreground">
+              {selectedProfessional?.nome} - {selectedProfessional?.matricula}
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => setSelectedProfessionalId(null)}>
+            Voltar à Lista
+          </Button>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+            <TabsTrigger value="vales">Vales & Adiantamentos</TabsTrigger>
+            <TabsTrigger value="epi">Controle EPI</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="dados" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Pessoais</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome Completo</Label>
+                  <p className="font-medium">{selectedProfessional?.nome}</p>
+                </div>
+                <div>
+                  <Label>Matrícula</Label>
+                  <p className="font-medium font-mono">{selectedProfessional?.matricula}</p>
+                </div>
+                <div>
+                  <Label>CPF</Label>
+                  <p className="font-medium">{selectedProfessional?.cpf || '-'}</p>
+                </div>
+                <div>
+                  <Label>RG</Label>
+                  <p className="font-medium">{selectedProfessional?.rg || '-'}</p>
+                </div>
+                <div>
+                  <Label>Loja</Label>
+                  <p className="font-medium">{selectedProfessional?.loja?.nome || '-'}</p>
+                </div>
+                <div>
+                  <Label>Cargo</Label>
+                  <p className="font-medium">{selectedProfessional?.cargo || '-'}</p>
+                </div>
+                <div>
+                  <Label>Salário</Label>
+                  <p className="font-medium">
+                    {formatCurrency((selectedProfessional?.salario || 0).toString())}
+                  </p>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <div>{getStatusBadge(selectedProfessional?.status || '')}</div>
+                </div>
+                <div>
+                  <Label>Data de Admissão</Label>
+                  <p className="font-medium">
+                    {selectedProfessional?.data_admissao 
+                      ? new Date(selectedProfessional.data_admissao).toLocaleDateString('pt-BR')
+                      : '-'
+                    }
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documentos">
+            <DocumentUploader
+              bucket="professional-documents"
+              folder="profissionais"
+              entityId={selectedProfessionalId}
+              entityType="professional"
+            />
+          </TabsContent>
+
+          <TabsContent value="vales">
+            <Card>
+              <CardHeader>
+                <CardTitle>Vales e Adiantamentos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Sistema de controle de vales em desenvolvimento...
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="epi">
+            <Card>
+              <CardHeader>
+                <CardTitle>Controle de EPI</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Sistema de controle de EPI em desenvolvimento...
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Cadastro de Profissionais</h1>
-          <p className="text-muted-foreground">Gerencie a base inicial de colaboradores</p>
+          <p className="text-muted-foreground">Gerencie colaboradores e seus documentos</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setEditingProfessional(null)}>
+              <Plus className="mr-2 h-4 w-4" />
               Novo Profissional
             </Button>
           </DialogTrigger>
@@ -125,126 +373,107 @@ export default function CadastroProfissionais() {
               </DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="matricula">Matrícula</Label>
+              <div>
+                <Label htmlFor="matricula">Matrícula *</Label>
                 <Input
                   id="matricula"
+                  value={formData.matricula}
+                  onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
                   placeholder="001"
-                  value={formData.matricula || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, matricula: e.target.value }))}
                   disabled={!!editingProfessional}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome Completo</Label>
+              <div>
+                <Label htmlFor="nome">Nome Completo *</Label>
                 <Input
                   id="nome"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   placeholder="João Silva"
-                  value={formData.nome || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
                 />
               </div>
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="cpf">CPF</Label>
                 <Input
                   id="cpf"
-                  placeholder="123.456.789-00"
-                  value={formData.cpf || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cpf: e.target.value }))}
+                  value={formData.cpf}
+                  onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                  placeholder="000.000.000-00"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
+              <div>
+                <Label htmlFor="rg">RG</Label>
                 <Input
-                  id="telefone"
-                  placeholder="(11) 99999-9999"
-                  value={formData.telefone || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
+                  id="rg"
+                  value={formData.rg}
+                  onChange={(e) => setFormData({ ...formData, rg: e.target.value })}
+                  placeholder="00.000.000-0"
                 />
               </div>
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="joao@email.com"
-                  value={formData.email || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="loja">Loja</Label>
-                <Select value={formData.loja || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, loja: value }))}>
+                <Select value={formData.loja_id} onValueChange={(value) => setFormData({ ...formData, loja_id: value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a loja" />
                   </SelectTrigger>
                   <SelectContent>
-                    {lojas.map(loja => (
-                      <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                    {lojas.map((loja) => (
+                      <SelectItem key={loja.id} value={loja.id}>
+                        {loja.nome}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div>
+                <Label htmlFor="cargo">Cargo</Label>
+                <Input
+                  id="cargo"
+                  value={formData.cargo}
+                  onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                  placeholder="Vendedor, Gerente, etc."
+                />
+              </div>
+              <div>
+                <Label htmlFor="salario">Salário</Label>
+                <Input
+                  id="salario"
+                  value={formData.salario}
+                  onChange={(e) => {
+                    const formatted = formatCurrency(e.target.value);
+                    setFormData({ ...formData, salario: formatted });
+                  }}
+                  placeholder="R$ 0,00"
+                />
+              </div>
+              <div>
                 <Label htmlFor="status">Status</Label>
-                <Select value={formData.status || 'ATIVO'} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'ATIVO' | 'DEMITIDO' }))}>
+                <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ATIVO">Ativo</SelectItem>
-                    <SelectItem value="DEMITIDO">Demitido</SelectItem>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="demitido">Demitido</SelectItem>
+                    <SelectItem value="afastado">Afastado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="salario">Salário Base</Label>
+              <div className="col-span-2">
+                <Label htmlFor="data_admissao">Data de Admissão</Label>
                 <Input
-                  id="salario"
-                  placeholder="R$ 0,00"
-                  value={formData.salario || ''}
-                  onChange={(e) => {
-                    const formatted = formatCurrency(e.target.value);
-                    setFormData(prev => ({ ...prev, salario: formatted }));
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="valeTransporte">Vale Transporte</Label>
-                <Input
-                  id="valeTransporte"
-                  placeholder="R$ 0,00"
-                  value={formData.valeTransporte || ''}
-                  onChange={(e) => {
-                    const formatted = formatCurrency(e.target.value);
-                    setFormData(prev => ({ ...prev, valeTransporte: formatted }));
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dataAdmissao">Data de Admissão</Label>
-                <Input
-                  id="dataAdmissao"
+                  id="data_admissao"
                   type="date"
-                  value={formData.dataAdmissao || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dataAdmissao: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dataInicioLoja">Início na Loja</Label>
-                <Input
-                  id="dataInicioLoja"
-                  type="date"
-                  value={formData.dataInicioLoja || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dataInicioLoja: e.target.value }))}
+                  value={formData.data_admissao}
+                  onChange={(e) => setFormData({ ...formData, data_admissao: e.target.value })}
                 />
               </div>
             </div>
-            <div className="flex gap-2 mt-6">
-              <Button onClick={handleCloseDialog} variant="outline" className="flex-1">
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button variant="outline" onClick={handleCloseDialog}>
                 Cancelar
               </Button>
-              <Button onClick={handleSave} disabled={loading} className="flex-1">
+              <Button onClick={handleSave} disabled={loading}>
                 {loading ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>
@@ -252,59 +481,53 @@ export default function CadastroProfissionais() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-primary">{professionals.filter(p => p.status === 'ATIVO').length}</p>
-                <p className="text-sm text-muted-foreground">Ativos</p>
-              </div>
-            </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Profissionais Ativos</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success">{activeProfessionals.length}</div>
           </CardContent>
         </Card>
-
-        <Card className="bg-destructive/5 border-destructive/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Users className="h-8 w-8 text-destructive" />
-              <div>
-                <p className="text-2xl font-bold text-destructive">{professionals.filter(p => p.status === 'DEMITIDO').length}</p>
-                <p className="text-sm text-muted-foreground">Demitidos</p>
-              </div>
-            </div>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Demitidos</CardTitle>
+            <UserX className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{dismissedProfessionals.length}</div>
           </CardContent>
         </Card>
-
-        <Card className="bg-accent/5 border-accent/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-8 w-8 text-accent" />
-              <div>
-                <p className="text-2xl font-bold text-accent">{new Set(professionals.map(p => p.loja)).size}</p>
-                <p className="text-sm text-muted-foreground">Lojas</p>
-              </div>
-            </div>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Profissionais</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{professionals.length}</div>
           </CardContent>
         </Card>
-
-        <Card className="bg-success/5 border-success/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-8 w-8 text-success" />
-              <div>
-                <p className="text-2xl font-bold text-success">{professionals.length}</p>
-                <p className="text-sm text-muted-foreground">Total</p>
-              </div>
-            </div>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Lojas Únicas</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{uniqueStores}</div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Professionals Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Profissionais Cadastrados</CardTitle>
+          <CardTitle>Lista de Profissionais</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -313,39 +536,52 @@ export default function CadastroProfissionais() {
                 <TableHead>Matrícula</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Loja</TableHead>
+                <TableHead>Cargo</TableHead>
                 <TableHead>Salário</TableHead>
-                <TableHead>Vale Transporte</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Admissão</TableHead>
+                <TableHead>Data Admissão</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {professionals.map((professional) => (
-                <TableRow key={professional.matricula}>
+                <TableRow key={professional.id}>
                   <TableCell className="font-mono">{professional.matricula}</TableCell>
                   <TableCell className="font-medium">{professional.nome}</TableCell>
+                  <TableCell>{professional.loja?.nome || '-'}</TableCell>
+                  <TableCell>{professional.cargo || '-'}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="bg-accent/10">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {professional.loja}
-                    </Badge>
+                    {formatCurrency((professional.salario || 0).toString())}
                   </TableCell>
-                  <TableCell>{professional.salario}</TableCell>
-                  <TableCell>{professional.valeTransporte}</TableCell>
                   <TableCell>{getStatusBadge(professional.status)}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(professional.dataAdmissao).toLocaleDateString('pt-BR')}
-                    </div>
+                    {professional.data_admissao 
+                      ? new Date(professional.data_admissao).toLocaleDateString('pt-BR')
+                      : '-'
+                    }
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => handleEdit(professional)}>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDocuments(professional.id)}
+                        title="Ver pasta do profissional"
+                      >
+                        <Folder className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(professional)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(professional.matricula)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(professional.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -358,4 +594,4 @@ export default function CadastroProfissionais() {
       </Card>
     </div>
   );
-}
+};
