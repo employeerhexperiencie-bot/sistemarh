@@ -16,7 +16,7 @@ export function Layout({ children }: LayoutProps) {
   }).format(new Date());
 
   return (
-    <div className="dark min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
@@ -56,7 +56,7 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
           )}
         </Button>
         <div className="min-w-0">
-          <h1 className="font-semibold text-sm sm:text-lg truncate">Agente Financeiro WhatsApp</h1>
+          <h1 className="font-semibold text-sm sm:text-lg truncate">Sistema de Gestão RH</h1>
           <p className="text-xs sm:text-sm text-muted-foreground capitalize truncate">
             Competência: {currentMonth}
           </p>

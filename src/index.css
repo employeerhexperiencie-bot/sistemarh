@@ -2,137 +2,137 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Agente Financeiro Whats - Design System
-Dark clean com toques verde/cyan - Escalável e profissional
+/* Sistema de Gestão RH - Design System
+Cores suaves e profissionais para área de Recursos Humanos
 */
 
 @layer base {
   :root {
     /* Core palette - Light mode */
-    --background: 220 15% 97%;
-    --foreground: 220 20% 10%;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
     
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 222 47% 11%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 222 47% 11%;
     
-    /* Financial green primary */
-    --primary: 158 64% 52%;
+    /* Primary - Azul profissional suave */
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 158 64% 45%;
-    --primary-glow: 158 64% 62%;
+    --primary-hover: 217 91% 55%;
+    --primary-glow: 217 91% 70%;
     
-    /* Clean secondary */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 20% 10%;
+    /* Secondary - Rosa suave para RH */
+    --secondary: 340 75% 95%;
+    --secondary-foreground: 340 75% 25%;
     
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
     
-    /* Success/Error accent colors */
-    --accent: 191 95% 50%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Verde menta suave */
+    --accent: 162 63% 82%;
+    --accent-foreground: 162 63% 25%;
     
-    --success: 158 64% 52%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     
-    --warning: 43 96% 56%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 158 64% 52%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
     
     --radius: 0.75rem;
     
     /* Sidebar light */
-    --sidebar-background: 220 15% 98%;
-    --sidebar-foreground: 220 15% 25%;
-    --sidebar-primary: 158 64% 52%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 95%;
-    --sidebar-accent-foreground: 220 15% 25%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 158 64% 52%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 217 91% 60%;
     
-    /* Financial dashboard gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(158 64% 52%), hsl(191 95% 50%));
-    --gradient-success: linear-gradient(135deg, hsl(158 64% 52%), hsl(158 74% 42%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(220 14% 98%));
+    /* RH gradients suaves */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(162 63% 82%));
+    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(162 63% 60%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 40% 98%));
     
-    /* Shadows with financial theme */
-    --shadow-financial: 0 4px 24px -8px hsl(158 64% 52% / 0.25);
-    --shadow-glow: 0 0 32px hsl(158 64% 62% / 0.4);
-    --shadow-card: 0 2px 16px -4px hsl(220 15% 25% / 0.1);
+    /* Shadows suaves */
+    --shadow-financial: 0 4px 20px -6px hsl(217 91% 60% / 0.15);
+    --shadow-glow: 0 0 24px hsl(217 91% 70% / 0.2);
+    --shadow-card: 0 2px 8px -2px hsl(222 47% 11% / 0.08);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    /* Core palette - Dark mode (preferred) */
-    --background: 220 20% 6%;
-    --foreground: 220 15% 94%;
+    /* Core palette - Dark mode */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
     
-    --card: 220 18% 8%;
-    --card-foreground: 220 15% 94%;
+    --card: 217 33% 17%;
+    --card-foreground: 210 40% 98%;
     
-    --popover: 220 18% 8%;
-    --popover-foreground: 220 15% 94%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 210 40% 98%;
     
-    /* Financial green - adjusted for dark */
-    --primary: 158 64% 55%;
-    --primary-foreground: 220 20% 6%;
-    --primary-hover: 158 64% 62%;
-    --primary-glow: 158 74% 65%;
+    /* Primary - Azul mais claro no dark */
+    --primary: 217 91% 65%;
+    --primary-foreground: 222 47% 11%;
+    --primary-hover: 217 91% 70%;
+    --primary-glow: 217 91% 75%;
     
-    --secondary: 220 15% 12%;
-    --secondary-foreground: 220 15% 88%;
+    --secondary: 217 33% 20%;
+    --secondary-foreground: 210 40% 98%;
     
-    --muted: 220 15% 12%;
-    --muted-foreground: 220 10% 65%;
+    --muted: 217 33% 20%;
+    --muted-foreground: 215 20% 65%;
     
-    /* Enhanced accents for dark */
-    --accent: 191 85% 55%;
-    --accent-foreground: 220 20% 6%;
+    /* Accent - Verde menta ajustado para dark */
+    --accent: 162 63% 50%;
+    --accent-foreground: 222 47% 11%;
     
-    --success: 158 64% 55%;
-    --success-foreground: 220 20% 6%;
+    --success: 142 71% 50%;
+    --success-foreground: 222 47% 11%;
     
-    --warning: 43 86% 58%;
-    --warning-foreground: 220 20% 6%;
+    --warning: 38 92% 60%;
+    --warning-foreground: 222 47% 11%;
     
-    --destructive: 0 74% 65%;
-    --destructive-foreground: 220 20% 6%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 222 47% 11%;
     
-    --border: 220 15% 15%;
-    --input: 220 15% 15%;
-    --ring: 158 64% 55%;
+    --border: 217 33% 23%;
+    --input: 217 33% 23%;
+    --ring: 217 91% 65%;
     
     /* Sidebar dark */
-    --sidebar-background: 220 20% 7%;
-    --sidebar-foreground: 220 15% 88%;
-    --sidebar-primary: 158 64% 55%;
-    --sidebar-primary-foreground: 220 20% 6%;
-    --sidebar-accent: 220 15% 11%;
-    --sidebar-accent-foreground: 220 15% 88%;
-    --sidebar-border: 220 15% 12%;
-    --sidebar-ring: 158 64% 55%;
+    --sidebar-background: 222 47% 13%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 65%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 20%;
+    --sidebar-ring: 217 91% 65%;
     
     /* Dark gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(158 64% 55%), hsl(191 85% 55%));
-    --gradient-success: linear-gradient(135deg, hsl(158 64% 55%), hsl(158 74% 45%));
-    --gradient-card: linear-gradient(135deg, hsl(220 18% 8%), hsl(220 15% 10%));
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 65%), hsl(162 63% 50%));
+    --gradient-success: linear-gradient(135deg, hsl(142 71% 50%), hsl(162 63% 45%));
+    --gradient-card: linear-gradient(135deg, hsl(217 33% 17%), hsl(217 33% 19%));
     
-    /* Enhanced shadows for dark */
-    --shadow-financial: 0 4px 32px -8px hsl(158 64% 55% / 0.35);
-    --shadow-glow: 0 0 48px hsl(158 74% 65% / 0.3);
-    --shadow-card: 0 4px 24px -4px hsl(220 20% 0% / 0.4);
+    /* Shadows para dark */
+    --shadow-financial: 0 4px 24px -6px hsl(217 91% 65% / 0.25);
+    --shadow-glow: 0 0 32px hsl(217 91% 75% / 0.2);
+    --shadow-card: 0 4px 16px -4px hsl(222 47% 0% / 0.3);
   }
 }
 
@@ -146,8 +146,8 @@ Dark clean com toques verde/cyan - Escalável e profissional
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* Financial dashboard utilities */
-  .financial-glow {
+  /* RH utilities */
+  .rh-glow {
     box-shadow: var(--shadow-glow);
   }
   
@@ -159,7 +159,7 @@ Dark clean com toques verde/cyan - Escalável e profissional
     transition: var(--transition-smooth);
   }
   
-  .shadow-financial {
+  .shadow-rh {
     box-shadow: var(--shadow-financial);
   }
   

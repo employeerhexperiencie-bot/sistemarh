@@ -51,7 +51,8 @@ export const CadastroProfissionais: React.FC = () => {
     cargo: '',
     salario: '',
     status: 'ativo' as 'ativo' | 'demitido' | 'afastado',
-    data_admissao: ''
+    data_admissao: '',
+    data_demissao: ''
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -162,7 +163,8 @@ export const CadastroProfissionais: React.FC = () => {
       cargo: professional.cargo || '',
       salario: formatCurrency((professional.salario || 0).toString()),
       status: professional.status as 'ativo' | 'demitido' | 'afastado',
-      data_admissao: professional.data_admissao || ''
+      data_admissao: professional.data_admissao || '',
+      data_demissao: professional.data_demissao || ''
     });
     setIsDialogOpen(true);
   };
@@ -206,7 +208,8 @@ export const CadastroProfissionais: React.FC = () => {
       cargo: '',
       salario: '',
       status: 'ativo',
-      data_admissao: ''
+      data_admissao: '',
+      data_demissao: ''
     });
   };
 
@@ -468,6 +471,17 @@ export const CadastroProfissionais: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, data_admissao: e.target.value })}
                 />
               </div>
+              {formData.status === 'demitido' && (
+                <div className="col-span-2">
+                  <Label htmlFor="data_demissao">Data de Demissão</Label>
+                  <Input
+                    id="data_demissao"
+                    type="date"
+                    value={formData.data_demissao}
+                    onChange={(e) => setFormData({ ...formData, data_demissao: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
             <div className="flex justify-end space-x-2 mt-6">
               <Button variant="outline" onClick={handleCloseDialog}>

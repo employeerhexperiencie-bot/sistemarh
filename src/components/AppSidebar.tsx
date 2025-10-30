@@ -74,8 +74,8 @@ export function AppSidebar() {
             <BarChart3 className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 transition-all duration-300 overflow-hidden min-w-0">
-            <h2 className="font-semibold text-sm truncate whitespace-nowrap">Agente Financeiro</h2>
-            <p className="text-xs text-muted-foreground truncate whitespace-nowrap">WhatsApp RH</p>
+            <h2 className="font-semibold text-sm truncate whitespace-nowrap">Sistema RH</h2>
+            <p className="text-xs text-muted-foreground truncate whitespace-nowrap">Gestão de Pessoas</p>
           </div>
         </div>
       </div>
