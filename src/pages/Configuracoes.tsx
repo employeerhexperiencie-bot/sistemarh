@@ -4,11 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useN8NAction } from '@/hooks/useN8NAction';
+import { AppearanceCustomizer } from '@/components/AppearanceCustomizer';
 
 const mockLojas = [
   { id: 'BROOKLIN', nome: 'Brooklin', telefone: '(11) 99999-1111', email: 'brooklin@empresa.com' },
@@ -17,13 +15,6 @@ const mockLojas = [
 ];
 
 export default function Configuracoes() {
-  const [config, setConfig] = useState({
-    faltasMode: 'NAO_CALCULA' as 'NAO_CALCULA' | 'CALCULA',
-    dsrAtivo: false,
-    webhookToken: '',
-    webhookBase: '',
-  });
-
   const [novaLoja, setNovaLoja] = useState({
     id: '',
     nome: '',
@@ -31,22 +22,9 @@ export default function Configuracoes() {
     email: '',
   });
 
-  const { execute, loading } = useN8NAction();
-
-  const handleSaveConfig = async () => {
-    // Simular salvamento das configurações
-    console.log('Salvando configurações:', config);
-    
-    // Em uma implementação real, isso seria enviado para o n8n
-    await execute('config_save', config, {
-      successMessage: 'Configurações salvas com sucesso',
-    });
-  };
-
   const handleAddLoja = () => {
     if (!novaLoja.id || !novaLoja.nome) return;
     
-    // Simular adição de nova loja
     console.log('Adicionando loja:', novaLoja);
     
     setNovaLoja({
@@ -69,86 +47,7 @@ export default function Configuracoes() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Configurações de Faltas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="faltasMode">Modo de Cálculo de Faltas</Label>
-                <Select 
-                  value={config.faltasMode} 
-                  onValueChange={(value: 'NAO_CALCULA' | 'CALCULA') => 
-                    setConfig(prev => ({ ...prev, faltasMode: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NAO_CALCULA">NÃO_CALCULA - Apenas registra</SelectItem>
-                    <SelectItem value="CALCULA">CALCULA - Desconta 1/30 do salário</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="dsrAtivo"
-                  checked={config.dsrAtivo}
-                  onCheckedChange={(checked) => 
-                    setConfig(prev => ({ ...prev, dsrAtivo: checked }))
-                  }
-                />
-                <Label htmlFor="dsrAtivo">DSR Ativo (desconto adicional em faltas injustificadas)</Label>
-              </div>
-
-              <div className="p-4 bg-muted/50 rounded-lg text-sm">
-                <h4 className="font-medium mb-2">Como funciona:</h4>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li><strong>NÃO_CALCULA:</strong> Faltas injustificadas são apenas registradas</li>
-                  <li><strong>CALCULA:</strong> Desconta 1/30 do salário base</li>
-                  <li><strong>DSR Ativo:</strong> Adiciona desconto proporcional do DSR</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle>Configurações de API</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="webhookBase">URL Base do N8N</Label>
-                <Input
-                  id="webhookBase"
-                  placeholder="https://n8n.suaempresa.com/webhook"
-                  value={config.webhookBase}
-                  onChange={(e) => setConfig(prev => ({ ...prev, webhookBase: e.target.value }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="webhookToken">Token de Autenticação</Label>
-                <Input
-                  id="webhookToken"
-                  type="password"
-                  placeholder="Bearer token para autenticação"
-                  value={config.webhookToken}
-                  onChange={(e) => setConfig(prev => ({ ...prev, webhookToken: e.target.value }))}
-                />
-              </div>
-
-              <Button onClick={handleSaveConfig} disabled={loading} className="w-full">
-                <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Salvando...' : 'Salvar Configurações'}
-              </Button>
-            </CardContent>
-          </Card>
+          <AppearanceCustomizer />
         </div>
 
         <div className="space-y-6">

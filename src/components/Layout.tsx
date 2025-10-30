@@ -4,19 +4,31 @@ import { Bell, User, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useAppearance } from '@/contexts/AppearanceContext';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
+  const { config } = useAppearance();
   const currentMonth = new Intl.DateTimeFormat('pt-BR', { 
     month: 'long', 
     year: 'numeric' 
   }).format(new Date());
 
+  const backgroundStyle = config.backgroundType === 'image'
+    ? {
+        backgroundImage: `url("${config.backgroundImage}")`,
+        backgroundRepeat: 'repeat',
+        backgroundAttachment: 'fixed',
+      }
+    : {
+        background: config.backgroundColor,
+      };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={backgroundStyle}>
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />

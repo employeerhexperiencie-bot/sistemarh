@@ -12,8 +12,6 @@ export function Dashboard() {
   const kpis = {
     vales: { value: 'R$ 45.300', count: 23, trend: '+12%' },
     adiantamentos: { value: 'R$ 89.500', count: 15, trend: '+8%' },
-    descFaltas: { value: 'R$ 12.400', count: 8, trend: '-5%' },
-    descDSR: { value: 'R$ 3.200', count: 4, trend: '-15%' },
     totalReceber: { value: 'R$ 328.700', count: 89, trend: '+7%' },
     holerites: { gerados: 45, enviados: 42, assinados: 38 }
   };
@@ -47,26 +45,6 @@ export function Dashboard() {
           icon={TrendingUp}
           colorClass="text-accent"
           onNavigate={() => navigate('/painel-loja?tipo=adiantamentos')}
-        />
-
-        <OptimizedFinancialCard
-          title="Desc. Faltas"
-          value={kpis.descFaltas.value}
-          count={kpis.descFaltas.count}
-          trend={kpis.descFaltas.trend}
-          icon={Users}
-          colorClass="text-warning"
-          onNavigate={() => navigate('/painel-loja?tipo=faltas')}
-        />
-
-        <OptimizedFinancialCard
-          title="Desc. DSR"
-          value={kpis.descDSR.value}
-          count={kpis.descDSR.count}
-          trend={kpis.descDSR.trend}
-          icon={AlertTriangle}
-          colorClass="text-destructive"
-          onNavigate={() => navigate('/painel-loja?tipo=dsr')}
         />
 
         <OptimizedFinancialCard
