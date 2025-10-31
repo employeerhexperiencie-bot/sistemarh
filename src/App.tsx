@@ -8,6 +8,7 @@ import { Dashboard } from "@/pages/Dashboard";
 import { Lancamentos } from "@/pages/Lancamentos";
 import Faltas from "@/pages/Faltas";
 import Holerites from "@/pages/Holerites";
+import Relatorios from "@/pages/Relatorios";
 import Pendencias from "@/pages/Pendencias";
 import PainelLoja from "@/pages/PainelLoja";
 import PainelProfissional from "@/pages/PainelProfissional";
@@ -52,6 +53,11 @@ const App = () => (
           <Route path="/holerites" element={
             <Layout>
               <Holerites />
+            </Layout>
+          } />
+          <Route path="/relatorios" element={
+            <Layout>
+              <Relatorios />
             </Layout>
           } />
           <Route path="/pendencias" element={

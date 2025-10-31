@@ -11,7 +11,8 @@ import {
   Users,
   Heart,
   Plane,
-  Package
+  Package,
+  LineChart
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -31,6 +32,7 @@ const mainItems = [
   { title: 'Lançamentos', url: '/lancamentos', icon: CreditCard },
   { title: 'Faltas', url: '/faltas', icon: UserX },
   { title: 'Holerites', url: '/holerites', icon: FileText },
+  { title: 'Relatórios', url: '/relatorios', icon: LineChart },
   { title: 'Pendências', url: '/pendencias', icon: AlertTriangle },
 ];
 
