@@ -12,6 +12,7 @@ import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folde
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentUploader } from '@/components/DocumentUploader';
+import { ValesManager } from '@/components/ValesManager';
 import { formatCurrency, parseCurrencyToCentavos } from '@/lib/utils';
 
 interface Professional {
@@ -326,16 +327,10 @@ export const CadastroProfissionais: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="vales">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vales e Adiantamentos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Sistema de controle de vales em desenvolvimento...
-                </p>
-              </CardContent>
-            </Card>
+            <ValesManager 
+              professionalId={selectedProfessionalId}
+              professionalName={selectedProfessional?.nome || ''}
+            />
           </TabsContent>
 
           <TabsContent value="epi">
