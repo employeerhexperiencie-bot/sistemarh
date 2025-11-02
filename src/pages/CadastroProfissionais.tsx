@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentUploader } from '@/components/DocumentUploader';
 import { ValesManager } from '@/components/ValesManager';
+import { ValeTransporteManager } from '@/components/ValeTransporteManager';
 import { formatCurrency, parseCurrencyToCentavos } from '@/lib/utils';
 
 interface Professional {
@@ -51,6 +52,7 @@ export const CadastroProfissionais: React.FC = () => {
     loja_id: '',
     cargo: '',
     salario: '',
+    valor_rota_diaria: '',
     status: 'ativo' as 'ativo' | 'demitido' | 'afastado',
     data_admissao: '',
     data_demissao: ''
@@ -163,6 +165,7 @@ export const CadastroProfissionais: React.FC = () => {
       loja_id: professional.loja_id || '',
       cargo: professional.cargo || '',
       salario: formatCurrency((professional.salario || 0).toString()),
+      valor_rota_diaria: '',
       status: professional.status as 'ativo' | 'demitido' | 'afastado',
       data_admissao: professional.data_admissao || '',
       data_demissao: professional.data_demissao || ''
@@ -208,6 +211,7 @@ export const CadastroProfissionais: React.FC = () => {
       loja_id: '',
       cargo: '',
       salario: '',
+      valor_rota_diaria: '',
       status: 'ativo',
       data_admissao: '',
       data_demissao: ''
@@ -257,10 +261,11 @@ export const CadastroProfissionais: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
             <TabsTrigger value="documentos">Documentos</TabsTrigger>
             <TabsTrigger value="vales">Vales & Adiantamentos</TabsTrigger>
+            <TabsTrigger value="transporte">Vale Transporte</TabsTrigger>
             <TabsTrigger value="epi">Controle EPI</TabsTrigger>
           </TabsList>
           
@@ -330,6 +335,13 @@ export const CadastroProfissionais: React.FC = () => {
             <ValesManager 
               professionalId={selectedProfessionalId}
               professionalName={selectedProfessional?.nome || ''}
+            />
+          </TabsContent>
+
+          <TabsContent value="transporte">
+            <ValeTransporteManager
+              profissionalId={selectedProfessionalId}
+              valorRotaDiaria={1250}
             />
           </TabsContent>
 
@@ -443,6 +455,21 @@ export const CadastroProfissionais: React.FC = () => {
                   }}
                   placeholder="R$ 0,00"
                 />
+              </div>
+              <div>
+                <Label htmlFor="valor_rota_diaria">Valor Diário Rota (Ida + Volta)</Label>
+                <Input
+                  id="valor_rota_diaria"
+                  value={formData.valor_rota_diaria}
+                  onChange={(e) => {
+                    const formatted = formatCurrency(e.target.value);
+                    setFormData({ ...formData, valor_rota_diaria: formatted });
+                  }}
+                  placeholder="R$ 0,00"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Valor para vale-transporte diário
+                </p>
               </div>
               <div>
                 <Label htmlFor="status">Status</Label>

@@ -62,21 +62,21 @@ export function AppSidebar() {
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? 'bg-primary/10 text-primary border-r-2 border-primary font-medium' 
-      : 'hover:bg-muted/50 smooth-transition';
+      ? 'bg-primary/10 text-primary border-l-4 border-primary font-medium shadow-sm' 
+      : 'hover:bg-muted/50 hover:border-l-4 hover:border-muted transition-all duration-200';
 
   return (
     <Sidebar
-      className="border-r border-border smooth-transition group/sidebar"
+      className="border-r border-border/50 smooth-transition group/sidebar bg-card/30 backdrop-blur-sm"
       collapsible="icon"
     >
-      <div className="p-4 border-b border-border transition-all duration-300">
+      <div className="p-4 border-b border-border/50 transition-all duration-300">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-lg">
             <BarChart3 className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0 transition-all duration-300 overflow-hidden min-w-0">
-            <h2 className="font-semibold text-sm truncate whitespace-nowrap">Sistema RH</h2>
+            <h2 className="font-bold text-base truncate whitespace-nowrap bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Sistema RH</h2>
             <p className="text-xs text-muted-foreground truncate whitespace-nowrap">Gestão de Pessoas</p>
           </div>
         </div>

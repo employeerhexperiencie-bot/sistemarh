@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUploader } from '@/components/FileUploader';
+import { EntradaEstoqueEPI } from '@/components/EntradaEstoqueEPI';
 import { ShoppingCart, Package, Truck, FileText, Plus, Eye, CheckCircle, AlertTriangle, Building2 } from 'lucide-react';
 import { useN8NAction } from '@/hooks/useN8NAction';
 
@@ -200,10 +201,14 @@ export default function GestaoEPI() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="estoque" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Estoque
+          </TabsTrigger>
+          <TabsTrigger value="entradas" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" />
+            Entrada de Produtos
           </TabsTrigger>
           <TabsTrigger value="pedidos" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
@@ -274,6 +279,10 @@ export default function GestaoEPI() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="entradas">
+          <EntradaEstoqueEPI />
         </TabsContent>
 
         <TabsContent value="pedidos">

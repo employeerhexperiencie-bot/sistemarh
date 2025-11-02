@@ -21,6 +21,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 150000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 0,
   },
   {
     loja: 'REI DO GADO',
@@ -32,6 +33,7 @@ const mockDados = [
     descDSR: 1890,
     totalReceber: 135000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 2,
   },
   {
     loja: 'REI DO GADO',
@@ -43,6 +45,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 165000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 0,
   },
   // BIG OSASCO
   {

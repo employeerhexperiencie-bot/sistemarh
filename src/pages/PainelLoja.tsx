@@ -20,6 +20,9 @@ const mockDados = [
     holeritesG: 12,
     holeritesE: 8,
     holeritesA: 3,
+    faltasComputadas: 5,
+    profissionaisComFaltas: 3,
+    totalProfissionais: 12,
   },
   {
     loja: 'BIG OSASCO',
@@ -31,6 +34,9 @@ const mockDados = [
     holeritesG: 10,
     holeritesE: 7,
     holeritesA: 4,
+    faltasComputadas: 4,
+    profissionaisComFaltas: 2,
+    totalProfissionais: 10,
   },
   {
     loja: 'BOSQUE SAUDE',
@@ -42,6 +48,9 @@ const mockDados = [
     holeritesG: 8,
     holeritesE: 6,
     holeritesA: 2,
+    faltasComputadas: 2,
+    profissionaisComFaltas: 1,
+    totalProfissionais: 8,
   },
   {
     loja: 'BROOKLYN',
@@ -53,6 +62,9 @@ const mockDados = [
     holeritesG: 9,
     holeritesE: 7,
     holeritesA: 5,
+    faltasComputadas: 3,
+    profissionaisComFaltas: 2,
+    totalProfissionais: 9,
   },
   {
     loja: 'ITAPECERICA',
@@ -64,6 +76,9 @@ const mockDados = [
     holeritesG: 7,
     holeritesE: 5,
     holeritesA: 3,
+    faltasComputadas: 2,
+    profissionaisComFaltas: 1,
+    totalProfissionais: 7,
   },
   {
     loja: 'LAJEDO',
@@ -75,6 +90,9 @@ const mockDados = [
     holeritesG: 8,
     holeritesE: 6,
     holeritesA: 4,
+    faltasComputadas: 2,
+    profissionaisComFaltas: 2,
+    totalProfissionais: 8,
   },
   {
     loja: 'MATEO BEI',
@@ -86,6 +104,9 @@ const mockDados = [
     holeritesG: 10,
     holeritesE: 8,
     holeritesA: 6,
+    faltasComputadas: 3,
+    profissionaisComFaltas: 3,
+    totalProfissionais: 10,
   },
   {
     loja: 'MUTINGA',
@@ -97,6 +118,9 @@ const mockDados = [
     holeritesG: 6,
     holeritesE: 4,
     holeritesA: 2,
+    faltasComputadas: 1,
+    profissionaisComFaltas: 1,
+    totalProfissionais: 6,
   },
   {
     loja: 'RAGUEB',
@@ -108,6 +132,9 @@ const mockDados = [
     holeritesG: 9,
     holeritesE: 7,
     holeritesA: 5,
+    faltasComputadas: 3,
+    profissionaisComFaltas: 2,
+    totalProfissionais: 9,
   },
   {
     loja: 'SBC',
@@ -119,6 +146,9 @@ const mockDados = [
     holeritesG: 11,
     holeritesE: 9,
     holeritesA: 7,
+    faltasComputadas: 4,
+    profissionaisComFaltas: 3,
+    totalProfissionais: 11,
   },
   {
     loja: 'SUPER LAPA',
@@ -130,6 +160,9 @@ const mockDados = [
     holeritesG: 10,
     holeritesE: 8,
     holeritesA: 6,
+    faltasComputadas: 3,
+    profissionaisComFaltas: 3,
+    totalProfissionais: 10,
   },
   {
     loja: 'TABOÃO',
@@ -141,6 +174,9 @@ const mockDados = [
     holeritesG: 8,
     holeritesE: 6,
     holeritesA: 4,
+    faltasComputadas: 2,
+    profissionaisComFaltas: 2,
+    totalProfissionais: 8,
   },
   {
     loja: 'COMERCIAL',
@@ -152,6 +188,9 @@ const mockDados = [
     holeritesG: 12,
     holeritesE: 10,
     holeritesA: 8,
+    faltasComputadas: 4,
+    profissionaisComFaltas: 3,
+    totalProfissionais: 12,
   },
 ];
 
@@ -391,6 +430,9 @@ export default function PainelLoja() {
                 <TableHead className="text-right">Adiantamentos</TableHead>
                 <TableHead className="text-right">Desc. Faltas</TableHead>
                 <TableHead className="text-right">Desc. DSR</TableHead>
+                <TableHead className="text-center">Faltas Computadas</TableHead>
+                <TableHead className="text-center">Profissionais c/ Faltas</TableHead>
+                <TableHead className="text-center">Total Profissionais</TableHead>
                 <TableHead className="text-right">Total a Receber</TableHead>
                 <TableHead className="text-center">Holerites</TableHead>
                 <TableHead className="text-center">Status</TableHead>
@@ -412,6 +454,21 @@ export default function PainelLoja() {
                   </TableCell>
                   <TableCell className="text-right text-destructive">
                     -{formatCurrency(item.descDSR)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive">
+                      {item.faltasComputadas}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="outline" className="bg-warning/10 text-warning">
+                      {item.profissionaisComFaltas}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="secondary">
+                      {item.totalProfissionais}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right font-bold text-success">
                     {formatCurrency(item.totalReceber)}
