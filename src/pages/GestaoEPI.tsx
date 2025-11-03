@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { FileUploader } from '@/components/FileUploader';
 import { EntradaEstoqueEPI } from '@/components/EntradaEstoqueEPI';
 import { ShoppingCart, Package, Truck, FileText, Plus, Eye, CheckCircle, AlertTriangle, Building2 } from 'lucide-react';
@@ -444,47 +445,90 @@ export default function GestaoEPI() {
             </div>
           )}
 
-          {dialogType === 'delivery' && (
+          {dialogType === 'request' && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Matrícula</Label>
-                  <Input placeholder="001" />
+                  <Label>Loja *</Label>
+                  <Input placeholder="CENTRO" required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nome do Funcionário</Label>
-                  <Input placeholder="João Silva" />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Loja</Label>
-                  <Input placeholder="CENTRO" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Item Entregue</Label>
-                  <Input placeholder="Uniforme Completo" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Quantidade</Label>
-                  <Input type="number" placeholder="1" />
+                  <Label>Matrícula do Profissional *</Label>
+                  <Input placeholder="001" required />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Termo de Responsabilidade</Label>
-                <FileUploader onFileUploaded={() => {}} />
+                <Label>Nome do Profissional *</Label>
+                <Input placeholder="João Silva" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Item Solicitado *</Label>
+                <Input placeholder="Uniforme Completo" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Quantidade *</Label>
+                <Input type="number" placeholder="2" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Observação</Label>
+                <Textarea placeholder="Detalhes adicionais do pedido" rows={3} />
+              </div>
+              <div className="flex gap-2 justify-end pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  Criar Pedido
+                </Button>
               </div>
             </div>
           )}
 
-          <div className="flex gap-2 mt-6">
-            <Button onClick={() => setIsDialogOpen(false)} variant="outline" className="flex-1">
-              Cancelar
-            </Button>
-            <Button disabled={loading} className="flex-1">
-              {loading ? 'Salvando...' : 'Salvar'}
-            </Button>
-          </div>
+          {dialogType === 'delivery' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Matrícula *</Label>
+                  <Input placeholder="001" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nome do Profissional *</Label>
+                  <Input placeholder="João Silva" required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Loja *</Label>
+                <Input placeholder="CENTRO" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Item Entregue *</Label>
+                <Input placeholder="Uniforme Completo" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Quantidade *</Label>
+                <Input type="number" placeholder="1" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Data da Entrega *</Label>
+                <Input type="date" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Termo de Responsabilidade Assinado</Label>
+                <FileUploader onFileUploaded={() => {}} />
+                <p className="text-xs text-muted-foreground">
+                  Upload do termo de responsabilidade assinado pelo profissional
+                </p>
+              </div>
+              <div className="flex gap-2 justify-end pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  Registrar Entrega
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
