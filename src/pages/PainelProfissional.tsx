@@ -58,6 +58,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 160000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 0,
   },
   {
     loja: 'BIG OSASCO',
@@ -69,6 +70,7 @@ const mockDados = [
     descDSR: 1450,
     totalReceber: 128000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'BIG OSASCO',
@@ -80,6 +82,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 145000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 0,
   },
   // BOSQUE SAUDE
   {
@@ -92,6 +95,7 @@ const mockDados = [
     descDSR: 650,
     totalReceber: 125000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'BOSQUE SAUDE',
@@ -103,6 +107,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 140000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 0,
   },
   // BROOKLYN
   {
@@ -115,6 +120,7 @@ const mockDados = [
     descDSR: 980,
     totalReceber: 138000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'BROOKLYN',
@@ -126,6 +132,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 155000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 0,
   },
   // ITAPECERICA
   {
@@ -138,6 +145,7 @@ const mockDados = [
     descDSR: 560,
     totalReceber: 120000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'ITAPECERICA',
@@ -149,6 +157,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 130000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 0,
   },
   // LAJEDO
   {
@@ -161,6 +170,7 @@ const mockDados = [
     descDSR: 720,
     totalReceber: 125000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'LAJEDO',
@@ -172,6 +182,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 145000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 0,
   },
   // MATEO BEI
   {
@@ -184,6 +195,7 @@ const mockDados = [
     descDSR: 1100,
     totalReceber: 148000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'MATEO BEI',
@@ -195,6 +207,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 165000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 0,
   },
   // MUTINGA
   {
@@ -207,6 +220,7 @@ const mockDados = [
     descDSR: 450,
     totalReceber: 118000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'MUTINGA',
@@ -218,6 +232,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 125000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 0,
   },
   // RAGUEB
   {
@@ -230,6 +245,7 @@ const mockDados = [
     descDSR: 890,
     totalReceber: 142000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'RAGUEB',
@@ -241,6 +257,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 155000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 0,
   },
   // SBC
   {
@@ -253,6 +270,7 @@ const mockDados = [
     descDSR: 1230,
     totalReceber: 168000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 2,
   },
   {
     loja: 'SBC',
@@ -264,6 +282,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 185000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 0,
   },
   // SUPER LAPA
   {
@@ -276,6 +295,7 @@ const mockDados = [
     descDSR: 1080,
     totalReceber: 155000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'SUPER LAPA',
@@ -287,6 +307,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 175000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 0,
   },
   // TABOÃO
   {
@@ -299,6 +320,7 @@ const mockDados = [
     descDSR: 710,
     totalReceber: 128000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 1,
   },
   {
     loja: 'TABOÃO',
@@ -310,6 +332,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 140000,
     statusHolerite: 'GERADO',
+    qtdFaltas: 0,
   },
   // COMERCIAL
   {
@@ -322,6 +345,7 @@ const mockDados = [
     descDSR: 1340,
     totalReceber: 172000,
     statusHolerite: 'ASSINADO',
+    qtdFaltas: 2,
   },
   {
     loja: 'COMERCIAL',
@@ -333,6 +357,7 @@ const mockDados = [
     descDSR: 0,
     totalReceber: 195000,
     statusHolerite: 'ENVIADO',
+    qtdFaltas: 0,
   },
 ];
 
@@ -358,11 +383,12 @@ export default function PainelProfissional() {
   };
 
   const exportCSV = () => {
-    const headers = ['Loja', 'Matrícula', 'Nome', 'Vales', 'Adiantamentos', 'Desc. Faltas', 'Desc. DSR', 'Total a Receber', 'Status Holerite'];
+    const headers = ['Loja', 'Matrícula', 'Nome', 'Nº Faltas', 'Vales', 'Adiantamentos', 'Desc. Faltas', 'Desc. DSR', 'Total a Receber', 'Status Holerite'];
     const rows = dadosFiltrados.map(item => [
       item.loja,
       item.matricula,
       item.nome,
+      item.qtdFaltas || 0,
       formatCurrency(item.vales),
       formatCurrency(item.adiantamentos),
       formatCurrency(item.descFaltas),
@@ -588,6 +614,7 @@ export default function PainelProfissional() {
                 <TableHead>Loja</TableHead>
                 <TableHead>Matr.</TableHead>
                 <TableHead>Nome</TableHead>
+                <TableHead className="text-center">Nº Faltas</TableHead>
                 <TableHead className="text-right">Vales</TableHead>
                 <TableHead className="text-right">Adiantamentos</TableHead>
                 <TableHead className="text-right">Desc. Faltas</TableHead>
@@ -603,6 +630,13 @@ export default function PainelProfissional() {
                   <TableCell className="font-medium">{item.loja}</TableCell>
                   <TableCell>{item.matricula}</TableCell>
                   <TableCell>{item.nome}</TableCell>
+                  <TableCell className="text-center">
+                    {item.qtdFaltas > 0 ? (
+                      <span className="font-semibold text-warning">{item.qtdFaltas}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right text-primary">
                     {item.vales > 0 ? formatCurrency(item.vales) : '-'}
                   </TableCell>
