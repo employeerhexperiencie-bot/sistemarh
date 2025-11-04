@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUploader } from '@/components/FileUploader';
@@ -418,6 +418,11 @@ export default function GestaoEPI() {
               {dialogType === 'request' && 'Novo Pedido de EPI'}
               {dialogType === 'delivery' && 'Registrar Entrega'}
             </DialogTitle>
+            <DialogDescription>
+              {dialogType === 'stock' && 'Preencha os dados do novo item para adicionar ao estoque'}
+              {dialogType === 'request' && 'Preencha os dados para solicitar EPIs para a loja'}
+              {dialogType === 'delivery' && 'Registre a entrega de EPI ao profissional'}
+            </DialogDescription>
           </DialogHeader>
           
           {dialogType === 'stock' && (

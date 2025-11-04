@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Building2, Edit, Trash2, FileText } from 'lucide-react';
@@ -188,6 +188,9 @@ export const CadastroLojas: React.FC = () => {
               <DialogTitle>
                 {editingLoja ? 'Editar Loja' : 'Nova Loja'}
               </DialogTitle>
+              <DialogDescription>
+                {editingLoja ? 'Atualize as informações da loja' : 'Cadastre uma nova loja no sistema'}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>

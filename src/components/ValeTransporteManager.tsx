@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileUploader } from '@/components/FileUploader';
 import { Bus, Download, Eye, Plus, CheckCircle2, AlertTriangle } from 'lucide-react';
 
@@ -170,6 +170,9 @@ export function ValeTransporteManager({ profissionalId, valorRotaDiaria }: ValeT
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Registrar Vale Transporte</DialogTitle>
+            <DialogDescription>
+              Preencha os dados do vale transporte para o profissional
+            </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">

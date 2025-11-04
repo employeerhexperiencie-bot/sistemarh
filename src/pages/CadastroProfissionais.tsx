@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder } from 'lucide-react';
@@ -381,6 +381,9 @@ export const CadastroProfissionais: React.FC = () => {
               <DialogTitle>
                 {editingProfessional ? 'Editar Profissional' : 'Novo Profissional'}
               </DialogTitle>
+              <DialogDescription>
+                {editingProfessional ? 'Atualize as informações do profissional' : 'Cadastre um novo profissional no sistema'}
+              </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4">
               <div>

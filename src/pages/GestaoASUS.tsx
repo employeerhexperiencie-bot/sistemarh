@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FileUploader } from '@/components/FileUploader';
 import { Heart, AlertTriangle, Calendar, Upload, FileText, Plus, Eye } from 'lucide-react';
 import { useN8NAction } from '@/hooks/useN8NAction';
@@ -123,6 +123,9 @@ export default function GestaoASUS() {
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Cadastrar Novo ASUS</DialogTitle>
+              <DialogDescription>
+                Cadastre um novo profissional de saúde ocupacional
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">

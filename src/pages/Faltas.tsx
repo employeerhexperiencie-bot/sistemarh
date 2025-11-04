@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileUploader } from '@/components/FileUploader';
 import { toast } from 'sonner';
 
@@ -243,6 +243,9 @@ export default function Faltas() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Registrar Nova Falta</DialogTitle>
+            <DialogDescription>
+              Preencha as informações sobre a falta do profissional
+            </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
