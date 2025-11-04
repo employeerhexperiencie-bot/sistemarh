@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CreditCard, TrendingUp, Users, FileText, AlertTriangle, DollarSign, Building2, Calendar, Package, Clock } from 'lucide-react';
+import { CreditCard, TrendingUp, Users, FileText, AlertTriangle, DollarSign, Building2, Calendar, Package, Clock, UserX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OptimizedFinancialCard } from '@/components/OptimizedFinancialCard';
 
@@ -13,7 +13,8 @@ export function Dashboard() {
     vales: { value: 'R$ 45.300', count: 23, trend: '+12%' },
     adiantamentos: { value: 'R$ 89.500', count: 15, trend: '+8%' },
     totalReceber: { value: 'R$ 328.700', count: 89, trend: '+7%' },
-    holerites: { gerados: 45, enviados: 42, assinados: 38 }
+    holerites: { gerados: 45, enviados: 42, assinados: 38 },
+    faltas: { total: 12, justificadas: 5, injustificadas: 7, lojas: 6, profissionais: 10 }
   };
 
   return (
@@ -26,7 +27,7 @@ export function Dashboard() {
       </div>
 
       {/* KPIs principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <OptimizedFinancialCard
           title="Vales"
           value={kpis.vales.value}
@@ -57,6 +58,41 @@ export function Dashboard() {
           onNavigate={() => navigate('/painel-loja')}
         />
 
+        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/faltas')}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Faltas do Mês</CardTitle>
+            <UserX className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-2xl font-bold">{kpis.faltas.total}</span>
+                <span className="text-xs text-muted-foreground">Total</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Justificadas</span>
+                <Badge className="bg-success/10 text-success border-success/20">{kpis.faltas.justificadas}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Injustificadas</span>
+                <Badge variant="destructive">{kpis.faltas.injustificadas}</Badge>
+              </div>
+              <div className="pt-1 border-t">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground">{kpis.faltas.lojas} lojas</span>
+                  <span className="text-muted-foreground">{kpis.faltas.profissionais} profissionais</span>
+                </div>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="w-full mt-2">
+              Ver detalhes
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Holerites Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/holerites')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Holerites</CardTitle>
