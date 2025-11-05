@@ -25,6 +25,7 @@ interface Document {
   file_path: string;
   file_size: number;
   mime_type: string;
+  data_vencimento?: string;
   created_at: string;
 }
 
@@ -39,6 +40,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const [uploading, setUploading] = useState(false);
   const [documentName, setDocumentName] = useState('');
   const [documentType, setDocumentType] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
   const { toast } = useToast();
 
   const documentTypes = {
@@ -91,7 +93,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           file_path: fileName,
           file_size: file.size,
           mime_type: file.type,
-          tipo: documentType
+          tipo: documentType,
+          data_vencimento: expiryDate || null
         };
       } else {
         documentData = {
@@ -100,7 +103,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
           file_path: fileName,
           file_size: file.size,
           mime_type: file.type,
-          categoria: documentType
+          categoria: documentType,
+          data_vencimento: expiryDate || null
         };
       }
 
@@ -117,6 +121,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
 
       setDocumentName('');
       setDocumentType('');
+      setExpiryDate('');
       loadDocuments();
       onDocumentUploaded?.();
 
@@ -258,6 +263,18 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="expiryDate">Data de Vencimento (Opcional)</Label>
+              <Input
+                id="expiryDate"
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Para documentos que possuem validade
+              </p>
+            </div>
           </div>
           
           <div>
@@ -296,41 +313,64 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             </p>
           ) : (
             <div className="space-y-3">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{doc.nome}</span>
-                      <Badge variant="secondary">
-                        {entityType === 'loja' 
-                          ? documentTypes.loja.find(t => t.value === doc.tipo)?.label 
-                          : documentTypes.professional.find(t => t.value === doc.categoria)?.label
-                        }
-                      </Badge>
+              {documents.map((doc) => {
+                const getExpiryStatus = (expiryDate?: string) => {
+                  if (!expiryDate) return null;
+                  const today = new Date();
+                  const expiry = new Date(expiryDate);
+                  const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                  
+                  if (daysUntilExpiry < 0) {
+                    return { status: 'expired', label: 'Vencido', variant: 'destructive' as const };
+                  } else if (daysUntilExpiry <= 30) {
+                    return { status: 'expiring', label: `Vence em ${daysUntilExpiry} dias`, variant: 'default' as const };
+                  }
+                  return { status: 'valid', label: `Válido até ${expiry.toLocaleDateString('pt-BR')}`, variant: 'secondary' as const };
+                };
+                
+                const expiryStatus = getExpiryStatus(doc.data_vencimento);
+                
+                return (
+                  <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{doc.nome}</span>
+                        <Badge variant="secondary">
+                          {entityType === 'loja' 
+                            ? documentTypes.loja.find(t => t.value === doc.tipo)?.label 
+                            : documentTypes.professional.find(t => t.value === doc.categoria)?.label
+                          }
+                        </Badge>
+                        {expiryStatus && (
+                          <Badge variant={expiryStatus.variant}>
+                            {expiryStatus.label}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {formatFileSize(doc.file_size)} • Enviado em {new Date(doc.created_at).toLocaleDateString('pt-BR')}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString('pt-BR')}
-                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadDocument(doc.file_path, doc.nome)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteDocument(doc.id, doc.file_path)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => downloadDocument(doc.file_path, doc.nome)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteDocument(doc.id, doc.file_path)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
