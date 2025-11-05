@@ -376,7 +376,7 @@ export const CadastroProfissionais: React.FC = () => {
               Novo Profissional
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingProfessional ? 'Editar Profissional' : 'Novo Profissional'}
@@ -385,137 +385,160 @@ export const CadastroProfissionais: React.FC = () => {
                 {editingProfessional ? 'Atualize as informações do profissional' : 'Cadastre um novo profissional no sistema'}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="matricula">Matrícula *</Label>
-                <Input
-                  id="matricula"
-                  value={formData.matricula}
-                  onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
-                  placeholder="001"
-                  disabled={!!editingProfessional}
-                />
-              </div>
-              <div>
-                <Label htmlFor="nome">Nome Completo *</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="João Silva"
-                />
-              </div>
-              <div>
-                <Label htmlFor="cpf">CPF</Label>
-                <Input
-                  id="cpf"
-                  value={formData.cpf}
-                  onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                  placeholder="000.000.000-00"
-                />
-              </div>
-              <div>
-                <Label htmlFor="rg">RG</Label>
-                <Input
-                  id="rg"
-                  value={formData.rg}
-                  onChange={(e) => setFormData({ ...formData, rg: e.target.value })}
-                  placeholder="00.000.000-0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="loja">Loja</Label>
-                <Select value={formData.loja_id} onValueChange={(value) => setFormData({ ...formData, loja_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a loja" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lojas.map((loja) => (
-                      <SelectItem key={loja.id} value={loja.id}>
-                        {loja.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="cargo">Cargo</Label>
-                <Input
-                  id="cargo"
-                  value={formData.cargo}
-                  onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-                  placeholder="Vendedor, Gerente, etc."
-                />
-              </div>
-              <div>
-                <Label htmlFor="salario">Salário</Label>
-                <Input
-                  id="salario"
-                  value={formData.salario}
-                  onChange={(e) => {
-                    const formatted = formatCurrency(e.target.value);
-                    setFormData({ ...formData, salario: formatted });
-                  }}
-                  placeholder="R$ 0,00"
-                />
-              </div>
-              <div>
-                <Label htmlFor="valor_rota_diaria">Valor Diário Rota (Ida + Volta)</Label>
-                <Input
-                  id="valor_rota_diaria"
-                  value={formData.valor_rota_diaria}
-                  onChange={(e) => {
-                    const formatted = formatCurrency(e.target.value);
-                    setFormData({ ...formData, valor_rota_diaria: formatted });
-                  }}
-                  placeholder="R$ 0,00"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Valor para vale-transporte diário
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ativo">Ativo</SelectItem>
-                    <SelectItem value="demitido">Demitido</SelectItem>
-                    <SelectItem value="afastado">Afastado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="data_admissao">Data de Admissão</Label>
-                <Input
-                  id="data_admissao"
-                  type="date"
-                  value={formData.data_admissao}
-                  onChange={(e) => setFormData({ ...formData, data_admissao: e.target.value })}
-                />
-              </div>
-              {formData.status === 'demitido' && (
-                <div className="col-span-2">
-                  <Label htmlFor="data_demissao">Data de Demissão</Label>
-                  <Input
-                    id="data_demissao"
-                    type="date"
-                    value={formData.data_demissao}
-                    onChange={(e) => setFormData({ ...formData, data_demissao: e.target.value })}
-                  />
+            
+            <Tabs defaultValue="dados" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="dados">Dados do Profissional</TabsTrigger>
+                <TabsTrigger value="documentos" disabled={!editingProfessional}>
+                  Documentos {!editingProfessional && '(salve primeiro)'}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="dados" className="mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="matricula">Matrícula *</Label>
+                    <Input
+                      id="matricula"
+                      value={formData.matricula}
+                      onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
+                      placeholder="001"
+                      disabled={!!editingProfessional}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="nome">Nome Completo *</Label>
+                    <Input
+                      id="nome"
+                      value={formData.nome}
+                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                      placeholder="João Silva"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input
+                      id="cpf"
+                      value={formData.cpf}
+                      onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                      placeholder="000.000.000-00"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="rg">RG</Label>
+                    <Input
+                      id="rg"
+                      value={formData.rg}
+                      onChange={(e) => setFormData({ ...formData, rg: e.target.value })}
+                      placeholder="00.000.000-0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="loja">Loja</Label>
+                    <Select value={formData.loja_id} onValueChange={(value) => setFormData({ ...formData, loja_id: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a loja" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {lojas.map((loja) => (
+                          <SelectItem key={loja.id} value={loja.id}>
+                            {loja.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="cargo">Cargo</Label>
+                    <Input
+                      id="cargo"
+                      value={formData.cargo}
+                      onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                      placeholder="Vendedor, Gerente, etc."
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="salario">Salário</Label>
+                    <Input
+                      id="salario"
+                      value={formData.salario}
+                      onChange={(e) => {
+                        const formatted = formatCurrency(e.target.value);
+                        setFormData({ ...formData, salario: formatted });
+                      }}
+                      placeholder="R$ 0,00"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="valor_rota_diaria">Valor Diário Rota (Ida + Volta)</Label>
+                    <Input
+                      id="valor_rota_diaria"
+                      value={formData.valor_rota_diaria}
+                      onChange={(e) => {
+                        const formatted = formatCurrency(e.target.value);
+                        setFormData({ ...formData, valor_rota_diaria: formatted });
+                      }}
+                      placeholder="R$ 0,00"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Valor para vale-transporte diário
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ativo">Ativo</SelectItem>
+                        <SelectItem value="demitido">Demitido</SelectItem>
+                        <SelectItem value="afastado">Afastado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="data_admissao">Data de Admissão</Label>
+                    <Input
+                      id="data_admissao"
+                      type="date"
+                      value={formData.data_admissao}
+                      onChange={(e) => setFormData({ ...formData, data_admissao: e.target.value })}
+                    />
+                  </div>
+                  {formData.status === 'demitido' && (
+                    <div className="col-span-2">
+                      <Label htmlFor="data_demissao">Data de Demissão</Label>
+                      <Input
+                        id="data_demissao"
+                        type="date"
+                        value={formData.data_demissao}
+                        onChange={(e) => setFormData({ ...formData, data_demissao: e.target.value })}
+                      />
+                    </div>
+                  )}
+                  <div className="col-span-2 flex justify-end space-x-2 pt-4">
+                    <Button variant="outline" onClick={handleCloseDialog}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleSave} disabled={loading}>
+                      {loading ? 'Salvando...' : 'Salvar'}
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button variant="outline" onClick={handleCloseDialog}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} disabled={loading}>
-                {loading ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="documentos" className="mt-4">
+                {editingProfessional && (
+                  <DocumentUploader
+                    bucket="professional-documents"
+                    folder="profissionais"
+                    entityId={editingProfessional.id}
+                    entityType="professional"
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>
