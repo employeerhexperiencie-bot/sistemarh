@@ -12,7 +12,8 @@ import {
   Heart,
   Plane,
   Package,
-  LineChart
+  LineChart,
+  Store
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -37,6 +38,7 @@ const mainItems = [
 ];
 
 const pessoasItems = [
+  { title: 'Cadastro de Lojas', url: '/cadastro-lojas', icon: Store },
   { title: 'Cadastro Profissionais', url: '/cadastro-profissionais', icon: Users },
   { title: 'Gestão ASUS', url: '/gestao-asus', icon: Heart },
   { title: 'Gestão Férias', url: '/gestao-ferias', icon: Plane },
