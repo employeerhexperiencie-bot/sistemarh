@@ -28,6 +28,7 @@ export const CadastroLojas: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLoja, setEditingLoja] = useState<Loja | null>(null);
   const [selectedLojaId, setSelectedLojaId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('dados');
   const [formData, setFormData] = useState({
     nome: '',
     cnpj: '',
@@ -83,22 +84,31 @@ export const CadastroLojas: React.FC = () => {
           title: "Sucesso",
           description: "Loja atualizada com sucesso"
         });
+        
+        await loadLojas();
+        handleCloseDialog();
       } else {
         // Create new loja
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('lojas')
-          .insert([formData]);
+          .insert([formData])
+          .select()
+          .single();
 
         if (error) throw error;
 
         toast({
           title: "Sucesso",
-          description: "Loja cadastrada com sucesso"
+          description: "Loja cadastrada! Agora você pode adicionar documentos."
         });
-      }
 
-      handleCloseDialog();
-      loadLojas();
+        // Load lojas to update the list
+        await loadLojas();
+        
+        // Set the newly created loja as editing to enable documents tab
+        setEditingLoja(data);
+        setActiveTab('documentos');
+      }
     } catch (error) {
       console.error('Save loja error:', error);
       toast({
@@ -121,6 +131,7 @@ export const CadastroLojas: React.FC = () => {
       email: loja.email || '',
       responsavel: loja.responsavel || ''
     });
+    setActiveTab('dados');
     setIsDialogOpen(true);
   };
 
@@ -154,6 +165,7 @@ export const CadastroLojas: React.FC = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingLoja(null);
+    setActiveTab('dados');
     setFormData({
       nome: '',
       cnpj: '',
@@ -178,7 +190,7 @@ export const CadastroLojas: React.FC = () => {
         <h1 className="text-3xl font-bold">Cadastro de Lojas</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingLoja(null)}>
+            <Button onClick={() => { setEditingLoja(null); setActiveTab('dados'); }}>
               <Plus className="mr-2 h-4 w-4" />
               Nova Loja
             </Button>
@@ -193,7 +205,7 @@ export const CadastroLojas: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             
-            <Tabs defaultValue="dados" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="dados">Dados da Loja</TabsTrigger>
                 <TabsTrigger value="documentos" disabled={!editingLoja}>
