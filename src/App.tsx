@@ -19,6 +19,7 @@ import GestaoFerias from "@/pages/GestaoFerias";
 import GestaoEPI from "@/pages/GestaoEPI";
 import Configuracoes from "@/pages/Configuracoes";
 import { CadastroLojas } from "@/pages/CadastroLojas";
+import ImportacaoDados from "@/pages/ImportacaoDados";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -108,6 +109,11 @@ const App = () => (
           <Route path="/cadastro-lojas" element={
             <Layout>
               <CadastroLojas />
+            </Layout>
+          } />
+          <Route path="/importacao-dados" element={
+            <Layout>
+              <ImportacaoDados />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

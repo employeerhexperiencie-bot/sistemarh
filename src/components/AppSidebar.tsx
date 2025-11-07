@@ -13,7 +13,8 @@ import {
   Plane,
   Package,
   LineChart,
-  Store
+  Store,
+  FileSpreadsheet
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -40,6 +41,7 @@ const mainItems = [
 const pessoasItems = [
   { title: 'Cadastro de Lojas', url: '/cadastro-lojas', icon: Store },
   { title: 'Cadastro Profissionais', url: '/cadastro-profissionais', icon: Users },
+  { title: 'Importação de Dados', url: '/importacao-dados', icon: FileSpreadsheet },
   { title: 'Gestão ASUS', url: '/gestao-asus', icon: Heart },
   { title: 'Gestão Férias', url: '/gestao-ferias', icon: Plane },
   { title: 'Gestão EPI', url: '/gestao-epi', icon: Package },
