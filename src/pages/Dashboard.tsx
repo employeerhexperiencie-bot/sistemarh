@@ -18,16 +18,16 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard RH</h1>
-        <p className="text-muted-foreground">
+    <div className="space-y-6 max-w-[1600px] mx-auto">
+      <div className="space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard RH</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Visão geral da gestão de pessoas e operações do mês atual
         </p>
       </div>
 
       {/* KPIs principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <OptimizedFinancialCard
           title="Vales"
           value={kpis.vales.value}
@@ -91,8 +91,8 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* Holerites Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* Holerites e Status Rápido */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/holerites')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Holerites</CardTitle>
@@ -118,11 +118,8 @@ export function Dashboard() {
             </Button>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Cards de Status Rápido */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 smooth-transition hover:shadow-financial cursor-pointer"
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 smooth-transition hover:shadow-financial cursor-pointer"
               onClick={() => navigate('/cadastro-lojas')}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -137,7 +134,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20 smooth-transition hover:shadow-financial cursor-pointer"
+        <Card className="bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20 smooth-transition hover:shadow-financial cursor-pointer"
               onClick={() => navigate('/cadastro-profissionais')}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -152,7 +149,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 smooth-transition hover:shadow-financial cursor-pointer"
+        <Card className="bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20 smooth-transition hover:shadow-financial cursor-pointer"
               onClick={() => navigate('/gestao-ferias')}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -167,7 +164,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20 smooth-transition hover:shadow-financial cursor-pointer"
+        <Card className="bg-gradient-to-br from-success/5 to-success/10 border-success/20 smooth-transition hover:shadow-financial cursor-pointer"
               onClick={() => navigate('/gestao-epi')}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -184,7 +181,7 @@ export function Dashboard() {
       </div>
 
       {/* Alertas Inteligentes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="border-warning/50 bg-gradient-to-br from-warning/10 to-warning/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-warning">

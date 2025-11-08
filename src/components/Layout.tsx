@@ -38,7 +38,7 @@ export function Layout({ children }: LayoutProps) {
             <HeaderComponent currentMonth={currentMonth} />
 
             {/* Main Content */}
-            <main className="flex-1 p-4 sm:p-6 overflow-auto">
+            <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto">
               {children}
             </main>
           </div>
@@ -53,8 +53,8 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
   const collapsed = state === 'collapsed';
 
   return (
-    <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm px-4 sm:px-6 flex items-center justify-between sticky top-0 z-50">
-      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+    <header className="h-14 sm:h-16 border-b border-border bg-card/50 backdrop-blur-sm px-3 sm:px-4 lg:px-6 flex items-center justify-between sticky top-0 z-50">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <Button
           variant="ghost"
           size="sm"
@@ -68,17 +68,17 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
           )}
         </Button>
         <div className="min-w-0">
-          <h1 className="font-semibold text-sm sm:text-lg truncate">Sistema de Gestão RH</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground capitalize truncate">
+          <h1 className="font-semibold text-sm sm:text-base lg:text-lg truncate">Sistema de Gestão RH</h1>
+          <p className="text-xs text-muted-foreground capitalize truncate hidden sm:block">
             Competência: {currentMonth}
           </p>
         </div>
       </div>
       
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <DocumentNotifications />
         
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" className="flex-shrink-0">
           <User className="h-4 w-4" />
           <span className="hidden sm:inline ml-2">Admin</span>
         </Button>
