@@ -17,7 +17,8 @@ import {
   FileSpreadsheet,
   UserMinus,
   Gift,
-  BookOpen
+  BookOpen,
+  Calculator
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -34,6 +35,7 @@ import {
 
 const mainItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Simulador Folha', url: '/simulador-folha', icon: Calculator },
   { title: 'Lançamentos', url: '/lancamentos', icon: CreditCard },
   { title: 'Faltas', url: '/faltas', icon: UserX },
   { title: 'Holerites', url: '/holerites', icon: FileText },
