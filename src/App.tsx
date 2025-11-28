@@ -18,6 +18,9 @@ import { CadastroProfissionais } from "@/pages/CadastroProfissionais";
 import GestaoASUS from "@/pages/GestaoASUS";
 import GestaoFerias from "@/pages/GestaoFerias";
 import GestaoEPI from "@/pages/GestaoEPI";
+import GestaoAfastamentos from "@/pages/GestaoAfastamentos";
+import GestaoBeneficios from "@/pages/GestaoBeneficios";
+import ReferenciaSistema from "@/pages/ReferenciaSistema";
 import Configuracoes from "@/pages/Configuracoes";
 import { CadastroLojas } from "@/pages/CadastroLojas";
 import ImportacaoDados from "@/pages/ImportacaoDados";
@@ -101,6 +104,21 @@ const App = () => (
           <Route path="/gestao-epi" element={
             <Layout>
               <GestaoEPI />
+            </Layout>
+          } />
+          <Route path="/gestao-afastamentos" element={
+            <Layout>
+              <GestaoAfastamentos />
+            </Layout>
+          } />
+          <Route path="/gestao-beneficios" element={
+            <Layout>
+              <GestaoBeneficios />
+            </Layout>
+          } />
+          <Route path="/referencia-sistema" element={
+            <Layout>
+              <ReferenciaSistema />
             </Layout>
           } />
           <Route path="/configuracoes" element={

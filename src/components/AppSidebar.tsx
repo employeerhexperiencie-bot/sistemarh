@@ -14,7 +14,10 @@ import {
   Package,
   LineChart,
   Store,
-  FileSpreadsheet
+  FileSpreadsheet,
+  UserMinus,
+  Gift,
+  BookOpen
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -44,7 +47,9 @@ const pessoasItems = [
   { title: 'Importação de Dados', url: '/importacao-dados', icon: FileSpreadsheet },
   { title: 'Gestão ASUS', url: '/gestao-asus', icon: Heart },
   { title: 'Gestão Férias', url: '/gestao-ferias', icon: Plane },
+  { title: 'Gestão Afastamentos', url: '/gestao-afastamentos', icon: UserMinus },
   { title: 'Gestão EPI', url: '/gestao-epi', icon: Package },
+  { title: 'Gestão Benefícios', url: '/gestao-beneficios', icon: Gift },
 ];
 
 const painelItems = [
@@ -54,6 +59,7 @@ const painelItems = [
 
 const configItems = [
   { title: 'Configurações', url: '/configuracoes', icon: Settings },
+  { title: 'Referência Sistema', url: '/referencia-sistema', icon: BookOpen },
 ];
 
 export function AppSidebar() {
