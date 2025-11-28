@@ -110,8 +110,8 @@ export default function GestaoASUS() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestão de ASUS</h1>
-          <p className="text-muted-foreground">Controle de exames periódicos para manipulação de alimentos</p>
+          <h1 className="text-3xl font-bold">Gestão de Exames</h1>
+          <p className="text-muted-foreground">Controle de exames ocupacionais e periódicos</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
