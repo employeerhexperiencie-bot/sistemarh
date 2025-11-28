@@ -21,6 +21,7 @@ import GestaoEPI from "@/pages/GestaoEPI";
 import GestaoAfastamentos from "@/pages/GestaoAfastamentos";
 import GestaoBeneficios from "@/pages/GestaoBeneficios";
 import ReferenciaSistema from "@/pages/ReferenciaSistema";
+import SimuladorFolha from "@/pages/SimuladorFolha";
 import Configuracoes from "@/pages/Configuracoes";
 import { CadastroLojas } from "@/pages/CadastroLojas";
 import ImportacaoDados from "@/pages/ImportacaoDados";
@@ -119,6 +120,11 @@ const App = () => (
           <Route path="/referencia-sistema" element={
             <Layout>
               <ReferenciaSistema />
+            </Layout>
+          } />
+          <Route path="/simulador-folha" element={
+            <Layout>
+              <SimuladorFolha />
             </Layout>
           } />
           <Route path="/configuracoes" element={
