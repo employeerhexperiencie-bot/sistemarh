@@ -211,6 +211,68 @@ export const useMockData = () => {
     });
   };
 
+  // Gerar dados de afastamentos
+  const getAfastamentos = () => {
+    return profissionais.slice(0, 25).map((prof, index) => {
+      const motivos = ['ACIDENTE_TRABALHO', 'ACIDENTE_TRAJETO', 'DOENCA', 'LICENCA_MATERNIDADE', 'LICENCA_PATERNIDADE', 'OUTROS'];
+      const status = ['ATIVO', 'FINALIZADO', 'AGUARDANDO_PERICIA'];
+      
+      const motivo = motivos[index % motivos.length];
+      const statusAfastamento = status[index % status.length];
+      
+      const dataInicio = new Date();
+      dataInicio.setDate(dataInicio.getDate() - Math.floor(Math.random() * 90));
+      
+      const dataPericia = new Date(dataInicio);
+      dataPericia.setDate(dataPericia.getDate() + 30);
+      
+      return {
+        id: `${prof.matricula}-${index}`,
+        matricula: prof.matricula,
+        nome: prof.nome,
+        loja: prof.localTrabalho,
+        motivo,
+        dataInicio: dataInicio.toISOString().split('T')[0],
+        dataPericia: statusAfastamento === 'AGUARDANDO_PERICIA' ? dataPericia.toISOString().split('T')[0] : undefined,
+        dataFim: statusAfastamento === 'FINALIZADO' ? new Date().toISOString().split('T')[0] : undefined,
+        status: statusAfastamento,
+        observacao: motivo === 'LICENCA_MATERNIDADE' ? 'Recebe 40% no dia 20' : undefined,
+      };
+    });
+  };
+
+  // Gerar dados de benefícios
+  const getBeneficios = () => {
+    return profissionais.map((prof) => {
+      const escala = prof.escala || '6x1';
+      const diasUteis = escala === '6x1' ? 26 : 22;
+      const valorPassagem = 4.40;
+      const valorVR = 25.00;
+      const valorCestaBasica = 150.00;
+      
+      // Simular faltas e afastamentos
+      const faltas = Math.floor(Math.random() * 3);
+      const temCestaBasica = faltas === 0; // Perde cesta se tiver falta injustificada
+      
+      const diasTrabalhados = Math.max(0, diasUteis - faltas);
+      const valorVT = diasTrabalhados * 2 * valorPassagem;
+      const valorVRTotal = diasTrabalhados * valorVR;
+      
+      return {
+        matricula: prof.matricula,
+        nome: prof.nome,
+        loja: prof.localTrabalho,
+        escala,
+        diasUteis,
+        diasTrabalhados,
+        valorVT,
+        valorVR: valorVRTotal,
+        cestaBasica: temCestaBasica ? valorCestaBasica : 0,
+        temCestaBasica,
+      };
+    });
+  };
+
   // Gerar alertas baseados nos dados
   const getAlertas = () => {
     const alertas = [];
@@ -274,6 +336,8 @@ export const useMockData = () => {
     getFerias,
     getFaltas,
     getExamesASO,
+    getAfastamentos,
+    getBeneficios,
     getAlertas,
     
     // Estatísticas gerais
