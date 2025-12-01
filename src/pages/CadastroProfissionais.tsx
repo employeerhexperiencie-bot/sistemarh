@@ -253,6 +253,10 @@ export const CadastroProfissionais: React.FC = () => {
   const [formData, setFormData] = useState<FormDataCompleto>(initialFormData);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  
+  // Verificar se veio matrícula via URL
+  const searchParams = new URLSearchParams(window.location.search);
+  const matriculaParam = searchParams.get('matricula');
 
   const loadProfessionals = async () => {
     try {
@@ -423,6 +427,17 @@ export const CadastroProfissionais: React.FC = () => {
     loadProfessionals();
     loadLojas();
   }, []);
+
+  // Abrir automaticamente se veio matrícula via URL
+  useEffect(() => {
+    if (matriculaParam && professionals.length > 0) {
+      const professional = professionals.find(p => p.matricula === matriculaParam);
+      if (professional) {
+        setSelectedProfessionalId(professional.id);
+        setActiveTab('historico'); // Abre direto na aba de histórico
+      }
+    }
+  }, [matriculaParam, professionals]);
 
   const activeProfessionals = professionals.filter(p => p.status === 'ativo');
   const dismissedProfessionals = professionals.filter(p => p.status === 'demitido');

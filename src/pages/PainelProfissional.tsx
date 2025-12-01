@@ -661,17 +661,18 @@ export default function PainelProfissional() {
                         variant="outline"
                         size="sm"
                         onClick={() => navigate(`/historico-profissional?profissional=${item.nome}&loja=${item.loja}`)}
-                        title="Ver histórico financeiro"
+                        title="Ver histórico financeiro simples"
                       >
                         <History className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="default"
                         size="sm"
-                        onClick={() => navigate('/cadastro-profissionais')}
-                        title="Ver pasta completa (Documentos, Advertências, Histórico)"
+                        onClick={() => navigate(`/cadastro-profissionais?matricula=${item.matricula}`)}
+                        title="Abrir Pasta Completa: Dados, Histórico, Documentos, Advertências, Vales, VT, EPI"
                       >
-                        <FolderOpen className="h-4 w-4" />
+                        <FolderOpen className="h-4 w-4 mr-1" />
+                        Pasta
                       </Button>
                     </div>
                   </TableCell>
