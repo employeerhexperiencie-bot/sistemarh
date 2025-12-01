@@ -21,7 +21,7 @@ export default function ReferenciaSistema() {
         <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="folha" className="text-xs sm:text-sm">Folha de Pagamento</TabsTrigger>
           <TabsTrigger value="beneficios" className="text-xs sm:text-sm">Benefícios</TabsTrigger>
-          <TabsTrigger value="exames" className="text-xs sm:text-sm">Exames/ASUS</TabsTrigger>
+          <TabsTrigger value="exames" className="text-xs sm:text-sm">Exames/ASO</TabsTrigger>
           <TabsTrigger value="ferias" className="text-xs sm:text-sm">Férias</TabsTrigger>
           <TabsTrigger value="afastamentos" className="text-xs sm:text-sm">Afastamentos</TabsTrigger>
           <TabsTrigger value="status" className="text-xs sm:text-sm">Status Projeto</TabsTrigger>
@@ -336,13 +336,13 @@ export default function ReferenciaSistema() {
           </div>
         </TabsContent>
 
-        {/* EXAMES/ASUS */}
+        {/* EXAMES/ASO */}
         <TabsContent value="exames" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="h-5 w-5 text-success" />
-                Exames Ocupacionais (ASUS)
+                Exames Ocupacionais (ASO)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -502,7 +502,7 @@ export default function ReferenciaSistema() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-3 w-3 text-success" />
-                    <span>Gestão de ASUS</span>
+                    <span>Gestão de ASO</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-3 w-3 text-success" />
@@ -566,7 +566,7 @@ export default function ReferenciaSistema() {
                   </div>
                   <div className="flex items-center gap-2">
                     <XCircle className="h-3 w-3 text-muted-foreground" />
-                    <span>Tabela: exames_asus</span>
+                    <span>Tabela: exames_aso</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <XCircle className="h-3 w-3 text-muted-foreground" />
@@ -618,7 +618,7 @@ export default function ReferenciaSistema() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-3 w-3 text-success" />
-                    <span>Alertas de vencimento ASUS (30 dias)</span>
+                    <span>Alertas de vencimento ASO (30 dias)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-3 w-3 text-success" />

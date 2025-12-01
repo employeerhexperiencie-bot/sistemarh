@@ -15,7 +15,7 @@ import PainelLoja from "@/pages/PainelLoja";
 import PainelProfissional from "@/pages/PainelProfissional";
 import HistoricoProfissional from "@/pages/HistoricoProfissional";
 import { CadastroProfissionais } from "@/pages/CadastroProfissionais";
-import GestaoASUS from "@/pages/GestaoASUS";
+import GestaoASO from "@/pages/GestaoASO";
 import GestaoFerias from "@/pages/GestaoFerias";
 import GestaoEPI from "@/pages/GestaoEPI";
 import GestaoAfastamentos from "@/pages/GestaoAfastamentos";
@@ -93,9 +93,9 @@ const App = () => (
               <CadastroProfissionais />
             </Layout>
           } />
-          <Route path="/gestao-asus" element={
+          <Route path="/gestao-aso" element={
             <Layout>
-              <GestaoASUS />
+              <GestaoASO />
             </Layout>
           } />
           <Route path="/gestao-ferias" element={

@@ -10,7 +10,7 @@ import { FileUploader } from '@/components/FileUploader';
 import { Heart, AlertTriangle, Calendar, Upload, FileText, Plus, Eye } from 'lucide-react';
 import { useN8NAction } from '@/hooks/useN8NAction';
 
-interface ASUSExam {
+interface ASOExam {
   matricula: string;
   nome: string;
   loja: string;
@@ -22,8 +22,8 @@ interface ASUSExam {
   observacao?: string;
 }
 
-export default function GestaoASUS() {
-  const [exams, setExams] = useState<ASUSExam[]>([
+export default function GestaoASO() {
+  const [exams, setExams] = useState<ASOExam[]>([
     {
       matricula: '001',
       nome: 'João Silva',
@@ -47,13 +47,13 @@ export default function GestaoASUS() {
   ]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<ASUSExam>>({
+  const [formData, setFormData] = useState<Partial<ASOExam>>({
     tipo: 'SEMESTRAL'
   });
 
   const { execute, loading } = useN8NAction();
 
-  const calculateStatus = (dataValidade: string): ASUSExam['status'] => {
+  const calculateStatus = (dataValidade: string): ASOExam['status'] => {
     const today = new Date();
     const validadeDate = new Date(dataValidade);
     const diffTime = validadeDate.getTime() - today.getTime();
@@ -72,11 +72,11 @@ export default function GestaoASUS() {
       status: calculateStatus(formData.dataValidade!),
     };
 
-    await execute('asus_cadastrar', payload, {
-      successMessage: 'Exame ASUS cadastrado com sucesso!',
+    await execute('aso_cadastrar', payload, {
+      successMessage: 'Exame ASO cadastrado com sucesso!',
     });
 
-    setExams(prev => [...prev, payload as ASUSExam]);
+    setExams(prev => [...prev, payload as ASOExam]);
     handleCloseDialog();
   };
 
@@ -85,7 +85,7 @@ export default function GestaoASUS() {
     setFormData({ tipo: 'SEMESTRAL' });
   };
 
-  const getStatusBadge = (status: ASUSExam['status']) => {
+  const getStatusBadge = (status: ASOExam['status']) => {
     switch (status) {
       case 'VALIDO':
         return <Badge className="bg-success/10 text-success border-success/20">Válido</Badge>;
@@ -96,7 +96,7 @@ export default function GestaoASUS() {
     }
   };
 
-  const getTipoBadge = (tipo: ASUSExam['tipo']) => {
+  const getTipoBadge = (tipo: ASOExam['tipo']) => {
     return tipo === 'SEMESTRAL' 
       ? <Badge variant="outline">6 meses</Badge>
       : <Badge variant="secondary">Anual</Badge>;
@@ -117,14 +117,14 @@ export default function GestaoASUS() {
           <DialogTrigger asChild>
             <Button onClick={() => setIsDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Cadastrar ASUS
+              Cadastrar ASO
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Cadastrar Novo ASUS</DialogTitle>
+              <DialogTitle>Cadastrar Novo ASO</DialogTitle>
               <DialogDescription>
-                Cadastre um novo profissional de saúde ocupacional
+                Cadastre um novo exame de saúde ocupacional
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -203,7 +203,7 @@ export default function GestaoASUS() {
               </div>
 
               <div className="space-y-2">
-                <Label>Upload do Exame ASUS</Label>
+                <Label>Upload do Exame ASO</Label>
                 <FileUploader
                   onFileUploaded={(fileId) => setFormData(prev => ({ ...prev, fileId }))}
                 />
@@ -286,7 +286,7 @@ export default function GestaoASUS() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Controle de Exames ASUS</CardTitle>
+          <CardTitle>Controle de Exames ASO</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
