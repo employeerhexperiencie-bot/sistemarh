@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUploader } from '@/components/FileUploader';
 import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock } from 'lucide-react';
+import { useMockData } from '@/hooks/useMockData';
 
 interface Afastamento {
   id: string;
@@ -35,28 +36,51 @@ const motivosAfastamento = [
 ];
 
 export default function GestaoAfastamentos() {
-  const [afastamentos, setAfastamentos] = useState<Afastamento[]>([
-    {
-      id: '1',
-      matricula: '001',
-      nome: 'João Silva',
-      loja: 'CENTRO',
-      motivo: 'ACIDENTE_TRABALHO',
-      dataInicio: '2025-01-10',
-      dataPericia: '2025-02-10',
-      status: 'ATIVO',
-    },
-    {
-      id: '2',
-      matricula: '003',
-      nome: 'Ana Costa',
-      loja: 'BROOKLIN',
-      motivo: 'LICENCA_MATERNIDADE',
-      dataInicio: '2025-01-15',
-      status: 'ATIVO',
-      observacao: 'Recebe 40% no dia 20',
+  const mockData = useMockData();
+  const [afastamentos, setAfastamentos] = useState<Afastamento[]>([]);
+
+  useEffect(() => {
+    if (mockData.hasMockData) {
+      const afastamentosData = mockData.getAfastamentos();
+      const afastamentosFormatados: Afastamento[] = afastamentosData.map((a: any) => ({
+        id: a.id,
+        matricula: a.matricula,
+        nome: a.nome,
+        loja: a.loja,
+        motivo: a.motivo as Afastamento['motivo'],
+        dataInicio: a.dataInicio,
+        dataPericia: a.dataPericia,
+        dataFim: a.dataFim,
+        status: a.status as Afastamento['status'],
+        observacao: a.observacao,
+      }));
+      setAfastamentos(afastamentosFormatados);
+    } else {
+      // Dados de fallback
+      setAfastamentos([
+        {
+          id: '1',
+          matricula: '001',
+          nome: 'João Silva',
+          loja: 'CENTRO',
+          motivo: 'ACIDENTE_TRABALHO',
+          dataInicio: '2025-01-10',
+          dataPericia: '2025-02-10',
+          status: 'ATIVO',
+        },
+        {
+          id: '2',
+          matricula: '003',
+          nome: 'Ana Costa',
+          loja: 'BROOKLIN',
+          motivo: 'LICENCA_MATERNIDADE',
+          dataInicio: '2025-01-15',
+          status: 'ATIVO',
+          observacao: 'Recebe 40% no dia 20',
+        }
+      ]);
     }
-  ]);
+  }, [mockData.hasMockData]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAfastamento, setEditingAfastamento] = useState<Afastamento | null>(null);
