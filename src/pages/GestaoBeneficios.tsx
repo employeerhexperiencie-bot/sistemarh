@@ -20,10 +20,16 @@ interface BeneficioConfig {
 export default function GestaoBeneficios() {
   const mockData = useMockData();
   const [beneficiosData, setBeneficiosData] = useState<any[]>([]);
+  const [dataSource, setDataSource] = useState<'real' | 'mock'>('mock');
 
   useEffect(() => {
+    // Verificar se há dados reais carregados
+    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
+    const hasRealData = !!dadosBeneficiosStr;
+    
     if (mockData.hasMockData) {
       const beneficios = mockData.getBeneficios();
+      setDataSource(hasRealData ? 'real' : 'mock');
       setBeneficiosData(beneficios.slice(0, 50)); // Limitar a 50 para performance
     }
   }, [mockData.hasMockData]);
@@ -58,7 +64,18 @@ export default function GestaoBeneficios() {
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Gestão de Benefícios</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold">Gestão de Benefícios</h1>
+          {dataSource === 'real' ? (
+            <Badge className="bg-success/10 text-success border-success/20">
+              Dados BASE_Beneficios.xlsx
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-muted-foreground">
+              Dados simulados
+            </Badge>
+          )}
+        </div>
         <p className="text-muted-foreground text-sm sm:text-base">Vale Transporte, Vale Refeição, Cesta Básica e Seguros</p>
       </div>
 
