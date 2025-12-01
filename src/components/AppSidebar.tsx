@@ -22,7 +22,8 @@ import {
   ChevronRight,
   Bell,
   History,
-  FileBox
+  FileBox,
+  Database
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -94,6 +95,7 @@ const navSections = [
     items: [
       { title: 'Análise Ativos', url: '/analisar-ativos', icon: FileBox },
       { title: 'Dados Adicionais', url: '/carregar-dados-adicionais', icon: FileSpreadsheet },
+      { title: 'Migrar para BD', url: '/migrar-dados', icon: Database },
       { title: 'Validação de Dados', url: '/validacao-dados', icon: AlertTriangle },
       { title: 'Histórico Alterações', url: '/audit-log', icon: History },
       { title: 'Configurações', url: '/configuracoes', icon: Settings },
