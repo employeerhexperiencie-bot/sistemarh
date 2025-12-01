@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, FileText, Filter, CreditCard, DollarSign } from 'lucide-react';
+import { Users, TrendingUp, FileText, Filter, CreditCard, DollarSign, FolderOpen, History } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -621,12 +621,12 @@ export default function PainelProfissional() {
                 <TableHead className="text-right">Desc. DSR</TableHead>
                 <TableHead className="text-right">Total a Receber</TableHead>
                 <TableHead className="text-center">Status Holerite</TableHead>
+                <TableHead className="text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {dadosFiltrados.map((item, index) => (
-                <TableRow key={index} className="cursor-pointer hover:bg-muted/50" 
-                         onClick={() => navigate(`/historico-profissional?profissional=${item.nome}&loja=${item.loja}`)}>
+                <TableRow key={index} className="hover:bg-muted/50">
                   <TableCell className="font-medium">{item.loja}</TableCell>
                   <TableCell>{item.matricula}</TableCell>
                   <TableCell>{item.nome}</TableCell>
@@ -654,6 +654,26 @@ export default function PainelProfissional() {
                   </TableCell>
                   <TableCell className="text-center">
                     {getStatusBadge(item.statusHolerite)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex gap-2 justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/historico-profissional?profissional=${item.nome}&loja=${item.loja}`)}
+                        title="Ver histórico financeiro"
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/cadastro-profissionais')}
+                        title="Ver pasta completa (Documentos, Advertências, Histórico)"
+                      >
+                        <FolderOpen className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
