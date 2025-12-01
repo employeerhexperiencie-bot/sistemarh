@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -21,7 +21,7 @@ const MigrarDados = () => {
   const [dbStatus, setDbStatus] = useState({ profissionais: 0, lojas: 0 });
 
   // Carregar status do banco ao montar
-  useState(() => {
+  useEffect(() => {
     const loadDbStatus = async () => {
       const [profResult, lojaResult] = await Promise.all([
         supabase.from('profissionais').select('id', { count: 'exact', head: true }),
@@ -35,7 +35,7 @@ const MigrarDados = () => {
     };
     
     loadDbStatus();
-  });
+  }, []);
 
   const handleClearDatabase = async () => {
     if (!confirm("⚠️ Tem certeza? Isso irá DELETAR TODOS os dados do banco de dados!")) {
