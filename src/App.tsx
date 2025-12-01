@@ -29,6 +29,7 @@ import ImportacaoDados from "@/pages/ImportacaoDados";
 import Alertas from "@/pages/Alertas";
 import AuditLog from "@/pages/AuditLog";
 import AnalisarAtivos from "@/pages/AnalisarAtivos";
+import CarregarDadosAdicionais from "@/pages/CarregarDadosAdicionais";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -160,6 +161,11 @@ const App = () => (
           <Route path="/analisar-ativos" element={
             <Layout>
               <AnalisarAtivos />
+            </Layout>
+          } />
+          <Route path="/carregar-dados-adicionais" element={
+            <Layout>
+              <CarregarDadosAdicionais />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
