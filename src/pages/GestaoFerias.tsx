@@ -31,53 +31,27 @@ export default function GestaoFerias() {
   const [vacations, setVacations] = useState<Vacation[]>([]);
 
   useEffect(() => {
-    if (mockData.hasMockData) {
-      const feriasData = mockData.getFerias();
-      const feriasFormatadas: Vacation[] = feriasData.map((f) => {
-        const periodoAquisitivoArr = f.periodoAquisitivo.split(' - ');
-        const [diaIni, mesIni, anoIni] = periodoAquisitivoArr[0].split('/');
-        const [diaFim, mesFim, anoFim] = periodoAquisitivoArr[1].split('/');
-        
-        return {
-          matricula: f.matricula,
-          nome: f.nome,
-          loja: f.loja,
-          periodoAquisitivo: {
-            inicio: `${anoIni}-${mesIni}-${diaIni}`,
-            fim: `${anoFim}-${mesFim}-${diaFim}`,
-          },
-          diasUsados: f.status === 'agendada' ? 10 : 0,
-          diasDisponiveis: f.diasDisponiveis,
-          status: f.status === 'vencida' ? 'VENCENDO' : f.status === 'agendada' ? 'AGENDADO' : 'PENDENTE',
-        };
-      });
-      setVacations(feriasFormatadas);
-    } else {
-      // Dados de fallback se não houver importados
-      setVacations([
-        {
-          matricula: '001',
-          nome: 'João Silva',
-          loja: 'CENTRO',
-          periodoAquisitivo: { inicio: '2024-01-15', fim: '2025-01-14' },
-          dataInicioFerias: '2025-03-01',
-          dataFimFerias: '2025-03-30',
-          diasUsados: 0,
-          diasDisponiveis: 30,
-          status: 'AGENDADO',
+    const feriasData = mockData.getFerias();
+    const feriasFormatadas: Vacation[] = feriasData.map((f) => {
+      const periodoAquisitivoArr = f.periodoAquisitivo.split(' - ');
+      const [diaIni, mesIni, anoIni] = periodoAquisitivoArr[0].split('/');
+      const [diaFim, mesFim, anoFim] = periodoAquisitivoArr[1].split('/');
+      
+      return {
+        matricula: f.matricula,
+        nome: f.nome,
+        loja: f.loja,
+        periodoAquisitivo: {
+          inicio: `${anoIni}-${mesIni}-${diaIni}`,
+          fim: `${anoFim}-${mesFim}-${diaFim}`,
         },
-        {
-          matricula: '002',
-          nome: 'Maria Santos',
-          loja: 'BROOKLIN',
-          periodoAquisitivo: { inicio: '2023-08-10', fim: '2024-08-09' },
-          diasUsados: 10,
-          diasDisponiveis: 20,
-          status: 'VENCENDO',
-        }
-      ]);
-    }
-  }, [mockData.hasMockData]);
+        diasUsados: f.status === 'agendada' ? 10 : 0,
+        diasDisponiveis: f.diasDisponiveis,
+        status: f.status === 'vencida' ? 'VENCENDO' : f.status === 'agendada' ? 'AGENDADO' : 'PENDENTE',
+      };
+    });
+    setVacations(feriasFormatadas);
+  }, [mockData]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVacation, setEditingVacation] = useState<Vacation | null>(null);

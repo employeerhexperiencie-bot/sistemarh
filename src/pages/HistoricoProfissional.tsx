@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Calendar, TrendingUp, FileText, Filter, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useMockData } from '@/hooks/useMockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,7 @@ const mockHistorico = [
 export default function HistoricoProfissional() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const mockData = useMockData();
   const [competencia, setCompetencia] = useState('2025-08');
   const [novoItem, setNovoItem] = useState({
     tipo: '',
@@ -58,8 +60,77 @@ export default function HistoricoProfissional() {
     descricao: '',
   });
   
+  const matricula = searchParams.get('matricula') || '';
   const profissional = searchParams.get('profissional') || '';
   const loja = searchParams.get('loja') || '';
+
+  // Gerar histórico baseado em dados reais
+  const mockHistorico = useMemo(() => {
+    const prof = mockData.profissionais.find(p => p.matricula === matricula);
+    if (!prof) return [];
+
+    const beneficios = mockData.getBeneficios().find((b: any) => b.matricula === matricula);
+    const faltas = mockData.getFaltas().find((f: any) => f.matricula === matricula);
+
+    const historico: any[] = [];
+
+    // VT e VR
+    if (beneficios) {
+      historico.push({
+        data: '2025-08-20',
+        tipo: 'VALE',
+        valor: beneficios.valorVT * 100,
+        descricao: 'Vale Transporte',
+        status: 'APROVADO',
+      });
+      historico.push({
+        data: '2025-08-20',
+        tipo: 'VALE',
+        valor: beneficios.valorVR * 100,
+        descricao: 'Vale Refeição',
+        status: 'APROVADO',
+      });
+      if (beneficios.cestaBasica > 0) {
+        historico.push({
+          data: '2025-08-15',
+          tipo: 'VALE',
+          valor: beneficios.cestaBasica * 100,
+          descricao: 'Cesta Básica',
+          status: 'APROVADO',
+        });
+      }
+    }
+
+    // Adiantamento
+    if (prof.salarioReceber || prof.salarioCTPS) {
+      const salarioStr = prof.salarioReceber || prof.salarioCTPS;
+      const salarioNum = typeof salarioStr === 'string' 
+        ? parseFloat(salarioStr.replace(/[^0-9,]/g, '').replace(',', '.'))
+        : 0;
+      if (salarioNum > 0) {
+        historico.push({
+          data: '2025-08-20',
+          tipo: 'ADIANTAMENTO',
+          valor: Math.floor(salarioNum * 0.4 * 100),
+          descricao: 'Adiantamento dia 20 (40%)',
+          status: 'APROVADO',
+        });
+      }
+    }
+
+    // Faltas
+    if (faltas && faltas.faltasInjustificadas > 0) {
+      historico.push({
+        data: '2025-08-10',
+        tipo: 'FALTA',
+        valor: -Math.floor(faltas.faltasInjustificadas * 15000),
+        descricao: `${faltas.faltasInjustificadas} faltas injustificadas`,
+        status: 'DESCONTADO',
+      });
+    }
+
+    return historico.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+  }, [mockData, matricula]);
 
   const formatCurrency = (centavos: number) => {
     return new Intl.NumberFormat('pt-BR', {
