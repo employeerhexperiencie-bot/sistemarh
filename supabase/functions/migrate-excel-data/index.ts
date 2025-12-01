@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     // Receber dados do body
     const { profissionais, lojas, examesASO, beneficios } = await req.json();
 
-    console.log(`Iniciando migração: ${lojas?.length || 0} lojas, ${profissionais?.length || 0} profissionais`);
+    console.log(`Iniciando migração: ${lojas?.length || 0} lojas fornecidas, ${profissionais?.length || 0} profissionais`);
 
     const results = {
       lojas: { inserted: 0, errors: [] as string[] },
@@ -83,29 +83,54 @@ Deno.serve(async (req) => {
     // Mapa para relacionar nomes de lojas com IDs
     const lojaIdMap = new Map<string, string>();
 
-    // 1. Inserir Lojas (com upsert para evitar duplicatas)
+    // 1. EXTRAIR E CRIAR LOJAS a partir dos profissionais
+    // Se não temos lojas no array, extraímos dos profissionais
+    const lojasUnicas = new Set<string>();
+    
+    if (profissionais && profissionais.length > 0) {
+      for (const prof of profissionais as ExcelProfissional[]) {
+        if (prof.localTrabalho && prof.localTrabalho.trim()) {
+          lojasUnicas.add(prof.localTrabalho.trim());
+        }
+      }
+    }
+
+    // Adicionar lojas fornecidas manualmente
     if (lojas && lojas.length > 0) {
       for (const loja of lojas as ExcelLoja[]) {
-        const { data, error } = await supabase
-          .from('lojas')
-          .upsert({
-            nome: loja.nome,
-            cnpj: loja.cnpj || null,
-          }, {
-            onConflict: 'nome',
-            ignoreDuplicates: false
-          })
-          .select('id, nome')
-          .single();
-
-        if (error) {
-          console.error(`Erro ao inserir loja ${loja.nome}:`, error);
-          results.lojas.errors.push(`${loja.nome}: ${error.message}`);
-        } else if (data) {
-          results.lojas.inserted++;
-          lojaIdMap.set(loja.nome, data.id);
-          console.log(`Loja inserida/atualizada: ${loja.nome} -> ${data.id}`);
+        if (loja.nome && loja.nome.trim()) {
+          lojasUnicas.add(loja.nome.trim());
         }
+      }
+    }
+
+    console.log(`Total de lojas únicas encontradas: ${lojasUnicas.size}`);
+
+    // Inserir cada loja única
+    for (const nomeLoja of lojasUnicas) {
+      const { data, error } = await supabase
+        .from('lojas')
+        .upsert({
+          nome: nomeLoja,
+          cnpj: null, // Será preenchido depois
+          endereco: null,
+          telefone: null,
+          email: null,
+          gerente: null,
+        }, {
+          onConflict: 'nome',
+          ignoreDuplicates: false
+        })
+        .select('id, nome')
+        .single();
+
+      if (error) {
+        console.error(`Erro ao inserir loja ${nomeLoja}:`, error);
+        results.lojas.errors.push(`${nomeLoja}: ${error.message}`);
+      } else if (data) {
+        results.lojas.inserted++;
+        lojaIdMap.set(nomeLoja, data.id);
+        console.log(`Loja criada: ${nomeLoja} -> ${data.id}`);
       }
     }
 
