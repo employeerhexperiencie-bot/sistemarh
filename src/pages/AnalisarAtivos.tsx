@@ -280,6 +280,29 @@ export default function AnalisarAtivos() {
         </div>
       )}
 
+      {/* Banner de Dados Adicionais */}
+      <Card className="border-info/20 bg-info/5">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <FileSpreadsheet className="h-5 w-5 text-info flex-shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-2">
+              <p className="font-medium">Dados Adicionais Disponíveis</p>
+              <p className="text-sm text-muted-foreground">
+                Além dos dados da planilha ATIVOS.xlsx, você pode carregar informações complementares de ASO e Benefícios.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/carregar-dados-adicionais'}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Carregar BASE_ASO e BASE_Beneficios
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Resumo por Lojas */}
       {dados && dados.lojas.length > 0 && (
         <Card>

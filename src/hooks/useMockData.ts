@@ -183,6 +183,42 @@ export const useMockData = () => {
 
   // Gerar dados de exames ASO
   const getExamesASO = () => {
+    // Tentar carregar dados reais do BASE_ASO.xlsx
+    const dadosASOStr = localStorage.getItem('dadosASO');
+    if (dadosASOStr) {
+      try {
+        const dadosASO = JSON.parse(dadosASOStr);
+        return dadosASO.map((aso: any) => {
+          const proximoExame = aso.proxExame && aso.proxExame !== 'NR' ? new Date(aso.proxExame) : null;
+          const hoje = new Date();
+          
+          let diasParaVencer = 0;
+          let status: 'regular' | 'vencendo' | 'vencido' = 'regular';
+          
+          if (proximoExame) {
+            diasParaVencer = Math.floor((proximoExame.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+            if (diasParaVencer < 0) status = 'vencido';
+            else if (diasParaVencer <= 30) status = 'vencendo';
+          }
+          
+          return {
+            matricula: aso.matricula,
+            nome: aso.nome,
+            loja: aso.localTrabalho,
+            cargo: aso.cargo,
+            ultimoExame: aso.ultimoASO || 'N/A',
+            proximoExame: aso.proxASO || 'N/A',
+            tipoExame: status === 'vencido' ? 'Vencido' : 'Periódico',
+            status,
+            diasParaVencer,
+          };
+        });
+      } catch (error) {
+        console.error('Erro ao carregar dados ASO:', error);
+      }
+    }
+    
+    // Fallback para dados gerados
     return profissionais.slice(0, 50).map((prof, index) => {
       const ultimoExame = new Date();
       ultimoExame.setMonth(ultimoExame.getMonth() - Math.floor(Math.random() * 12));
@@ -243,6 +279,46 @@ export const useMockData = () => {
 
   // Gerar dados de benefícios
   const getBeneficios = () => {
+    // Tentar carregar dados reais do BASE_Beneficios.xlsx
+    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
+    if (dadosBeneficiosStr) {
+      try {
+        const dadosBeneficios = JSON.parse(dadosBeneficiosStr);
+        return dadosBeneficios.map((ben: any) => {
+          const parseValor = (valor: any): number => {
+            if (!valor) return 0;
+            if (typeof valor === 'number') return valor;
+            const valorStr = String(valor).replace(/[R$\s.]/g, '').replace(',', '.');
+            return parseFloat(valorStr) || 0;
+          };
+          
+          const valorDiario = parseValor(ben.valorDiario);
+          const escala = '6x1'; // Padrão
+          const diasUteis = escala === '6x1' ? 26 : 22;
+          
+          const valorVT = valorDiario * diasUteis;
+          const valorVR = ben.vr === 'SIM' ? 25 * diasUteis : 0;
+          const cestaBasica = ben.cestaBasica === 'SIM' ? 150 : 0;
+          
+          return {
+            matricula: ben.matricula,
+            nome: ben.nome,
+            loja: ben.localTrabalho,
+            escala,
+            diasUteis,
+            diasTrabalhados: diasUteis,
+            valorVT,
+            valorVR,
+            cestaBasica,
+            temCestaBasica: ben.cestaBasica === 'SIM',
+          };
+        });
+      } catch (error) {
+        console.error('Erro ao carregar dados Benefícios:', error);
+      }
+    }
+    
+    // Fallback para dados gerados
     return profissionais.map((prof) => {
       const escala = prof.escala || '6x1';
       const diasUteis = escala === '6x1' ? 26 : 22;
@@ -250,9 +326,8 @@ export const useMockData = () => {
       const valorVR = 25.00;
       const valorCestaBasica = 150.00;
       
-      // Simular faltas e afastamentos
       const faltas = Math.floor(Math.random() * 3);
-      const temCestaBasica = faltas === 0; // Perde cesta se tiver falta injustificada
+      const temCestaBasica = faltas === 0;
       
       const diasTrabalhados = Math.max(0, diasUteis - faltas);
       const valorVT = diasTrabalhados * 2 * valorPassagem;
