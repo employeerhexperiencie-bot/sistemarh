@@ -18,6 +18,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { DocumentUploader } from '@/components/DocumentUploader';
 import { ValesManager } from '@/components/ValesManager';
 import { ValeTransporteManager } from '@/components/ValeTransporteManager';
+import { AdvertenciasManager } from '@/components/AdvertenciasManager';
+import { HistoricoCompleto } from '@/components/HistoricoCompleto';
 import { formatCurrency, parseCurrencyToCentavos } from '@/lib/utils';
 
 interface Professional {
@@ -444,9 +446,11 @@ export const CadastroProfissionais: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
-            <TabsTrigger value="dados" className="text-xs sm:text-sm py-2">Dados Pessoais</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto">
+            <TabsTrigger value="dados" className="text-xs sm:text-sm py-2">Dados</TabsTrigger>
+            <TabsTrigger value="historico" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
             <TabsTrigger value="documentos" className="text-xs sm:text-sm py-2">Documentos</TabsTrigger>
+            <TabsTrigger value="advertencias" className="text-xs sm:text-sm py-2">Advertências</TabsTrigger>
             <TabsTrigger value="vales" className="text-xs sm:text-sm py-2">Vales</TabsTrigger>
             <TabsTrigger value="transporte" className="text-xs sm:text-sm py-2">VT</TabsTrigger>
             <TabsTrigger value="epi" className="text-xs sm:text-sm py-2">EPI</TabsTrigger>
@@ -505,6 +509,13 @@ export const CadastroProfissionais: React.FC = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="historico">
+            <HistoricoCompleto
+              professionalId={selectedProfessionalId}
+              professionalName={selectedProfessional?.nome || ''}
+            />
+          </TabsContent>
+
           <TabsContent value="documentos">
             <DocumentUploader
               bucket="professional-documents"
@@ -514,8 +525,15 @@ export const CadastroProfissionais: React.FC = () => {
             />
           </TabsContent>
 
+          <TabsContent value="advertencias">
+            <AdvertenciasManager
+              professionalId={selectedProfessionalId}
+              professionalName={selectedProfessional?.nome || ''}
+            />
+          </TabsContent>
+
           <TabsContent value="vales">
-            <ValesManager 
+            <ValesManager
               professionalId={selectedProfessionalId}
               professionalName={selectedProfessional?.nome || ''}
             />
