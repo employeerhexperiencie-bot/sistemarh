@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, Trash2, Eye, AlertCircle, Download } from 'lucide-react';
+import { Calendar, Trash2, Eye, AlertCircle, Download, FileDown, Filter, X } from 'lucide-react';
 import { useMockData } from '@/hooks/useMockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,23 @@ export default function Faltas() {
   
   const [loading, setLoading] = useState(false);
 
+  // Filtros
+  const [filtros, setFiltros] = useState({
+    dataInicio: '',
+    dataFim: '',
+    loja: 'todas',
+    tipo: 'todos',
+    busca: '',
+  });
+
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Obter lista única de lojas
+  const lojasUnicas = useMemo(() => {
+    const lojas = new Set(faltas.map(f => f.loja));
+    return Array.from(lojas).sort();
+  }, [faltas]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -112,8 +129,65 @@ export default function Faltas() {
       : 'bg-destructive/10 text-destructive border-destructive/20';
   };
 
-  const faltasJustificadas = faltas.filter(f => f.tipo === 'JUSTIFICADA').length;
-  const faltasInjustificadas = faltas.filter(f => f.tipo === 'INJUSTIFICADA').length;
+  // Aplicar filtros
+  const faltasFiltradas = useMemo(() => {
+    return faltas.filter(falta => {
+      // Filtro por período
+      if (filtros.dataInicio && falta.data < filtros.dataInicio) return false;
+      if (filtros.dataFim && falta.data > filtros.dataFim) return false;
+
+      // Filtro por loja
+      if (filtros.loja !== 'todas' && falta.loja !== filtros.loja) return false;
+
+      // Filtro por tipo
+      if (filtros.tipo !== 'todos' && falta.tipo !== filtros.tipo) return false;
+
+      // Filtro por busca (nome ou matrícula)
+      if (filtros.busca) {
+        const busca = filtros.busca.toLowerCase();
+        const nomeMatch = falta.nomeProfissional.toLowerCase().includes(busca);
+        const matriculaMatch = falta.matricula.toLowerCase().includes(busca);
+        if (!nomeMatch && !matriculaMatch) return false;
+      }
+
+      return true;
+    });
+  }, [faltas, filtros]);
+
+  const faltasJustificadas = faltasFiltradas.filter(f => f.tipo === 'JUSTIFICADA').length;
+  const faltasInjustificadas = faltasFiltradas.filter(f => f.tipo === 'INJUSTIFICADA').length;
+
+  const limparFiltros = () => {
+    setFiltros({
+      dataInicio: '',
+      dataFim: '',
+      loja: 'todas',
+      tipo: 'todos',
+      busca: '',
+    });
+  };
+
+  const exportarCSV = () => {
+    const headers = ['Data', 'Matrícula', 'Profissional', 'Loja', 'Tipo', 'Observação'];
+    const csvContent = [
+      headers.join(','),
+      ...faltasFiltradas.map(f => [
+        new Date(f.data).toLocaleDateString('pt-BR'),
+        f.matricula,
+        `"${f.nomeProfissional}"`,
+        `"${f.loja}"`,
+        f.tipo === 'JUSTIFICADA' ? 'Justificada' : 'Injustificada',
+        `"${f.observacao || '-'}"`,
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `faltas_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    toast.success('CSV exportado com sucesso');
+  };
 
   return (
     <div className="space-y-6">
@@ -122,11 +196,88 @@ export default function Faltas() {
           <h1 className="text-3xl font-bold">Registro de Faltas</h1>
           <p className="text-muted-foreground">Controle de faltas e ausências dos profissionais</p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Calendar className="h-4 w-4 mr-2" />
-          Registrar Falta
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
+            <Filter className="h-4 w-4 mr-2" />
+            Filtros
+          </Button>
+          <Button variant="outline" onClick={exportarCSV}>
+            <FileDown className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Calendar className="h-4 w-4 mr-2" />
+            Registrar Falta
+          </Button>
+        </div>
       </div>
+
+      {showFilters && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Filtros Avançados</h3>
+              <Button variant="ghost" size="sm" onClick={limparFiltros}>
+                <X className="h-4 w-4 mr-1" />
+                Limpar
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="space-y-2">
+                <Label>Data Início</Label>
+                <Input
+                  type="date"
+                  value={filtros.dataInicio}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Data Fim</Label>
+                <Input
+                  type="date"
+                  value={filtros.dataFim}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Loja</Label>
+                <Select value={filtros.loja} onValueChange={(value) => setFiltros(prev => ({ ...prev, loja: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {lojasUnicas.map((loja) => (
+                      <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={filtros.tipo} onValueChange={(value) => setFiltros(prev => ({ ...prev, tipo: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="JUSTIFICADA">Justificada</SelectItem>
+                    <SelectItem value="INJUSTIFICADA">Injustificada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Buscar</Label>
+                <Input
+                  placeholder="Nome ou matrícula"
+                  value={filtros.busca}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, busca: e.target.value }))}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-primary/5 border-primary/20">
@@ -134,7 +285,7 @@ export default function Faltas() {
             <div className="flex items-center gap-2">
               <Calendar className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold text-primary">{faltas.length}</p>
+                <p className="text-2xl font-bold text-primary">{faltasFiltradas.length}</p>
                 <p className="text-sm text-muted-foreground">Total de Faltas</p>
               </div>
             </div>
@@ -185,14 +336,14 @@ export default function Faltas() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {faltas.length === 0 ? (
+              {faltasFiltradas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                    Nenhuma falta registrada ainda
+                    {faltas.length === 0 ? 'Nenhuma falta registrada ainda' : 'Nenhuma falta encontrada com os filtros aplicados'}
                   </TableCell>
                 </TableRow>
               ) : (
-                faltas.map((falta) => (
+                faltasFiltradas.map((falta) => (
                   <TableRow key={falta.id}>
                     <TableCell>{new Date(falta.data).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell className="font-mono">{falta.matricula}</TableCell>
