@@ -26,10 +26,16 @@ interface ASOExam {
 export default function GestaoASO() {
   const mockData = useMockData();
   const [exams, setExams] = useState<ASOExam[]>([]);
+  const [dataSource, setDataSource] = useState<'real' | 'mock'>('mock');
 
   useEffect(() => {
+    // Verificar se há dados reais carregados
+    const dadosASOStr = localStorage.getItem('dadosASO');
+    const hasRealData = !!dadosASOStr;
+    
     if (mockData.hasMockData) {
       const examesData = mockData.getExamesASO();
+      setDataSource(hasRealData ? 'real' : 'mock');
       const examesFormatados: ASOExam[] = examesData.map((e) => ({
         matricula: e.matricula,
         nome: e.nome,
@@ -42,6 +48,7 @@ export default function GestaoASO() {
       }));
       setExams(examesFormatados);
     } else {
+      setDataSource('mock');
       // Dados de fallback
       setExams([
         {
@@ -132,7 +139,18 @@ export default function GestaoASO() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestão de Exames</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">Gestão de Exames ASO</h1>
+            {dataSource === 'real' ? (
+              <Badge className="bg-success/10 text-success border-success/20">
+                Dados BASE_ASO.xlsx
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-muted-foreground">
+                Dados simulados
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">Controle de exames ocupacionais e periódicos</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

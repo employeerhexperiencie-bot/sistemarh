@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, CheckCircle, Download, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Download, RefreshCw, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Inconsistencia {
@@ -19,6 +19,30 @@ export default function ValidacaoDados() {
   const [inconsistencias, setInconsistencias] = useState<Inconsistencia[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [ultimaValidacao, setUltimaValidacao] = useState<Date | null>(null);
+  const [dataStatus, setDataStatus] = useState({
+    hasATIVOS: false,
+    hasASO: false,
+    hasBeneficios: false,
+    timestampATIVOS: null as string | null,
+    timestampASO: null as string | null,
+    timestampBeneficios: null as string | null,
+  });
+
+  useEffect(() => {
+    // Verificar status dos dados carregados
+    const profissionaisStr = localStorage.getItem('profissionaisImportados');
+    const dadosASOStr = localStorage.getItem('dadosASO');
+    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
+    
+    setDataStatus({
+      hasATIVOS: !!profissionaisStr,
+      hasASO: !!dadosASOStr,
+      hasBeneficios: !!dadosBeneficiosStr,
+      timestampATIVOS: localStorage.getItem('profissionaisImportados_timestamp'),
+      timestampASO: localStorage.getItem('dadosASO_timestamp'),
+      timestampBeneficios: localStorage.getItem('dadosBeneficios_timestamp'),
+    });
+  }, []);
 
   const validarDados = () => {
     setIsLoading(true);
@@ -301,6 +325,84 @@ export default function ValidacaoDados() {
           Última validação: {ultimaValidacao.toLocaleString('pt-BR')}
         </p>
       )}
+
+      {/* Status dos Dados Carregados */}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Info className="h-5 w-5 text-primary" />
+            Status dos Dados Carregados
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between p-3 bg-background rounded-lg border">
+              <div>
+                <p className="font-medium text-sm">ATIVOS.xlsx</p>
+                {dataStatus.timestampATIVOS && (
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(dataStatus.timestampATIVOS).toLocaleString('pt-BR')}
+                  </p>
+                )}
+              </div>
+              {dataStatus.hasATIVOS ? (
+                <Badge className="bg-success/10 text-success border-success/20">
+                  Carregado
+                </Badge>
+              ) : (
+                <Badge variant="destructive">Ausente</Badge>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-background rounded-lg border">
+              <div>
+                <p className="font-medium text-sm">BASE_ASO.xlsx</p>
+                {dataStatus.timestampASO && (
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(dataStatus.timestampASO).toLocaleString('pt-BR')}
+                  </p>
+                )}
+              </div>
+              {dataStatus.hasASO ? (
+                <Badge className="bg-success/10 text-success border-success/20">
+                  Carregado
+                </Badge>
+              ) : (
+                <Badge variant="destructive">Ausente</Badge>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-background rounded-lg border">
+              <div>
+                <p className="font-medium text-sm">BASE_Beneficios.xlsx</p>
+                {dataStatus.timestampBeneficios && (
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(dataStatus.timestampBeneficios).toLocaleString('pt-BR')}
+                  </p>
+                )}
+              </div>
+              {dataStatus.hasBeneficios ? (
+                <Badge className="bg-success/10 text-success border-success/20">
+                  Carregado
+                </Badge>
+              ) : (
+                <Badge variant="destructive">Ausente</Badge>
+              )}
+            </div>
+          </div>
+          
+          {(!dataStatus.hasATIVOS || !dataStatus.hasASO || !dataStatus.hasBeneficios) && (
+            <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <p className="text-sm text-orange-800 dark:text-orange-200">
+                Alguns arquivos não foram carregados. Acesse{' '}
+                <a href="/analisar-ativos" className="underline font-medium">Analisar Ativos</a> e{' '}
+                <a href="/carregar-dados-adicionais" className="underline font-medium">Carregar Dados Adicionais</a>
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tabs com diferentes visualizações */}
       <Tabs defaultValue="todas" className="w-full">

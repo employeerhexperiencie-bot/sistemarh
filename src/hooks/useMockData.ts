@@ -188,6 +188,8 @@ export const useMockData = () => {
     if (dadosASOStr) {
       try {
         const dadosASO = JSON.parse(dadosASOStr);
+        console.log(`✅ Usando ${dadosASO.length} registros reais de ASO da BASE_ASO.xlsx`);
+        
         return dadosASO.map((aso: any) => {
           const proximoExame = aso.proxExame && aso.proxExame !== 'NR' ? new Date(aso.proxExame) : null;
           const hoje = new Date();
@@ -214,10 +216,11 @@ export const useMockData = () => {
           };
         });
       } catch (error) {
-        console.error('Erro ao carregar dados ASO:', error);
+        console.error('❌ Erro ao carregar dados ASO do localStorage:', error);
       }
     }
     
+    console.log('⚠️ Usando dados simulados de ASO (BASE_ASO.xlsx não carregado)');
     // Fallback para dados gerados
     return profissionais.slice(0, 50).map((prof, index) => {
       const ultimoExame = new Date();
@@ -284,6 +287,8 @@ export const useMockData = () => {
     if (dadosBeneficiosStr) {
       try {
         const dadosBeneficios = JSON.parse(dadosBeneficiosStr);
+        console.log(`✅ Usando ${dadosBeneficios.length} registros reais de Benefícios da BASE_Beneficios.xlsx`);
+        
         return dadosBeneficios.map((ben: any) => {
           const parseValor = (valor: any): number => {
             if (!valor) return 0;
@@ -314,10 +319,11 @@ export const useMockData = () => {
           };
         });
       } catch (error) {
-        console.error('Erro ao carregar dados Benefícios:', error);
+        console.error('❌ Erro ao carregar dados Benefícios do localStorage:', error);
       }
     }
     
+    console.log('⚠️ Usando dados simulados de Benefícios (BASE_Beneficios.xlsx não carregado)');
     // Fallback para dados gerados
     return profissionais.map((prof) => {
       const escala = prof.escala || '6x1';

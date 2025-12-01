@@ -11,6 +11,25 @@ export default function CarregarDadosAdicionais() {
   const [loadingBeneficios, setLoadingBeneficios] = useState(false);
   const [statusASO, setStatusASO] = useState<'idle' | 'loaded' | 'error'>('idle');
   const [statusBeneficios, setStatusBeneficios] = useState<'idle' | 'loaded' | 'error'>('idle');
+  const [timestampASO, setTimestampASO] = useState<string | null>(null);
+  const [timestampBeneficios, setTimestampBeneficios] = useState<string | null>(null);
+
+  // Carregar status dos dados ao montar o componente
+  useState(() => {
+    const asoData = localStorage.getItem('dadosASO');
+    const beneficiosData = localStorage.getItem('dadosBeneficios');
+    const asoTime = localStorage.getItem('dadosASO_timestamp');
+    const beneficiosTime = localStorage.getItem('dadosBeneficios_timestamp');
+    
+    if (asoData) {
+      setStatusASO('loaded');
+      setTimestampASO(asoTime);
+    }
+    if (beneficiosData) {
+      setStatusBeneficios('loaded');
+      setTimestampBeneficios(beneficiosTime);
+    }
+  });
 
   const carregarASO = async () => {
     setLoadingASO(true);
@@ -23,34 +42,67 @@ export default function CarregarDadosAdicionais() {
       const worksheet = workbook.Sheets[firstSheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
       
-      // Pular as primeiras 2 linhas (título e cabeçalho)
-      const headers = jsonData[3] as string[];
-      const rows = jsonData.slice(4).filter(row => row[0]); // Filtrar linhas com matrícula
+      console.log('Total de linhas no BASE_ASO:', jsonData.length);
       
-      const dadosASO = rows.map(row => ({
-        matricula: row[0] || '',
-        nome: row[1] || '',
-        inicioLoja: row[2] || '',
-        gestor: row[3] || '',
-        cbo: row[4] || '',
-        cargo: row[5] || '',
-        localTrabalho: row[6] || '',
-        localRegistro: row[7] || '',
-        ultimoASO: row[8] || '',
-        proxASO: row[9] || '',
-        statusASO: row[10] || '',
-        ultimoExame: row[11] || '',
-        proxExame: row[12] || '',
-        statusExames: row[13] || '',
-      }));
+      // Encontrar a linha do cabeçalho dinamicamente (procurar por "MATRICULA" ou "Matricula")
+      let headerRowIndex = -1;
+      for (let i = 0; i < Math.min(15, jsonData.length); i++) {
+        const row = jsonData[i];
+        if (row && row[0] && String(row[0]).toLowerCase().includes('matricula')) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+      
+      if (headerRowIndex === -1) {
+        throw new Error('Cabeçalho não encontrado na planilha BASE_ASO');
+      }
+      
+      console.log('Cabeçalho encontrado na linha:', headerRowIndex);
+      const rows = jsonData.slice(headerRowIndex + 1).filter(row => row && row[0]); // Filtrar linhas com matrícula
+      
+      const dadosASO = rows.map(row => {
+        // Função auxiliar para converter datas do Excel
+        const parseExcelDate = (value: any): string => {
+          if (!value) return '';
+          if (typeof value === 'string') return value;
+          if (typeof value === 'number') {
+            // Excel armazena datas como números (dias desde 1900)
+            const date = new Date((value - 25569) * 86400 * 1000);
+            return date.toISOString().split('T')[0];
+          }
+          return String(value);
+        };
+        
+        return {
+          matricula: String(row[0] || '').trim(),
+          nome: String(row[1] || '').trim(),
+          inicioLoja: parseExcelDate(row[2]),
+          gestor: String(row[3] || '').trim(),
+          cbo: String(row[4] || '').trim(),
+          cargo: String(row[5] || '').trim(),
+          localTrabalho: String(row[6] || '').trim(),
+          localRegistro: String(row[7] || '').trim(),
+          ultimoASO: parseExcelDate(row[8]),
+          proxASO: parseExcelDate(row[9]),
+          statusASO: String(row[10] || '').trim(),
+          ultimoExame: parseExcelDate(row[11]),
+          proxExame: parseExcelDate(row[12]),
+          statusExames: String(row[13] || '').trim(),
+        };
+      });
 
+      console.log('Registros ASO processados:', dadosASO.length);
+      console.log('Exemplo de registro:', dadosASO[0]);
+      
       localStorage.setItem('dadosASO', JSON.stringify(dadosASO));
+      localStorage.setItem('dadosASO_timestamp', new Date().toISOString());
       setStatusASO('loaded');
-      toast.success(`${dadosASO.length} registros de ASO carregados!`);
+      toast.success(`✅ ${dadosASO.length} registros de ASO carregados com sucesso!`);
     } catch (error) {
       console.error('Erro ao carregar ASO:', error);
       setStatusASO('error');
-      toast.error('Erro ao carregar dados de ASO');
+      toast.error(`❌ Erro ao carregar dados de ASO: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setLoadingASO(false);
     }
@@ -67,38 +119,77 @@ export default function CarregarDadosAdicionais() {
       const worksheet = workbook.Sheets[firstSheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
       
-      // Pular as primeiras linhas
-      const headers = jsonData[8] as string[];
-      const rows = jsonData.slice(9).filter(row => row[0]); // Filtrar linhas com matrícula
+      console.log('Total de linhas no BASE_Beneficios:', jsonData.length);
       
-      const dadosBeneficios = rows.map(row => ({
-        matricula: row[0] || '',
-        nome: row[1] || '',
-        inicioLoja: row[2] || '',
-        gestor: row[3] || '',
-        cbo: row[4] || '',
-        cargo: row[5] || '',
-        localTrabalho: row[6] || '',
-        localRegistro: row[7] || '',
-        vtVc: row[8] || '',
-        tiposConducao: row[9] || '',
-        valorUnit: row[10] || '',
-        valorDiario: row[11] || '',
-        vr: row[12] || '',
-        cestaBasica: row[13] || '',
-        seguroVida: row[14] || '',
-        odonto: row[15] || '',
-        bemMais: row[16] || '',
-        hipcom: row[17] || '',
-      }));
+      // Encontrar a linha do cabeçalho dinamicamente
+      let headerRowIndex = -1;
+      for (let i = 0; i < Math.min(15, jsonData.length); i++) {
+        const row = jsonData[i];
+        if (row && row[0] && String(row[0]).toLowerCase().includes('matricula')) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+      
+      if (headerRowIndex === -1) {
+        throw new Error('Cabeçalho não encontrado na planilha BASE_Beneficios');
+      }
+      
+      console.log('Cabeçalho encontrado na linha:', headerRowIndex);
+      const rows = jsonData.slice(headerRowIndex + 1).filter(row => row && row[0]); // Filtrar linhas com matrícula
+      
+      const dadosBeneficios = rows.map(row => {
+        // Função auxiliar para converter datas do Excel
+        const parseExcelDate = (value: any): string => {
+          if (!value) return '';
+          if (typeof value === 'string') return value;
+          if (typeof value === 'number') {
+            const date = new Date((value - 25569) * 86400 * 1000);
+            return date.toISOString().split('T')[0];
+          }
+          return String(value);
+        };
+        
+        // Função para normalizar valores SIM/NÃO
+        const normalizeBoolean = (value: any): string => {
+          if (!value) return 'NÃO';
+          const str = String(value).toUpperCase().trim();
+          return str === 'SIM' || str === 'S' || str === '1' || str === 'TRUE' ? 'SIM' : 'NÃO';
+        };
+        
+        return {
+          matricula: String(row[0] || '').trim(),
+          nome: String(row[1] || '').trim(),
+          inicioLoja: parseExcelDate(row[2]),
+          gestor: String(row[3] || '').trim(),
+          cbo: String(row[4] || '').trim(),
+          cargo: String(row[5] || '').trim(),
+          localTrabalho: String(row[6] || '').trim(),
+          localRegistro: String(row[7] || '').trim(),
+          vtVc: normalizeBoolean(row[8]),
+          tiposConducao: String(row[9] || '').trim(),
+          valorUnit: row[10] || '',
+          valorDiario: row[11] || '',
+          vr: normalizeBoolean(row[12]),
+          cestaBasica: normalizeBoolean(row[13]),
+          seguroVida: normalizeBoolean(row[14]),
+          odonto: normalizeBoolean(row[15]),
+          bemMais: normalizeBoolean(row[16]),
+          hipcom: normalizeBoolean(row[17]),
+        };
+      });
 
+      console.log('Registros Benefícios processados:', dadosBeneficios.length);
+      console.log('Exemplo de registro:', dadosBeneficios[0]);
+      
       localStorage.setItem('dadosBeneficios', JSON.stringify(dadosBeneficios));
+      localStorage.setItem('dadosBeneficios_timestamp', new Date().toISOString());
       setStatusBeneficios('loaded');
-      toast.success(`${dadosBeneficios.length} registros de Benefícios carregados!`);
+      toast.success(`✅ ${dadosBeneficios.length} registros de Benefícios carregados com sucesso!`);
     } catch (error) {
       console.error('Erro ao carregar Benefícios:', error);
       setStatusBeneficios('error');
-      toast.error('Erro ao carregar dados de Benefícios');
+      toast.error(`❌ Erro ao carregar dados de Benefícios: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setLoadingBeneficios(false);
     }
@@ -117,10 +208,21 @@ export default function CarregarDadosAdicionais() {
     toast.success('Dados adicionais removidos');
   };
 
-  const getStatusBadge = (status: 'idle' | 'loaded' | 'error') => {
+  const getStatusBadge = (status: 'idle' | 'loaded' | 'error', timestamp: string | null) => {
     switch (status) {
       case 'loaded':
-        return <Badge className="bg-success/10 text-success border-success/20"><Check className="h-3 w-3 mr-1" />Carregado</Badge>;
+        return (
+          <div className="flex flex-col gap-1">
+            <Badge className="bg-success/10 text-success border-success/20">
+              <Check className="h-3 w-3 mr-1" />Carregado
+            </Badge>
+            {timestamp && (
+              <span className="text-xs text-muted-foreground">
+                {new Date(timestamp).toLocaleString('pt-BR')}
+              </span>
+            )}
+          </div>
+        );
       case 'error':
         return <Badge variant="destructive"><AlertCircle className="h-3 w-3 mr-1" />Erro</Badge>;
       default:
@@ -147,7 +249,7 @@ export default function CarregarDadosAdicionais() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Status:</span>
-              {getStatusBadge(statusASO)}
+              {getStatusBadge(statusASO, timestampASO)}
             </div>
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
@@ -175,7 +277,7 @@ export default function CarregarDadosAdicionais() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Status:</span>
-              {getStatusBadge(statusBeneficios)}
+              {getStatusBadge(statusBeneficios, timestampBeneficios)}
             </div>
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
