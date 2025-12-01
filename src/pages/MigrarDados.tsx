@@ -17,6 +17,54 @@ interface MigrationResults {
 const MigrarDados = () => {
   const [migrating, setMigrating] = useState(false);
   const [results, setResults] = useState<MigrationResults | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [dbStatus, setDbStatus] = useState({ profissionais: 0, lojas: 0 });
+
+  // Carregar status do banco ao montar
+  useState(() => {
+    const loadDbStatus = async () => {
+      const [profResult, lojaResult] = await Promise.all([
+        supabase.from('profissionais').select('id', { count: 'exact', head: true }),
+        supabase.from('lojas').select('id', { count: 'exact', head: true })
+      ]);
+      
+      setDbStatus({
+        profissionais: profResult.count || 0,
+        lojas: lojaResult.count || 0
+      });
+    };
+    
+    loadDbStatus();
+  });
+
+  const handleClearDatabase = async () => {
+    if (!confirm("⚠️ Tem certeza? Isso irá DELETAR TODOS os dados do banco de dados!")) {
+      return;
+    }
+
+    setClearing(true);
+    try {
+      // Deletar todos os dados em ordem reversa (devido às foreign keys)
+      await supabase.from('beneficios').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('exames_aso').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('faltas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('ferias').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('afastamentos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('professional_vales').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('professional_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('loja_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('profissionais').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('lojas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+      toast.success("Banco de dados limpo com sucesso!");
+      setResults(null);
+      setDbStatus({ profissionais: 0, lojas: 0 });
+    } catch (error: any) {
+      toast.error(`Erro ao limpar banco: ${error.message}`);
+    } finally {
+      setClearing(false);
+    }
+  };
 
   const handleMigration = async () => {
     setMigrating(true);
@@ -58,6 +106,17 @@ const MigrarDados = () => {
       if (data && data.success) {
         setResults(data.results);
         toast.success("Migração concluída com sucesso!");
+        
+        // Atualizar status do banco
+        const [profResult, lojaResult] = await Promise.all([
+          supabase.from('profissionais').select('id', { count: 'exact', head: true }),
+          supabase.from('lojas').select('id', { count: 'exact', head: true })
+        ]);
+        
+        setDbStatus({
+          profissionais: profResult.count || 0,
+          lojas: lojaResult.count || 0
+        });
       } else {
         toast.error("Erro na migração dos dados");
       }
@@ -137,6 +196,31 @@ const MigrarDados = () => {
         </CardContent>
       </Card>
 
+      {/* Status do Banco de Dados */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            Status Atual do Banco de Dados
+          </CardTitle>
+          <CardDescription>
+            Dados já migrados para o banco
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Profissionais no BD</p>
+              <p className="text-2xl font-bold text-green-600">{dbStatus.profissionais}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Lojas no BD</p>
+              <p className="text-2xl font-bold text-green-600">{dbStatus.lojas}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Botão de migração */}
       <Card>
         <CardHeader>
@@ -165,6 +249,26 @@ const MigrarDados = () => {
               <>
                 <Database className="h-4 w-4 mr-2" />
                 Migrar Dados para Banco de Dados
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={handleClearDatabase}
+            disabled={clearing}
+            size="lg"
+            variant="destructive"
+            className="w-full"
+          >
+            {clearing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Limpando banco...
+              </>
+            ) : (
+              <>
+                <XCircle className="h-4 w-4 mr-2" />
+                Limpar Banco de Dados (Resetar)
               </>
             )}
           </Button>
