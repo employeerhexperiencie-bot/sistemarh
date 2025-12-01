@@ -31,6 +31,7 @@ import AuditLog from "@/pages/AuditLog";
 import AnalisarAtivos from "@/pages/AnalisarAtivos";
 import CarregarDadosAdicionais from "@/pages/CarregarDadosAdicionais";
 import ValidacaoDados from "@/pages/ValidacaoDados";
+import DashboardAnalitico from "@/pages/DashboardAnalitico";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -172,6 +173,11 @@ const App = () => (
           <Route path="/validacao-dados" element={
             <Layout>
               <ValidacaoDados />
+            </Layout>
+          } />
+          <Route path="/dashboard-analitico" element={
+            <Layout>
+              <DashboardAnalitico />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

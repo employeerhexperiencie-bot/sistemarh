@@ -85,6 +85,7 @@ const navSections = [
   {
     label: 'Relatórios',
     items: [
+      { title: 'Dashboard Analítico', url: '/dashboard-analitico', icon: BarChart3 },
       { title: 'Relatórios', url: '/relatorios', icon: LineChart },
     ],
   },
