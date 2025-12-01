@@ -14,6 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      adiantamentos: {
+        Row: {
+          created_at: string | null
+          data_pagamento: string | null
+          elegivel: boolean | null
+          id: string
+          mes_referencia: string
+          motivo_inelegibilidade: string | null
+          observacoes: string | null
+          pago: boolean | null
+          percentual_adiantamento: number
+          profissional_id: string | null
+          salario_base: number
+          updated_at: string | null
+          valor_adiantamento: number
+        }
+        Insert: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          elegivel?: boolean | null
+          id?: string
+          mes_referencia: string
+          motivo_inelegibilidade?: string | null
+          observacoes?: string | null
+          pago?: boolean | null
+          percentual_adiantamento: number
+          profissional_id?: string | null
+          salario_base: number
+          updated_at?: string | null
+          valor_adiantamento: number
+        }
+        Update: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          elegivel?: boolean | null
+          id?: string
+          mes_referencia?: string
+          motivo_inelegibilidade?: string | null
+          observacoes?: string | null
+          pago?: boolean | null
+          percentual_adiantamento?: number
+          profissional_id?: string | null
+          salario_base?: number
+          updated_at?: string | null
+          valor_adiantamento?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adiantamentos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advertencias: {
+        Row: {
+          created_at: string | null
+          data_ocorrencia: string
+          descricao: string | null
+          documento_id: string | null
+          id: string
+          motivo: string
+          profissional_id: string | null
+          status: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_ocorrencia: string
+          descricao?: string | null
+          documento_id?: string | null
+          id?: string
+          motivo: string
+          profissional_id?: string | null
+          status?: string | null
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_ocorrencia?: string
+          descricao?: string | null
+          documento_id?: string | null
+          id?: string
+          motivo?: string
+          profissional_id?: string | null
+          status?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advertencias_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "professional_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advertencias_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       afastamentos: {
         Row: {
           created_at: string | null
@@ -57,6 +167,78 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "afastamentos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alertas_sistema: {
+        Row: {
+          acao_url: string | null
+          created_at: string | null
+          data_leitura: string | null
+          data_vencimento: string | null
+          dias_ate_vencimento: number | null
+          entidade_relacionada_id: string | null
+          entidade_relacionada_tipo: string | null
+          id: string
+          lido: boolean | null
+          loja_id: string | null
+          mensagem: string
+          prioridade: string | null
+          profissional_id: string | null
+          tipo: string
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          acao_url?: string | null
+          created_at?: string | null
+          data_leitura?: string | null
+          data_vencimento?: string | null
+          dias_ate_vencimento?: number | null
+          entidade_relacionada_id?: string | null
+          entidade_relacionada_tipo?: string | null
+          id?: string
+          lido?: boolean | null
+          loja_id?: string | null
+          mensagem: string
+          prioridade?: string | null
+          profissional_id?: string | null
+          tipo: string
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          acao_url?: string | null
+          created_at?: string | null
+          data_leitura?: string | null
+          data_vencimento?: string | null
+          dias_ate_vencimento?: number | null
+          entidade_relacionada_id?: string | null
+          entidade_relacionada_tipo?: string | null
+          id?: string
+          lido?: boolean | null
+          loja_id?: string | null
+          mensagem?: string
+          prioridade?: string | null
+          profissional_id?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_sistema_loja_id_fkey"
+            columns: ["loja_id"]
+            isOneToOne: false
+            referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alertas_sistema_profissional_id_fkey"
             columns: ["profissional_id"]
             isOneToOne: false
             referencedRelation: "profissionais"
@@ -125,6 +307,241 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "beneficios_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      configuracoes_sistema: {
+        Row: {
+          categoria: string | null
+          chave: string
+          created_at: string | null
+          descricao: string | null
+          editavel: boolean | null
+          id: string
+          tipo: string
+          updated_at: string | null
+          valor: string
+        }
+        Insert: {
+          categoria?: string | null
+          chave: string
+          created_at?: string | null
+          descricao?: string | null
+          editavel?: boolean | null
+          id?: string
+          tipo: string
+          updated_at?: string | null
+          valor: string
+        }
+        Update: {
+          categoria?: string | null
+          chave?: string
+          created_at?: string | null
+          descricao?: string | null
+          editavel?: boolean | null
+          id?: string
+          tipo?: string
+          updated_at?: string | null
+          valor?: string
+        }
+        Relationships: []
+      }
+      decimo_terceiro: {
+        Row: {
+          ano: number
+          avos_descontados: number | null
+          avos_liquidos: number
+          avos_trabalhados: number
+          created_at: string | null
+          id: string
+          observacoes: string | null
+          primeira_parcela_data: string | null
+          primeira_parcela_paga: boolean | null
+          primeira_parcela_valor: number | null
+          profissional_id: string | null
+          segunda_parcela_data: string | null
+          segunda_parcela_inss: number | null
+          segunda_parcela_irrf: number | null
+          segunda_parcela_liquido: number | null
+          segunda_parcela_paga: boolean | null
+          segunda_parcela_pensao: number | null
+          segunda_parcela_valor: number | null
+          updated_at: string | null
+          valor_base: number
+        }
+        Insert: {
+          ano: number
+          avos_descontados?: number | null
+          avos_liquidos: number
+          avos_trabalhados: number
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          primeira_parcela_data?: string | null
+          primeira_parcela_paga?: boolean | null
+          primeira_parcela_valor?: number | null
+          profissional_id?: string | null
+          segunda_parcela_data?: string | null
+          segunda_parcela_inss?: number | null
+          segunda_parcela_irrf?: number | null
+          segunda_parcela_liquido?: number | null
+          segunda_parcela_paga?: boolean | null
+          segunda_parcela_pensao?: number | null
+          segunda_parcela_valor?: number | null
+          updated_at?: string | null
+          valor_base: number
+        }
+        Update: {
+          ano?: number
+          avos_descontados?: number | null
+          avos_liquidos?: number
+          avos_trabalhados?: number
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          primeira_parcela_data?: string | null
+          primeira_parcela_paga?: boolean | null
+          primeira_parcela_valor?: number | null
+          profissional_id?: string | null
+          segunda_parcela_data?: string | null
+          segunda_parcela_inss?: number | null
+          segunda_parcela_irrf?: number | null
+          segunda_parcela_liquido?: number | null
+          segunda_parcela_paga?: boolean | null
+          segunda_parcela_pensao?: number | null
+          segunda_parcela_valor?: number | null
+          updated_at?: string | null
+          valor_base?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decimo_terceiro_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emprestimos: {
+        Row: {
+          created_at: string | null
+          data_inicio: string
+          data_previsao_termino: string | null
+          id: string
+          numero_parcelas: number
+          observacoes: string | null
+          parcelas_pagas: number | null
+          profissional_id: string | null
+          saldo_devedor: number
+          status: string | null
+          taxa_juros: number | null
+          tipo: string
+          updated_at: string | null
+          valor_parcela: number
+          valor_total: number
+        }
+        Insert: {
+          created_at?: string | null
+          data_inicio: string
+          data_previsao_termino?: string | null
+          id?: string
+          numero_parcelas: number
+          observacoes?: string | null
+          parcelas_pagas?: number | null
+          profissional_id?: string | null
+          saldo_devedor: number
+          status?: string | null
+          taxa_juros?: number | null
+          tipo: string
+          updated_at?: string | null
+          valor_parcela: number
+          valor_total: number
+        }
+        Update: {
+          created_at?: string | null
+          data_inicio?: string
+          data_previsao_termino?: string | null
+          id?: string
+          numero_parcelas?: number
+          observacoes?: string | null
+          parcelas_pagas?: number | null
+          profissional_id?: string | null
+          saldo_devedor?: number
+          status?: string | null
+          taxa_juros?: number | null
+          tipo?: string
+          updated_at?: string | null
+          valor_parcela?: number
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emprestimos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      epis: {
+        Row: {
+          categoria: string | null
+          created_at: string | null
+          data_entrega: string
+          data_validade: string | null
+          documento_id: string | null
+          id: string
+          nome_epi: string
+          numero_ca: string | null
+          observacoes: string | null
+          profissional_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string | null
+          data_entrega: string
+          data_validade?: string | null
+          documento_id?: string | null
+          id?: string
+          nome_epi: string
+          numero_ca?: string | null
+          observacoes?: string | null
+          profissional_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string | null
+          data_entrega?: string
+          data_validade?: string | null
+          documento_id?: string | null
+          id?: string
+          nome_epi?: string
+          numero_ca?: string | null
+          observacoes?: string | null
+          profissional_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "epis_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "professional_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "epis_profissional_id_fkey"
             columns: ["profissional_id"]
             isOneToOne: false
             referencedRelation: "profissionais"
@@ -285,6 +702,258 @@ export type Database = {
           },
         ]
       }
+      historico_acoes: {
+        Row: {
+          acao: string
+          created_at: string | null
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          descricao: string
+          entidade_id: string
+          entidade_nome: string | null
+          entidade_tipo: string
+          id: string
+          ip_address: string | null
+          modulo: string
+          user_agent: string | null
+          usuario: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao: string
+          entidade_id: string
+          entidade_nome?: string | null
+          entidade_tipo: string
+          id?: string
+          ip_address?: string | null
+          modulo: string
+          user_agent?: string | null
+          usuario?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao?: string
+          entidade_id?: string
+          entidade_nome?: string | null
+          entidade_tipo?: string
+          id?: string
+          ip_address?: string | null
+          modulo?: string
+          user_agent?: string | null
+          usuario?: string | null
+        }
+        Relationships: []
+      }
+      historico_salarios: {
+        Row: {
+          created_at: string | null
+          data_alteracao: string
+          id: string
+          motivo: string | null
+          percentual_alteracao: number | null
+          profissional_id: string | null
+          salario_anterior: number | null
+          salario_novo: number
+          tipo_alteracao: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_alteracao: string
+          id?: string
+          motivo?: string | null
+          percentual_alteracao?: number | null
+          profissional_id?: string | null
+          salario_anterior?: number | null
+          salario_novo: number
+          tipo_alteracao: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_alteracao?: string
+          id?: string
+          motivo?: string | null
+          percentual_alteracao?: number | null
+          profissional_id?: string | null
+          salario_anterior?: number | null
+          salario_novo?: number
+          tipo_alteracao?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_salarios_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      holerites: {
+        Row: {
+          adiantamento: number | null
+          adicional_insalubridade: number | null
+          adicional_noturno: number | null
+          adicional_periculosidade: number | null
+          base_fgts: number | null
+          base_inss: number | null
+          base_irrf: number | null
+          created_at: string | null
+          data_geracao: string | null
+          emprestimo: number | null
+          faltas: number | null
+          fgts: number | null
+          horas_extras: number | null
+          id: string
+          inss: number | null
+          irrf: number | null
+          mes_referencia: string
+          outros_descontos: number | null
+          outros_proventos: number | null
+          pdf_path: string | null
+          pensao_alimenticia: number | null
+          profissional_id: string | null
+          salario_base: number
+          salario_liquido: number
+          status: string | null
+          total_descontos: number
+          total_proventos: number
+          updated_at: string | null
+          vale_refeicao: number | null
+          vale_transporte: number | null
+        }
+        Insert: {
+          adiantamento?: number | null
+          adicional_insalubridade?: number | null
+          adicional_noturno?: number | null
+          adicional_periculosidade?: number | null
+          base_fgts?: number | null
+          base_inss?: number | null
+          base_irrf?: number | null
+          created_at?: string | null
+          data_geracao?: string | null
+          emprestimo?: number | null
+          faltas?: number | null
+          fgts?: number | null
+          horas_extras?: number | null
+          id?: string
+          inss?: number | null
+          irrf?: number | null
+          mes_referencia: string
+          outros_descontos?: number | null
+          outros_proventos?: number | null
+          pdf_path?: string | null
+          pensao_alimenticia?: number | null
+          profissional_id?: string | null
+          salario_base: number
+          salario_liquido: number
+          status?: string | null
+          total_descontos: number
+          total_proventos: number
+          updated_at?: string | null
+          vale_refeicao?: number | null
+          vale_transporte?: number | null
+        }
+        Update: {
+          adiantamento?: number | null
+          adicional_insalubridade?: number | null
+          adicional_noturno?: number | null
+          adicional_periculosidade?: number | null
+          base_fgts?: number | null
+          base_inss?: number | null
+          base_irrf?: number | null
+          created_at?: string | null
+          data_geracao?: string | null
+          emprestimo?: number | null
+          faltas?: number | null
+          fgts?: number | null
+          horas_extras?: number | null
+          id?: string
+          inss?: number | null
+          irrf?: number | null
+          mes_referencia?: string
+          outros_descontos?: number | null
+          outros_proventos?: number | null
+          pdf_path?: string | null
+          pensao_alimenticia?: number | null
+          profissional_id?: string | null
+          salario_base?: number
+          salario_liquido?: number
+          status?: string | null
+          total_descontos?: number
+          total_proventos?: number
+          updated_at?: string | null
+          vale_refeicao?: number | null
+          vale_transporte?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holerites_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lancamentos_financeiros: {
+        Row: {
+          categoria: string
+          created_at: string | null
+          descricao: string
+          id: string
+          mes_referencia: string
+          observacoes: string | null
+          profissional_id: string | null
+          referencia: string | null
+          tipo: string
+          updated_at: string | null
+          valor: number
+        }
+        Insert: {
+          categoria: string
+          created_at?: string | null
+          descricao: string
+          id?: string
+          mes_referencia: string
+          observacoes?: string | null
+          profissional_id?: string | null
+          referencia?: string | null
+          tipo: string
+          updated_at?: string | null
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          mes_referencia?: string
+          observacoes?: string | null
+          profissional_id?: string | null
+          referencia?: string | null
+          tipo?: string
+          updated_at?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_financeiros_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loja_documents: {
         Row: {
           created_at: string | null
@@ -361,6 +1030,62 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      pendencias: {
+        Row: {
+          created_at: string | null
+          data_resolucao: string | null
+          data_vencimento: string | null
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          prioridade: string | null
+          profissional_id: string | null
+          responsavel: string | null
+          status: string | null
+          tipo: string
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_resolucao?: string | null
+          data_vencimento?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          prioridade?: string | null
+          profissional_id?: string | null
+          responsavel?: string | null
+          status?: string | null
+          tipo: string
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_resolucao?: string | null
+          data_vencimento?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          prioridade?: string | null
+          profissional_id?: string | null
+          responsavel?: string | null
+          status?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pendencias_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professional_documents: {
         Row: {
@@ -608,6 +1333,80 @@ export type Database = {
             columns: ["loja_id"]
             isOneToOne: false
             referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vale_transporte_detalhado: {
+        Row: {
+          created_at: string | null
+          dias_afastamento: number | null
+          dias_atestado: number | null
+          dias_falta: number | null
+          dias_ferias: number | null
+          dias_trabalhados: number
+          escala: string | null
+          id: string
+          mes_referencia: string
+          observacoes: string | null
+          percentual_desconto_folha: number | null
+          profissional_id: string | null
+          total_dias_desconto: number | null
+          updated_at: string | null
+          valor_desconto: number | null
+          valor_desconto_folha: number | null
+          valor_diario: number
+          valor_liquido: number
+          valor_total_bruto: number
+        }
+        Insert: {
+          created_at?: string | null
+          dias_afastamento?: number | null
+          dias_atestado?: number | null
+          dias_falta?: number | null
+          dias_ferias?: number | null
+          dias_trabalhados: number
+          escala?: string | null
+          id?: string
+          mes_referencia: string
+          observacoes?: string | null
+          percentual_desconto_folha?: number | null
+          profissional_id?: string | null
+          total_dias_desconto?: number | null
+          updated_at?: string | null
+          valor_desconto?: number | null
+          valor_desconto_folha?: number | null
+          valor_diario: number
+          valor_liquido: number
+          valor_total_bruto: number
+        }
+        Update: {
+          created_at?: string | null
+          dias_afastamento?: number | null
+          dias_atestado?: number | null
+          dias_falta?: number | null
+          dias_ferias?: number | null
+          dias_trabalhados?: number
+          escala?: string | null
+          id?: string
+          mes_referencia?: string
+          observacoes?: string | null
+          percentual_desconto_folha?: number | null
+          profissional_id?: string | null
+          total_dias_desconto?: number | null
+          updated_at?: string | null
+          valor_desconto?: number | null
+          valor_desconto_folha?: number | null
+          valor_diario?: number
+          valor_liquido?: number
+          valor_total_bruto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vale_transporte_detalhado_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
             referencedColumns: ["id"]
           },
         ]
