@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Calendar, Trash2, Eye, AlertCircle, Download } from 'lucide-react';
 import { useMockData } from '@/hooks/useMockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,11 +27,10 @@ interface Falta {
 
 export default function Faltas() {
   const mockData = useMockData();
-  const [faltas, setFaltas] = useState<Falta[]>([]);
-
-  useEffect(() => {
+  
+  const faltasIniciais = useMemo(() => {
     const faltasData = mockData.getFaltas();
-    const faltasFormatadas: Falta[] = faltasData
+    return faltasData
       .filter(f => f.totalFaltas > 0)
       .map((f, index) => ({
         id: `${f.matricula}-${index}`,
@@ -39,12 +38,13 @@ export default function Faltas() {
         nomeProfissional: f.nome,
         loja: f.loja,
         data: f.ultimaFalta || '2024-11-25',
-        tipo: f.faltasInjustificadas > 0 ? 'INJUSTIFICADA' : 'JUSTIFICADA',
+        tipo: (f.faltasInjustificadas > 0 ? 'INJUSTIFICADA' : 'JUSTIFICADA') as 'JUSTIFICADA' | 'INJUSTIFICADA',
         observacao: `Total: ${f.totalFaltas} faltas (${f.faltasJustificadas} justificadas, ${f.faltasInjustificadas} injustificadas)`,
         createdAt: new Date().toISOString(),
       }));
-    setFaltas(faltasFormatadas);
-  }, [mockData]);
+  }, [mockData.profissionais.length]);
+
+  const [faltas, setFaltas] = useState<Falta[]>(faltasIniciais);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
