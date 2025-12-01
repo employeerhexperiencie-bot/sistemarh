@@ -32,6 +32,7 @@ import AnalisarAtivos from "@/pages/AnalisarAtivos";
 import CarregarDadosAdicionais from "@/pages/CarregarDadosAdicionais";
 import ValidacaoDados from "@/pages/ValidacaoDados";
 import DashboardAnalitico from "@/pages/DashboardAnalitico";
+import MigrarDados from "@/pages/MigrarDados";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -178,6 +179,11 @@ const App = () => (
           <Route path="/dashboard-analitico" element={
             <Layout>
               <DashboardAnalitico />
+            </Layout>
+          } />
+          <Route path="/migrar-dados" element={
+            <Layout>
+              <MigrarDados />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

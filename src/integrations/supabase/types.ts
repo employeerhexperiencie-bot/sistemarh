@@ -285,6 +285,47 @@ export type Database = {
           },
         ]
       }
+      loja_documents: {
+        Row: {
+          created_at: string | null
+          data_validade: string | null
+          file_path: string
+          file_type: string | null
+          id: string
+          loja_id: string | null
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_validade?: string | null
+          file_path: string
+          file_type?: string | null
+          id?: string
+          loja_id?: string | null
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_validade?: string | null
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          loja_id?: string | null
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loja_documents_loja_id_fkey"
+            columns: ["loja_id"]
+            isOneToOne: false
+            referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lojas: {
         Row: {
           cnpj: string | null
@@ -320,6 +361,101 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      professional_documents: {
+        Row: {
+          created_at: string | null
+          data_validade: string | null
+          file_path: string
+          file_type: string | null
+          id: string
+          nome: string
+          profissional_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_validade?: string | null
+          file_path: string
+          file_type?: string | null
+          id?: string
+          nome: string
+          profissional_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_validade?: string | null
+          file_path?: string
+          file_type?: string | null
+          id?: string
+          nome?: string
+          profissional_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_documents_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_vales: {
+        Row: {
+          created_at: string | null
+          data_lancamento: string
+          descricao: string | null
+          documento_id: string | null
+          id: string
+          profissional_id: string | null
+          status: string | null
+          tipo: string
+          updated_at: string | null
+          valor: number
+        }
+        Insert: {
+          created_at?: string | null
+          data_lancamento: string
+          descricao?: string | null
+          documento_id?: string | null
+          id?: string
+          profissional_id?: string | null
+          status?: string | null
+          tipo: string
+          updated_at?: string | null
+          valor: number
+        }
+        Update: {
+          created_at?: string | null
+          data_lancamento?: string
+          descricao?: string | null
+          documento_id?: string | null
+          id?: string
+          profissional_id?: string | null
+          status?: string | null
+          tipo?: string
+          updated_at?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_vales_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "professional_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_vales_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profissionais: {
         Row: {
