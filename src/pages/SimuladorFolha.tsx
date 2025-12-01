@@ -11,8 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Calculator, DollarSign, Calendar, Bus, Utensils, 
-  TrendingDown, TrendingUp, Users, CheckCircle, XCircle, Info,
-  FileText, Store, Download, Filter, Building2
+  TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet
 } from 'lucide-react';
 
 // Função de arredondamento conforme regra do sistema
@@ -47,7 +46,6 @@ interface Profissional {
   recebeCesta: boolean;
   recebeVT: boolean;
   recebeVR: boolean;
-  // Descontos do mês
   faltas: number;
   atestados: number;
   diasFerias: number;
@@ -122,7 +120,6 @@ const calcularProfissional = (
   const diasTrabalhados = Math.max(0, diasUteis - diasAbatidos);
   const valorDia = p.salario / 30;
   
-  // === PAGAMENTO DIA 20 ===
   let valorDia20 = 0;
   let recebeDia20 = true;
   let motivoDia20 = '';
@@ -152,28 +149,23 @@ const calcularProfissional = (
     motivoDia20 = `${percentualDia20}%`;
   }
   
-  // === VT ===
   let valorVT = 0;
   if (p.recebeVT && p.status === 'ativo') {
     valorVT = arredondarValor(diasTrabalhados * 2 * p.valorPassagem);
   }
   
-  // === VR ===
   let valorVRTotal = 0;
   if (p.recebeVR && p.status === 'ativo') {
     valorVRTotal = arredondarValor(diasTrabalhados * valorVR);
   }
   
-  // === CESTA ===
   let recebeCesta = p.recebeCesta;
   if (p.faltas > 0) recebeCesta = false;
   if (mesmaCompetencia && dataAdmissao.getDate() > 15) recebeCesta = false;
   
-  // === DESCONTOS ===
   const descontoFaltas = arredondarValor(p.faltas * valorDia);
   const totalDescontos = p.vales + p.emprestimos + p.pensao + descontoFaltas;
   
-  // === DIA 5 ===
   const salarioBruto = p.salario - descontoFaltas;
   const salarioLiquido = arredondarValor(salarioBruto - (recebeDia20 ? valorDia20 : 0) - totalDescontos + descontoFaltas);
   
@@ -192,6 +184,30 @@ const calcularProfissional = (
   };
 };
 
+// Summary Card Component
+function SummaryCard({ icon: Icon, label, value, color }: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  color: string;
+}) {
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-lg ${color}`}>
+            <Icon className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground truncate">{label}</p>
+            <p className="text-lg font-bold tracking-tight">{value}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SimuladorFolha() {
   const [competencia, setCompetencia] = useState(() => {
     const now = new Date();
@@ -205,7 +221,6 @@ export default function SimuladorFolha() {
   const [lojaSelecionada, setLojaSelecionada] = useState<string>('todas');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
 
-  // Profissionais filtrados
   const profissionaisFiltrados = useMemo(() => {
     return mockProfissionais.filter(p => {
       if (lojaSelecionada !== 'todas' && p.lojaId !== lojaSelecionada) return false;
@@ -214,7 +229,6 @@ export default function SimuladorFolha() {
     });
   }, [lojaSelecionada, filtroStatus]);
 
-  // Cálculos em lote
   const calculosLote = useMemo(() => {
     return profissionaisFiltrados.map(p => ({
       profissional: p,
@@ -223,7 +237,6 @@ export default function SimuladorFolha() {
     }));
   }, [profissionaisFiltrados, diasUteis6x1, diasUteis5x2, valorVR, percentualDia20, competencia]);
 
-  // Resumo por loja
   const resumoPorLoja = useMemo(() => {
     const resumo: Record<string, {
       loja: Loja;
@@ -272,7 +285,6 @@ export default function SimuladorFolha() {
     return Object.values(resumo);
   }, [calculosLote]);
 
-  // Totais gerais
   const totaisGerais = useMemo(() => {
     return resumoPorLoja.reduce((acc, r) => ({
       totalDia20: acc.totalDia20 + r.totalDia20,
@@ -287,13 +299,13 @@ export default function SimuladorFolha() {
   const getStatusBadge = (status: Profissional['status']) => {
     const config: Record<string, { label: string; className: string }> = {
       ativo: { label: 'Ativo', className: 'bg-success/10 text-success border-success/20' },
-      ferias: { label: 'Férias', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+      ferias: { label: 'Férias', className: 'bg-info/10 text-info border-info/20' },
       afastado_acidente: { label: 'Af. Acidente', className: 'bg-destructive/10 text-destructive border-destructive/20' },
       afastado_doenca: { label: 'Af. Doença', className: 'bg-warning/10 text-warning border-warning/20' },
-      licenca_maternidade: { label: 'Maternidade', className: 'bg-pink-500/10 text-pink-500 border-pink-500/20' },
+      licenca_maternidade: { label: 'Maternidade', className: 'bg-accent/10 text-accent border-accent/20' },
     };
     const c = config[status] || config.ativo;
-    return <Badge className={c.className}>{c.label}</Badge>;
+    return <Badge variant="outline" className={`${c.className} text-xs`}>{c.label}</Badge>;
   };
 
   const exportarCSV = () => {
@@ -321,145 +333,140 @@ export default function SimuladorFolha() {
 
   return (
     <div className="space-y-6 max-w-[1800px] mx-auto">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Simulador de Folha</h1>
-          <p className="text-muted-foreground text-sm">20 lojas • {mockProfissionais.length} funcionários</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Simulador de Folha</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {mockLojas.length} lojas • {mockProfissionais.length} funcionários
+          </p>
         </div>
-        <Button onClick={exportarCSV} variant="outline" className="gap-2">
+        <Button onClick={exportarCSV} className="gap-2">
           <Download className="h-4 w-4" />
           Exportar CSV
         </Button>
       </div>
 
-      {/* Cards de Resumo Geral */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-success mb-1">
-              <Calendar className="h-4 w-4" />
-              <span className="text-xs font-medium">Dia 20</span>
-            </div>
-            <p className="text-xl font-bold">{formatCurrency(totaisGerais.totalDia20)}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-primary mb-1">
-              <DollarSign className="h-4 w-4" />
-              <span className="text-xs font-medium">Dia 5</span>
-            </div>
-            <p className="text-xl font-bold">{formatCurrency(totaisGerais.totalDia5)}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-blue-500 mb-1">
-              <Bus className="h-4 w-4" />
-              <span className="text-xs font-medium">Total VT</span>
-            </div>
-            <p className="text-xl font-bold">{formatCurrency(totaisGerais.totalVT)}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-orange-500 mb-1">
-              <Utensils className="h-4 w-4" />
-              <span className="text-xs font-medium">Total VR</span>
-            </div>
-            <p className="text-xl font-bold">{formatCurrency(totaisGerais.totalVR)}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-purple-500 mb-1">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-medium">Total Geral</span>
-            </div>
-            <p className="text-xl font-bold">{formatCurrency(totaisGerais.totalGeral)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Users className="h-4 w-4" />
-              <span className="text-xs font-medium">Funcionários</span>
-            </div>
-            <p className="text-xl font-bold">{totaisGerais.funcionarios}</p>
-          </CardContent>
-        </Card>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 stagger-children">
+        <SummaryCard
+          icon={Calendar}
+          label="Dia 20"
+          value={formatCurrency(totaisGerais.totalDia20)}
+          color="bg-success/10 text-success"
+        />
+        <SummaryCard
+          icon={DollarSign}
+          label="Dia 5"
+          value={formatCurrency(totaisGerais.totalDia5)}
+          color="bg-primary/10 text-primary"
+        />
+        <SummaryCard
+          icon={Bus}
+          label="Total VT"
+          value={formatCurrency(totaisGerais.totalVT)}
+          color="bg-info/10 text-info"
+        />
+        <SummaryCard
+          icon={Utensils}
+          label="Total VR"
+          value={formatCurrency(totaisGerais.totalVR)}
+          color="bg-warning/10 text-warning"
+        />
+        <SummaryCard
+          icon={TrendingUp}
+          label="Total Geral"
+          value={formatCurrency(totaisGerais.totalGeral)}
+          color="bg-accent/10 text-accent"
+        />
+        <SummaryCard
+          icon={Users}
+          label="Funcionários"
+          value={totaisGerais.funcionarios.toString()}
+          color="bg-muted text-muted-foreground"
+        />
       </div>
 
+      {/* Tabs */}
       <Tabs defaultValue="lojas" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="lojas" className="flex items-center gap-2">
+        <TabsList className="bg-muted/50 p-1">
+          <TabsTrigger value="lojas" className="gap-2 data-[state=active]:bg-background">
             <Building2 className="h-4 w-4" />
-            Por Loja
+            <span className="hidden sm:inline">Por Loja</span>
           </TabsTrigger>
-          <TabsTrigger value="funcionarios" className="flex items-center gap-2">
+          <TabsTrigger value="funcionarios" className="gap-2 data-[state=active]:bg-background">
             <Users className="h-4 w-4" />
-            Por Funcionário
+            <span className="hidden sm:inline">Por Funcionário</span>
           </TabsTrigger>
-          <TabsTrigger value="config" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Configurações
+          <TabsTrigger value="config" className="gap-2 data-[state=active]:bg-background">
+            <Settings2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Configurações</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* VISÃO POR LOJA */}
-        <TabsContent value="lojas" className="space-y-4">
+        {/* By Store Tab */}
+        <TabsContent value="lojas" className="space-y-4 animate-fade-in">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Store className="h-5 w-5" />
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
                 Resumo por Loja - {competencia}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="w-full">
-                <Table>
+                <Table className="table-zebra">
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Loja</TableHead>
-                      <TableHead className="text-center">Func.</TableHead>
-                      <TableHead className="text-center">Ativos</TableHead>
-                      <TableHead className="text-center">Férias</TableHead>
-                      <TableHead className="text-center">Afast.</TableHead>
-                      <TableHead className="text-right">Dia 20</TableHead>
-                      <TableHead className="text-right">Dia 5</TableHead>
-                      <TableHead className="text-right">VT</TableHead>
-                      <TableHead className="text-right">VR</TableHead>
-                      <TableHead className="text-right font-bold">Total</TableHead>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="font-semibold">Loja</TableHead>
+                      <TableHead className="text-center font-semibold">Func.</TableHead>
+                      <TableHead className="text-center font-semibold">Ativos</TableHead>
+                      <TableHead className="text-center font-semibold">Férias</TableHead>
+                      <TableHead className="text-center font-semibold">Afast.</TableHead>
+                      <TableHead className="text-right font-semibold">Dia 20</TableHead>
+                      <TableHead className="text-right font-semibold">Dia 5</TableHead>
+                      <TableHead className="text-right font-semibold">VT</TableHead>
+                      <TableHead className="text-right font-semibold">VR</TableHead>
+                      <TableHead className="text-right font-semibold text-primary">Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {resumoPorLoja.map((r) => (
-                      <TableRow key={r.loja.id} className="hover:bg-muted/30">
+                      <TableRow key={r.loja.id} className="transition-colors">
                         <TableCell className="font-medium">{r.loja.nome}</TableCell>
                         <TableCell className="text-center">{r.qtdFuncionarios}</TableCell>
-                        <TableCell className="text-center text-success">{r.funcionariosAtivos}</TableCell>
-                        <TableCell className="text-center text-blue-500">{r.funcionariosFerias}</TableCell>
-                        <TableCell className="text-center text-warning">{r.funcionariosAfastados}</TableCell>
-                        <TableCell className="text-right text-success">{formatCurrency(r.totalDia20)}</TableCell>
-                        <TableCell className="text-right text-primary">{formatCurrency(r.totalDia5)}</TableCell>
-                        <TableCell className="text-right text-blue-500">{formatCurrency(r.totalVT)}</TableCell>
-                        <TableCell className="text-right text-orange-500">{formatCurrency(r.totalVR)}</TableCell>
-                        <TableCell className="text-right font-bold">{formatCurrency(r.totalGeral)}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                            {r.funcionariosAtivos}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                            {r.funcionariosFerias}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
+                            {r.funcionariosAfastados}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-success font-medium">
+                          {formatCurrency(r.totalDia20)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(r.totalDia5)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatCurrency(r.totalVT)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatCurrency(r.totalVR)}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-primary">
+                          {formatCurrency(r.totalGeral)}
+                        </TableCell>
                       </TableRow>
                     ))}
-                    {/* Linha de Total */}
-                    <TableRow className="bg-primary/10 font-bold">
-                      <TableCell>TOTAL GERAL</TableCell>
-                      <TableCell className="text-center">{totaisGerais.funcionarios}</TableCell>
-                      <TableCell className="text-center">-</TableCell>
-                      <TableCell className="text-center">-</TableCell>
-                      <TableCell className="text-center">-</TableCell>
-                      <TableCell className="text-right text-success">{formatCurrency(totaisGerais.totalDia20)}</TableCell>
-                      <TableCell className="text-right text-primary">{formatCurrency(totaisGerais.totalDia5)}</TableCell>
-                      <TableCell className="text-right text-blue-500">{formatCurrency(totaisGerais.totalVT)}</TableCell>
-                      <TableCell className="text-right text-orange-500">{formatCurrency(totaisGerais.totalVR)}</TableCell>
-                      <TableCell className="text-right text-primary text-lg">{formatCurrency(totaisGerais.totalGeral)}</TableCell>
-                    </TableRow>
                   </TableBody>
                 </Table>
               </ScrollArea>
@@ -467,92 +474,97 @@ export default function SimuladorFolha() {
           </Card>
         </TabsContent>
 
-        {/* VISÃO POR FUNCIONÁRIO */}
-        <TabsContent value="funcionarios" className="space-y-4">
-          {/* Filtros */}
+        {/* By Employee Tab */}
+        <TabsContent value="funcionarios" className="space-y-4 animate-fade-in">
+          {/* Filters */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Filtros:</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs">Loja:</Label>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">Loja</Label>
                   <Select value={lojaSelecionada} onValueChange={setLojaSelecionada}>
-                    <SelectTrigger className="w-[150px] h-8">
-                      <SelectValue />
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Todas as lojas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="todas">Todas as Lojas</SelectItem>
-                      {mockLojas.map(loja => (
-                        <SelectItem key={loja.id} value={loja.id}>{loja.nome}</SelectItem>
+                      <SelectItem value="todas">Todas as lojas</SelectItem>
+                      {mockLojas.map(l => (
+                        <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs">Status:</Label>
+                <div className="flex-1 min-w-[200px]">
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">Status</Label>
                   <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-                    <SelectTrigger className="w-[130px] h-8">
-                      <SelectValue />
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Todos os status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="todos">Todos os status</SelectItem>
                       <SelectItem value="ativo">Ativos</SelectItem>
-                      <SelectItem value="ferias">Férias</SelectItem>
-                      <SelectItem value="afastado_doenca">Af. Doença</SelectItem>
-                      <SelectItem value="afastado_acidente">Af. Acidente</SelectItem>
-                      <SelectItem value="licenca_maternidade">Maternidade</SelectItem>
+                      <SelectItem value="ferias">Em Férias</SelectItem>
+                      <SelectItem value="afastado_acidente">Afastados (Acidente)</SelectItem>
+                      <SelectItem value="afastado_doenca">Afastados (Doença)</SelectItem>
+                      <SelectItem value="licenca_maternidade">Licença Maternidade</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Badge variant="secondary">{profissionaisFiltrados.length} funcionários</Badge>
               </div>
             </CardContent>
           </Card>
 
+          {/* Table */}
           <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Detalhamento por Funcionário
+                <Badge variant="secondary" className="ml-2">{calculosLote.length}</Badge>
+              </CardTitle>
+            </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="w-full h-[600px]">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-background z-10">
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Loja</TableHead>
-                      <TableHead>Mat.</TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="text-right">Salário</TableHead>
-                      <TableHead className="text-center">Faltas</TableHead>
-                      <TableHead className="text-right">Dia 20</TableHead>
-                      <TableHead className="text-right">Dia 5</TableHead>
-                      <TableHead className="text-right">VT</TableHead>
-                      <TableHead className="text-right">VR</TableHead>
-                      <TableHead className="text-right font-bold">Total</TableHead>
+              <ScrollArea className="w-full max-h-[600px]">
+                <Table className="table-zebra">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="font-semibold">Mat.</TableHead>
+                      <TableHead className="font-semibold">Nome</TableHead>
+                      <TableHead className="font-semibold">Loja</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                      <TableHead className="text-right font-semibold">Salário</TableHead>
+                      <TableHead className="text-right font-semibold">Dia 20</TableHead>
+                      <TableHead className="text-right font-semibold">Dia 5</TableHead>
+                      <TableHead className="text-right font-semibold">VT</TableHead>
+                      <TableHead className="text-right font-semibold">VR</TableHead>
+                      <TableHead className="text-right font-semibold text-primary">Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {calculosLote.map((c) => (
-                      <TableRow key={c.profissional.id} className="hover:bg-muted/30">
-                        <TableCell className="text-xs text-muted-foreground">{c.loja?.codigo}</TableCell>
+                      <TableRow key={c.profissional.id} className="transition-colors">
                         <TableCell className="font-mono text-xs">{c.profissional.matricula}</TableCell>
-                        <TableCell className="font-medium text-sm">{c.profissional.nome}</TableCell>
-                        <TableCell className="text-center">{getStatusBadge(c.profissional.status)}</TableCell>
-                        <TableCell className="text-right text-sm">{formatCurrency(c.profissional.salario)}</TableCell>
-                        <TableCell className="text-center">
-                          {c.profissional.faltas > 0 ? (
-                            <Badge variant="destructive" className="text-xs">{c.profissional.faltas}</Badge>
-                          ) : '-'}
+                        <TableCell className="font-medium max-w-[180px] truncate">{c.profissional.nome}</TableCell>
+                        <TableCell className="text-muted-foreground">{c.loja?.nome}</TableCell>
+                        <TableCell>{getStatusBadge(c.profissional.status)}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatCurrency(c.profissional.salario)}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <span className={c.recebeDia20 ? 'text-success' : 'text-muted-foreground'}>
-                            {formatCurrency(c.valorDia20)}
-                          </span>
+                        <TableCell className="text-right font-mono text-success">
+                          {formatCurrency(c.valorDia20)}
                         </TableCell>
-                        <TableCell className="text-right text-primary">{formatCurrency(c.salarioLiquido)}</TableCell>
-                        <TableCell className="text-right text-blue-500">{formatCurrency(c.valorVT)}</TableCell>
-                        <TableCell className="text-right text-orange-500">{formatCurrency(c.valorVR)}</TableCell>
-                        <TableCell className="text-right font-bold">{formatCurrency(c.totalMes)}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatCurrency(c.salarioLiquido)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-muted-foreground">
+                          {formatCurrency(c.valorVT)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-muted-foreground">
+                          {formatCurrency(c.valorVR)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-primary">
+                          {formatCurrency(c.totalMes)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -562,85 +574,66 @@ export default function SimuladorFolha() {
           </Card>
         </TabsContent>
 
-        {/* CONFIGURAÇÕES */}
-        <TabsContent value="config" className="space-y-4">
+        {/* Settings Tab */}
+        <TabsContent value="config" className="animate-fade-in">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Configurações da Competência
+              <CardTitle className="text-base flex items-center gap-2">
+                <Settings2 className="h-5 w-5 text-primary" />
+                Parâmetros da Competência
               </CardTitle>
-              <CardDescription>Parâmetros do mês para os cálculos</CardDescription>
+              <CardDescription>
+                Configure os valores base para o cálculo da folha
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label>Competência</Label>
+                  <Label htmlFor="competencia">Competência</Label>
                   <Input
+                    id="competencia"
                     type="month"
                     value={competencia}
                     onChange={(e) => setCompetencia(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Dias Úteis (6x1)</Label>
+                  <Label htmlFor="diasUteis6x1">Dias Úteis (6x1)</Label>
                   <Input
+                    id="diasUteis6x1"
                     type="number"
                     value={diasUteis6x1}
-                    onChange={(e) => setDiasUteis6x1(parseInt(e.target.value) || 0)}
+                    onChange={(e) => setDiasUteis6x1(Number(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Dias Úteis (5x2)</Label>
+                  <Label htmlFor="diasUteis5x2">Dias Úteis (5x2)</Label>
                   <Input
+                    id="diasUteis5x2"
                     type="number"
                     value={diasUteis5x2}
-                    onChange={(e) => setDiasUteis5x2(parseInt(e.target.value) || 0)}
+                    onChange={(e) => setDiasUteis5x2(Number(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Valor VR/dia</Label>
+                  <Label htmlFor="valorVR">Valor VR / dia</Label>
                   <Input
+                    id="valorVR"
                     type="number"
                     step="0.01"
                     value={valorVR}
-                    onChange={(e) => setValorVR(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setValorVR(Number(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>% Dia 20</Label>
+                  <Label htmlFor="percentualDia20">% Dia 20</Label>
                   <Input
+                    id="percentualDia20"
                     type="number"
                     value={percentualDia20}
-                    onChange={(e) => setPercentualDia20(parseInt(e.target.value) || 0)}
+                    onChange={(e) => setPercentualDia20(Number(e.target.value))}
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Regras */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                Regras de Pagamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-3">
-              <div>
-                <h4 className="font-semibold text-primary mb-1">Arredondamento</h4>
-                <p>• ≥ R$ 0,50 → CIMA | &lt; R$ 0,50 → BAIXO</p>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="font-semibold text-warning mb-1">Dia 20</h4>
-                <p>• Admitidos até dia 10: 40% | Férias: não recebe | +10 faltas: não recebe</p>
-              </div>
-              <Separator />
-              <div>
-                <h4 className="font-semibold text-destructive mb-1">Cesta Básica</h4>
-                <p>• Falta injustificada: perde | Admissão após dia 15: não tem direito</p>
               </div>
             </CardContent>
           </Card>
