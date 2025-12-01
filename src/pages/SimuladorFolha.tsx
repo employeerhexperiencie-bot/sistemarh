@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,16 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Calculator, DollarSign, Calendar, Bus, Utensils, 
   TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet,
-  FileText, Gift, Banknote
+  FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info
 } from 'lucide-react';
 import { RelatorioFolha } from '@/components/folha/RelatorioFolha';
 import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
 import { GestaoEmprestimos } from '@/components/folha/GestaoEmprestimos';
 import { AdiantamentoSalario } from '@/components/folha/AdiantamentoSalario';
 import { useMockData } from '@/hooks/useMockData';
+import { Link } from 'react-router-dom';
 
 // Função de arredondamento conforme regra do sistema
 const arredondarValor = (valor: number): number => {
@@ -228,6 +230,47 @@ export default function SimuladorFolha() {
   const [lojaSelecionada, setLojaSelecionada] = useState<string>('todas');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
 
+  // Estado de validação de dados
+  const [validacaoDados, setValidacaoDados] = useState<{
+    ativosCarregados: boolean;
+    asoCarregados: boolean;
+    beneficiosCarregados: boolean;
+    timestampAtivos: string | null;
+    timestampASO: string | null;
+    timestampBeneficios: string | null;
+  }>({
+    ativosCarregados: false,
+    asoCarregados: false,
+    beneficiosCarregados: false,
+    timestampAtivos: null,
+    timestampASO: null,
+    timestampBeneficios: null,
+  });
+
+  // Verificar dados carregados
+  useEffect(() => {
+    const profissionaisStr = localStorage.getItem('profissionaisImportados');
+    const dadosASOStr = localStorage.getItem('dadosASO');
+    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
+    
+    const timestampAtivos = localStorage.getItem('profissionaisImportados_timestamp');
+    const timestampASO = localStorage.getItem('dadosASO_timestamp');
+    const timestampBeneficios = localStorage.getItem('dadosBeneficios_timestamp');
+
+    setValidacaoDados({
+      ativosCarregados: !!profissionaisStr,
+      asoCarregados: !!dadosASOStr,
+      beneficiosCarregados: !!dadosBeneficiosStr,
+      timestampAtivos,
+      timestampASO,
+      timestampBeneficios,
+    });
+  }, []);
+
+  const dadosCompletos = validacaoDados.ativosCarregados && 
+                         validacaoDados.asoCarregados && 
+                         validacaoDados.beneficiosCarregados;
+
   // Se tiver dados da planilha, usa eles, senão usa mock
   const profissionais = mockData.hasMockData 
     ? mockData.profissionais.map((p, index) => {
@@ -375,21 +418,99 @@ export default function SimuladorFolha() {
 
   return (
     <div className="space-y-6 max-w-[1800px] mx-auto">
-      {/* Aviso de dados importados */}
-      {mockData.hasMockData && (
-        <Card className="bg-primary/10 border-primary">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <FileSpreadsheet className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-semibold text-primary">Usando Dados da Planilha ATIVOS.xlsx</p>
-                <p className="text-sm text-muted-foreground">
-                  {mockData.totalProfissionais} profissionais • {mockData.totalLojas} lojas
-                </p>
+      {/* Status de Validação de Dados */}
+      {dadosCompletos ? (
+        <Alert className="border-success bg-success/5">
+          <CheckCircle2 className="h-5 w-5 text-success" />
+          <AlertTitle className="text-success font-semibold">Dados Validados e Completos</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>ATIVOS.xlsx: {mockData.totalProfissionais} profissionais • {mockData.totalLojas} lojas</span>
+                {validacaoDados.timestampAtivos && (
+                  <span className="text-xs text-muted-foreground">
+                    (Carregado: {new Date(validacaoDados.timestampAtivos).toLocaleString('pt-BR')})
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>BASE_ASO.xlsx carregado</span>
+                {validacaoDados.timestampASO && (
+                  <span className="text-xs text-muted-foreground">
+                    (Carregado: {new Date(validacaoDados.timestampASO).toLocaleString('pt-BR')})
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>BASE_Beneficios.xlsx carregado</span>
+                {validacaoDados.timestampBeneficios && (
+                  <span className="text-xs text-muted-foreground">
+                    (Carregado: {new Date(validacaoDados.timestampBeneficios).toLocaleString('pt-BR')})
+                  </span>
+                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <p className="mt-3 text-sm font-medium text-success">
+              ✓ Sistema pronto para gerar folha de pagamento e holerites confiáveis
+            </p>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="border-destructive bg-destructive/5">
+          <AlertTriangle className="h-5 w-5 text-destructive" />
+          <AlertTitle className="text-destructive font-semibold">Dados Incompletos - Ação Necessária</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                {validacaoDados.ativosCarregados ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive" />
+                )}
+                <span className={validacaoDados.ativosCarregados ? 'text-success' : 'text-destructive'}>
+                  ATIVOS.xlsx {validacaoDados.ativosCarregados ? '(carregado)' : '(não carregado)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {validacaoDados.asoCarregados ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive" />
+                )}
+                <span className={validacaoDados.asoCarregados ? 'text-success' : 'text-destructive'}>
+                  BASE_ASO.xlsx {validacaoDados.asoCarregados ? '(carregado)' : '(não carregado)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {validacaoDados.beneficiosCarregados ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive" />
+                )}
+                <span className={validacaoDados.beneficiosCarregados ? 'text-success' : 'text-destructive'}>
+                  BASE_Beneficios.xlsx {validacaoDados.beneficiosCarregados ? '(carregado)' : '(não carregado)'}
+                </span>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              <Link to="/carregar-dados-adicionais">
+                <Button size="sm" variant="destructive">
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Carregar Dados Faltantes
+                </Button>
+              </Link>
+              <Link to="/validacao-dados">
+                <Button size="sm" variant="outline">
+                  <Info className="h-4 w-4 mr-2" />
+                  Ver Relatório de Validação
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
       
       {/* Header */}

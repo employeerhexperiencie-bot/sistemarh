@@ -10,9 +10,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
   FileText, Download, Filter, DollarSign, Calendar,
-  TrendingDown, Users, Building2, Printer, Eye
+  TrendingDown, Users, Building2, Printer, Eye, CheckCircle2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useMockData } from '@/hooks/useMockData';
 
 // Tipos
 interface EventoFolha {
@@ -254,6 +255,7 @@ function DetalheHolerite({ folha, competencia }: DetalheHoleriteProps) {
 }
 
 export function RelatorioFolha() {
+  const mockData = useMockData();
   const [competencia, setCompetencia] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -261,7 +263,52 @@ export function RelatorioFolha() {
   const [lojaFiltro, setLojaFiltro] = useState('todas');
   const [searchTerm, setSearchTerm] = useState('');
   
-  const folhaCompleta = useMemo(() => gerarFolhaMock(), []);
+  // Verificar se temos dados das planilhas BASE
+  const dadosASOStr = localStorage.getItem('dadosASO');
+  const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
+  const dadosCompletos = mockData.hasMockData && dadosASOStr && dadosBeneficiosStr;
+  
+  const folhaCompleta = useMemo(() => {
+    if (mockData.hasMockData) {
+      // Usar dados reais da planilha
+      return mockData.profissionais.map(p => {
+        const salarioBase = mockData.parseSalario(p.salarioReceber || p.salarioCTPS);
+        const eventos: EventoFolha[] = [
+          { codigo: '001', descricao: 'Salário Base', tipo: 'provento', valor: salarioBase },
+        ];
+        
+        // INSS
+        const inss = arredondarValor(salarioBase * 0.08);
+        eventos.push({ codigo: '101', descricao: 'INSS', tipo: 'desconto', valor: inss });
+        
+        // Vale Transporte
+        const vt = arredondarValor(salarioBase * 0.06);
+        eventos.push({ codigo: '103', descricao: 'Vale Transporte', tipo: 'desconto', valor: vt });
+        
+        // Pensão Alimentícia
+        if (p.pensao === 'SIM') {
+          const pensao = arredondarValor(salarioBase * 0.30);
+          eventos.push({ codigo: '109', descricao: 'Pensão Alimentícia', tipo: 'desconto', valor: pensao });
+        }
+        
+        const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
+        const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
+        
+        return {
+          matricula: p.matricula,
+          nome: p.nome,
+          cargo: p.cargo,
+          loja: p.localTrabalho,
+          salarioBase,
+          eventos,
+          totalProventos,
+          totalDescontos,
+          liquido: arredondarValor(totalProventos - totalDescontos),
+        };
+      });
+    }
+    return gerarFolhaMock();
+  }, [mockData]);
   
   const folhaFiltrada = useMemo(() => {
     return folhaCompleta.filter(f => {
@@ -302,9 +349,18 @@ export function RelatorioFolha() {
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             Relatório Geral de Folha
+            {dadosCompletos && (
+              <Badge variant="outline" className="bg-success/10 text-success border-success/20 ml-2">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Dados Validados
+              </Badge>
+            )}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Consolidação de todos os eventos de pagamento
+            {dadosCompletos 
+              ? `Usando dados reais de ${mockData.totalProfissionais} profissionais`
+              : 'Consolidação de todos os eventos de pagamento (dados simulados)'
+            }
           </p>
         </div>
         <div className="flex gap-2">

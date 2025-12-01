@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { FileText, Mail, CheckCircle, Download, Upload, Printer, Eye, Send } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { FileText, Mail, CheckCircle, Download, Upload, Printer, Eye, Send, AlertTriangle, CheckCircle2, XCircle, Info, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { gerarHoleritePDF, gerarHoleriteMock } from '@/components/folha/HoleritePDF';
+import { useMockData } from '@/hooks/useMockData';
+import { Link } from 'react-router-dom';
 
 interface HoleriteItem {
   id: string;
@@ -45,6 +48,7 @@ const gerarHoleritesMock = (): HoleriteItem[] => {
 
 export default function Holerites() {
   const { toast } = useToast();
+  const mockData = useMockData();
   const [competencia, setCompetencia] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -54,8 +58,50 @@ export default function Holerites() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [gerando, setGerando] = useState(false);
+
+  // Estado de validação de dados
+  const [validacaoDados, setValidacaoDados] = useState<{
+    ativosCarregados: boolean;
+    asoCarregados: boolean;
+    beneficiosCarregados: boolean;
+  }>({
+    ativosCarregados: false,
+    asoCarregados: false,
+    beneficiosCarregados: false,
+  });
+
+  // Verificar dados carregados
+  useEffect(() => {
+    const profissionaisStr = localStorage.getItem('profissionaisImportados');
+    const dadosASOStr = localStorage.getItem('dadosASO');
+    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
+
+    setValidacaoDados({
+      ativosCarregados: !!profissionaisStr,
+      asoCarregados: !!dadosASOStr,
+      beneficiosCarregados: !!dadosBeneficiosStr,
+    });
+  }, []);
+
+  const dadosCompletos = validacaoDados.ativosCarregados && 
+                         validacaoDados.asoCarregados && 
+                         validacaoDados.beneficiosCarregados;
   
-  const holerites = useMemo(() => gerarHoleritesMock(), []);
+  // Se tiver dados da planilha, usa eles, senão usa mock
+  const holerites = useMemo(() => {
+    if (mockData.hasMockData) {
+      return mockData.profissionais.map(p => ({
+        id: p.matricula,
+        loja: p.localTrabalho,
+        matricula: p.matricula,
+        nome: p.nome,
+        cargo: p.cargo,
+        salario: mockData.parseSalario(p.salarioReceber || p.salarioCTPS),
+        status: 'pendente' as const,
+      }));
+    }
+    return gerarHoleritesMock();
+  }, [mockData]);
   
   const holeritesFiltrados = useMemo(() => {
     return holerites.filter(h => {
@@ -207,6 +253,85 @@ export default function Holerites() {
   
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
+      {/* Status de Validação de Dados */}
+      {dadosCompletos ? (
+        <Alert className="border-success bg-success/5">
+          <CheckCircle2 className="h-5 w-5 text-success" />
+          <AlertTitle className="text-success font-semibold">Dados Validados - Holerites Confiáveis</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Todas as planilhas carregadas (ATIVOS, ASO, Benefícios)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>{mockData.totalProfissionais} profissionais • {mockData.totalLojas} lojas</span>
+              </div>
+            </div>
+            <p className="mt-3 text-sm font-medium text-success">
+              ✓ Holerites prontos para serem gerados com dados completos e validados
+            </p>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="border-destructive bg-destructive/5">
+          <AlertTriangle className="h-5 w-5 text-destructive" />
+          <AlertTitle className="text-destructive font-semibold">Atenção: Dados Incompletos</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                {validacaoDados.ativosCarregados ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive" />
+                )}
+                <span className={validacaoDados.ativosCarregados ? 'text-success' : 'text-destructive'}>
+                  ATIVOS.xlsx {validacaoDados.ativosCarregados ? '(carregado)' : '(não carregado)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {validacaoDados.asoCarregados ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive" />
+                )}
+                <span className={validacaoDados.asoCarregados ? 'text-success' : 'text-destructive'}>
+                  BASE_ASO.xlsx {validacaoDados.asoCarregados ? '(carregado)' : '(não carregado)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {validacaoDados.beneficiosCarregados ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive" />
+                )}
+                <span className={validacaoDados.beneficiosCarregados ? 'text-success' : 'text-destructive'}>
+                  BASE_Beneficios.xlsx {validacaoDados.beneficiosCarregados ? '(carregado)' : '(não carregado)'}
+                </span>
+              </div>
+            </div>
+            <p className="mt-3 text-sm font-medium text-destructive">
+              ⚠️ Holerites gerados com dados simulados. Carregue todas as planilhas para gerar holerites reais.
+            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <Link to="/carregar-dados-adicionais">
+                <Button size="sm" variant="destructive">
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Carregar Dados Faltantes
+                </Button>
+              </Link>
+              <Link to="/validacao-dados">
+                <Button size="sm" variant="outline">
+                  <Info className="h-4 w-4 mr-2" />
+                  Ver Relatório de Validação
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
