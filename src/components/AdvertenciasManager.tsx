@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, AlertTriangle, FileText, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuditLog } from '@/contexts/AuditLogContext';
 
 interface AdvertenciasManagerProps {
   professionalId: string;
@@ -46,6 +47,7 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
     aplicada_por: '',
   });
   const { toast } = useToast();
+  const { addLog } = useAuditLog();
 
   const loadAdvertencias = async () => {
     try {
@@ -110,6 +112,15 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
       
       setAdvertencias(prev => [novaAdvertencia, ...prev]);
 
+      addLog({
+        usuario: 'Sistema',
+        acao: 'CRIAR',
+        modulo: 'ADVERTENCIAS',
+        entidade: professionalName,
+        detalhes: `Advertência ${formData.tipo} registrada: ${formData.motivo}`,
+        metadata: { tipo: formData.tipo, motivo: formData.motivo }
+      });
+
       toast({
         title: "Sucesso",
         description: "Advertência registrada com sucesso"
@@ -142,6 +153,15 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
 
       // Simulação de sucesso
       setAdvertencias(prev => prev.filter(adv => adv.id !== id));
+
+      addLog({
+        usuario: 'Sistema',
+        acao: 'EXCLUIR',
+        modulo: 'ADVERTENCIAS',
+        entidade: professionalName,
+        detalhes: `Advertência excluída`,
+        metadata: { advertenciaId: id }
+      });
 
       toast({
         title: "Sucesso",
