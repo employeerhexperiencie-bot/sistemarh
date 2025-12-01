@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { 
   CreditCard, TrendingUp, Users, FileText, AlertTriangle, 
   DollarSign, Building2, Calendar, Package, Clock, UserX,
-  ArrowUpRight, ArrowDownRight, ChevronRight
+  ArrowUpRight, ArrowDownRight, ChevronRight, Bus, Utensils, ShoppingBasket
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AlertasResumo } from '@/components/alertas/AlertasAutomaticos';
@@ -95,6 +95,21 @@ export function Dashboard() {
   const totalSalarios = mockData.totalSalarios;
   const adiantamento20 = totalSalarios * 0.4; // 40% para adiantamento dia 20
   const valesEstimados = mockData.totalProfissionais * 150; // Média de R$ 150 por profissional
+  
+  // Calcular afastamentos
+  const afastamentos = mockData.hasMockData ? mockData.getAfastamentos() : [];
+  const afastamentosAtivos = afastamentos.filter((a: any) => a.status === 'ATIVO');
+  const afastamentosMaternidade = afastamentosAtivos.filter((a: any) => a.motivo === 'LICENCA_MATERNIDADE');
+  const afastamentosAcidente = afastamentosAtivos.filter((a: any) => 
+    a.motivo === 'ACIDENTE_TRABALHO' || a.motivo === 'ACIDENTE_TRAJETO'
+  );
+  
+  // Calcular benefícios
+  const beneficios = mockData.hasMockData ? mockData.getBeneficios() : [];
+  const totalVT = beneficios.reduce((sum: number, b: any) => sum + b.valorVT, 0);
+  const totalVR = beneficios.reduce((sum: number, b: any) => sum + b.valorVR, 0);
+  const totalCesta = beneficios.reduce((sum: number, b: any) => sum + b.cestaBasica, 0);
+  const totalBeneficios = totalVT + totalVR + totalCesta;
   
   // Mock data com valores reais quando disponível
   const kpis = {
@@ -250,6 +265,134 @@ export function Dashboard() {
           gradient="bg-gradient-to-br from-success/20 to-success/5 text-success"
           onClick={() => navigate('/gestao-epi')}
         />
+      </div>
+
+      {/* Afastamentos e Benefícios */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Card de Afastamentos */}
+        <Card 
+          className="card-interactive cursor-pointer"
+          onClick={() => navigate('/gestao-afastamentos')}
+        >
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="p-1.5 rounded-lg bg-warning/10">
+                <UserX className="h-4 w-4 text-warning" />
+              </div>
+              Afastamentos Ativos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mockData.hasMockData ? (
+              <div className="space-y-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold">{afastamentosAtivos.length}</span>
+                  <span className="text-sm text-muted-foreground">profissionais afastados</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-pink-500/5 rounded-lg border border-pink-500/20">
+                    <p className="text-xs text-muted-foreground mb-1">Maternidade</p>
+                    <p className="text-xl font-bold text-pink-400">{afastamentosMaternidade.length}</p>
+                  </div>
+                  <div className="p-3 bg-destructive/5 rounded-lg border border-destructive/20">
+                    <p className="text-xs text-muted-foreground mb-1">Acidentes</p>
+                    <p className="text-xl font-bold text-destructive">{afastamentosAcidente.length}</p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t text-xs text-muted-foreground">
+                  <p>• Maternidade: recebe 40% no dia 20</p>
+                  <p>• Acidentes: pagamento no mês seguinte</p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-sm text-muted-foreground">Carregue os dados da planilha</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/analisar-ativos');
+                  }}
+                >
+                  Ir para Análise de Ativos
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card de Benefícios */}
+        <Card 
+          className="card-interactive cursor-pointer"
+          onClick={() => navigate('/gestao-beneficios')}
+        >
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="p-1.5 rounded-lg bg-success/10">
+                <DollarSign className="h-4 w-4 text-success" />
+              </div>
+              Benefícios do Mês
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mockData.hasMockData ? (
+              <div className="space-y-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-success">
+                    {(totalBeneficios / 1000).toFixed(1)}k
+                  </span>
+                  <span className="text-sm text-muted-foreground">total em benefícios</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2 bg-primary/5 rounded">
+                    <div className="flex items-center gap-2">
+                      <Bus className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Vale Transporte</span>
+                    </div>
+                    <span className="text-sm font-bold text-primary">
+                      R$ {(totalVT / 1000).toFixed(1)}k
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-orange-500/5 rounded">
+                    <div className="flex items-center gap-2">
+                      <Utensils className="h-4 w-4 text-orange-500" />
+                      <span className="text-sm font-medium">Vale Refeição</span>
+                    </div>
+                    <span className="text-sm font-bold text-orange-500">
+                      R$ {(totalVR / 1000).toFixed(1)}k
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-green-600/5 rounded">
+                    <div className="flex items-center gap-2">
+                      <ShoppingBasket className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium">Cesta Básica</span>
+                    </div>
+                    <span className="text-sm font-bold text-green-600">
+                      R$ {(totalCesta / 1000).toFixed(1)}k
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-sm text-muted-foreground">Carregue os dados da planilha</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/analisar-ativos');
+                  }}
+                >
+                  Ir para Análise de Ativos
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Alerts and Activities */}
