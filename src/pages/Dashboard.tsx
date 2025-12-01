@@ -7,6 +7,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { AlertasResumo } from '@/components/alertas/AlertasAutomaticos';
 
 // KPI Card Component
 interface KPICardProps {
@@ -234,37 +235,8 @@ export function Dashboard() {
 
       {/* Alerts and Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Urgent Actions */}
-        <Card className="border-warning/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="p-1.5 rounded-lg bg-warning/10">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-              </div>
-              Ações Urgentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <AlertItem
-              icon={Clock}
-              title="3 documentos vencendo em 7 dias"
-              subtitle="Centro, Brooklin, Morumbi"
-              action="Ver"
-            />
-            <AlertItem
-              icon={Calendar}
-              title="5 férias a vencer este mês"
-              subtitle="Período aquisitivo encerrando"
-              action="Agendar"
-            />
-            <AlertItem
-              icon={Package}
-              title="2 EPIs com estoque crítico"
-              subtitle="Uniforme e Touca abaixo de 20%"
-              action="Repor"
-            />
-          </CardContent>
-        </Card>
+        {/* Alertas Automáticos */}
+        <AlertasResumo maxItems={5} />
 
         {/* Recent Activities */}
         <Card>
