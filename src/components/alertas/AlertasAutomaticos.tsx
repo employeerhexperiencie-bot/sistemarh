@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Bell, AlertTriangle, Calendar, FileText, Stethoscope, 
   Clock, CheckCircle, XCircle, Building2, User, ChevronRight,
-  Filter, Download, RefreshCw, Eye
+  Filter, Download, RefreshCw, Eye, CheckCircle2, Info
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useMockData } from '@/hooks/useMockData';
 
 export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
@@ -36,7 +38,130 @@ export interface Alerta {
   resolvido: boolean;
 }
 
-// Gerar alertas mock baseado nas regras de negócio
+// Gerar alertas baseado em dados reais das planilhas
+const gerarAlertasReais = (mockData: ReturnType<typeof useMockData>): Alerta[] => {
+  const alertas: Alerta[] = [];
+  let id = 1;
+  const hoje = new Date();
+
+  // Verificar se temos dados ASO carregados
+  const dadosASOStr = localStorage.getItem('dadosASO');
+  if (dadosASOStr && mockData.hasMockData) {
+    try {
+      const dadosASO = JSON.parse(dadosASOStr);
+      
+      // Alertas de ASO baseados em dados reais
+      dadosASO.forEach((aso: any) => {
+        if (!aso.proxExame || aso.proxExame === 'NR') return;
+        
+        const dataVenc = new Date(aso.proxExame);
+        const diasRestantes = Math.floor((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        let nivel: NivelAlerta = 'info';
+        if (diasRestantes <= 0) nivel = 'critico';
+        else if (diasRestantes <= 7) nivel = 'urgente';
+        else if (diasRestantes <= 30) nivel = 'atencao';
+        
+        // Só criar alerta se estiver vencido ou vencendo em até 60 dias
+        if (diasRestantes <= 60) {
+          alertas.push({
+            id: `aso-${id++}`,
+            tipo: 'aso',
+            nivel,
+            titulo: diasRestantes <= 0 ? 'ASO Vencido' : 'ASO Vencendo',
+            descricao: diasRestantes <= 0 
+              ? `Exame ocupacional vencido há ${Math.abs(diasRestantes)} dias`
+              : `Exame ocupacional vence em ${diasRestantes} dias`,
+            dataVencimento: dataVenc.toISOString().split('T')[0],
+            diasRestantes,
+            loja: aso.localTrabalho || 'N/A',
+            profissional: aso.nome,
+            matricula: aso.matricula,
+            acaoUrl: '/gestao-aso',
+            lido: false,
+            resolvido: false,
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao processar alertas de ASO:', error);
+    }
+  }
+
+  // Alertas de Férias baseados em dados reais
+  if (mockData.hasMockData) {
+    const ferias = mockData.getFerias();
+    ferias.forEach((feria: any) => {
+      if (feria.status === 'vencida' || feria.status === 'vencendo') {
+        const dataVenc = new Date(feria.dataVencimento);
+        const diasRestantes = Math.floor((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        let nivel: NivelAlerta = 'info';
+        if (diasRestantes <= 0) nivel = 'critico';
+        else if (diasRestantes <= 15) nivel = 'urgente';
+        else if (diasRestantes <= 30) nivel = 'atencao';
+        
+        alertas.push({
+          id: `ferias-${id++}`,
+          tipo: 'ferias',
+          nivel,
+          titulo: diasRestantes <= 0 ? 'Férias Vencidas' : 'Férias a Vencer',
+          descricao: diasRestantes <= 0 
+            ? `Período aquisitivo venceu há ${Math.abs(diasRestantes)} dias - AÇÃO URGENTE`
+            : `Período aquisitivo vence em ${diasRestantes} dias`,
+          dataVencimento: dataVenc.toISOString().split('T')[0],
+          diasRestantes,
+          loja: feria.loja,
+          profissional: feria.nome,
+          matricula: feria.matricula,
+          acaoUrl: '/gestao-ferias',
+          lido: false,
+          resolvido: false,
+        });
+      }
+    });
+  }
+
+  // Alertas de Afastamentos
+  if (mockData.hasMockData) {
+    const afastamentos = mockData.getAfastamentos();
+    afastamentos.forEach((afastamento: any) => {
+      if (afastamento.status === 'AGUARDANDO_PERICIA' && afastamento.dataPericia) {
+        const dataPericia = new Date(afastamento.dataPericia);
+        const diasRestantes = Math.floor((dataPericia.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        let nivel: NivelAlerta = 'info';
+        if (diasRestantes <= 0) nivel = 'critico';
+        else if (diasRestantes <= 7) nivel = 'urgente';
+        else if (diasRestantes <= 15) nivel = 'atencao';
+        
+        if (diasRestantes <= 30) {
+          alertas.push({
+            id: `afastamento-${id++}`,
+            tipo: 'afastamento',
+            nivel,
+            titulo: diasRestantes <= 0 ? 'Perícia Atrasada' : 'Perícia Agendada',
+            descricao: diasRestantes <= 0 
+              ? `Perícia estava agendada há ${Math.abs(diasRestantes)} dias`
+              : `Perícia agendada em ${diasRestantes} dias`,
+            dataVencimento: dataPericia.toISOString().split('T')[0],
+            diasRestantes,
+            loja: afastamento.loja,
+            profissional: afastamento.nome,
+            matricula: afastamento.matricula,
+            acaoUrl: '/gestao-afastamentos',
+            lido: false,
+            resolvido: false,
+          });
+        }
+      }
+    });
+  }
+
+  return alertas.sort((a, b) => a.diasRestantes - b.diasRestantes);
+};
+
+// Gerar alertas mock baseado nas regras de negócio (fallback)
 const gerarAlertasMock = (): Alerta[] => {
   const lojas = ['Loja 01', 'Loja 02', 'Loja 03', 'Loja 04', 'Loja 05', 'Loja 06', 'Loja 07'];
   const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira', 
@@ -279,12 +404,34 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }
 
 export function CentralAlertas() {
   const navigate = useNavigate();
-  const [alertas, setAlertas] = useState<Alerta[]>(() => gerarAlertasMock());
+  const mockData = useMockData();
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
   const [nivelFiltro, setNivelFiltro] = useState<string>('todos');
   const [lojaFiltro, setLojaFiltro] = useState<string>('todas');
   const [mostrarResolvidos, setMostrarResolvidos] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Verificar se temos dados completos carregados
+  const [dadosCompletos, setDadosCompletos] = useState(false);
+  
+  useEffect(() => {
+    const profissionaisStr = localStorage.getItem('profissionaisImportados');
+    const dadosASOStr = localStorage.getItem('dadosASO');
+    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
+    setDadosCompletos(!!(profissionaisStr && dadosASOStr && dadosBeneficiosStr));
+  }, []);
+  
+  // Gerar alertas baseados em dados reais ou mock
+  const [alertas, setAlertas] = useState<Alerta[]>(() => 
+    mockData.hasMockData ? gerarAlertasReais(mockData) : gerarAlertasMock()
+  );
+  
+  // Atualizar alertas quando mockData mudar
+  useEffect(() => {
+    if (mockData.hasMockData) {
+      setAlertas(gerarAlertasReais(mockData));
+    }
+  }, [mockData.hasMockData, mockData.totalProfissionais]);
   
   const alertasFiltrados = useMemo(() => {
     return alertas.filter(a => {
@@ -322,6 +469,52 @@ export function CentralAlertas() {
   
   return (
     <div className="space-y-6">
+      {/* Status de Validação de Dados */}
+      {dadosCompletos ? (
+        <Alert className="border-success bg-success/5">
+          <CheckCircle2 className="h-5 w-5 text-success" />
+          <AlertTitle className="text-success font-semibold">Alertas Baseados em Dados Reais</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Todas as planilhas carregadas (ATIVOS, ASO, Benefícios)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>{alertas.length} alertas gerados automaticamente dos dados reais</span>
+              </div>
+            </div>
+            <p className="mt-3 text-sm font-medium text-success">
+              ✓ Sistema monitorando vencimentos reais de ASO, férias e afastamentos
+            </p>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="border-warning bg-warning/5">
+          <AlertTriangle className="h-5 w-5 text-warning" />
+          <AlertTitle className="text-warning font-semibold">Alertas com Dados Simulados</AlertTitle>
+          <AlertDescription>
+            <p className="mt-2 text-sm">
+              ⚠️ Os alertas exibidos são baseados em dados simulados. Para gerar alertas reais baseados em ASO, férias e afastamentos, carregue todas as planilhas.
+            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <Link to="/carregar-dados-adicionais">
+                <Button size="sm" variant="default">
+                  <Info className="h-4 w-4 mr-2" />
+                  Carregar Dados Reais
+                </Button>
+              </Link>
+              <Link to="/validacao-dados">
+                <Button size="sm" variant="outline">
+                  Ver Validação
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -503,7 +696,14 @@ export function CentralAlertas() {
 // Componente de Resumo para uso no Dashboard
 export function AlertasResumo({ maxItems = 5 }: { maxItems?: number }) {
   const navigate = useNavigate();
-  const alertas = useMemo(() => gerarAlertasMock().filter(a => !a.resolvido).slice(0, maxItems), [maxItems]);
+  const mockData = useMockData();
+  
+  const alertas = useMemo(() => {
+    const alertasGerados = mockData.hasMockData 
+      ? gerarAlertasReais(mockData) 
+      : gerarAlertasMock();
+    return alertasGerados.filter(a => !a.resolvido).slice(0, maxItems);
+  }, [mockData.hasMockData, mockData.totalProfissionais, maxItems]);
   
   const criticos = alertas.filter(a => a.nivel === 'critico').length;
   const urgentes = alertas.filter(a => a.nivel === 'urgente').length;
@@ -517,8 +717,14 @@ export function AlertasResumo({ maxItems = 5 }: { maxItems?: number }) {
               <AlertTriangle className={`h-4 w-4 ${criticos > 0 ? 'text-destructive' : 'text-warning'}`} />
             </div>
             Alertas Pendentes
+            {mockData.hasMockData && (
+              <Badge variant="outline" className="bg-success/10 text-success border-success/20 ml-2">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Dados Reais
+              </Badge>
+            )}
             {(criticos + urgentes) > 0 && (
-              <Badge variant={criticos > 0 ? 'destructive' : 'secondary'} className="ml-2">
+              <Badge variant={criticos > 0 ? 'destructive' : 'secondary'}>
                 {criticos > 0 ? `${criticos} críticos` : `${urgentes} urgentes`}
               </Badge>
             )}
@@ -546,7 +752,15 @@ export function AlertasResumo({ maxItems = 5 }: { maxItems?: number }) {
 
 // Componente de Badge para o Header
 export function AlertasBadge() {
-  const alertas = useMemo(() => gerarAlertasMock().filter(a => !a.resolvido && !a.lido), []);
+  const mockData = useMockData();
+  
+  const alertas = useMemo(() => {
+    const alertasGerados = mockData.hasMockData 
+      ? gerarAlertasReais(mockData) 
+      : gerarAlertasMock();
+    return alertasGerados.filter(a => !a.resolvido && !a.lido);
+  }, [mockData.hasMockData, mockData.totalProfissionais]);
+  
   const criticos = alertas.filter(a => a.nivel === 'critico').length;
   
   if (alertas.length === 0) return null;
@@ -568,6 +782,12 @@ export function AlertasBadge() {
           <DialogTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
             Alertas ({alertas.length})
+            {mockData.hasMockData && (
+              <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Dados Reais
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="flex-1 -mx-6 px-6">
