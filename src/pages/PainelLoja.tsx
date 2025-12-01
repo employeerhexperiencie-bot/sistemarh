@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useMockData } from '@/hooks/useMockData';
 
 const mockDados = [
   {
@@ -197,9 +198,28 @@ const mockDados = [
 export default function PainelLoja() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const mockData = useMockData();
   const [competencia, setCompetencia] = useState('2025-08');
   const [lojaFiltro, setLojaFiltro] = useState('');
   const tipoFiltro = searchParams.get('tipo') || '';
+
+  // Usar dados da planilha se disponível
+  const estatisticasLojas = mockData.hasMockData 
+    ? mockData.getEstatisticasPorLoja().map(stat => ({
+        loja: stat.loja,
+        vales: Math.floor(stat.totalProfissionais * 15000), // R$150 médio por profissional
+        adiantamentos: Math.floor(stat.totalSalarios * 0.4), // 40% dia 20
+        descFaltas: Math.floor(stat.totalSalarios * 0.02), // 2% estimado
+        descDSR: Math.floor(stat.totalSalarios * 0.015), // 1.5% estimado
+        totalReceber: Math.floor(stat.totalSalarios),
+        holeritesG: stat.totalProfissionais,
+        holeritesE: Math.floor(stat.totalProfissionais * 0.7),
+        holeritesA: Math.floor(stat.totalProfissionais * 0.5),
+        faltasComputadas: Math.floor(Math.random() * 5),
+        profissionaisComFaltas: Math.floor(Math.random() * 3),
+        totalProfissionais: stat.totalProfissionais,
+      }))
+    : mockDados;
 
   useEffect(() => {
     if (tipoFiltro) {
@@ -217,7 +237,7 @@ export default function PainelLoja() {
 
   const exportCSV = () => {
     const headers = ['Loja', 'Vales', 'Adiantamentos', 'Desc. Faltas', 'Desc. DSR', 'Total a Receber', 'Holerites G', 'Holerites E', 'Holerites A'];
-    const rows = mockDados.map(item => [
+    const rows = estatisticasLojas.map(item => [
       item.loja,
       formatCurrency(item.vales),
       formatCurrency(item.adiantamentos),
@@ -246,7 +266,7 @@ export default function PainelLoja() {
     return <Badge variant="outline">Pendente</Badge>;
   };
 
-  const dadosFiltrados = mockDados.filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro);
+  const dadosFiltrados = estatisticasLojas.filter(item => !lojaFiltro || lojaFiltro === 'TODAS' || item.loja === lojaFiltro);
 
   return (
     <div className="space-y-6">

@@ -155,6 +155,18 @@ export default function AnalisarAtivos() {
 
   useEffect(() => {
     carregarArquivo();
+    
+    // Após carregar, automaticamente popular o sistema se ainda não foi feito
+    const jaPopulado = localStorage.getItem('profissionaisImportados');
+    if (!jaPopulado) {
+      // Aguarda um pouco para garantir que os dados foram carregados
+      setTimeout(() => {
+        if (dados && dados.profissionais.length > 0) {
+          localStorage.setItem('profissionaisImportados', JSON.stringify(dados.profissionais));
+          localStorage.setItem('lojasImportadas', JSON.stringify(dados.lojas));
+        }
+      }, 1000);
+    }
   }, []);
 
   const popularSistema = () => {

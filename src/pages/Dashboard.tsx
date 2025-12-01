@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AlertasResumo } from '@/components/alertas/AlertasAutomaticos';
+import { useMockData } from '@/hooks/useMockData';
 
 // KPI Card Component
 interface KPICardProps {
@@ -88,14 +89,32 @@ function StatCard({ title, value, icon: Icon, gradient, onClick }: StatCardProps
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const mockData = useMockData();
   
-  // Mock data
+  // Calcular KPIs baseados nos dados reais da planilha
+  const totalSalarios = mockData.totalSalarios;
+  const adiantamento20 = totalSalarios * 0.4; // 40% para adiantamento dia 20
+  const valesEstimados = mockData.totalProfissionais * 150; // Média de R$ 150 por profissional
+  
+  // Mock data com valores reais quando disponível
   const kpis = {
-    vales: { value: 'R$ 45.300', count: 23, trend: '+12%' },
-    adiantamentos: { value: 'R$ 89.500', count: 15, trend: '+8%' },
-    totalReceber: { value: 'R$ 328.700', count: 89, trend: '+7%' },
-    holerites: { gerados: 45, enviados: 42, assinados: 38 },
-    faltas: { total: 12, justificadas: 5, injustificadas: 7, lojas: 6, profissionais: 10 }
+    vales: { 
+      value: mockData.hasMockData ? `R$ ${(valesEstimados / 1000).toFixed(1)}k` : 'R$ 45.300', 
+      count: mockData.hasMockData ? Math.floor(mockData.totalProfissionais * 0.7) : 23, 
+      trend: '+12%' 
+    },
+    adiantamentos: { 
+      value: mockData.hasMockData ? `R$ ${(adiantamento20 / 1000).toFixed(1)}k` : 'R$ 89.500', 
+      count: mockData.hasMockData ? Math.floor(mockData.totalProfissionais * 0.5) : 15, 
+      trend: '+8%' 
+    },
+    totalReceber: { 
+      value: mockData.hasMockData ? `R$ ${(totalSalarios / 1000).toFixed(1)}k` : 'R$ 328.700', 
+      count: mockData.totalProfissionais || 89, 
+      trend: '+7%' 
+    },
+    holerites: { gerados: mockData.totalProfissionais || 45, enviados: 42, assinados: 38 },
+    faltas: { total: 12, justificadas: 5, injustificadas: 7, lojas: mockData.totalLojas || 6, profissionais: 10 }
   };
 
   return (
@@ -202,7 +221,7 @@ export function Dashboard() {
 
         <StatCard
           title="Lojas Ativas"
-          value={20}
+          value={mockData.totalLojas || 20}
           icon={Building2}
           gradient="bg-gradient-to-br from-primary/20 to-primary/5 text-primary"
           onClick={() => navigate('/cadastro-lojas')}
@@ -210,7 +229,7 @@ export function Dashboard() {
 
         <StatCard
           title="Profissionais"
-          value={260}
+          value={mockData.totalProfissionais || 260}
           icon={Users}
           gradient="bg-gradient-to-br from-accent/20 to-accent/5 text-accent"
           onClick={() => navigate('/cadastro-profissionais')}
