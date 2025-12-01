@@ -248,6 +248,49 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 5. Inserir configurações padrão do sistema
+    const configuracoesDefault = [
+      { chave: 'percentual_vr_desconto', valor: '6.00', tipo: 'number', categoria: 'beneficios', descricao: 'Percentual de desconto do VR na folha' },
+      { chave: 'valor_diario_vr', valor: '25.00', tipo: 'number', categoria: 'beneficios', descricao: 'Valor diário padrão do Vale Refeição' },
+      { chave: 'dias_antecedencia_aso', valor: '30', tipo: 'number', categoria: 'alertas', descricao: 'Dias de antecedência para alertas de ASO' },
+      { chave: 'dias_antecedencia_ferias', valor: '30', tipo: 'number', categoria: 'alertas', descricao: 'Dias de antecedência para alertas de férias' },
+      { chave: 'percentual_day20_padrao', valor: '50', tipo: 'number', categoria: 'folha', descricao: 'Percentual padrão de adiantamento Day 20' },
+    ];
+
+    let configsInseridas = 0;
+    for (const config of configuracoesDefault) {
+      const { error } = await supabase.from('configuracoes_sistema').upsert(config, {
+        onConflict: 'chave',
+        ignoreDuplicates: false
+      });
+      if (!error) configsInseridas++;
+    }
+
+    console.log(`${configsInseridas} configurações inseridas`);
+
+    // 6. Criar histórico de salários para profissionais
+    const { data: profsComSalario } = await supabase
+      .from('profissionais')
+      .select('id, salario_nominal, data_admissao')
+      .not('salario_nominal', 'is', null);
+
+    let salariosInseridos = 0;
+    if (profsComSalario && profsComSalario.length > 0) {
+      for (const prof of profsComSalario) {
+        const { error } = await supabase.from('historico_salarios').insert({
+          profissional_id: prof.id,
+          salario_anterior: null,
+          salario_novo: prof.salario_nominal,
+          tipo_alteracao: 'admissao',
+          motivo: 'Salário inicial de admissão',
+          data_alteracao: prof.data_admissao || new Date().toISOString().split('T')[0],
+        });
+        if (!error) salariosInseridos++;
+      }
+    }
+
+    console.log(`${salariosInseridos} históricos de salário criados`);
+
     console.log('Migração concluída:', results);
 
     return new Response(
