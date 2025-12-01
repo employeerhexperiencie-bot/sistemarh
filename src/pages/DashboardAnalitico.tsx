@@ -108,6 +108,73 @@ export default function DashboardAnalitico() {
     ];
   }, [dadosHistoricos]);
 
+  // Análise de faltas por motivo
+  const faltasPorMotivo = useMemo(() => {
+    const faltas = lojaFiltro === 'TODAS'
+      ? mockData.getFaltas()
+      : mockData.getFaltas().filter((f: any) => f.loja === lojaFiltro);
+
+    const motivos = {
+      'Doença': 0,
+      'Sem Justificativa': 0,
+      'Atestado Médico': 0,
+      'Assuntos Pessoais': 0,
+      'Outros': 0
+    };
+
+    faltas.forEach((f: any) => {
+      if (f.faltasInjustificadas > 0) {
+        motivos['Sem Justificativa'] += f.faltasInjustificadas;
+      }
+      if (f.faltasJustificadas > 0) {
+        // Distribuir justificadas entre os motivos
+        const porMotivo = Math.ceil(f.faltasJustificadas / 3);
+        motivos['Atestado Médico'] += porMotivo;
+        motivos['Doença'] += Math.floor(porMotivo * 0.6);
+        motivos['Assuntos Pessoais'] += Math.floor(porMotivo * 0.4);
+      }
+    });
+
+    return [
+      { name: 'Sem Justificativa', value: motivos['Sem Justificativa'], color: '#ef4444' },
+      { name: 'Atestado Médico', value: motivos['Atestado Médico'], color: '#16a34a' },
+      { name: 'Doença', value: motivos['Doença'], color: '#f59e0b' },
+      { name: 'Assuntos Pessoais', value: motivos['Assuntos Pessoais'], color: '#0A84FF' },
+    ].filter(m => m.value > 0);
+  }, [mockData, lojaFiltro]);
+
+  // Análise de faltas por loja
+  const faltasPorLoja = useMemo(() => {
+    const estatisticas = mockData.getEstatisticasPorLoja();
+    const faltas = mockData.getFaltas();
+
+    return estatisticas.slice(0, 10).map(stat => {
+      const faltasLoja = faltas.filter((f: any) => f.loja === stat.loja);
+      
+      const totalFaltas = faltasLoja.reduce((sum: number, f: any) => sum + f.totalFaltas, 0);
+      const faltasJust = faltasLoja.reduce((sum: number, f: any) => sum + f.faltasJustificadas, 0);
+      const faltasInjust = faltasLoja.reduce((sum: number, f: any) => sum + f.faltasInjustificadas, 0);
+      
+      // Calcular taxa de absenteísmo (%)
+      const taxaAbsenteismo = stat.totalProfissionais > 0 
+        ? ((totalFaltas / (stat.totalProfissionais * 22)) * 100).toFixed(1) // 22 dias úteis médio
+        : '0.0';
+
+      return {
+        loja: stat.loja.length > 15 ? stat.loja.substring(0, 15) + '...' : stat.loja,
+        totalFaltas,
+        justificadas: faltasJust,
+        injustificadas: faltasInjust,
+        profissionais: stat.totalProfissionais,
+        taxaAbsenteismo: parseFloat(taxaAbsenteismo),
+        // Simular motivos por loja
+        atestados: Math.floor(faltasJust * 0.6),
+        doenca: Math.floor(faltasJust * 0.3),
+        pessoais: Math.floor(faltasJust * 0.1),
+      };
+    }).sort((a, b) => b.totalFaltas - a.totalFaltas);
+  }, [mockData]);
+
   // Métricas de crescimento
   const metricas = useMemo(() => {
     if (dadosHistoricos.length < 2) return null;
@@ -405,27 +472,146 @@ export default function DashboardAnalitico() {
 
         {/* Evolução de Faltas */}
         <TabsContent value="faltas" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-warning" />
+                  Evolução de Faltas e Absenteísmo
+                </CardTitle>
+                <CardDescription>Comparação entre faltas justificadas e injustificadas</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={350}>
+                  <ComposedChart data={dadosHistoricos}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="mes" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="faltasJustificadas" stackId="a" fill="#16a34a" name="Justificadas" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="faltasInjustificadas" stackId="a" fill="#ef4444" name="Injustificadas" radius={[8, 8, 0, 0]} />
+                    <Line type="monotone" dataKey="faltas" stroke="#f59e0b" strokeWidth={3} name="Total" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Motivos das Faltas</CardTitle>
+                <CardDescription>Distribuição por causa</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart>
+                    <Pie
+                      data={faltasPorMotivo}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {faltasPorMotivo.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  {faltasPorMotivo.map((motivo, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: motivo.color }} />
+                        <span>{motivo.name}</span>
+                      </div>
+                      <span className="font-medium">{motivo.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Análise por Loja */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-warning" />
-                Evolução de Faltas e Absenteísmo
+                <Users className="h-5 w-5 text-destructive" />
+                Análise de Faltas por Loja
               </CardTitle>
-              <CardDescription>Comparação entre faltas justificadas e injustificadas</CardDescription>
+              <CardDescription>Detalhamento de faltas, motivos e taxa de absenteísmo por loja</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <ComposedChart data={dadosHistoricos}>
+              <ResponsiveContainer width="100%" height={500}>
+                <BarChart data={faltasPorLoja} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="mes" className="text-xs" />
-                  <YAxis className="text-xs" />
+                  <XAxis type="number" className="text-xs" />
+                  <YAxis dataKey="loja" type="category" width={120} className="text-xs" />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  <Bar dataKey="faltasJustificadas" stackId="a" fill="#16a34a" name="Justificadas" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="faltasInjustificadas" stackId="a" fill="#ef4444" name="Injustificadas" radius={[8, 8, 0, 0]} />
-                  <Line type="monotone" dataKey="faltas" stroke="#f59e0b" strokeWidth={3} name="Total" />
-                </ComposedChart>
+                  <Bar dataKey="atestados" stackId="a" fill="#16a34a" name="Atestados" />
+                  <Bar dataKey="doenca" stackId="a" fill="#f59e0b" name="Doença" />
+                  <Bar dataKey="pessoais" stackId="a" fill="#0A84FF" name="Pessoais" />
+                  <Bar dataKey="injustificadas" stackId="a" fill="#ef4444" name="Injustificadas" radius={[0, 8, 8, 0]} />
+                </BarChart>
               </ResponsiveContainer>
+
+              {/* Tabela com estatísticas detalhadas */}
+              <div className="mt-6 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Loja</th>
+                      <th className="text-center p-2">Profissionais</th>
+                      <th className="text-center p-2">Total Faltas</th>
+                      <th className="text-center p-2">Justificadas</th>
+                      <th className="text-center p-2">Injustificadas</th>
+                      <th className="text-center p-2">Taxa Absenteísmo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {faltasPorLoja.map((loja, index) => (
+                      <tr key={index} className="border-b hover:bg-muted/50">
+                        <td className="p-2 font-medium">{loja.loja}</td>
+                        <td className="text-center p-2">{loja.profissionais}</td>
+                        <td className="text-center p-2">
+                          <span className="font-bold text-warning">{loja.totalFaltas}</span>
+                        </td>
+                        <td className="text-center p-2">
+                          <span className="text-success">{loja.justificadas}</span>
+                        </td>
+                        <td className="text-center p-2">
+                          <span className="text-destructive">{loja.injustificadas}</span>
+                        </td>
+                        <td className="text-center p-2">
+                          <Badge 
+                            variant={loja.taxaAbsenteismo > 5 ? "destructive" : loja.taxaAbsenteismo > 3 ? "outline" : "secondary"}
+                            className={loja.taxaAbsenteismo > 5 ? "" : loja.taxaAbsenteismo > 3 ? "bg-warning/10 text-warning" : "bg-success/10 text-success"}
+                          >
+                            {loja.taxaAbsenteismo}%
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Taxa de Absenteísmo:</strong> Calculada como (Total Faltas / (Profissionais × 22 dias úteis)) × 100
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  • <span className="text-success">Ótimo:</span> {'<'} 3% | 
+                  • <span className="text-warning ml-2">Atenção:</span> 3-5% | 
+                  • <span className="text-destructive ml-2">Crítico:</span> {'>'} 5%
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
