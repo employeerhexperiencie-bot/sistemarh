@@ -21,7 +21,8 @@ import {
   Calculator,
   ChevronRight,
   Bell,
-  History
+  History,
+  FileBox
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -90,6 +91,7 @@ const navSections = [
   {
     label: 'Sistema',
     items: [
+      { title: 'Análise Ativos', url: '/analisar-ativos', icon: FileBox },
       { title: 'Histórico Alterações', url: '/audit-log', icon: History },
       { title: 'Configurações', url: '/configuracoes', icon: Settings },
       { title: 'Referência', url: '/referencia-sistema', icon: BookOpen },
