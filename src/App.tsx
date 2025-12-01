@@ -21,6 +21,7 @@ import GestaoFerias from "@/pages/GestaoFerias";
 import GestaoEPI from "@/pages/GestaoEPI";
 import GestaoAfastamentos from "@/pages/GestaoAfastamentos";
 import GestaoBeneficios from "@/pages/GestaoBeneficios";
+import GestaoBeneficiosDetalhado from "@/pages/GestaoBeneficiosDetalhado";
 import ReferenciaSistema from "@/pages/ReferenciaSistema";
 import SimuladorFolha from "@/pages/SimuladorFolha";
 import Configuracoes from "@/pages/Configuracoes";
@@ -124,6 +125,11 @@ const App = () => (
           <Route path="/gestao-beneficios" element={
             <Layout>
               <GestaoBeneficios />
+            </Layout>
+          } />
+          <Route path="/gestao-beneficios-detalhado" element={
+            <Layout>
+              <GestaoBeneficiosDetalhado />
             </Layout>
           } />
           <Route path="/referencia-sistema" element={
