@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentUploader } from '@/components/DocumentUploader';
@@ -253,6 +253,7 @@ export const CadastroProfissionais: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dados');
   const [formData, setFormData] = useState<FormDataCompleto>(initialFormData);
   const [loading, setLoading] = useState(false);
+  const [usingImportedData, setUsingImportedData] = useState(false);
   const { toast } = useToast();
   const { addLog } = useAuditLog();
   
@@ -260,8 +261,55 @@ export const CadastroProfissionais: React.FC = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const matriculaParam = searchParams.get('matricula');
 
+  // Função para converter dados importados para o formato Professional
+  const convertImportedToProfessional = (imported: any): Professional => {
+    // Converter salário de string para centavos
+    const salarioStr = imported.salarioReceber || imported.salarioCTPS || 'R$ 0,00';
+    const salarioNumerico = parseFloat(
+      salarioStr.replace('R$', '').replace(/\./g, '').replace(',', '.').trim()
+    ) * 100;
+
+    return {
+      id: imported.matricula,
+      matricula: imported.matricula,
+      nome: imported.nome,
+      cpf: imported.cpf,
+      rg: imported.rg,
+      cargo: imported.cargo,
+      salario: salarioNumerico,
+      status: 'ativo',
+      data_admissao: imported.admissaoCTPS || imported.inicioLoja,
+      loja: { nome: imported.localTrabalho || imported.localRegistro },
+      created_at: new Date().toISOString()
+    };
+  };
+
   const loadProfessionals = async () => {
     try {
+      // Primeiro, tentar carregar dados importados do localStorage
+      const importedDataStr = localStorage.getItem('profissionaisImportados');
+      
+      if (importedDataStr) {
+        const importedData = JSON.parse(importedDataStr);
+        const convertedProfessionals = importedData.map(convertImportedToProfessional);
+        setProfessionals(convertedProfessionals);
+        setUsingImportedData(true);
+        
+        // Carregar lojas importadas também
+        const lojasImportadasStr = localStorage.getItem('lojasImportadas');
+        if (lojasImportadasStr) {
+          const lojasImportadas = JSON.parse(lojasImportadasStr);
+          const lojasFormatadas = lojasImportadas.map((nome: string, index: number) => ({
+            id: `imported-${index}`,
+            nome: nome
+          }));
+          setLojas(lojasFormatadas);
+        }
+        
+        return;
+      }
+
+      // Se não houver dados importados, carrega do Supabase normalmente
       const { data, error } = await supabase
         .from('profissionais')
         .select(`
@@ -272,6 +320,10 @@ export const CadastroProfissionais: React.FC = () => {
 
       if (error) throw error;
       setProfessionals((data || []) as Professional[]);
+      setUsingImportedData(false);
+      
+      // Carregar lojas do Supabase
+      await loadLojas();
     } catch (error) {
       console.error('Load professionals error:', error);
       toast({
@@ -296,7 +348,27 @@ export const CadastroProfissionais: React.FC = () => {
     }
   };
 
+  const limparDadosImportados = () => {
+    localStorage.removeItem('profissionaisImportados');
+    localStorage.removeItem('lojasImportadas');
+    setUsingImportedData(false);
+    loadProfessionals();
+    toast({
+      title: "Sucesso",
+      description: "Dados importados limpos. Mostrando dados do sistema."
+    });
+  };
+
   const handleSave = async () => {
+    if (usingImportedData) {
+      toast({
+        title: "Aviso",
+        description: "Não é possível editar dados importados. Limpe os dados importados primeiro para usar o sistema normalmente.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!formData.nome || !formData.matricula) {
       toast({
         title: "Erro",
@@ -380,6 +452,15 @@ export const CadastroProfissionais: React.FC = () => {
   };
 
   const handleEdit = (professional: Professional) => {
+    if (usingImportedData) {
+      toast({
+        title: "Aviso",
+        description: "Não é possível editar dados importados. Limpe os dados importados primeiro.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setEditingProfessional(professional);
     setFormData({
       ...initialFormData,
@@ -398,6 +479,15 @@ export const CadastroProfissionais: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (usingImportedData) {
+      toast({
+        title: "Aviso",
+        description: "Não é possível excluir dados importados. Limpe os dados importados primeiro.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const professional = professionals.find(p => p.id === id);
     if (!confirm('Tem certeza que deseja excluir este profissional?')) return;
 
@@ -611,6 +701,28 @@ export const CadastroProfissionais: React.FC = () => {
   // View principal - Lista de profissionais
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
+      {/* Aviso de dados importados */}
+      {usingImportedData && (
+        <Card className="bg-primary/10 border-primary">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-semibold text-primary">Visualizando Dados Importados</p>
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {professionals.length} profissionais da planilha ATIVOS.xlsx
+                  </p>
+                </div>
+              </div>
+              <Button onClick={limparDadosImportados} variant="outline" size="sm">
+                Limpar e Usar Sistema
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Cadastro de Profissionais</h1>
@@ -618,7 +730,7 @@ export const CadastroProfissionais: React.FC = () => {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingProfessional(null)}>
+            <Button onClick={() => setEditingProfessional(null)} disabled={usingImportedData}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Profissional
             </Button>
