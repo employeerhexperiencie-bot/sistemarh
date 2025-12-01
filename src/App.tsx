@@ -30,6 +30,7 @@ import Alertas from "@/pages/Alertas";
 import AuditLog from "@/pages/AuditLog";
 import AnalisarAtivos from "@/pages/AnalisarAtivos";
 import CarregarDadosAdicionais from "@/pages/CarregarDadosAdicionais";
+import ValidacaoDados from "@/pages/ValidacaoDados";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -166,6 +167,11 @@ const App = () => (
           <Route path="/carregar-dados-adicionais" element={
             <Layout>
               <CarregarDadosAdicionais />
+            </Layout>
+          } />
+          <Route path="/validacao-dados" element={
+            <Layout>
+              <ValidacaoDados />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
