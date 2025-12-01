@@ -11,8 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Calculator, DollarSign, Calendar, Bus, Utensils, 
-  TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet
+  TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet,
+  FileText, Gift, Banknote
 } from 'lucide-react';
+import { RelatorioFolha } from '@/components/folha/RelatorioFolha';
+import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
+import { GestaoEmprestimos } from '@/components/folha/GestaoEmprestimos';
+import { AdiantamentoSalario } from '@/components/folha/AdiantamentoSalario';
 
 // Função de arredondamento conforme regra do sistema
 const arredondarValor = (valor: number): number => {
@@ -389,7 +394,7 @@ export default function SimuladorFolha() {
 
       {/* Tabs */}
       <Tabs defaultValue="lojas" className="space-y-4">
-        <TabsList className="bg-muted/50 p-1">
+        <TabsList className="bg-muted/50 p-1 flex-wrap h-auto gap-1">
           <TabsTrigger value="lojas" className="gap-2 data-[state=active]:bg-background">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Por Loja</span>
@@ -398,9 +403,25 @@ export default function SimuladorFolha() {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Por Funcionário</span>
           </TabsTrigger>
+          <TabsTrigger value="adiantamento" className="gap-2 data-[state=active]:bg-background">
+            <TrendingUp className="h-4 w-4" />
+            <span className="hidden sm:inline">Adiantamento</span>
+          </TabsTrigger>
+          <TabsTrigger value="relatorio" className="gap-2 data-[state=active]:bg-background">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Relatório Geral</span>
+          </TabsTrigger>
+          <TabsTrigger value="decimo" className="gap-2 data-[state=active]:bg-background">
+            <Gift className="h-4 w-4" />
+            <span className="hidden sm:inline">13º Salário</span>
+          </TabsTrigger>
+          <TabsTrigger value="emprestimos" className="gap-2 data-[state=active]:bg-background">
+            <Banknote className="h-4 w-4" />
+            <span className="hidden sm:inline">Empréstimos</span>
+          </TabsTrigger>
           <TabsTrigger value="config" className="gap-2 data-[state=active]:bg-background">
             <Settings2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Configurações</span>
+            <span className="hidden sm:inline">Config</span>
           </TabsTrigger>
         </TabsList>
 
@@ -637,6 +658,26 @@ export default function SimuladorFolha() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Adiantamento Tab */}
+        <TabsContent value="adiantamento" className="animate-fade-in">
+          <AdiantamentoSalario />
+        </TabsContent>
+
+        {/* Relatório Geral Tab */}
+        <TabsContent value="relatorio" className="animate-fade-in">
+          <RelatorioFolha />
+        </TabsContent>
+
+        {/* 13º Salário Tab */}
+        <TabsContent value="decimo" className="animate-fade-in">
+          <DecimoTerceiro />
+        </TabsContent>
+
+        {/* Empréstimos Tab */}
+        <TabsContent value="emprestimos" className="animate-fade-in">
+          <GestaoEmprestimos />
         </TabsContent>
       </Tabs>
     </div>
