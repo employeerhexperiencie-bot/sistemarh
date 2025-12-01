@@ -55,9 +55,16 @@ export const useMockData = () => {
   }, []);
 
   // Converter salário string para número
-  const parseSalario = (salarioStr: string): number => {
+  const parseSalario = (salarioStr: string | number | undefined | null): number => {
     if (!salarioStr) return 0;
-    const numeroLimpo = salarioStr
+    
+    // Se já for número, retorna direto
+    if (typeof salarioStr === 'number') return salarioStr;
+    
+    // Converte para string se não for
+    const strValue = String(salarioStr);
+    
+    const numeroLimpo = strValue
       .replace('R$', '')
       .replace(/\./g, '')
       .replace(',', '.')
