@@ -71,7 +71,7 @@ const gerarAlertasMock = (): Alerta[] => {
       loja: lojas[idx % lojas.length],
       profissional: nomes[idx % nomes.length],
       matricula: String(100 + idx).padStart(4, '0'),
-      acaoUrl: '/gestao-asus',
+      acaoUrl: '/gestao-aso',
       lido: Math.random() > 0.5,
       resolvido: false,
     });
