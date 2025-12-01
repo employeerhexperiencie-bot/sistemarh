@@ -8,365 +8,56 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-const mockDados = [
-  // REI DO GADO
-  {
-    loja: 'REI DO GADO',
-    matricula: '001',
-    nome: 'João Silva',
-    vales: 12050,
-    adiantamentos: 35000,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 150000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 0,
-  },
-  {
-    loja: 'REI DO GADO',
-    matricula: '002',
-    nome: 'Maria Santos',
-    vales: 8500,
-    adiantamentos: 25000,
-    descFaltas: 2150,
-    descDSR: 1890,
-    totalReceber: 135000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 2,
-  },
-  {
-    loja: 'REI DO GADO',
-    matricula: '003',
-    nome: 'Carlos Pereira',
-    vales: 10200,
-    adiantamentos: 29500,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 165000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 0,
-  },
-  // BIG OSASCO
-  {
-    loja: 'BIG OSASCO',
-    matricula: '101',
-    nome: 'Pedro Costa',
-    vales: 15200,
-    adiantamentos: 40000,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 160000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 0,
-  },
-  {
-    loja: 'BIG OSASCO',
-    matricula: '102',
-    nome: 'Ana Oliveira',
-    vales: 9800,
-    adiantamentos: 27800,
-    descFaltas: 1750,
-    descDSR: 1450,
-    totalReceber: 128000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'BIG OSASCO',
-    matricula: '103',
-    nome: 'Roberto Lima',
-    vales: 13200,
-    adiantamentos: 32000,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 145000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 0,
-  },
-  // BOSQUE SAUDE
-  {
-    loja: 'BOSQUE SAUDE',
-    matricula: '201',
-    nome: 'Fernanda Alves',
-    vales: 11400,
-    adiantamentos: 28000,
-    descFaltas: 890,
-    descDSR: 650,
-    totalReceber: 125000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'BOSQUE SAUDE',
-    matricula: '202',
-    nome: 'Ricardo Souza',
-    vales: 9700,
-    adiantamentos: 26200,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 140000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 0,
-  },
-  // BROOKLYN
-  {
-    loja: 'BROOKLYN',
-    matricula: '301',
-    nome: 'Juliana Castro',
-    vales: 14100,
-    adiantamentos: 31500,
-    descFaltas: 1200,
-    descDSR: 980,
-    totalReceber: 138000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'BROOKLYN',
-    matricula: '302',
-    nome: 'Marcos Rodrigues',
-    vales: 10800,
-    adiantamentos: 27800,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 155000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 0,
-  },
-  // ITAPECERICA
-  {
-    loja: 'ITAPECERICA',
-    matricula: '401',
-    nome: 'Patricia Mendes',
-    vales: 12900,
-    adiantamentos: 24350,
-    descFaltas: 750,
-    descDSR: 560,
-    totalReceber: 120000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'ITAPECERICA',
-    matricula: '402',
-    nome: 'Eduardo Ferreira',
-    vales: 8000,
-    adiantamentos: 24350,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 130000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 0,
-  },
-  // LAJEDO
-  {
-    loja: 'LAJEDO',
-    matricula: '501',
-    nome: 'Camila Barbosa',
-    vales: 13600,
-    adiantamentos: 26400,
-    descFaltas: 980,
-    descDSR: 720,
-    totalReceber: 125000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'LAJEDO',
-    matricula: '502',
-    nome: 'Thiago Nascimento',
-    vales: 9600,
-    adiantamentos: 26400,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 145000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 0,
-  },
-  // MATEO BEI
-  {
-    loja: 'MATEO BEI',
-    matricula: '601',
-    nome: 'Luciana Ramos',
-    vales: 15800,
-    adiantamentos: 30600,
-    descFaltas: 1350,
-    descDSR: 1100,
-    totalReceber: 148000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'MATEO BEI',
-    matricula: '602',
-    nome: 'Alexandre Teixeira',
-    vales: 11800,
-    adiantamentos: 30600,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 165000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 0,
-  },
-  // MUTINGA
-  {
-    loja: 'MUTINGA',
-    matricula: '701',
-    nome: 'Bianca Correia',
-    vales: 12400,
-    adiantamentos: 23250,
-    descFaltas: 680,
-    descDSR: 450,
-    totalReceber: 118000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'MUTINGA',
-    matricula: '702',
-    nome: 'Diego Moreira',
-    vales: 7400,
-    adiantamentos: 23250,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 125000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 0,
-  },
-  // RAGUEB
-  {
-    loja: 'RAGUEB',
-    matricula: '801',
-    nome: 'Gabriela Santos',
-    vales: 14550,
-    adiantamentos: 28950,
-    descFaltas: 1150,
-    descDSR: 890,
-    totalReceber: 142000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'RAGUEB',
-    matricula: '802',
-    nome: 'Leonardo Silva',
-    vales: 10550,
-    adiantamentos: 28950,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 155000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 0,
-  },
-  // SBC
-  {
-    loja: 'SBC',
-    matricula: '901',
-    nome: 'Isabella Costa',
-    vales: 17400,
-    adiantamentos: 36200,
-    descFaltas: 1580,
-    descDSR: 1230,
-    totalReceber: 168000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 2,
-  },
-  {
-    loja: 'SBC',
-    matricula: '902',
-    nome: 'Rafael Oliveira',
-    vales: 12400,
-    adiantamentos: 36200,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 185000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 0,
-  },
-  // SUPER LAPA
-  {
-    loja: 'SUPER LAPA',
-    matricula: '1001',
-    nome: 'Amanda Pereira',
-    vales: 16200,
-    adiantamentos: 32150,
-    descFaltas: 1420,
-    descDSR: 1080,
-    totalReceber: 155000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'SUPER LAPA',
-    matricula: '1002',
-    nome: 'Bruno Martins',
-    vales: 11700,
-    adiantamentos: 32150,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 175000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 0,
-  },
-  // TABOÃO
-  {
-    loja: 'TABOÃO',
-    matricula: '1101',
-    nome: 'Carolina Lima',
-    vales: 13250,
-    adiantamentos: 26800,
-    descFaltas: 920,
-    descDSR: 710,
-    totalReceber: 128000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 1,
-  },
-  {
-    loja: 'TABOÃO',
-    matricula: '1102',
-    nome: 'Felipe Santos',
-    vales: 9250,
-    adiantamentos: 26800,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 140000,
-    statusHolerite: 'GERADO',
-    qtdFaltas: 0,
-  },
-  // COMERCIAL
-  {
-    loja: 'COMERCIAL',
-    matricula: '1201',
-    nome: 'Vanessa Rodrigues',
-    vales: 18100,
-    adiantamentos: 39300,
-    descFaltas: 1680,
-    descDSR: 1340,
-    totalReceber: 172000,
-    statusHolerite: 'ASSINADO',
-    qtdFaltas: 2,
-  },
-  {
-    loja: 'COMERCIAL',
-    matricula: '1202',
-    nome: 'Gustavo Almeida',
-    vales: 13100,
-    adiantamentos: 39300,
-    descFaltas: 0,
-    descDSR: 0,
-    totalReceber: 195000,
-    statusHolerite: 'ENVIADO',
-    qtdFaltas: 0,
-  },
-];
+import { useMockData } from '@/hooks/useMockData';
 
 export default function PainelProfissional() {
+  const mockData = useMockData();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [competencia, setCompetencia] = useState('2025-08');
   const [lojaFiltro, setLojaFiltro] = useState('');
   const [profissionalFiltro, setProfissionalFiltro] = useState('');
+
+  // Gerar dados de profissionais com informações financeiras
+  const [profissionaisData, setProfissionaisData] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (mockData.hasMockData) {
+      const folhaPagamento = mockData.getFolhaPagamento();
+      const faltas = mockData.getFaltas();
+      
+      const profissionaisComFinanceiro = folhaPagamento.map((prof: any) => {
+        const faltasProf = faltas.find((f: any) => f.matricula === prof.matricula);
+        const qtdFaltas = faltasProf ? faltasProf.totalFaltas : 0;
+        
+        // Calcular vales (estimativa baseada em dias trabalhados)
+        const vales = Math.floor(prof.salarioBase * 0.08); // ~8% do salário
+        
+        // Descontos por faltas e DSR
+        const descFaltas = qtdFaltas > 0 ? Math.floor(prof.salarioBase * 0.035 * qtdFaltas) : 0; // 3.5% por falta
+        const descDSR = qtdFaltas > 1 ? Math.floor(prof.salarioBase * 0.015 * qtdFaltas) : 0; // 1.5% por falta (DSR)
+        
+        // Status aleatório de holerite
+        const statusOptions = ['GERADO', 'ENVIADO', 'ASSINADO'];
+        const statusHolerite = statusOptions[Math.floor(Math.random() * statusOptions.length)];
+        
+        return {
+          loja: prof.loja,
+          matricula: prof.matricula,
+          nome: prof.nome,
+          vales: vales * 100, // converter para centavos
+          adiantamentos: prof.adiantamentoDia20 * 100,
+          descFaltas: descFaltas * 100,
+          descDSR: descDSR * 100,
+          totalReceber: prof.liquido * 100,
+          statusHolerite,
+          qtdFaltas,
+        };
+      });
+      
+      setProfissionaisData(profissionaisComFinanceiro);
+    }
+  }, [mockData.hasMockData]);
 
   useEffect(() => {
     const lojaParam = searchParams.get('loja');
@@ -419,20 +110,28 @@ export default function PainelProfissional() {
     }
   };
 
-  const dadosFiltrados = mockDados.filter(item => {
+  const dadosFiltrados = profissionaisData.filter(item => {
     if (lojaFiltro && lojaFiltro !== 'TODAS' && item.loja !== lojaFiltro) return false;
     if (profissionalFiltro && !item.nome.toLowerCase().includes(profissionalFiltro.toLowerCase())) return false;
     return true;
   });
+
+  // Lojas únicas para o select
+  const lojasUnicas = Array.from(new Set(profissionaisData.map(p => p.loja))).sort();
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Painel por Profissional</h1>
-          {lojaFiltro && (
+          {lojaFiltro && lojaFiltro !== 'TODAS' && (
             <p className="text-muted-foreground">
               Filtrado por loja: <span className="font-medium">{lojaFiltro}</span>
+            </p>
+          )}
+          {mockData.hasMockData && (
+            <p className="text-xs text-success mt-1">
+              ✓ {profissionaisData.length} profissionais da planilha ATIVOS.xlsx
             </p>
           )}
         </div>
@@ -568,19 +267,9 @@ export default function PainelProfissional() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="TODAS">Todas as lojas</SelectItem>
-                  <SelectItem value="REI DO GADO">Rei do Gado</SelectItem>
-                  <SelectItem value="BIG OSASCO">Big Osasco</SelectItem>
-                  <SelectItem value="BOSQUE SAUDE">Bosque Saúde</SelectItem>
-                  <SelectItem value="BROOKLYN">Brooklyn</SelectItem>
-                  <SelectItem value="ITAPECERICA">Itapecerica</SelectItem>
-                  <SelectItem value="LAJEDO">Lajedo</SelectItem>
-                  <SelectItem value="MATEO BEI">Mateo Bei</SelectItem>
-                  <SelectItem value="MUTINGA">Mutinga</SelectItem>
-                  <SelectItem value="RAGUEB">Ragueb</SelectItem>
-                  <SelectItem value="SBC">SBC</SelectItem>
-                  <SelectItem value="SUPER LAPA">Super Lapa</SelectItem>
-                  <SelectItem value="TABOÃO">Taboão</SelectItem>
-                  <SelectItem value="COMERCIAL">Comercial</SelectItem>
+                  {lojasUnicas.map((loja) => (
+                    <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -625,7 +314,27 @@ export default function PainelProfissional() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {dadosFiltrados.map((item, index) => (
+              {dadosFiltrados.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                    {mockData.hasMockData ? (
+                      'Nenhum profissional encontrado com os filtros aplicados'
+                    ) : (
+                      <div className="space-y-2">
+                        <p>Nenhum dado carregado</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate('/analisar-ativos')}
+                        >
+                          Carregar dados da planilha
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                dadosFiltrados.map((item, index) => (
                 <TableRow key={index} className="hover:bg-muted/50">
                   <TableCell className="font-medium">{item.loja}</TableCell>
                   <TableCell>{item.matricula}</TableCell>
@@ -677,7 +386,8 @@ export default function PainelProfissional() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+              )}
             </TableBody>
             </Table>
           </div>
