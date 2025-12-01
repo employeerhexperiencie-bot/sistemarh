@@ -275,11 +275,12 @@ export default function SimuladorFolha() {
   const profissionais = mockData.hasMockData 
     ? mockData.profissionais.map((p, index) => {
         const salario = mockData.parseSalario(p.salarioReceber || p.salarioCTPS);
+        const lojaIndex = mockData.lojas.indexOf(p.localTrabalho);
         return {
           id: p.matricula,
           nome: p.nome,
           matricula: p.matricula,
-          lojaId: p.localTrabalho,
+          lojaId: lojaIndex >= 0 ? `loja-${lojaIndex + 1}` : p.localTrabalho,
           salario,
           escala: (p.escala?.includes('6') ? '6x1' : '5x2') as '6x1' | '5x2',
           valorPassagem: 4.40,
@@ -300,7 +301,7 @@ export default function SimuladorFolha() {
 
   const lojas = mockData.hasMockData
     ? mockData.lojas.map((nome, index) => ({
-        id: nome,
+        id: `loja-${index + 1}`,
         nome: nome,
         codigo: String(index + 1).padStart(3, '0'),
       }))

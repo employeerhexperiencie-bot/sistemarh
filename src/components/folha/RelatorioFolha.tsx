@@ -395,8 +395,8 @@ export function RelatorioFolha() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas as Lojas</SelectItem>
-                  {lojas.map(l => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  {lojas.map((l, idx) => (
+                    <SelectItem key={`${l}-${idx}`} value={l}>{l}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -487,8 +487,8 @@ export function RelatorioFolha() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {folhaFiltrada.map((f) => (
-                  <TableRow key={f.matricula}>
+                {folhaFiltrada.map((f, index) => (
+                  <TableRow key={`${f.matricula}-${index}`}>
                     <TableCell className="font-mono text-sm">{f.matricula}</TableCell>
                     <TableCell className="font-medium">{f.nome}</TableCell>
                     <TableCell className="text-muted-foreground">{f.cargo}</TableCell>
