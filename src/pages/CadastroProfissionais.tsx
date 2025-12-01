@@ -21,6 +21,7 @@ import { ValeTransporteManager } from '@/components/ValeTransporteManager';
 import { AdvertenciasManager } from '@/components/AdvertenciasManager';
 import { HistoricoCompleto } from '@/components/HistoricoCompleto';
 import { formatCurrency, parseCurrencyToCentavos } from '@/lib/utils';
+import { useAuditLog } from '@/contexts/AuditLogContext';
 
 interface Professional {
   id: string;
@@ -253,6 +254,7 @@ export const CadastroProfissionais: React.FC = () => {
   const [formData, setFormData] = useState<FormDataCompleto>(initialFormData);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { addLog } = useAuditLog();
   
   // Verificar se veio matrícula via URL
   const searchParams = new URLSearchParams(window.location.search);
@@ -328,6 +330,15 @@ export const CadastroProfissionais: React.FC = () => {
 
         if (error) throw error;
         
+        addLog({
+          usuario: 'Sistema',
+          acao: 'EDITAR',
+          modulo: 'PROFISSIONAIS',
+          entidade: formData.nome,
+          detalhes: `Profissional ${formData.matricula} - ${formData.nome} atualizado`,
+          metadata: { profissionalId: editingProfessional.id }
+        });
+        
         toast({
           title: "Sucesso",
           description: "Profissional atualizado com sucesso"
@@ -338,6 +349,15 @@ export const CadastroProfissionais: React.FC = () => {
           .insert([professionalData]);
 
         if (error) throw error;
+
+        addLog({
+          usuario: 'Sistema',
+          acao: 'CRIAR',
+          modulo: 'PROFISSIONAIS',
+          entidade: formData.nome,
+          detalhes: `Novo profissional cadastrado: ${formData.matricula} - ${formData.nome}`,
+          metadata: { matricula: formData.matricula }
+        });
 
         toast({
           title: "Sucesso",
@@ -378,6 +398,7 @@ export const CadastroProfissionais: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
+    const professional = professionals.find(p => p.id === id);
     if (!confirm('Tem certeza que deseja excluir este profissional?')) return;
 
     try {
@@ -387,6 +408,15 @@ export const CadastroProfissionais: React.FC = () => {
         .eq('id', id);
 
       if (error) throw error;
+
+      addLog({
+        usuario: 'Sistema',
+        acao: 'EXCLUIR',
+        modulo: 'PROFISSIONAIS',
+        entidade: professional?.nome || 'Profissional',
+        detalhes: `Profissional ${professional?.matricula} - ${professional?.nome} excluído`,
+        metadata: { profissionalId: id }
+      });
 
       toast({
         title: "Sucesso",

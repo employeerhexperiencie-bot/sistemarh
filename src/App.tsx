@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppearanceProvider } from "@/contexts/AppearanceContext";
+import { AuditLogProvider } from "@/contexts/AuditLogContext";
 import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { Lancamentos } from "@/pages/Lancamentos";
@@ -26,13 +27,15 @@ import Configuracoes from "@/pages/Configuracoes";
 import { CadastroLojas } from "@/pages/CadastroLojas";
 import ImportacaoDados from "@/pages/ImportacaoDados";
 import Alertas from "@/pages/Alertas";
+import AuditLog from "@/pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <AppearanceProvider>
-    <QueryClientProvider client={queryClient}>
+    <AuditLogProvider>
+      <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -148,12 +151,18 @@ const App = () => (
               <Alertas />
             </Layout>
           } />
+          <Route path="/audit-log" element={
+            <Layout>
+              <AuditLog />
+            </Layout>
+          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+     </TooltipProvider>
+   </QueryClientProvider>
+   </AuditLogProvider>
   </AppearanceProvider>
 );
 
