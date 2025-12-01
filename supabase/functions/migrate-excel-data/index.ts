@@ -83,14 +83,17 @@ Deno.serve(async (req) => {
     // Mapa para relacionar nomes de lojas com IDs
     const lojaIdMap = new Map<string, string>();
 
-    // 1. Inserir Lojas
+    // 1. Inserir Lojas (com upsert para evitar duplicatas)
     if (lojas && lojas.length > 0) {
       for (const loja of lojas as ExcelLoja[]) {
         const { data, error } = await supabase
           .from('lojas')
-          .insert({
+          .upsert({
             nome: loja.nome,
             cnpj: loja.cnpj || null,
+          }, {
+            onConflict: 'nome',
+            ignoreDuplicates: false
           })
           .select('id, nome')
           .single();
@@ -101,7 +104,7 @@ Deno.serve(async (req) => {
         } else if (data) {
           results.lojas.inserted++;
           lojaIdMap.set(loja.nome, data.id);
-          console.log(`Loja inserida: ${loja.nome} -> ${data.id}`);
+          console.log(`Loja inserida/atualizada: ${loja.nome} -> ${data.id}`);
         }
       }
     }
@@ -109,12 +112,18 @@ Deno.serve(async (req) => {
     // 2. Inserir Profissionais
     if (profissionais && profissionais.length > 0) {
       for (const prof of profissionais as ExcelProfissional[]) {
+        // Pular registros com matrícula inválida
+        if (!prof.matricula || prof.matricula === '00-00') {
+          results.profissionais.errors.push(`${prof.nome}: matrícula inválida`);
+          continue;
+        }
+
         // Buscar ID da loja pelo nome
         const lojaId = lojaIdMap.get(prof.localTrabalho || '');
 
         const { data, error } = await supabase
           .from('profissionais')
-          .insert({
+          .upsert({
             matricula: prof.matricula,
             nome: prof.nome,
             cpf: prof.cpf || null,
@@ -163,8 +172,13 @@ Deno.serve(async (req) => {
           .single();
 
         if (error) {
-          console.error(`Erro ao inserir profissional ${prof.nome}:`, error);
-          results.profissionais.errors.push(`${prof.matricula} - ${prof.nome}: ${error.message}`);
+          // Ignorar erros de duplicata
+          if (error.code === '23505') {
+            console.log(`Profissional ${prof.matricula} já existe, pulando...`);
+          } else {
+            console.error(`Erro ao inserir profissional ${prof.nome}:`, error);
+            results.profissionais.errors.push(`${prof.matricula} - ${prof.nome}: ${error.message}`);
+          }
         } else {
           results.profissionais.inserted++;
           if (results.profissionais.inserted % 50 === 0) {
