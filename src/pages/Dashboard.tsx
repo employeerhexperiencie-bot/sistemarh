@@ -1,14 +1,94 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CreditCard, TrendingUp, Users, FileText, AlertTriangle, DollarSign, Building2, Calendar, Package, Clock, UserX } from 'lucide-react';
+import { 
+  CreditCard, TrendingUp, Users, FileText, AlertTriangle, 
+  DollarSign, Building2, Calendar, Package, Clock, UserX,
+  ArrowUpRight, ArrowDownRight, ChevronRight
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { OptimizedFinancialCard } from '@/components/OptimizedFinancialCard';
+
+// KPI Card Component
+interface KPICardProps {
+  title: string;
+  value: string;
+  subtitle?: string;
+  trend?: { value: string; positive: boolean };
+  icon: React.ElementType;
+  iconColor: string;
+  onClick?: () => void;
+}
+
+function KPICard({ title, value, subtitle, trend, icon: Icon, iconColor, onClick }: KPICardProps) {
+  return (
+    <Card 
+      className="card-interactive cursor-pointer group" 
+      onClick={onClick}
+    >
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold tracking-tight">{value}</p>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
+            )}
+            {trend && (
+              <div className={`inline-flex items-center gap-1 text-xs font-medium ${
+                trend.positive ? 'text-success' : 'text-destructive'
+              }`}>
+                {trend.positive ? (
+                  <ArrowUpRight className="h-3 w-3" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3" />
+                )}
+                {trend.value}
+              </div>
+            )}
+          </div>
+          <div className={`p-3 rounded-xl ${iconColor} transition-transform group-hover:scale-110`}>
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Stat Card Component
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  gradient: string;
+  onClick?: () => void;
+}
+
+function StatCard({ title, value, icon: Icon, gradient, onClick }: StatCardProps) {
+  return (
+    <Card 
+      className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${gradient} border-0`}
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-lg bg-background/20 backdrop-blur-sm">
+            <Icon className="h-5 w-5 text-inherit" />
+          </div>
+          <div>
+            <p className="text-xl font-bold">{value}</p>
+            <p className="text-xs opacity-80">{title}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function Dashboard() {
   const navigate = useNavigate();
   
-  // Mock data para demonstração
+  // Mock data
   const kpis = {
     vales: { value: 'R$ 45.300', count: 23, trend: '+12%' },
     adiantamentos: { value: 'R$ 89.500', count: 15, trend: '+8%' },
@@ -18,253 +98,262 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto">
-      <div className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard RH</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Visão geral da gestão de pessoas e operações do mês atual
+    <div className="space-y-8 max-w-[1600px] mx-auto">
+      {/* Page Header */}
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Visão geral da gestão de pessoas e operações
         </p>
       </div>
 
-      {/* KPIs principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <OptimizedFinancialCard
+      {/* Primary KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+        <KPICard
           title="Vales"
           value={kpis.vales.value}
-          count={kpis.vales.count}
-          trend={kpis.vales.trend}
+          subtitle={`${kpis.vales.count} lançamentos`}
+          trend={{ value: kpis.vales.trend, positive: true }}
           icon={CreditCard}
-          colorClass="text-primary"
-          onNavigate={() => navigate('/painel-loja?tipo=vales')}
+          iconColor="bg-primary/10 text-primary"
+          onClick={() => navigate('/painel-loja?tipo=vales')}
         />
 
-        <OptimizedFinancialCard
+        <KPICard
           title="Adiantamentos"
           value={kpis.adiantamentos.value}
-          count={kpis.adiantamentos.count}
-          trend={kpis.adiantamentos.trend}
+          subtitle={`${kpis.adiantamentos.count} lançamentos`}
+          trend={{ value: kpis.adiantamentos.trend, positive: true }}
           icon={TrendingUp}
-          colorClass="text-accent"
-          onNavigate={() => navigate('/painel-loja?tipo=adiantamentos')}
+          iconColor="bg-accent/10 text-accent"
+          onClick={() => navigate('/painel-loja?tipo=adiantamentos')}
         />
 
-        <OptimizedFinancialCard
+        <KPICard
           title="Total a Receber"
           value={kpis.totalReceber.value}
-          count={kpis.totalReceber.count}
-          trend={kpis.totalReceber.trend}
+          subtitle={`${kpis.totalReceber.count} funcionários`}
+          trend={{ value: kpis.totalReceber.trend, positive: true }}
           icon={DollarSign}
-          colorClass="text-primary"
-          onNavigate={() => navigate('/painel-loja')}
+          iconColor="bg-success/10 text-success"
+          onClick={() => navigate('/painel-loja')}
         />
 
-        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/faltas')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Faltas do Mês</CardTitle>
-            <UserX className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-2xl font-bold">{kpis.faltas.total}</span>
-                <span className="text-xs text-muted-foreground">Total</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Justificadas</span>
-                <Badge className="bg-success/10 text-success border-success/20">{kpis.faltas.justificadas}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Injustificadas</span>
-                <Badge variant="destructive">{kpis.faltas.injustificadas}</Badge>
-              </div>
-              <div className="pt-1 border-t">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">{kpis.faltas.lojas} lojas</span>
-                  <span className="text-muted-foreground">{kpis.faltas.profissionais} profissionais</span>
-                </div>
+        {/* Absences Card - Special layout */}
+        <Card 
+          className="card-interactive cursor-pointer" 
+          onClick={() => navigate('/faltas')}
+        >
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-sm font-medium text-muted-foreground">Faltas do Mês</p>
+              <div className="p-3 rounded-xl bg-destructive/10 text-destructive">
+                <UserX className="h-5 w-5" />
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              Ver detalhes
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Holerites e Status Rápido */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="card-shadow smooth-transition hover:shadow-financial cursor-pointer" onClick={() => navigate('/holerites')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Holerites</CardTitle>
-            <FileText className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Gerados</span>
-                <Badge variant="secondary">{kpis.holerites.gerados}</Badge>
+            <p className="text-2xl font-bold tracking-tight mb-3">{kpis.faltas.total}</p>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Justificadas</span>
+                <Badge variant="outline" className="bg-success/10 text-success border-success/20 font-medium">
+                  {kpis.faltas.justificadas}
+                </Badge>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Enviados</span>
-                <Badge variant="outline">{kpis.holerites.enviados}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Assinados</span>
-                <Badge className="bg-success/10 text-success border-success/20">{kpis.holerites.assinados}</Badge>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="w-full mt-2">
-              Ver detalhes
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 smooth-transition hover:shadow-financial cursor-pointer"
-              onClick={() => navigate('/cadastro-lojas')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <Building2 className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">13</p>
-                <p className="text-xs text-muted-foreground">Lojas Ativas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20 smooth-transition hover:shadow-financial cursor-pointer"
-              onClick={() => navigate('/cadastro-profissionais')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-accent/10">
-                <Users className="h-6 w-6 text-accent" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">127</p>
-                <p className="text-xs text-muted-foreground">Profissionais</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20 smooth-transition hover:shadow-financial cursor-pointer"
-              onClick={() => navigate('/gestao-ferias')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-warning/10">
-                <Calendar className="h-6 w-6 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">8</p>
-                <p className="text-xs text-muted-foreground">Férias Agendadas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-success/5 to-success/10 border-success/20 smooth-transition hover:shadow-financial cursor-pointer"
-              onClick={() => navigate('/gestao-epi')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-success/10">
-                <Package className="h-6 w-6 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">95%</p>
-                <p className="text-xs text-muted-foreground">EPIs OK</p>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Injustificadas</span>
+                <Badge variant="destructive" className="font-medium">
+                  {kpis.faltas.injustificadas}
+                </Badge>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Alertas Inteligentes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-warning/50 bg-gradient-to-br from-warning/10 to-warning/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-warning">
-              <AlertTriangle className="h-5 w-5" />
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {/* Holerites Card */}
+        <Card 
+          className="col-span-2 sm:col-span-1 card-interactive cursor-pointer"
+          onClick={() => navigate('/holerites')}
+        >
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="h-4 w-4 text-info" />
+              <span className="text-sm font-medium">Holerites</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Gerados</span>
+                <Badge variant="secondary" className="font-mono">{kpis.holerites.gerados}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Enviados</span>
+                <Badge variant="outline" className="font-mono">{kpis.holerites.enviados}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Assinados</span>
+                <Badge className="bg-success/10 text-success border-success/20 font-mono">{kpis.holerites.assinados}</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <StatCard
+          title="Lojas Ativas"
+          value={20}
+          icon={Building2}
+          gradient="bg-gradient-to-br from-primary/20 to-primary/5 text-primary"
+          onClick={() => navigate('/cadastro-lojas')}
+        />
+
+        <StatCard
+          title="Profissionais"
+          value={260}
+          icon={Users}
+          gradient="bg-gradient-to-br from-accent/20 to-accent/5 text-accent"
+          onClick={() => navigate('/cadastro-profissionais')}
+        />
+
+        <StatCard
+          title="Férias Agendadas"
+          value={8}
+          icon={Calendar}
+          gradient="bg-gradient-to-br from-warning/20 to-warning/5 text-warning"
+          onClick={() => navigate('/gestao-ferias')}
+        />
+
+        <StatCard
+          title="EPIs OK"
+          value="95%"
+          icon={Package}
+          gradient="bg-gradient-to-br from-success/20 to-success/5 text-success"
+          onClick={() => navigate('/gestao-epi')}
+        />
+      </div>
+
+      {/* Alerts and Activities */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Urgent Actions */}
+        <Card className="border-warning/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="p-1.5 rounded-lg bg-warning/10">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+              </div>
               Ações Urgentes
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
-              <Clock className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">3 documentos vencendo em 7 dias</p>
-                <p className="text-xs text-muted-foreground">Centro, Brooklin, Morumbi</p>
-              </div>
-              <Button size="sm" variant="outline">Ver</Button>
-            </div>
-            
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
-              <Calendar className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">5 férias a vencer este mês</p>
-                <p className="text-xs text-muted-foreground">Período aquisitivo encerrando</p>
-              </div>
-              <Button size="sm" variant="outline">Agendar</Button>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
-              <Package className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">2 EPIs com estoque crítico</p>
-                <p className="text-xs text-muted-foreground">Uniforme e Touca abaixo de 20%</p>
-              </div>
-              <Button size="sm" variant="outline">Repor</Button>
-            </div>
+            <AlertItem
+              icon={Clock}
+              title="3 documentos vencendo em 7 dias"
+              subtitle="Centro, Brooklin, Morumbi"
+              action="Ver"
+            />
+            <AlertItem
+              icon={Calendar}
+              title="5 férias a vencer este mês"
+              subtitle="Período aquisitivo encerrando"
+              action="Agendar"
+            />
+            <AlertItem
+              icon={Package}
+              title="2 EPIs com estoque crítico"
+              subtitle="Uniforme e Touca abaixo de 20%"
+              action="Repor"
+            />
           </CardContent>
         </Card>
 
-        <Card className="card-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+        {/* Recent Activities */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </div>
               Atividades Recentes
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Vale lançado - BROOKLIN</p>
-                <p className="text-xs text-muted-foreground">Há 5 minutos</p>
-              </div>
-              <Badge variant="outline" className="bg-primary/10 text-primary">R$ 450</Badge>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-accent"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Holerite enviado - CENTRO</p>
-                <p className="text-xs text-muted-foreground">Há 12 minutos</p>
-              </div>
-              <Badge variant="secondary">Agosto/2025</Badge>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-success"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Férias agendadas - MORUMBI</p>
-                <p className="text-xs text-muted-foreground">Há 18 minutos</p>
-              </div>
-              <Badge variant="outline" className="bg-success/10 text-success">15 dias</Badge>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-warning"></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Falta registrada - TATUAPÉ</p>
-                <p className="text-xs text-muted-foreground">Há 35 minutos</p>
-              </div>
-              <Badge variant="outline" className="bg-warning/10 text-warning">INJUST</Badge>
-            </div>
+            <ActivityItem
+              color="bg-primary"
+              title="Vale lançado - BROOKLIN"
+              time="Há 5 minutos"
+              badge={{ text: 'R$ 450', variant: 'primary' }}
+            />
+            <ActivityItem
+              color="bg-info"
+              title="Holerite enviado - CENTRO"
+              time="Há 12 minutos"
+              badge={{ text: 'Dezembro/2024', variant: 'secondary' }}
+            />
+            <ActivityItem
+              color="bg-success"
+              title="Férias agendadas - MORUMBI"
+              time="Há 18 minutos"
+              badge={{ text: '15 dias', variant: 'success' }}
+            />
+            <ActivityItem
+              color="bg-warning"
+              title="Falta registrada - TATUAPÉ"
+              time="Há 35 minutos"
+              badge={{ text: 'INJUST', variant: 'warning' }}
+            />
           </CardContent>
         </Card>
       </div>
+    </div>
+  );
+}
+
+// Alert Item Component
+function AlertItem({ icon: Icon, title, subtitle, action }: {
+  icon: React.ElementType;
+  title: string;
+  subtitle: string;
+  action: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
+      <Icon className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+        {action}
+        <ChevronRight className="h-3 w-3 ml-1" />
+      </Button>
+    </div>
+  );
+}
+
+// Activity Item Component  
+function ActivityItem({ color, title, time, badge }: {
+  color: string;
+  title: string;
+  time: string;
+  badge: { text: string; variant: 'primary' | 'secondary' | 'success' | 'warning' };
+}) {
+  const badgeStyles = {
+    primary: 'bg-primary/10 text-primary border-primary/20',
+    secondary: 'bg-secondary text-secondary-foreground',
+    success: 'bg-success/10 text-success border-success/20',
+    warning: 'bg-warning/10 text-warning border-warning/20',
+  };
+
+  return (
+    <div className="flex items-center gap-3 group">
+      <div className={`h-2 w-2 rounded-full ${color} ${color === 'bg-primary' ? 'animate-pulse-soft' : ''}`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{title}</p>
+        <p className="text-xs text-muted-foreground">{time}</p>
+      </div>
+      <Badge variant="outline" className={`text-xs ${badgeStyles[badge.variant]}`}>
+        {badge.text}
+      </Badge>
     </div>
   );
 }

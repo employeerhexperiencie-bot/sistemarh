@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Sistema de Gestão RH - Design System
-Cores suaves e profissionais para área de Recursos Humanos
+/* Sistema de Gestão RH - Premium Design System
+   Inspirado em: TOTVS UX3, Senior Sistemas, Notion, Monday.com
 */
 
 @layer base {
   :root {
-    /* Core palette - Light mode */
-    --background: 210 40% 98%;
+    /* Core palette - Light mode - Premium Corporate */
+    --background: 220 20% 97%;
     --foreground: 222 47% 11%;
     
     --card: 0 0% 100%;
@@ -18,123 +18,147 @@ Cores suaves e profissionais para área de Recursos Humanos
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
     
-    /* Primary - Azul profissional suave */
-    --primary: 217 91% 60%;
+    /* Primary - Modern Blue (#0A84FF inspired) */
+    --primary: 211 100% 52%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 217 91% 55%;
-    --primary-glow: 217 91% 70%;
+    --primary-hover: 211 100% 45%;
+    --primary-glow: 211 100% 65%;
     
-    /* Secondary - Rosa suave para RH */
-    --secondary: 340 75% 95%;
-    --secondary-foreground: 340 75% 25%;
+    /* Secondary - Soft gray */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 46%;
     
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
     
-    /* Accent - Verde menta suave */
-    --accent: 162 63% 82%;
-    --accent-foreground: 162 63% 25%;
+    /* Accent - Soft purple */
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
     
-    --success: 142 71% 45%;
+    /* Success - Emerald green */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
     
+    /* Warning - Amber */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     
+    /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    /* Info - Cyan */
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
     
-    --radius: 0.75rem;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 211 100% 52%;
     
-    /* Sidebar light */
+    --radius: 0.625rem;
+    
+    /* Sidebar - Clean white */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 211 100% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 211 100% 52%;
     
-    /* RH gradients suaves */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(162 63% 82%));
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(162 63% 60%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 40% 98%));
-    --gradient-accent: linear-gradient(135deg, hsl(162 63% 82%), hsl(217 91% 70%));
+    /* Premium gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(211 100% 52%), hsl(211 100% 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 70%));
+    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%), hsl(160 84% 50%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 20% 98%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 14% 98%));
     
-    /* Shadows suaves */
-    --shadow-financial: 0 4px 20px -6px hsl(217 91% 60% / 0.15);
-    --shadow-glow: 0 0 24px hsl(217 91% 70% / 0.2);
-    --shadow-card: 0 2px 8px -2px hsl(222 47% 11% / 0.08);
-    --shadow-hover: 0 8px 30px -8px hsl(217 91% 60% / 0.25);
+    /* Premium shadows */
+    --shadow-xs: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
+    --shadow-sm: 0 1px 3px 0 hsl(222 47% 11% / 0.08), 0 1px 2px -1px hsl(222 47% 11% / 0.08);
+    --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.08), 0 2px 4px -2px hsl(222 47% 11% / 0.08);
+    --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.08), 0 4px 6px -4px hsl(222 47% 11% / 0.08);
+    --shadow-xl: 0 20px 25px -5px hsl(222 47% 11% / 0.08), 0 8px 10px -6px hsl(222 47% 11% / 0.08);
+    --shadow-glow: 0 0 20px hsl(211 100% 52% / 0.15);
+    --shadow-card: 0 1px 3px hsl(222 47% 11% / 0.06), 0 1px 2px hsl(222 47% 11% / 0.04);
+    --shadow-card-hover: 0 10px 40px -10px hsl(222 47% 11% / 0.12);
     
     /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
     /* Core palette - Dark mode */
-    --background: 222 47% 11%;
+    --background: 222 47% 8%;
     --foreground: 210 40% 98%;
     
-    --card: 217 33% 17%;
+    --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
     
-    --popover: 217 33% 17%;
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
     
-    /* Primary - Azul mais claro no dark */
-    --primary: 217 91% 65%;
+    /* Primary - Brighter blue in dark */
+    --primary: 211 100% 60%;
     --primary-foreground: 222 47% 11%;
-    --primary-hover: 217 91% 70%;
-    --primary-glow: 217 91% 75%;
+    --primary-hover: 211 100% 65%;
+    --primary-glow: 211 100% 70%;
     
-    --secondary: 217 33% 20%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
     
-    --muted: 217 33% 20%;
+    --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
     
-    /* Accent - Verde menta ajustado para dark */
-    --accent: 162 63% 50%;
+    /* Accent */
+    --accent: 262 83% 65%;
     --accent-foreground: 222 47% 11%;
     
-    --success: 142 71% 50%;
+    --success: 160 84% 45%;
     --success-foreground: 222 47% 11%;
     
-    --warning: 38 92% 60%;
+    --warning: 38 92% 55%;
     --warning-foreground: 222 47% 11%;
     
-    --destructive: 0 84% 65%;
-    --destructive-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 217 33% 23%;
-    --input: 217 33% 23%;
-    --ring: 217 91% 65%;
+    --info: 199 89% 55%;
+    --info-foreground: 222 47% 11%;
+    
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 211 100% 60%;
     
     /* Sidebar dark */
-    --sidebar-background: 222 47% 13%;
+    --sidebar-background: 222 47% 10%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 65%;
+    --sidebar-primary: 211 100% 60%;
     --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 18%;
+    --sidebar-accent: 217 33% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 20%;
-    --sidebar-ring: 217 91% 65%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 211 100% 60%;
     
     /* Dark gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 65%), hsl(162 63% 50%));
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 50%), hsl(162 63% 45%));
-    --gradient-card: linear-gradient(135deg, hsl(217 33% 17%), hsl(217 33% 19%));
+    --gradient-primary: linear-gradient(135deg, hsl(211 100% 60%), hsl(211 100% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(262 83% 65%), hsl(262 83% 75%));
+    --gradient-success: linear-gradient(135deg, hsl(160 84% 45%), hsl(160 84% 55%));
+    --gradient-card: linear-gradient(180deg, hsl(222 47% 11%), hsl(222 47% 13%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(222 47% 10%), hsl(222 47% 12%));
     
-    /* Shadows para dark */
-    --shadow-financial: 0 4px 24px -6px hsl(217 91% 65% / 0.25);
-    --shadow-glow: 0 0 32px hsl(217 91% 75% / 0.2);
-    --shadow-card: 0 4px 16px -4px hsl(222 47% 0% / 0.3);
+    /* Dark shadows */
+    --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.4), 0 1px 2px -1px hsl(0 0% 0% / 0.4);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 30px hsl(211 100% 60% / 0.2);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-card-hover: 0 10px 40px -10px hsl(0 0% 0% / 0.5);
   }
 }
 
@@ -144,15 +168,208 @@ Cores suaves e profissionais para área de Recursos Humanos
   }
   
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* RH utilities */
-  .rh-glow {
+  /* Typography scale */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+  
+  /* Premium utility classes */
+  .card-premium {
+    @apply bg-card border border-border/50 rounded-xl;
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-smooth);
+  }
+  
+  .card-premium:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+  
+  .card-interactive {
+    @apply cursor-pointer;
+    transition: var(--transition-smooth);
+  }
+  
+  .card-interactive:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+  
+  .shadow-premium {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-premium-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  
+  .glow-primary {
     box-shadow: var(--shadow-glow);
   }
   
+  /* Smooth transitions */
+  .transition-premium {
+    transition: var(--transition-smooth);
+  }
+  
+  .transition-fast {
+    transition: var(--transition-fast);
+  }
+  
+  /* Table zebra striping */
+  .table-zebra tbody tr:nth-child(even) {
+    @apply bg-muted/30;
+  }
+  
+  .table-zebra tbody tr:hover {
+    @apply bg-muted/50;
+  }
+  
+  /* KPI Card styles */
+  .kpi-card {
+    @apply relative overflow-hidden rounded-xl border bg-card p-5;
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-smooth);
+  }
+  
+  .kpi-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+  
+  .kpi-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-0;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.03), transparent);
+    transition: var(--transition-smooth);
+  }
+  
+  .kpi-card:hover::before {
+    @apply opacity-100;
+  }
+  
+  /* Sidebar premium styles */
+  .sidebar-premium {
+    background: var(--gradient-sidebar);
+  }
+  
+  .nav-item-premium {
+    @apply relative rounded-lg px-3 py-2 text-sm font-medium;
+    transition: var(--transition-fast);
+  }
+  
+  .nav-item-premium:hover {
+    @apply bg-muted/80;
+  }
+  
+  .nav-item-premium.active {
+    @apply bg-primary/10 text-primary;
+  }
+  
+  .nav-item-premium.active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary;
+  }
+  
+  /* Badge premium */
+  .badge-premium {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    transition: var(--transition-fast);
+  }
+  
+  /* Responsive grid utilities */
+  @screen sm {
+    .grid-auto-fit {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+  }
+  
+  @screen lg {
+    .grid-auto-fit {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+  }
+  
+  /* Focus states */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+  
+  /* Loading skeleton */
+  .skeleton-premium {
+    @apply animate-pulse rounded-lg bg-muted;
+  }
+  
+  /* Scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+  
+  /* Animation utilities */
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  
+  .animate-slide-in {
+    animation: slide-in-right 0.3s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+  
+  /* Stagger children animations */
+  .stagger-children > * {
+    opacity: 0;
+    animation: fade-in 0.4s ease-out forwards;
+  }
+  
+  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+  
+  /* Legacy compatibility */
   .card-shadow {
     box-shadow: var(--shadow-card);
   }
@@ -161,62 +378,12 @@ Cores suaves e profissionais para área de Recursos Humanos
     transition: var(--transition-smooth);
   }
   
-  .shadow-rh {
-    box-shadow: var(--shadow-financial);
-  }
-  
-  /* Enhanced responsive design */
-  @screen sm {
-    .responsive-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  
-  @screen lg {
-    .responsive-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-  
-  /* Performance optimizations */
-  .gpu-accelerated {
-    transform: translateZ(0);
-    will-change: transform;
-  }
-  
-  .smooth-hover {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  .shadow-financial {
+    box-shadow: var(--shadow-lg);
   }
   
   .smooth-hover:hover {
-    box-shadow: var(--shadow-hover);
+    box-shadow: var(--shadow-card-hover);
     transform: translateY(-2px);
-  }
-  
-  /* Sidebar animations */
-  .sidebar-expand {
-    animation: sidebar-expand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .sidebar-collapse {
-    animation: sidebar-collapse 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  @keyframes sidebar-expand {
-    from {
-      width: 3rem;
-    }
-    to {
-      width: 16rem;
-    }
-  }
-  
-  @keyframes sidebar-collapse {
-    from {
-      width: 16rem;
-    }
-    to {
-      width: 3rem;
-    }
   }
 }
