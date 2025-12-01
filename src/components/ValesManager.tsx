@@ -56,8 +56,8 @@ export const ValesManager: React.FC<ValesManagerProps> = ({
     try {
       const { data, error } = await supabase
         .from('professional_vales')
-        .select('*')
-        .eq('professional_id', professionalId)
+        .select('id, tipo, valor, descricao, data_lancamento, documento_id, status, created_at, profissional_id')
+        .eq('profissional_id', professionalId)
         .order('data_lancamento', { ascending: false });
 
       if (error) throw error;

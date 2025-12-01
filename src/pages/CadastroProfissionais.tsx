@@ -33,8 +33,10 @@ interface Professional {
   loja_id?: string;
   loja?: { nome: string };
   cargo?: string;
-  salario: number;
-  status: 'ativo' | 'demitido' | 'afastado';
+  salario_nominal?: number;
+  primeiro_salario?: number;
+  ultimo_salario?: number;
+  status: string;
   data_admissao?: string;
   data_demissao?: string;
   created_at: string;
@@ -277,7 +279,7 @@ export const CadastroProfissionais: React.FC = () => {
       cpf: imported.cpf,
       rg: imported.rg,
       cargo: imported.cargo,
-      salario: salarioNumerico,
+      salario_nominal: salarioNumerico,
       status: 'ativo',
       data_admissao: imported.admissaoCTPS || imported.inicioLoja,
       loja: { nome: imported.localTrabalho || imported.localRegistro },
@@ -471,7 +473,7 @@ export const CadastroProfissionais: React.FC = () => {
       rg: professional.rg || '',
       loja_id: professional.loja_id || '',
       cargo: professional.cargo || '',
-      salario_nominal: formatCurrency((professional.salario || 0).toString()),
+      salario_nominal: formatCurrency((professional.salario_nominal || 0).toString()),
       status: professional.status as 'ativo' | 'demitido' | 'afastado',
       data_admissao: professional.data_admissao || '',
       data_demissao: professional.data_demissao || '',
@@ -633,7 +635,7 @@ export const CadastroProfissionais: React.FC = () => {
                 <div>
                   <Label className="text-xs text-muted-foreground">Salário</Label>
                   <p className="font-medium">
-                    {formatCurrency((selectedProfessional?.salario || 0).toString())}
+                    {formatCurrency((selectedProfessional?.salario_nominal || 0).toString())}
                   </p>
                 </div>
                 <div>
@@ -1908,7 +1910,7 @@ export const CadastroProfissionais: React.FC = () => {
                   <TableCell className="hidden md:table-cell">{professional.loja?.nome || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{professional.cargo || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {formatCurrency((professional.salario || 0).toString())}
+                    {formatCurrency((professional.salario_nominal || 0).toString())}
                   </TableCell>
                   <TableCell>{getStatusBadge(professional.status)}</TableCell>
                   <TableCell>
