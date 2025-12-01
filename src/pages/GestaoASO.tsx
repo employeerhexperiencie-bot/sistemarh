@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { FileUploader } from '@/components/FileUploader';
 import { Heart, AlertTriangle, Calendar, Upload, FileText, Plus, Eye } from 'lucide-react';
 import { useN8NAction } from '@/hooks/useN8NAction';
+import { useMockData } from '@/hooks/useMockData';
 
 interface ASOExam {
   matricula: string;
@@ -23,28 +24,49 @@ interface ASOExam {
 }
 
 export default function GestaoASO() {
-  const [exams, setExams] = useState<ASOExam[]>([
-    {
-      matricula: '001',
-      nome: 'João Silva',
-      loja: 'CENTRO',
-      dataEmissao: '2025-02-15',
-      dataValidade: '2025-08-15',
-      tipo: 'SEMESTRAL',
-      status: 'VALIDO',
-      fileId: null,
-    },
-    {
-      matricula: '002',
-      nome: 'Maria Santos',
-      loja: 'BROOKLIN',
-      dataEmissao: '2024-12-10',
-      dataValidade: '2025-06-10',
-      tipo: 'ANUAL',
-      status: 'VENCE_30_DIAS',
-      fileId: null,
+  const mockData = useMockData();
+  const [exams, setExams] = useState<ASOExam[]>([]);
+
+  useEffect(() => {
+    if (mockData.hasMockData) {
+      const examesData = mockData.getExamesASO();
+      const examesFormatados: ASOExam[] = examesData.map((e) => ({
+        matricula: e.matricula,
+        nome: e.nome,
+        loja: e.loja,
+        dataEmissao: e.ultimoExame,
+        dataValidade: e.proximoExame,
+        tipo: e.tipoExame === 'Periódico' ? 'SEMESTRAL' : 'ANUAL',
+        status: e.status === 'vencido' ? 'VENCIDO' : e.status === 'vencendo' ? 'VENCE_30_DIAS' : 'VALIDO',
+        fileId: null,
+      }));
+      setExams(examesFormatados);
+    } else {
+      // Dados de fallback
+      setExams([
+        {
+          matricula: '001',
+          nome: 'João Silva',
+          loja: 'CENTRO',
+          dataEmissao: '2025-02-15',
+          dataValidade: '2025-08-15',
+          tipo: 'SEMESTRAL',
+          status: 'VALIDO',
+          fileId: null,
+        },
+        {
+          matricula: '002',
+          nome: 'Maria Santos',
+          loja: 'BROOKLIN',
+          dataEmissao: '2024-12-10',
+          dataValidade: '2025-06-10',
+          tipo: 'ANUAL',
+          status: 'VENCE_30_DIAS',
+          fileId: null,
+        }
+      ]);
     }
-  ]);
+  }, [mockData.hasMockData]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<ASOExam>>({
