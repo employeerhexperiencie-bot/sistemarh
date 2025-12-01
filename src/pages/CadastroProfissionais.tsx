@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, Bus, Utensils, ShoppingBasket } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentUploader } from '@/components/DocumentUploader';
@@ -581,8 +582,16 @@ export const CadastroProfissionais: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 h-auto">
             <TabsTrigger value="dados" className="text-xs sm:text-sm py-2">Dados</TabsTrigger>
+            <TabsTrigger value="aso" className="text-xs sm:text-sm py-2 gap-1">
+              <Stethoscope className="h-3 w-3" />
+              <span>ASO</span>
+            </TabsTrigger>
+            <TabsTrigger value="beneficios" className="text-xs sm:text-sm py-2 gap-1">
+              <Gift className="h-3 w-3" />
+              <span>Benefícios</span>
+            </TabsTrigger>
             <TabsTrigger value="historico" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
             <TabsTrigger value="documentos" className="text-xs sm:text-sm py-2">Documentos</TabsTrigger>
             <TabsTrigger value="advertencias" className="text-xs sm:text-sm py-2">Advertências</TabsTrigger>
@@ -642,6 +651,320 @@ export const CadastroProfissionais: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="aso" className="space-y-4">
+            {(() => {
+              const dadosASOStr = localStorage.getItem('dadosASO');
+              if (!dadosASOStr) {
+                return (
+                  <Alert className="border-warning bg-warning/5">
+                    <AlertTriangle className="h-5 w-5 text-warning" />
+                    <AlertTitle>Dados de ASO Não Carregados</AlertTitle>
+                    <AlertDescription>
+                      Para visualizar informações de exames ocupacionais (ASO), carregue a planilha BASE_ASO.xlsx na página "Dados Adicionais".
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+
+              try {
+                const dadosASO = JSON.parse(dadosASOStr);
+                const asoProf = dadosASO.find((a: any) => a.matricula === selectedProfessional?.matricula);
+
+                if (!asoProf) {
+                  return (
+                    <Alert>
+                      <AlertDescription>
+                        Nenhum registro de ASO encontrado para este profissional na planilha BASE_ASO.xlsx.
+                      </AlertDescription>
+                    </Alert>
+                  );
+                }
+
+                const proximoExame = asoProf.proxExame && asoProf.proxExame !== 'NR' ? new Date(asoProf.proxExame) : null;
+                const hoje = new Date();
+                let diasRestantes = 0;
+                let statusExame: 'regular' | 'vencendo' | 'vencido' = 'regular';
+                
+                if (proximoExame) {
+                  diasRestantes = Math.floor((proximoExame.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                  if (diasRestantes < 0) statusExame = 'vencido';
+                  else if (diasRestantes <= 30) statusExame = 'vencendo';
+                }
+
+                return (
+                  <>
+                    {statusExame !== 'regular' && (
+                      <Alert className={statusExame === 'vencido' ? 'border-destructive bg-destructive/5' : 'border-warning bg-warning/5'}>
+                        <AlertTriangle className={`h-5 w-5 ${statusExame === 'vencido' ? 'text-destructive' : 'text-warning'}`} />
+                        <AlertTitle className={statusExame === 'vencido' ? 'text-destructive' : 'text-warning'}>
+                          {statusExame === 'vencido' ? 'ASO Vencido!' : 'ASO Vencendo em Breve'}
+                        </AlertTitle>
+                        <AlertDescription>
+                          {statusExame === 'vencido' 
+                            ? `Exame venceu há ${Math.abs(diasRestantes)} dias. Agende o exame imediatamente!`
+                            : `Exame vence em ${diasRestantes} dias. Agende com antecedência.`
+                          }
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="flex items-center gap-2">
+                            <Stethoscope className="h-5 w-5 text-success" />
+                            Exames Ocupacionais (ASO)
+                          </CardTitle>
+                          <Badge className={
+                            statusExame === 'vencido' ? 'bg-destructive' :
+                            statusExame === 'vencendo' ? 'bg-warning' :
+                            'bg-success'
+                          }>
+                            {statusExame === 'vencido' ? 'Vencido' :
+                             statusExame === 'vencendo' ? 'Vencendo' :
+                             'Regular'}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Último ASO</Label>
+                            <p className="font-medium">
+                              {asoProf.ultimoASO && asoProf.ultimoASO !== 'NR' 
+                                ? new Date(asoProf.ultimoASO).toLocaleDateString('pt-BR')
+                                : '-'
+                              }
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Próximo ASO</Label>
+                            <p className="font-medium">
+                              {asoProf.proxASO && asoProf.proxASO !== 'NR'
+                                ? new Date(asoProf.proxASO).toLocaleDateString('pt-BR')
+                                : '-'
+                              }
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Dias Restantes</Label>
+                            <p className={`font-medium ${
+                              statusExame === 'vencido' ? 'text-destructive' :
+                              statusExame === 'vencendo' ? 'text-warning' :
+                              'text-success'
+                            }`}>
+                              {proximoExame ? (diasRestantes < 0 ? `${Math.abs(diasRestantes)} dias atrás` : `${diasRestantes} dias`) : '-'}
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Periodicidade</Label>
+                            <p className="font-medium">{asoProf.periodicidade || '-'}</p>
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <Label className="text-sm font-semibold mb-3 block">Informações Adicionais</Label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div className="space-y-1">
+                              <span className="text-muted-foreground">Loja:</span>
+                              <span className="ml-2 font-medium">{asoProf.localTrabalho || '-'}</span>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-muted-foreground">Cargo:</span>
+                              <span className="ml-2 font-medium">{asoProf.cargo || '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                );
+              } catch (error) {
+                console.error('Erro ao processar dados ASO:', error);
+                return (
+                  <Alert className="border-destructive bg-destructive/5">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    <AlertTitle>Erro ao Carregar Dados</AlertTitle>
+                    <AlertDescription>
+                      Erro ao processar informações de ASO. Recarregue os dados na página "Dados Adicionais".
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+            })()}
+          </TabsContent>
+
+          <TabsContent value="beneficios" className="space-y-4">
+            {(() => {
+              const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
+              if (!dadosBeneficiosStr) {
+                return (
+                  <Alert className="border-warning bg-warning/5">
+                    <AlertTriangle className="h-5 w-5 text-warning" />
+                    <AlertTitle>Dados de Benefícios Não Carregados</AlertTitle>
+                    <AlertDescription>
+                      Para visualizar informações de benefícios (VT, VR, Cesta Básica), carregue a planilha BASE_Beneficios.xlsx na página "Dados Adicionais".
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+
+              try {
+                const dadosBeneficios = JSON.parse(dadosBeneficiosStr);
+                const benefProf = dadosBeneficios.find((b: any) => b.matricula === selectedProfessional?.matricula);
+
+                if (!benefProf) {
+                  return (
+                    <Alert>
+                      <AlertDescription>
+                        Nenhum registro de benefícios encontrado para este profissional na planilha BASE_Beneficios.xlsx.
+                      </AlertDescription>
+                    </Alert>
+                  );
+                }
+
+                const parseValor = (valor: any): number => {
+                  if (!valor) return 0;
+                  if (typeof valor === 'number') return valor;
+                  const valorStr = String(valor).replace(/[R$\s.]/g, '').replace(',', '.');
+                  return parseFloat(valorStr) || 0;
+                };
+
+                const valorDiario = parseValor(benefProf.valorDiario);
+                const escala = benefProf.escala || '6x1';
+                const diasUteis = escala === '6x1' ? 26 : 22;
+                const valorVTMensal = valorDiario * diasUteis;
+                const valorVRDiario = 25;
+                const valorVRMensal = benefProf.vr === 'SIM' ? valorVRDiario * diasUteis : 0;
+                const valorCestaBasica = benefProf.cestaBasica === 'SIM' ? 150 : 0;
+
+                return (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Gift className="h-5 w-5 text-primary" />
+                        Benefícios do Profissional
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Card className="bg-info/5 border-info/20">
+                          <CardContent className="pt-6">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2.5 rounded-lg bg-info/10">
+                                <Bus className="h-5 w-5 text-info" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Vale Transporte</p>
+                                <p className="text-xl font-bold text-info">
+                                  {formatCurrency((valorVTMensal * 100).toString())}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  R$ {valorDiario.toFixed(2)}/dia × {diasUteis} dias
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card className={valorVRMensal > 0 ? 'bg-warning/5 border-warning/20' : 'bg-muted/30'}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2.5 rounded-lg ${valorVRMensal > 0 ? 'bg-warning/10' : 'bg-muted'}`}>
+                                <Utensils className={`h-5 w-5 ${valorVRMensal > 0 ? 'text-warning' : 'text-muted-foreground'}`} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Vale Refeição</p>
+                                <p className={`text-xl font-bold ${valorVRMensal > 0 ? 'text-warning' : 'text-muted-foreground'}`}>
+                                  {valorVRMensal > 0 ? formatCurrency((valorVRMensal * 100).toString()) : 'Não recebe'}
+                                </p>
+                                {valorVRMensal > 0 && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    R$ {valorVRDiario.toFixed(2)}/dia × {diasUteis} dias
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card className={valorCestaBasica > 0 ? 'bg-success/5 border-success/20' : 'bg-muted/30'}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2.5 rounded-lg ${valorCestaBasica > 0 ? 'bg-success/10' : 'bg-muted'}`}>
+                                <ShoppingBasket className={`h-5 w-5 ${valorCestaBasica > 0 ? 'text-success' : 'text-muted-foreground'}`} />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Cesta Básica</p>
+                                <p className={`text-xl font-bold ${valorCestaBasica > 0 ? 'text-success' : 'text-muted-foreground'}`}>
+                                  {valorCestaBasica > 0 ? formatCurrency((valorCestaBasica * 100).toString()) : 'Não recebe'}
+                                </p>
+                                {valorCestaBasica > 0 && (
+                                  <p className="text-xs text-muted-foreground mt-1">Mensal</p>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <Label className="text-sm font-semibold mb-3 block">Detalhes</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Escala</Label>
+                            <p className="font-medium">{escala}</p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Dias Úteis</Label>
+                            <p className="font-medium">{diasUteis} dias</p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Vale Refeição</Label>
+                            <Badge variant={benefProf.vr === 'SIM' ? 'default' : 'secondary'}>
+                              {benefProf.vr === 'SIM' ? 'SIM' : 'NÃO'}
+                            </Badge>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Cesta Básica</Label>
+                            <Badge variant={benefProf.cestaBasica === 'SIM' ? 'default' : 'secondary'}>
+                              {benefProf.cestaBasica === 'SIM' ? 'SIM' : 'NÃO'}
+                            </Badge>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Loja</Label>
+                            <p className="font-medium">{benefProf.localTrabalho || '-'}</p>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Total Mensal</Label>
+                            <p className="font-bold text-primary">
+                              {formatCurrency(((valorVTMensal + valorVRMensal + valorCestaBasica) * 100).toString())}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              } catch (error) {
+                console.error('Erro ao processar dados de benefícios:', error);
+                return (
+                  <Alert className="border-destructive bg-destructive/5">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    <AlertTitle>Erro ao Carregar Dados</AlertTitle>
+                    <AlertDescription>
+                      Erro ao processar informações de benefícios. Recarregue os dados na página "Dados Adicionais".
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+            })()}
           </TabsContent>
 
           <TabsContent value="historico">
