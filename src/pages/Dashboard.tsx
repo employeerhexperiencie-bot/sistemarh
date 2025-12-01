@@ -9,6 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { AlertasResumo } from '@/components/alertas/AlertasAutomaticos';
 import { useMockData } from '@/hooks/useMockData';
+import { LojaComparison } from '@/components/LojaComparison';
 
 // KPI Card Component
 interface KPICardProps {
@@ -400,8 +401,12 @@ export function Dashboard() {
         {/* Alertas Automáticos */}
         <AlertasResumo maxItems={5} />
 
-        {/* Recent Activities */}
-        <Card>
+        {/* Ranking de Lojas */}
+        <LojaComparison />
+      </div>
+
+      {/* Recent Activities */}
+      <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <div className="p-1.5 rounded-lg bg-primary/10">
@@ -438,9 +443,8 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 // Alert Item Component
 function AlertItem({ icon: Icon, title, subtitle, action }: {
