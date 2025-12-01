@@ -18,6 +18,7 @@ import { RelatorioFolha } from '@/components/folha/RelatorioFolha';
 import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
 import { GestaoEmprestimos } from '@/components/folha/GestaoEmprestimos';
 import { AdiantamentoSalario } from '@/components/folha/AdiantamentoSalario';
+import { useMockData } from '@/hooks/useMockData';
 
 // Função de arredondamento conforme regra do sistema
 const arredondarValor = (valor: number): number => {
@@ -214,6 +215,7 @@ function SummaryCard({ icon: Icon, label, value, color }: {
 }
 
 export default function SimuladorFolha() {
+  const mockData = useMockData();
   const [competencia, setCompetencia] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -226,21 +228,56 @@ export default function SimuladorFolha() {
   const [lojaSelecionada, setLojaSelecionada] = useState<string>('todas');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
 
+  // Se tiver dados da planilha, usa eles, senão usa mock
+  const profissionais = mockData.hasMockData 
+    ? mockData.profissionais.map((p, index) => {
+        const salario = mockData.parseSalario(p.salarioReceber || p.salarioCTPS);
+        return {
+          id: p.matricula,
+          nome: p.nome,
+          matricula: p.matricula,
+          lojaId: p.localTrabalho,
+          salario,
+          escala: (p.escala?.includes('6') ? '6x1' : '5x2') as '6x1' | '5x2',
+          valorPassagem: 4.40,
+          dataAdmissao: p.admissaoCTPS || '2020-01-01',
+          status: 'ativo' as const,
+          recebeCesta: true,
+          recebeVT: true,
+          recebeVR: true,
+          faltas: 0,
+          atestados: 0,
+          diasFerias: 0,
+          vales: 0,
+          emprestimos: 0,
+          pensao: p.pensao === 'SIM' ? salario * 0.30 : 0,
+        };
+      })
+    : mockProfissionais;
+
+  const lojas = mockData.hasMockData
+    ? mockData.lojas.map((nome, index) => ({
+        id: nome,
+        nome: nome,
+        codigo: String(index + 1).padStart(3, '0'),
+      }))
+    : mockLojas;
+
   const profissionaisFiltrados = useMemo(() => {
-    return mockProfissionais.filter(p => {
+    return profissionais.filter(p => {
       if (lojaSelecionada !== 'todas' && p.lojaId !== lojaSelecionada) return false;
       if (filtroStatus !== 'todos' && p.status !== filtroStatus) return false;
       return true;
     });
-  }, [lojaSelecionada, filtroStatus]);
+  }, [lojaSelecionada, filtroStatus, profissionais]);
 
   const calculosLote = useMemo(() => {
     return profissionaisFiltrados.map(p => ({
       profissional: p,
-      loja: mockLojas.find(l => l.id === p.lojaId),
+      loja: lojas.find(l => l.id === p.lojaId),
       ...calcularProfissional(p, diasUteis6x1, diasUteis5x2, valorVR, percentualDia20, competencia),
     }));
-  }, [profissionaisFiltrados, diasUteis6x1, diasUteis5x2, valorVR, percentualDia20, competencia]);
+  }, [profissionaisFiltrados, diasUteis6x1, diasUteis5x2, valorVR, percentualDia20, competencia, lojas]);
 
   const resumoPorLoja = useMemo(() => {
     const resumo: Record<string, {
@@ -256,7 +293,7 @@ export default function SimuladorFolha() {
       funcionariosAfastados: number;
     }> = {};
 
-    mockLojas.forEach(loja => {
+    lojas.forEach(loja => {
       resumo[loja.id] = {
         loja,
         qtdFuncionarios: 0,
@@ -338,12 +375,29 @@ export default function SimuladorFolha() {
 
   return (
     <div className="space-y-6 max-w-[1800px] mx-auto">
+      {/* Aviso de dados importados */}
+      {mockData.hasMockData && (
+        <Card className="bg-primary/10 border-primary">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <FileSpreadsheet className="h-5 w-5 text-primary" />
+              <div>
+                <p className="font-semibold text-primary">Usando Dados da Planilha ATIVOS.xlsx</p>
+                <p className="text-sm text-muted-foreground">
+                  {mockData.totalProfissionais} profissionais • {mockData.totalLojas} lojas
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Simulador de Folha</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {mockLojas.length} lojas • {mockProfissionais.length} funcionários
+            {lojas.length} lojas • {profissionais.length} funcionários
           </p>
         </div>
         <Button onClick={exportarCSV} className="gap-2">
@@ -509,7 +563,7 @@ export default function SimuladorFolha() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todas as lojas</SelectItem>
-                      {mockLojas.map(l => (
+                      {lojas.map(l => (
                         <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
                       ))}
                     </SelectContent>
