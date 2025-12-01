@@ -203,23 +203,30 @@ export default function PainelLoja() {
   const [lojaFiltro, setLojaFiltro] = useState('');
   const tipoFiltro = searchParams.get('tipo') || '';
 
-  // Usar dados da planilha se disponível
-  const estatisticasLojas = mockData.hasMockData 
-    ? mockData.getEstatisticasPorLoja().map(stat => ({
-        loja: stat.loja,
-        vales: Math.floor(stat.totalProfissionais * 15000), // R$150 médio por profissional
-        adiantamentos: Math.floor(stat.totalSalarios * 0.4), // 40% dia 20
-        descFaltas: Math.floor(stat.totalSalarios * 0.02), // 2% estimado
-        descDSR: Math.floor(stat.totalSalarios * 0.015), // 1.5% estimado
-        totalReceber: Math.floor(stat.totalSalarios),
-        holeritesG: stat.totalProfissionais,
-        holeritesE: Math.floor(stat.totalProfissionais * 0.7),
-        holeritesA: Math.floor(stat.totalProfissionais * 0.5),
-        faltasComputadas: Math.floor(Math.random() * 5),
-        profissionaisComFaltas: Math.floor(Math.random() * 3),
-        totalProfissionais: stat.totalProfissionais,
-      }))
-    : mockDados;
+  // Usar dados da planilha
+  const faltasPorLoja = mockData.getFaltas().reduce((acc: any, f: any) => {
+    if (!acc[f.loja]) {
+      acc[f.loja] = { total: 0, profissionais: 0 };
+    }
+    acc[f.loja].total += f.totalFaltas;
+    if (f.totalFaltas > 0) acc[f.loja].profissionais += 1;
+    return acc;
+  }, {});
+
+  const estatisticasLojas = mockData.getEstatisticasPorLoja().map(stat => ({
+    loja: stat.loja,
+    vales: Math.floor(stat.totalProfissionais * 15000), // R$150 médio por profissional
+    adiantamentos: Math.floor(stat.totalSalarios * 0.4), // 40% dia 20
+    descFaltas: Math.floor(stat.totalSalarios * 0.02), // 2% estimado
+    descDSR: Math.floor(stat.totalSalarios * 0.015), // 1.5% estimado
+    totalReceber: Math.floor(stat.totalSalarios),
+    holeritesG: stat.totalProfissionais,
+    holeritesE: Math.floor(stat.totalProfissionais * 0.9),
+    holeritesA: Math.floor(stat.totalProfissionais * 0.8),
+    faltasComputadas: faltasPorLoja[stat.loja]?.total || 0,
+    profissionaisComFaltas: faltasPorLoja[stat.loja]?.profissionais || 0,
+    totalProfissionais: stat.totalProfissionais,
+  }));
 
   useEffect(() => {
     if (tipoFiltro) {

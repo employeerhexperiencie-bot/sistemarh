@@ -27,12 +27,10 @@ export default function GestaoBeneficios() {
     const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
     const hasRealData = !!dadosBeneficiosStr;
     
-    if (mockData.hasMockData) {
-      const beneficios = mockData.getBeneficios();
-      setDataSource(hasRealData ? 'real' : 'mock');
-      setBeneficiosData(beneficios.slice(0, 50)); // Limitar a 50 para performance
-    }
-  }, [mockData.hasMockData]);
+    const beneficios = mockData.getBeneficios();
+    setDataSource(hasRealData ? 'real' : 'mock');
+    setBeneficiosData(beneficios.slice(0, 100)); // Limitar para performance
+  }, [mockData]);
 
   const [config, setConfig] = useState<BeneficioConfig>({
     diasUteis6x1: 26,
@@ -349,90 +347,82 @@ export default function GestaoBeneficios() {
               <CardDescription>Resumo de VT, VR e Cesta Básica ({beneficiosData.length} profissionais)</CardDescription>
             </CardHeader>
             <CardContent>
-              {mockData.hasMockData ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-primary/5 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Total VT</p>
-                      <p className="text-2xl font-bold text-primary">
-                        {beneficiosData.reduce((sum, b) => sum + b.valorVT, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-orange-500/5 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Total VR</p>
-                      <p className="text-2xl font-bold text-orange-500">
-                        {beneficiosData.reduce((sum, b) => sum + b.valorVR, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-green-600/5 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Total Cesta</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {beneficiosData.reduce((sum, b) => sum + b.cestaBasica, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-accent/5 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Total Geral</p>
-                      <p className="text-2xl font-bold text-accent">
-                        {beneficiosData.reduce((sum, b) => sum + b.valorVT + b.valorVR + b.cestaBasica, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </p>
-                    </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-primary/5 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total VT</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {beneficiosData.reduce((sum, b) => sum + b.valorVT, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
                   </div>
-                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Matrícula</TableHead>
-                          <TableHead>Nome</TableHead>
-                          <TableHead>Loja</TableHead>
-                          <TableHead>Escala</TableHead>
-                          <TableHead>VT</TableHead>
-                          <TableHead>VR</TableHead>
-                          <TableHead>Cesta</TableHead>
-                          <TableHead>Total</TableHead>
+                  <div className="p-4 bg-orange-500/5 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total VR</p>
+                    <p className="text-2xl font-bold text-orange-500">
+                      {beneficiosData.reduce((sum, b) => sum + b.valorVR, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-green-600/5 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total Cesta</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {beneficiosData.reduce((sum, b) => sum + b.cestaBasica, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-accent/5 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total Geral</p>
+                    <p className="text-2xl font-bold text-accent">
+                      {beneficiosData.reduce((sum, b) => sum + b.valorVT + b.valorVR + b.cestaBasica, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Matrícula</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Loja</TableHead>
+                        <TableHead>Escala</TableHead>
+                        <TableHead>VT</TableHead>
+                        <TableHead>VR</TableHead>
+                        <TableHead>Cesta</TableHead>
+                        <TableHead>Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {beneficiosData.map((ben, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-mono">{ben.matricula}</TableCell>
+                          <TableCell className="font-medium">{ben.nome}</TableCell>
+                          <TableCell>{ben.loja}</TableCell>
+                          <TableCell>{ben.escala}</TableCell>
+                          <TableCell className="font-mono text-primary">
+                            {ben.valorVT.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </TableCell>
+                          <TableCell className="font-mono text-orange-500">
+                            {ben.valorVR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </TableCell>
+                          <TableCell className="font-mono">
+                            {ben.temCestaBasica ? (
+                              <span className="text-success">
+                                {ben.cestaBasica.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              </span>
+                            ) : (
+                              <span className="text-destructive">R$ 0,00</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-mono font-bold">
+                            {(ben.valorVT + ben.valorVR + ben.cestaBasica).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {beneficiosData.map((ben, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-mono">{ben.matricula}</TableCell>
-                            <TableCell className="font-medium">{ben.nome}</TableCell>
-                            <TableCell>{ben.loja}</TableCell>
-                            <TableCell>{ben.escala}</TableCell>
-                            <TableCell className="font-mono text-primary">
-                              {ben.valorVT.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                            </TableCell>
-                            <TableCell className="font-mono text-orange-500">
-                              {ben.valorVR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                            </TableCell>
-                            <TableCell className="font-mono">
-                              {ben.temCestaBasica ? (
-                                <span className="text-success">
-                                  {ben.cestaBasica.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                </span>
-                              ) : (
-                                <span className="text-destructive">R$ 0,00</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="font-mono font-bold">
-                              {(ben.valorVT + ben.valorVR + ben.cestaBasica).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <Button className="w-full">
-                    <Download className="h-4 w-4 mr-2" />
-                    Exportar Relatório CSV
-                  </Button>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              ) : (
-                <div className="p-4 bg-muted/50 rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum dado de profissionais importado. Vá para "Análise de Ativos" para carregar os dados.
-                  </p>
-                </div>
-              )}
+                <Button className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar Relatório CSV
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

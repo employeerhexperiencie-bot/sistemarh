@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMockData } from '@/hooks/useMockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +22,14 @@ import {
 } from 'lucide-react';
 
 export default function Relatorios() {
+  const mockData = useMockData();
   const [periodo, setPeriodo] = useState({ inicio: '', fim: '' });
   const [loja, setLoja] = useState('TODAS');
   const [tipoRelatorio, setTipoRelatorio] = useState('geral');
+
+  const ferias = mockData.getFerias();
+  const feriasAgendadas = ferias.filter((f: any) => f.status === 'agendada').length;
+  const alertas = mockData.getAlertas();
 
   const relatoriosDisponiveis = [
     {
@@ -227,7 +233,7 @@ export default function Relatorios() {
             <div className="flex items-center gap-3">
               <Building2 className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold text-primary">13</p>
+                <p className="text-2xl font-bold text-primary">{mockData.totalLojas}</p>
                 <p className="text-sm text-muted-foreground">Lojas</p>
               </div>
             </div>
@@ -239,7 +245,7 @@ export default function Relatorios() {
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-accent" />
               <div>
-                <p className="text-2xl font-bold text-accent">127</p>
+                <p className="text-2xl font-bold text-accent">{mockData.totalProfissionais}</p>
                 <p className="text-sm text-muted-foreground">Profissionais</p>
               </div>
             </div>
@@ -249,10 +255,10 @@ export default function Relatorios() {
         <Card className="bg-success/5 border-success/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <CheckCircle className="h-8 w-8 text-success" />
+              <Calendar className="h-8 w-8 text-success" />
               <div>
-                <p className="text-2xl font-bold text-success">98%</p>
-                <p className="text-sm text-muted-foreground">Conformidade</p>
+                <p className="text-2xl font-bold text-success">{feriasAgendadas}</p>
+                <p className="text-sm text-muted-foreground">Férias Agendadas</p>
               </div>
             </div>
           </CardContent>
@@ -261,10 +267,10 @@ export default function Relatorios() {
         <Card className="bg-warning/5 border-warning/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <TrendingUp className="h-8 w-8 text-warning" />
+              <AlertTriangle className="h-8 w-8 text-warning" />
               <div>
-                <p className="text-2xl font-bold text-warning">+12%</p>
-                <p className="text-sm text-muted-foreground">Crescimento</p>
+                <p className="text-2xl font-bold text-warning">{alertas.length}</p>
+                <p className="text-sm text-muted-foreground">Alertas Ativos</p>
               </div>
             </div>
           </CardContent>

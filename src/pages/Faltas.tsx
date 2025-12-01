@@ -30,48 +30,21 @@ export default function Faltas() {
   const [faltas, setFaltas] = useState<Falta[]>([]);
 
   useEffect(() => {
-    if (mockData.hasMockData) {
-      const faltasData = mockData.getFaltas();
-      const faltasFormatadas: Falta[] = faltasData
-        .filter(f => f.totalFaltas > 0)
-        .map((f, index) => ({
-          id: `${f.matricula}-${index}`,
-          matricula: f.matricula,
-          nomeProfissional: f.nome,
-          loja: f.loja,
-          data: f.ultimaFalta || '2024-11-25',
-          tipo: f.faltasInjustificadas > 0 ? 'INJUSTIFICADA' : 'JUSTIFICADA',
-          observacao: `Total: ${f.totalFaltas} faltas (${f.faltasJustificadas} justificadas, ${f.faltasInjustificadas} injustificadas)`,
-          createdAt: new Date().toISOString(),
-        }));
-      setFaltas(faltasFormatadas);
-    } else {
-      // Dados de fallback
-      setFaltas([
-        {
-          id: '1',
-          matricula: '001',
-          nomeProfissional: 'João Silva',
-          loja: 'REI DO GADO',
-          data: '2025-08-28',
-          tipo: 'INJUSTIFICADA',
-          observacao: 'Falta sem justificativa',
-          createdAt: '2025-08-28T10:00:00'
-        },
-        {
-          id: '2',
-          matricula: '002',
-          nomeProfissional: 'Maria Santos',
-          loja: 'REI DO GADO',
-          data: '2025-08-25',
-          tipo: 'JUSTIFICADA',
-          observacao: 'Atestado médico',
-          atestadoFileId: 'doc123',
-          createdAt: '2025-08-25T14:30:00'
-        }
-      ]);
-    }
-  }, [mockData.hasMockData]);
+    const faltasData = mockData.getFaltas();
+    const faltasFormatadas: Falta[] = faltasData
+      .filter(f => f.totalFaltas > 0)
+      .map((f, index) => ({
+        id: `${f.matricula}-${index}`,
+        matricula: f.matricula,
+        nomeProfissional: f.nome,
+        loja: f.loja,
+        data: f.ultimaFalta || '2024-11-25',
+        tipo: f.faltasInjustificadas > 0 ? 'INJUSTIFICADA' : 'JUSTIFICADA',
+        observacao: `Total: ${f.totalFaltas} faltas (${f.faltasJustificadas} justificadas, ${f.faltasInjustificadas} injustificadas)`,
+        createdAt: new Date().toISOString(),
+      }));
+    setFaltas(faltasFormatadas);
+  }, [mockData]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
