@@ -1,10 +1,11 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { User, PanelLeftOpen, PanelLeftClose, Bell, Search } from 'lucide-react';
+import { User, PanelLeftOpen, PanelLeftClose, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { DocumentNotifications } from '@/components/DocumentNotifications';
+import { AlertasBadge } from '@/components/alertas/AlertasAutomaticos';
 import { Input } from '@/components/ui/input';
 
 interface LayoutProps {
@@ -93,6 +94,7 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
       
       {/* Right side */}
       <div className="flex items-center gap-2">
+        <AlertasBadge />
         <DocumentNotifications />
         
         <Button 

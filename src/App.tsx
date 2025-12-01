@@ -25,6 +25,7 @@ import SimuladorFolha from "@/pages/SimuladorFolha";
 import Configuracoes from "@/pages/Configuracoes";
 import { CadastroLojas } from "@/pages/CadastroLojas";
 import ImportacaoDados from "@/pages/ImportacaoDados";
+import Alertas from "@/pages/Alertas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -140,6 +141,11 @@ const App = () => (
           <Route path="/importacao-dados" element={
             <Layout>
               <ImportacaoDados />
+            </Layout>
+          } />
+          <Route path="/alertas" element={
+            <Layout>
+              <Alertas />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

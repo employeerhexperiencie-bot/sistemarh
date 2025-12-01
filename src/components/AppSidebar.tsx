@@ -19,7 +19,8 @@ import {
   Gift,
   BookOpen,
   Calculator,
-  ChevronRight
+  ChevronRight,
+  Bell
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -41,6 +42,7 @@ const navSections = [
     label: 'Dashboard',
     items: [
       { title: 'Visão Geral', url: '/', icon: LayoutDashboard },
+      { title: 'Alertas', url: '/alertas', icon: Bell },
       { title: 'Simulador Folha', url: '/simulador-folha', icon: Calculator },
     ],
   },
