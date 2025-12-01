@@ -28,6 +28,7 @@ import { CadastroLojas } from "@/pages/CadastroLojas";
 import ImportacaoDados from "@/pages/ImportacaoDados";
 import Alertas from "@/pages/Alertas";
 import AuditLog from "@/pages/AuditLog";
+import AnalisarAtivos from "@/pages/AnalisarAtivos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -154,6 +155,11 @@ const App = () => (
           <Route path="/audit-log" element={
             <Layout>
               <AuditLog />
+            </Layout>
+          } />
+          <Route path="/analisar-ativos" element={
+            <Layout>
+              <AnalisarAtivos />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
