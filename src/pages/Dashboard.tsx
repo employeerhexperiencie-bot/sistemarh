@@ -326,7 +326,7 @@ export function Dashboard() {
         {/* Card de Benefícios */}
         <Card
           className="card-interactive cursor-pointer"
-          onClick={() => navigate('/gestao-beneficios')}
+          onClick={() => navigate('/gestao-beneficios-detalhado')}
         >
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
