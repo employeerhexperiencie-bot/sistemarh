@@ -8,8 +8,9 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AlertasResumo } from '@/components/alertas/AlertasAutomaticos';
-import { useMockData } from '@/hooks/useMockData';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { LojaComparison } from '@/components/LojaComparison';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // KPI Card Component
 interface KPICardProps {
@@ -90,15 +91,37 @@ function StatCard({ title, value, icon: Icon, gradient, onClick }: StatCardProps
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const mockData = useMockData();
+  const data = useSupabaseData();
   
-  // Calcular KPIs baseados nos dados reais da planilha
-  const totalSalarios = mockData.totalSalarios;
+  // Loading state
+  if (data.isLoading) {
+    return (
+      <div className="space-y-8 max-w-[1600px] mx-auto">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Carregando dados...</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-32 rounded-lg" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map(i => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
+  // Calcular KPIs baseados nos dados do Supabase
+  const totalSalarios = data.totalSalarios;
   const adiantamento20 = totalSalarios * 0.4; // 40% para adiantamento dia 20
-  const valesEstimados = mockData.totalProfissionais * 150; // Média de R$ 150 por profissional
+  const valesEstimados = data.totalProfissionais * 150; // Média de R$ 150 por profissional
   
   // Calcular afastamentos
-  const afastamentos = mockData.getAfastamentos();
+  const afastamentos = data.getAfastamentos();
   const afastamentosAtivos = afastamentos.filter((a: any) => a.status === 'ATIVO');
   const afastamentosMaternidade = afastamentosAtivos.filter((a: any) => a.motivo === 'LICENCA_MATERNIDADE');
   const afastamentosAcidente = afastamentosAtivos.filter((a: any) => 
@@ -106,14 +129,14 @@ export function Dashboard() {
   );
   
   // Calcular benefícios
-  const beneficios = mockData.getBeneficios();
+  const beneficios = data.getBeneficios();
   const totalVT = beneficios.reduce((sum: number, b: any) => sum + b.valorVT, 0);
   const totalVR = beneficios.reduce((sum: number, b: any) => sum + b.valorVR, 0);
   const totalCesta = beneficios.reduce((sum: number, b: any) => sum + b.cestaBasica, 0);
   const totalBeneficios = totalVT + totalVR + totalCesta;
 
   // Calcular faltas
-  const faltasData = mockData.getFaltas();
+  const faltasData = data.getFaltas();
   const totalFaltas = faltasData.reduce((sum: number, f: any) => sum + f.totalFaltas, 0);
   const faltasJustificadas = faltasData.reduce((sum: number, f: any) => sum + f.faltasJustificadas, 0);
   const faltasInjustificadas = faltasData.reduce((sum: number, f: any) => sum + f.faltasInjustificadas, 0);
@@ -122,29 +145,29 @@ export function Dashboard() {
   const kpis = {
     vales: { 
       value: `R$ ${(valesEstimados / 1000).toFixed(1)}k`, 
-      count: Math.floor(mockData.totalProfissionais * 0.7), 
+      count: Math.floor(data.totalProfissionais * 0.7), 
       trend: '+12%' 
     },
     adiantamentos: { 
       value: `R$ ${(adiantamento20 / 1000).toFixed(1)}k`, 
-      count: Math.floor(mockData.totalProfissionais * 0.5), 
+      count: Math.floor(data.totalProfissionais * 0.5), 
       trend: '+8%' 
     },
     totalReceber: { 
       value: `R$ ${(totalSalarios / 1000).toFixed(1)}k`, 
-      count: mockData.totalProfissionais, 
+      count: data.totalProfissionais, 
       trend: '+7%' 
     },
     holerites: { 
-      gerados: mockData.totalProfissionais, 
-      enviados: Math.floor(mockData.totalProfissionais * 0.9), 
-      assinados: Math.floor(mockData.totalProfissionais * 0.8) 
+      gerados: data.totalProfissionais, 
+      enviados: Math.floor(data.totalProfissionais * 0.9), 
+      assinados: Math.floor(data.totalProfissionais * 0.8) 
     },
     faltas: { 
       total: totalFaltas, 
       justificadas: faltasJustificadas, 
       injustificadas: faltasInjustificadas, 
-      lojas: mockData.totalLojas, 
+      lojas: data.totalLojas, 
       profissionais: faltasData.filter((f: any) => f.totalFaltas > 0).length 
     }
   };
@@ -253,7 +276,7 @@ export function Dashboard() {
 
         <StatCard
           title="Lojas Ativas"
-          value={mockData.totalLojas}
+          value={data.totalLojas}
           icon={Building2}
           gradient="bg-gradient-to-br from-primary/20 to-primary/5 text-primary"
           onClick={() => navigate('/cadastro-lojas')}
@@ -261,7 +284,7 @@ export function Dashboard() {
 
         <StatCard
           title="Profissionais"
-          value={mockData.totalProfissionais}
+          value={data.totalProfissionais}
           icon={Users}
           gradient="bg-gradient-to-br from-accent/20 to-accent/5 text-accent"
           onClick={() => navigate('/cadastro-profissionais')}
@@ -269,7 +292,7 @@ export function Dashboard() {
 
         <StatCard
           title="Férias Agendadas"
-          value={mockData.getFerias().filter((f: any) => f.status === 'agendada').length}
+          value={data.getFerias().filter((f: any) => f.status === 'agendada').length}
           icon={Calendar}
           gradient="bg-gradient-to-br from-warning/20 to-warning/5 text-warning"
           onClick={() => navigate('/gestao-ferias')}
