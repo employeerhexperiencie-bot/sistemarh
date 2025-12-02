@@ -103,11 +103,32 @@ const MigrarDados = () => {
 
       const profissionais = JSON.parse(profissionaisImportados);
       const lojas = lojasData ? JSON.parse(lojasData) : [];
-      const examesASO = dadosASO ? JSON.parse(dadosASO).dados : [];
-      const beneficios = dadosBeneficios ? JSON.parse(dadosBeneficios).dados : [];
-      const ferias = dadosFerias ? JSON.parse(dadosFerias).dados : [];
-      const faltas = dadosFaltas ? JSON.parse(dadosFaltas).dados : [];
-      const afastamentos = dadosAfastamentos ? JSON.parse(dadosAfastamentos).dados : [];
+      
+      // Parse ASO e Benefícios - podem estar no formato {dados: [...]} ou como array direto
+      const parsedASO = dadosASO ? JSON.parse(dadosASO) : null;
+      const examesASO = parsedASO ? (Array.isArray(parsedASO) ? parsedASO : parsedASO.dados || []) : [];
+      
+      const parsedBeneficios = dadosBeneficios ? JSON.parse(dadosBeneficios) : null;
+      const beneficios = parsedBeneficios ? (Array.isArray(parsedBeneficios) ? parsedBeneficios : parsedBeneficios.dados || []) : [];
+      
+      const parsedFerias = dadosFerias ? JSON.parse(dadosFerias) : null;
+      const ferias = parsedFerias ? (Array.isArray(parsedFerias) ? parsedFerias : parsedFerias.dados || []) : [];
+      
+      const parsedFaltas = dadosFaltas ? JSON.parse(dadosFaltas) : null;
+      const faltas = parsedFaltas ? (Array.isArray(parsedFaltas) ? parsedFaltas : parsedFaltas.dados || []) : [];
+      
+      const parsedAfastamentos = dadosAfastamentos ? JSON.parse(dadosAfastamentos) : null;
+      const afastamentos = parsedAfastamentos ? (Array.isArray(parsedAfastamentos) ? parsedAfastamentos : parsedAfastamentos.dados || []) : [];
+      
+      console.log('Dados para migração:', {
+        profissionais: profissionais.length,
+        lojas: lojas.length,
+        examesASO: examesASO.length,
+        beneficios: beneficios.length,
+        ferias: ferias.length,
+        faltas: faltas.length,
+        afastamentos: afastamentos.length
+      });
 
       // Chamar edge function
       const { data, error } = await supabase.functions.invoke('migrate-excel-data', {
@@ -168,14 +189,27 @@ const MigrarDados = () => {
     const dadosFaltas = localStorage.getItem('dadosFaltas');
     const dadosAfastamentos = localStorage.getItem('dadosAfastamentos');
 
+    // Helper para parsear dados que podem estar no formato {dados: [...]} ou array direto
+    const parseData = (data: string | null) => {
+      if (!data) return 0;
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) return parsed.length;
+        if (parsed.dados && Array.isArray(parsed.dados)) return parsed.dados.length;
+        return 0;
+      } catch {
+        return 0;
+      }
+    };
+
     return {
       profissionais: profissionaisImportados ? JSON.parse(profissionaisImportados).length : 0,
       lojas: lojasData ? JSON.parse(lojasData).length : 0,
-      aso: dadosASO ? JSON.parse(dadosASO).dados?.length || 0 : 0,
-      beneficios: dadosBeneficios ? JSON.parse(dadosBeneficios).dados?.length || 0 : 0,
-      ferias: dadosFerias ? JSON.parse(dadosFerias).dados?.length || 0 : 0,
-      faltas: dadosFaltas ? JSON.parse(dadosFaltas).dados?.length || 0 : 0,
-      afastamentos: dadosAfastamentos ? JSON.parse(dadosAfastamentos).dados?.length || 0 : 0
+      aso: parseData(dadosASO),
+      beneficios: parseData(dadosBeneficios),
+      ferias: parseData(dadosFerias),
+      faltas: parseData(dadosFaltas),
+      afastamentos: parseData(dadosAfastamentos)
     };
   };
 
