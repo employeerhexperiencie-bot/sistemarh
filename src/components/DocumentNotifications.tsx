@@ -41,7 +41,6 @@ export const DocumentNotifications: React.FC = () => {
           id,
           nome,
           data_vencimento,
-          tipo,
           loja:lojas(id, nome)
         `)
         .not('data_vencimento', 'is', null)
@@ -54,7 +53,6 @@ export const DocumentNotifications: React.FC = () => {
           id,
           nome,
           data_vencimento,
-          categoria,
           professional:profissionais(id, nome)
         `)
         .not('data_vencimento', 'is', null)
