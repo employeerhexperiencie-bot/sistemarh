@@ -958,6 +958,7 @@ export type Database = {
         Row: {
           created_at: string | null
           data_validade: string | null
+          data_vencimento: string | null
           file_path: string
           file_type: string | null
           id: string
@@ -968,6 +969,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           data_validade?: string | null
+          data_vencimento?: string | null
           file_path: string
           file_type?: string | null
           id?: string
@@ -978,6 +980,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           data_validade?: string | null
+          data_vencimento?: string | null
           file_path?: string
           file_type?: string | null
           id?: string
@@ -1091,6 +1094,7 @@ export type Database = {
         Row: {
           created_at: string | null
           data_validade: string | null
+          data_vencimento: string | null
           file_path: string
           file_type: string | null
           id: string
@@ -1101,6 +1105,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           data_validade?: string | null
+          data_vencimento?: string | null
           file_path: string
           file_type?: string | null
           id?: string
@@ -1111,6 +1116,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           data_validade?: string | null
+          data_vencimento?: string | null
           file_path?: string
           file_type?: string | null
           id?: string
