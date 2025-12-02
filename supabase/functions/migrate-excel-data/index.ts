@@ -75,10 +75,13 @@ Deno.serve(async (req) => {
 
     const results = {
       lojas: { inserted: 0, errors: [] as string[] },
-      profissionais: { inserted: 0, errors: [] as string[] },
+      profissionais: { inserted: 0, errors: [] as string[], warnings: [] as string[] },
       examesASO: { inserted: 0, errors: [] as string[] },
       beneficios: { inserted: 0, errors: [] as string[] },
     };
+
+    // Contador para gerar matrículas automáticas
+    let autoMatriculaCounter = 1;
 
     // Mapa para relacionar nomes de lojas com IDs (case-insensitive)
     const lojaIdMap = new Map<string, string>();
@@ -146,10 +149,17 @@ Deno.serve(async (req) => {
     // 2. Inserir Profissionais
     if (profissionais && profissionais.length > 0) {
       for (const prof of profissionais as ExcelProfissional[]) {
-        // Pular registros com matrícula inválida
-        if (!prof.matricula || prof.matricula === '00-00') {
-          results.profissionais.errors.push(`${prof.nome}: matrícula inválida`);
-          continue;
+        // Gerar matrícula automática se inválida ou ausente
+        let matricula = prof.matricula;
+        let matriculaGerada = false;
+        
+        if (!matricula || matricula.trim() === '' || matricula === '00-00' || matricula.trim().length < 2) {
+          // Gerar matrícula automática no formato AUTO-XXXX
+          matricula = `AUTO-${String(autoMatriculaCounter).padStart(4, '0')}`;
+          autoMatriculaCounter++;
+          matriculaGerada = true;
+          results.profissionais.warnings.push(`${prof.nome}: matrícula original inválida, gerada automaticamente: ${matricula}`);
+          console.log(`Matrícula gerada para ${prof.nome}: ${matricula}`);
         }
 
         // Buscar ID da loja pelo nome (com matching case-insensitive)
@@ -165,17 +175,24 @@ Deno.serve(async (req) => {
           }
           
           if (!lojaId) {
-            console.warn(`Loja não encontrada para profissional ${prof.matricula}: "${prof.localTrabalho}"`);
+            console.warn(`Loja não encontrada para profissional ${matricula}: "${prof.localTrabalho}"`);
+            results.profissionais.warnings.push(`${prof.nome} (${matricula}): loja "${prof.localTrabalho}" não encontrada`);
           }
+        } else {
+          results.profissionais.warnings.push(`${prof.nome} (${matricula}): sem loja definida`);
         }
 
         // Determinar salário (priorizar salarioNominal, depois ultimoSalario, depois primeiroSalario)
         const salario = prof.salarioNominal || prof.ultimoSalario || prof.primeiroSalario || null;
+        
+        if (!salario) {
+          results.profissionais.warnings.push(`${prof.nome} (${matricula}): sem salário definido`);
+        }
 
         const { data, error } = await supabase
           .from('profissionais')
           .upsert({
-            matricula: prof.matricula,
+            matricula: matricula,
             nome: prof.nome,
             cpf: prof.cpf || null,
             rg: prof.rg || null,
@@ -218,6 +235,9 @@ Deno.serve(async (req) => {
             local_homologacao: prof.localHomologacao || null,
             data_cumprir_aviso: prof.dataCumprirAviso || null,
             status: prof.status || 'ativo',
+          }, {
+            onConflict: 'matricula',
+            ignoreDuplicates: false
           })
           .select('id, matricula, nome')
           .single();
@@ -225,10 +245,10 @@ Deno.serve(async (req) => {
         if (error) {
           // Ignorar erros de duplicata
           if (error.code === '23505') {
-            console.log(`Profissional ${prof.matricula} já existe, pulando...`);
+            console.log(`Profissional ${matricula} já existe, pulando...`);
           } else {
             console.error(`Erro ao inserir profissional ${prof.nome}:`, error);
-            results.profissionais.errors.push(`${prof.matricula} - ${prof.nome}: ${error.message}`);
+            results.profissionais.errors.push(`${matricula} - ${prof.nome}: ${error.message}`);
           }
         } else {
           results.profissionais.inserted++;
