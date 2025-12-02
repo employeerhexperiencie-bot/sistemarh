@@ -1,35 +1,65 @@
-import { useState } from 'react';
-import { useMockData } from '@/hooks/useMockData';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   FileText, 
   Download, 
   Filter, 
-  TrendingUp, 
   Users, 
   Building2, 
   Calendar,
   AlertTriangle,
   CheckCircle,
   Clock,
-  DollarSign
+  DollarSign,
+  Loader2
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Relatorios() {
-  const mockData = useMockData();
+  const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState({ inicio: '', fim: '' });
   const [loja, setLoja] = useState('TODAS');
   const [tipoRelatorio, setTipoRelatorio] = useState('geral');
+  const [stats, setStats] = useState({
+    totalLojas: 0,
+    totalProfissionais: 0,
+    feriasAgendadas: 0,
+    alertasAtivos: 0,
+  });
+  const [lojas, setLojas] = useState<{ id: string; nome: string }[]>([]);
 
-  const ferias = mockData.getFerias();
-  const feriasAgendadas = ferias.filter((f: any) => f.status === 'agendada').length;
-  const alertas = mockData.getAlertas();
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [lojasRes, profRes, feriasRes, alertasRes] = await Promise.all([
+        supabase.from('lojas').select('id, nome'),
+        supabase.from('profissionais').select('id').eq('status', 'ativo'),
+        supabase.from('ferias').select('id').eq('status', 'agendada'),
+        supabase.from('alertas_sistema').select('id').eq('lido', false),
+      ]);
+
+      setLojas(lojasRes.data || []);
+      setStats({
+        totalLojas: lojasRes.data?.length || 0,
+        totalProfissionais: profRes.data?.length || 0,
+        feriasAgendadas: feriasRes.data?.length || 0,
+        alertasAtivos: alertasRes.data?.length || 0,
+      });
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const relatoriosDisponiveis = [
     {
@@ -93,6 +123,14 @@ export default function Relatorios() {
     // Implementação futura
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -102,7 +140,6 @@ export default function Relatorios() {
         </p>
       </div>
 
-      {/* Filtros Globais */}
       <Card className="card-shadow">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -138,9 +175,9 @@ export default function Relatorios() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="TODAS">Todas as lojas</SelectItem>
-                  <SelectItem value="CENTRO">Centro</SelectItem>
-                  <SelectItem value="BROOKLIN">Brooklin</SelectItem>
-                  <SelectItem value="MORUMBI">Morumbi</SelectItem>
+                  {lojas.map((l) => (
+                    <SelectItem key={l.id} value={l.nome}>{l.nome}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -153,7 +190,6 @@ export default function Relatorios() {
         </CardContent>
       </Card>
 
-      {/* Cards de Relatórios Disponíveis */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {relatoriosDisponiveis.map((relatorio) => (
           <Card 
@@ -179,7 +215,6 @@ export default function Relatorios() {
         ))}
       </div>
 
-      {/* Área de Exportação */}
       <Card className="card-shadow">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -226,14 +261,13 @@ export default function Relatorios() {
         </CardContent>
       </Card>
 
-      {/* Estatísticas Rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <Building2 className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold text-primary">{mockData.totalLojas}</p>
+                <p className="text-2xl font-bold text-primary">{stats.totalLojas}</p>
                 <p className="text-sm text-muted-foreground">Lojas</p>
               </div>
             </div>
@@ -245,7 +279,7 @@ export default function Relatorios() {
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-accent" />
               <div>
-                <p className="text-2xl font-bold text-accent">{mockData.totalProfissionais}</p>
+                <p className="text-2xl font-bold text-accent">{stats.totalProfissionais}</p>
                 <p className="text-sm text-muted-foreground">Profissionais</p>
               </div>
             </div>
@@ -257,7 +291,7 @@ export default function Relatorios() {
             <div className="flex items-center gap-3">
               <Calendar className="h-8 w-8 text-success" />
               <div>
-                <p className="text-2xl font-bold text-success">{feriasAgendadas}</p>
+                <p className="text-2xl font-bold text-success">{stats.feriasAgendadas}</p>
                 <p className="text-sm text-muted-foreground">Férias Agendadas</p>
               </div>
             </div>
@@ -269,7 +303,7 @@ export default function Relatorios() {
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-8 w-8 text-warning" />
               <div>
-                <p className="text-2xl font-bold text-warning">{alertas.length}</p>
+                <p className="text-2xl font-bold text-warning">{stats.alertasAtivos}</p>
                 <p className="text-sm text-muted-foreground">Alertas Ativos</p>
               </div>
             </div>

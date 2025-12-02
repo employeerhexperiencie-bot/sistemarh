@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, Trash2, Eye, AlertCircle, Download, FileDown, Filter, X } from 'lucide-react';
-import { useMockData } from '@/hooks/useMockData';
+import { Calendar, Trash2, Eye, AlertCircle, Download, FileDown, Filter, X, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileUploader } from '@/components/FileUploader';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface Falta {
@@ -26,26 +26,8 @@ interface Falta {
 }
 
 export default function Faltas() {
-  const mockData = useMockData();
-  
-  const faltasIniciais = useMemo(() => {
-    const faltasData = mockData.getFaltas();
-    return faltasData
-      .filter(f => f.totalFaltas > 0)
-      .map((f, index) => ({
-        id: `${f.matricula}-${index}`,
-        matricula: f.matricula,
-        nomeProfissional: f.nome,
-        loja: f.loja,
-        data: f.ultimaFalta || '2024-11-25',
-        tipo: (f.faltasInjustificadas > 0 ? 'INJUSTIFICADA' : 'JUSTIFICADA') as 'JUSTIFICADA' | 'INJUSTIFICADA',
-        observacao: `Total: ${f.totalFaltas} faltas (${f.faltasJustificadas} justificadas, ${f.faltasInjustificadas} injustificadas)`,
-        createdAt: new Date().toISOString(),
-      }));
-  }, [mockData.profissionais.length]);
-
-  const [faltas, setFaltas] = useState<Falta[]>(faltasIniciais);
-
+  const [faltas, setFaltas] = useState<Falta[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     matricula: '',
@@ -56,10 +38,7 @@ export default function Faltas() {
     observacao: '',
     atestadoFileId: null as string | null,
   });
-  
-  const [loading, setLoading] = useState(false);
-
-  // Filtros
+  const [saving, setSaving] = useState(false);
   const [filtros, setFiltros] = useState({
     dataInicio: '',
     dataFim: '',
@@ -67,10 +46,50 @@ export default function Faltas() {
     tipo: 'todos',
     busca: '',
   });
-
   const [showFilters, setShowFilters] = useState(false);
 
-  // Obter lista única de lojas
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('faltas')
+        .select(`
+          *,
+          profissionais:profissional_id (
+            matricula,
+            nome,
+            lojas:loja_id (nome)
+          )
+        `)
+        .order('data_falta', { ascending: false });
+
+      if (error) throw error;
+
+      const faltasData: Falta[] = (data || []).map((f: any) => ({
+        id: f.id,
+        matricula: f.profissionais?.matricula || '',
+        nomeProfissional: f.profissionais?.nome || 'Profissional não encontrado',
+        loja: f.profissionais?.lojas?.nome || 'Loja não definida',
+        data: f.data_falta,
+        tipo: (f.tipo?.toUpperCase() === 'JUSTIFICADA' ? 'JUSTIFICADA' : 'INJUSTIFICADA') as 'JUSTIFICADA' | 'INJUSTIFICADA',
+        observacao: f.motivo || undefined,
+        atestadoFileId: f.documento_comprovante || undefined,
+        createdAt: f.created_at,
+      }));
+
+      setFaltas(faltasData);
+    } catch (error) {
+      console.error('Erro ao carregar faltas:', error);
+      toast.error('Erro ao carregar dados de faltas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const lojasUnicas = useMemo(() => {
     const lojas = new Set(faltas.map(f => f.loja));
     return Array.from(lojas).sort();
@@ -78,22 +97,37 @@ export default function Faltas() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!formData.matricula || !formData.data || !formData.tipo) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
 
+    setSaving(true);
     try {
-      const novaFalta: Falta = {
-        id: Date.now().toString(),
-        matricula: formData.matricula,
-        nomeProfissional: formData.nomeProfissional,
-        loja: formData.loja,
-        data: formData.data,
-        tipo: formData.tipo as 'JUSTIFICADA' | 'INJUSTIFICADA',
-        observacao: formData.observacao || undefined,
-        atestadoFileId: formData.atestadoFileId || undefined,
-        createdAt: new Date().toISOString(),
-      };
+      const { data: prof } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('matricula', formData.matricula)
+        .maybeSingle();
 
-      setFaltas([novaFalta, ...faltas]);
+      if (!prof) {
+        toast.error('Profissional não encontrado com essa matrícula');
+        setSaving(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('faltas')
+        .insert({
+          profissional_id: prof.id,
+          data_falta: formData.data,
+          tipo: formData.tipo.toLowerCase(),
+          motivo: formData.observacao || null,
+          documento_comprovante: formData.atestadoFileId || null,
+        });
+
+      if (error) throw error;
+
       toast.success('Falta registrada com sucesso');
       setIsDialogOpen(false);
       setFormData({
@@ -105,18 +139,20 @@ export default function Faltas() {
         observacao: '',
         atestadoFileId: null,
       });
+      loadData();
     } catch (error) {
+      console.error('Erro ao registrar falta:', error);
       toast.error('Erro ao registrar falta');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta falta?')) {
-      setFaltas(faltas.filter(f => f.id !== id));
-      toast.success('Falta excluída com sucesso');
-    }
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta falta?')) return;
+    
+    // Note: DELETE não está permitido na tabela faltas pelas RLS policies
+    toast.error('Exclusão de faltas não permitida pelo sistema');
   };
 
   const handleFileUploaded = (fileId: string) => {
@@ -129,27 +165,18 @@ export default function Faltas() {
       : 'bg-destructive/10 text-destructive border-destructive/20';
   };
 
-  // Aplicar filtros
   const faltasFiltradas = useMemo(() => {
     return faltas.filter(falta => {
-      // Filtro por período
       if (filtros.dataInicio && falta.data < filtros.dataInicio) return false;
       if (filtros.dataFim && falta.data > filtros.dataFim) return false;
-
-      // Filtro por loja
       if (filtros.loja !== 'todas' && falta.loja !== filtros.loja) return false;
-
-      // Filtro por tipo
       if (filtros.tipo !== 'todos' && falta.tipo !== filtros.tipo) return false;
-
-      // Filtro por busca (nome ou matrícula)
       if (filtros.busca) {
         const busca = filtros.busca.toLowerCase();
         const nomeMatch = falta.nomeProfissional.toLowerCase().includes(busca);
         const matriculaMatch = falta.matricula.toLowerCase().includes(busca);
         if (!nomeMatch && !matriculaMatch) return false;
       }
-
       return true;
     });
   }, [faltas, filtros]);
@@ -188,6 +215,14 @@ export default function Faltas() {
     link.click();
     toast.success('CSV exportado com sucesso');
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -332,13 +367,12 @@ export default function Faltas() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Observação</TableHead>
                 <TableHead className="text-center">Atestado</TableHead>
-                <TableHead className="text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {faltasFiltradas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     {faltas.length === 0 ? 'Nenhuma falta registrada ainda' : 'Nenhuma falta encontrada com os filtros aplicados'}
                   </TableCell>
                 </TableRow>
@@ -369,16 +403,6 @@ export default function Faltas() {
                         '-'
                       )}
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(falta.id)}
-                        title="Excluir"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -405,29 +429,6 @@ export default function Faltas() {
                   placeholder="001"
                   value={formData.matricula}
                   onChange={(e) => setFormData(prev => ({ ...prev, matricula: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nomeProfissional">Nome do Profissional *</Label>
-                <Input
-                  id="nomeProfissional"
-                  placeholder="João Silva"
-                  value={formData.nomeProfissional}
-                  onChange={(e) => setFormData(prev => ({ ...prev, nomeProfissional: e.target.value }))}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="loja">Loja *</Label>
-                <Input
-                  id="loja"
-                  placeholder="REI DO GADO"
-                  value={formData.loja}
-                  onChange={(e) => setFormData(prev => ({ ...prev, loja: e.target.value }))}
                   required
                 />
               </div>
@@ -463,26 +464,20 @@ export default function Faltas() {
                 placeholder="Detalhes adicionais sobre a falta"
                 value={formData.observacao}
                 onChange={(e) => setFormData(prev => ({ ...prev, observacao: e.target.value }))}
-                rows={3}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Atestado (opcional)</Label>
-              <FileUploader
-                onFileUploaded={handleFileUploaded}
-              />
-              <p className="text-xs text-muted-foreground">
-                Anexe atestado médico ou justificativa para faltas justificadas
-              </p>
+              <Label>Atestado/Comprovante</Label>
+              <FileUploader onFileUploaded={handleFileUploaded} />
             </div>
 
-            <div className="flex gap-2 justify-end pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <div className="flex gap-2 pt-4">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Registrando...' : 'Registrar Falta'}
+              <Button type="submit" className="flex-1" disabled={saving}>
+                {saving ? 'Salvando...' : 'Registrar Falta'}
               </Button>
             </div>
           </form>

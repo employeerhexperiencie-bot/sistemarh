@@ -404,7 +404,7 @@ export function Dashboard() {
       {/* Alerts and Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Alertas Automáticos */}
-        <AlertasResumo maxItems={5} />
+        <AlertasResumo />
 
         {/* Ranking de Lojas */}
         <LojaComparison />

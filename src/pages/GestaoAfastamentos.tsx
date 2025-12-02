@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUploader } from '@/components/FileUploader';
-import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock } from 'lucide-react';
-import { useMockData } from '@/hooks/useMockData';
+import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Afastamento {
   id: string;
@@ -36,74 +37,110 @@ const motivosAfastamento = [
 ];
 
 export default function GestaoAfastamentos() {
-  const mockData = useMockData();
   const [afastamentos, setAfastamentos] = useState<Afastamento[]>([]);
-
-  useEffect(() => {
-    if (mockData.hasMockData) {
-      const afastamentosData = mockData.getAfastamentos();
-      const afastamentosFormatados: Afastamento[] = afastamentosData.map((a: any) => ({
-        id: a.id,
-        matricula: a.matricula,
-        nome: a.nome,
-        loja: a.loja,
-        motivo: a.motivo as Afastamento['motivo'],
-        dataInicio: a.dataInicio,
-        dataPericia: a.dataPericia,
-        dataFim: a.dataFim,
-        status: a.status as Afastamento['status'],
-        observacao: a.observacao,
-      }));
-      setAfastamentos(afastamentosFormatados);
-    } else {
-      // Dados de fallback
-      setAfastamentos([
-        {
-          id: '1',
-          matricula: '001',
-          nome: 'João Silva',
-          loja: 'CENTRO',
-          motivo: 'ACIDENTE_TRABALHO',
-          dataInicio: '2025-01-10',
-          dataPericia: '2025-02-10',
-          status: 'ATIVO',
-        },
-        {
-          id: '2',
-          matricula: '003',
-          nome: 'Ana Costa',
-          loja: 'BROOKLIN',
-          motivo: 'LICENCA_MATERNIDADE',
-          dataInicio: '2025-01-15',
-          status: 'ATIVO',
-          observacao: 'Recebe 40% no dia 20',
-        }
-      ]);
-    }
-  }, [mockData.hasMockData]);
-
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAfastamento, setEditingAfastamento] = useState<Afastamento | null>(null);
-  const [formData, setFormData] = useState<Partial<Afastamento>>({
-    status: 'ATIVO'
-  });
+  const [formData, setFormData] = useState<Partial<Afastamento>>({ status: 'ATIVO' });
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    if (!formData.matricula || !formData.dataInicio || !formData.motivo) return;
+  useEffect(() => {
+    loadData();
+  }, []);
 
-    if (editingAfastamento) {
-      setAfastamentos(prev =>
-        prev.map(a => a.id === editingAfastamento.id ? { ...a, ...formData } as Afastamento : a)
-      );
-    } else {
-      const newAfastamento: Afastamento = {
-        ...formData,
-        id: Date.now().toString(),
-      } as Afastamento;
-      setAfastamentos(prev => [...prev, newAfastamento]);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('afastamentos')
+        .select(`
+          *,
+          profissionais:profissional_id (
+            matricula,
+            nome,
+            lojas:loja_id (nome)
+          )
+        `);
+
+      if (error) throw error;
+
+      const afastamentosData: Afastamento[] = (data || []).map((a: any) => ({
+        id: a.id,
+        matricula: a.profissionais?.matricula || '',
+        nome: a.profissionais?.nome || 'Profissional não encontrado',
+        loja: a.profissionais?.lojas?.nome || 'Loja não definida',
+        motivo: (a.tipo?.toUpperCase() || 'OUTROS') as Afastamento['motivo'],
+        dataInicio: a.data_inicio,
+        dataPericia: a.data_prevista_retorno || undefined,
+        dataFim: a.data_retorno_efetivo || undefined,
+        status: (a.status?.toUpperCase() || 'ATIVO') as Afastamento['status'],
+        observacao: a.motivo || undefined,
+      }));
+
+      setAfastamentos(afastamentosData);
+    } catch (error) {
+      console.error('Erro ao carregar afastamentos:', error);
+      toast.error('Erro ao carregar dados de afastamentos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!formData.matricula || !formData.dataInicio || !formData.motivo) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
     }
 
-    handleCloseDialog();
+    setSaving(true);
+    try {
+      const { data: prof } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('matricula', formData.matricula)
+        .maybeSingle();
+
+      if (!prof) {
+        toast.error('Profissional não encontrado com essa matrícula');
+        setSaving(false);
+        return;
+      }
+
+      const afastamentoData = {
+        profissional_id: prof.id,
+        tipo: formData.motivo?.toLowerCase() || 'outros',
+        data_inicio: formData.dataInicio,
+        data_prevista_retorno: formData.dataPericia || null,
+        data_retorno_efetivo: formData.dataFim || null,
+        status: formData.status?.toLowerCase() || 'ativo',
+        motivo: formData.observacao || null,
+      };
+
+      if (editingAfastamento) {
+        const { error } = await supabase
+          .from('afastamentos')
+          .update(afastamentoData)
+          .eq('id', editingAfastamento.id);
+        
+        if (error) throw error;
+        toast.success('Afastamento atualizado com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('afastamentos')
+          .insert(afastamentoData);
+        
+        if (error) throw error;
+        toast.success('Afastamento registrado com sucesso!');
+      }
+
+      handleCloseDialog();
+      loadData();
+    } catch (error) {
+      console.error('Erro ao salvar afastamento:', error);
+      toast.error('Erro ao salvar afastamento');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEdit = (afastamento: Afastamento) => {
@@ -146,6 +183,14 @@ export default function GestaoAfastamentos() {
   const aguardandoPericia = afastamentos.filter(a => a.status === 'AGUARDANDO_PERICIA').length;
   const finalizados = afastamentos.filter(a => a.status === 'FINALIZADO').length;
   const maternidade = afastamentos.filter(a => a.motivo === 'LICENCA_MATERNIDADE' && a.status === 'ATIVO').length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -278,15 +323,14 @@ export default function GestaoAfastamentos() {
               <Button onClick={handleCloseDialog} variant="outline" className="flex-1">
                 Cancelar
               </Button>
-              <Button onClick={handleSave} className="flex-1">
-                Salvar
+              <Button onClick={handleSave} disabled={saving} className="flex-1">
+                {saving ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Cards de Resumo */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-warning/5 border-warning/20">
           <CardContent className="pt-6">
@@ -337,7 +381,6 @@ export default function GestaoAfastamentos() {
         </Card>
       </div>
 
-      {/* Regras de Pagamento */}
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader className="pb-3">
           <CardTitle className="text-base sm:text-lg text-primary flex items-center gap-2">
@@ -352,7 +395,6 @@ export default function GestaoAfastamentos() {
         </CardContent>
       </Card>
 
-      {/* Tabela de Afastamentos */}
       <Card>
         <CardHeader>
           <CardTitle>Controle de Afastamentos</CardTitle>
@@ -372,29 +414,37 @@ export default function GestaoAfastamentos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {afastamentos.map((afastamento) => (
-                <TableRow key={afastamento.id}>
-                  <TableCell className="font-mono">{afastamento.matricula}</TableCell>
-                  <TableCell className="font-medium">{afastamento.nome}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{afastamento.loja}</TableCell>
-                  <TableCell>{getMotivoBadge(afastamento.motivo)}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {new Date(afastamento.dataInicio).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {afastamento.dataPericia 
-                      ? new Date(afastamento.dataPericia).toLocaleDateString('pt-BR')
-                      : <span className="text-muted-foreground">-</span>
-                    }
-                  </TableCell>
-                  <TableCell>{getStatusBadge(afastamento.status)}</TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="ghost" onClick={() => handleEdit(afastamento)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+              {afastamentos.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    Nenhum afastamento registrado
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                afastamentos.map((afastamento) => (
+                  <TableRow key={afastamento.id}>
+                    <TableCell className="font-mono">{afastamento.matricula}</TableCell>
+                    <TableCell className="font-medium">{afastamento.nome}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{afastamento.loja}</TableCell>
+                    <TableCell>{getMotivoBadge(afastamento.motivo)}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {new Date(afastamento.dataInicio).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      {afastamento.dataPericia 
+                        ? new Date(afastamento.dataPericia).toLocaleDateString('pt-BR')
+                        : <span className="text-muted-foreground">-</span>
+                      }
+                    </TableCell>
+                    <TableCell>{getStatusBadge(afastamento.status)}</TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(afastamento)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

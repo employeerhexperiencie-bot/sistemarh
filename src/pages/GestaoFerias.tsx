@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock } from 'lucide-react';
-import { useN8NAction } from '@/hooks/useN8NAction';
-import { useMockData } from '@/hooks/useMockData';
+import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Vacation {
+  id: string;
   matricula: string;
   nome: string;
   loja: string;
@@ -27,32 +28,8 @@ interface Vacation {
 }
 
 export default function GestaoFerias() {
-  const mockData = useMockData();
   const [vacations, setVacations] = useState<Vacation[]>([]);
-
-  useEffect(() => {
-    const feriasData = mockData.getFerias();
-    const feriasFormatadas: Vacation[] = feriasData.map((f) => {
-      const periodoAquisitivoArr = f.periodoAquisitivo.split(' - ');
-      const [diaIni, mesIni, anoIni] = periodoAquisitivoArr[0].split('/');
-      const [diaFim, mesFim, anoFim] = periodoAquisitivoArr[1].split('/');
-      
-      return {
-        matricula: f.matricula,
-        nome: f.nome,
-        loja: f.loja,
-        periodoAquisitivo: {
-          inicio: `${anoIni}-${mesIni}-${diaIni}`,
-          fim: `${anoFim}-${mesFim}-${diaFim}`,
-        },
-        diasUsados: f.status === 'agendada' ? 10 : 0,
-        diasDisponiveis: f.diasDisponiveis,
-        status: f.status === 'vencida' ? 'VENCENDO' : f.status === 'agendada' ? 'AGENDADO' : 'PENDENTE',
-      };
-    });
-    setVacations(feriasFormatadas);
-  }, [mockData]);
-
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVacation, setEditingVacation] = useState<Vacation | null>(null);
   const [formData, setFormData] = useState<Partial<Vacation>>({
@@ -60,31 +37,131 @@ export default function GestaoFerias() {
     diasUsados: 0,
     status: 'PENDENTE'
   });
+  const [saving, setSaving] = useState(false);
 
-  const { execute, loading } = useN8NAction();
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const { data: ferias, error: feriasError } = await supabase
+        .from('ferias')
+        .select(`
+          *,
+          profissionais:profissional_id (
+            matricula,
+            nome,
+            lojas:loja_id (nome)
+          )
+        `);
+
+      if (feriasError) throw feriasError;
+
+      const vacationsData: Vacation[] = (ferias || []).map((f: any) => {
+        const hoje = new Date();
+        const dataFim = new Date(f.periodo_aquisitivo_fim);
+        const diasRestantes = Math.ceil((dataFim.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        let status: Vacation['status'] = 'PENDENTE';
+        if (f.status === 'em_gozo') status = 'EM_FERIAS';
+        else if (f.status === 'agendada') status = 'AGENDADO';
+        else if (f.status === 'finalizada') status = 'FINALIZADO';
+        else if (diasRestantes <= 30 && diasRestantes > 0) status = 'VENCENDO';
+        else if (diasRestantes <= 0) status = 'VENCENDO';
+        
+        return {
+          id: f.id,
+          matricula: f.profissionais?.matricula || '',
+          nome: f.profissionais?.nome || 'Profissional não encontrado',
+          loja: f.profissionais?.lojas?.nome || 'Loja não definida',
+          periodoAquisitivo: {
+            inicio: f.periodo_aquisitivo_inicio,
+            fim: f.periodo_aquisitivo_fim,
+          },
+          dataInicioFerias: f.periodo_gozo_inicio || undefined,
+          dataFimFerias: f.periodo_gozo_fim || undefined,
+          diasUsados: f.dias_gozados || 0,
+          diasDisponiveis: f.dias_direito || 30,
+          status,
+        };
+      });
+
+      setVacations(vacationsData);
+    } catch (error) {
+      console.error('Erro ao carregar férias:', error);
+      toast.error('Erro ao carregar dados de férias');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
-    if (!formData.matricula || !formData.periodoAquisitivo?.inicio || !formData.periodoAquisitivo?.fim) return;
-
-    const payload = {
-      ...formData,
-    };
-
-    const action = editingVacation ? 'ferias_atualizar' : 'ferias_cadastrar';
-    
-    await execute(action, payload, {
-      successMessage: editingVacation ? 'Férias atualizadas!' : 'Período de férias cadastrado!',
-    });
-
-    if (editingVacation) {
-      setVacations(prev => 
-        prev.map(v => v.matricula === editingVacation.matricula ? { ...v, ...formData } as Vacation : v)
-      );
-    } else {
-      setVacations(prev => [...prev, formData as Vacation]);
+    if (!formData.matricula || !formData.periodoAquisitivo?.inicio || !formData.periodoAquisitivo?.fim) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
     }
 
-    handleCloseDialog();
+    setSaving(true);
+    try {
+      // Buscar profissional pela matrícula
+      const { data: prof } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('matricula', formData.matricula)
+        .maybeSingle();
+
+      if (!prof) {
+        toast.error('Profissional não encontrado com essa matrícula');
+        setSaving(false);
+        return;
+      }
+
+      const statusMap: Record<string, string> = {
+        'PENDENTE': 'pendente',
+        'AGENDADO': 'agendada',
+        'EM_FERIAS': 'em_gozo',
+        'FINALIZADO': 'finalizada',
+        'VENCENDO': 'pendente',
+      };
+
+      const feriasData = {
+        profissional_id: prof.id,
+        periodo_aquisitivo_inicio: formData.periodoAquisitivo.inicio,
+        periodo_aquisitivo_fim: formData.periodoAquisitivo.fim,
+        periodo_gozo_inicio: formData.dataInicioFerias || null,
+        periodo_gozo_fim: formData.dataFimFerias || null,
+        dias_direito: formData.diasDisponiveis || 30,
+        dias_gozados: formData.diasUsados || 0,
+        status: statusMap[formData.status || 'PENDENTE'] || 'pendente',
+      };
+
+      if (editingVacation) {
+        const { error } = await supabase
+          .from('ferias')
+          .update(feriasData)
+          .eq('id', editingVacation.id);
+        
+        if (error) throw error;
+        toast.success('Férias atualizadas com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('ferias')
+          .insert(feriasData);
+        
+        if (error) throw error;
+        toast.success('Férias cadastradas com sucesso!');
+      }
+
+      handleCloseDialog();
+      loadData();
+    } catch (error) {
+      console.error('Erro ao salvar férias:', error);
+      toast.error('Erro ao salvar férias');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEdit = (vacation: Vacation) => {
@@ -129,6 +206,14 @@ export default function GestaoFerias() {
   const emFerias = vacations.filter(v => v.status === 'EM_FERIAS').length;
   const vencendo = vacations.filter(v => v.status === 'VENCENDO').length;
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -164,24 +249,6 @@ export default function GestaoFerias() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  placeholder="João Silva"
-                  value={formData.nome || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="loja">Loja</Label>
-                <Input
-                  id="loja"
-                  placeholder="CENTRO"
-                  value={formData.loja || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, loja: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <select
                   id="status"
@@ -193,7 +260,6 @@ export default function GestaoFerias() {
                   <option value="AGENDADO">Agendado</option>
                   <option value="EM_FERIAS">Em Férias</option>
                   <option value="FINALIZADO">Finalizado</option>
-                  <option value="VENCENDO">Vencendo</option>
                 </select>
               </div>
               <div className="space-y-2 col-span-2">
@@ -266,22 +332,13 @@ export default function GestaoFerias() {
                   onChange={(e) => setFormData(prev => ({ ...prev, diasUsados: parseInt(e.target.value) || 0 }))}
                 />
               </div>
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="observacao">Observação</Label>
-                <Input
-                  id="observacao"
-                  placeholder="Informações adicionais"
-                  value={formData.observacao || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, observacao: e.target.value }))}
-                />
-              </div>
             </div>
             <div className="flex gap-2 mt-6">
               <Button onClick={handleCloseDialog} variant="outline" className="flex-1">
                 Cancelar
               </Button>
-              <Button onClick={handleSave} disabled={loading} className="flex-1">
-                {loading ? 'Salvando...' : 'Salvar'}
+              <Button onClick={handleSave} disabled={saving} className="flex-1">
+                {saving ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>
           </DialogContent>
@@ -357,49 +414,57 @@ export default function GestaoFerias() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vacations.map((vacation, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-mono">{vacation.matricula}</TableCell>
-                  <TableCell className="font-medium">{vacation.nome}</TableCell>
-                  <TableCell>{vacation.loja}</TableCell>
-                  <TableCell className="text-sm">
-                    {new Date(vacation.periodoAquisitivo.inicio).toLocaleDateString('pt-BR')} até{' '}
-                    {new Date(vacation.periodoAquisitivo.fim).toLocaleDateString('pt-BR')}
-                    {vacation.status === 'VENCENDO' && (
-                      <div className="text-warning text-xs">
-                        Vence em {calculateDaysRemaining(vacation)} dias
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {vacation.dataInicioFerias && vacation.dataFimFerias ? (
-                      <div className="text-sm">
-                        {new Date(vacation.dataInicioFerias).toLocaleDateString('pt-BR')} até{' '}
-                        {new Date(vacation.dataFimFerias).toLocaleDateString('pt-BR')}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">Não agendado</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <span className="text-success">{vacation.diasDisponiveis - vacation.diasUsados}</span>/
-                      <span className="text-muted-foreground">{vacation.diasDisponiveis}</span>
-                      {vacation.diasUsados > 0 && (
-                        <div className="text-xs text-muted-foreground">
-                          {vacation.diasUsados} já usados
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(vacation.status)}</TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="ghost" onClick={() => handleEdit(vacation)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+              {vacations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    Nenhum registro de férias encontrado
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                vacations.map((vacation) => (
+                  <TableRow key={vacation.id}>
+                    <TableCell className="font-mono">{vacation.matricula}</TableCell>
+                    <TableCell className="font-medium">{vacation.nome}</TableCell>
+                    <TableCell>{vacation.loja}</TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(vacation.periodoAquisitivo.inicio).toLocaleDateString('pt-BR')} até{' '}
+                      {new Date(vacation.periodoAquisitivo.fim).toLocaleDateString('pt-BR')}
+                      {vacation.status === 'VENCENDO' && (
+                        <div className="text-warning text-xs">
+                          Vence em {calculateDaysRemaining(vacation)} dias
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {vacation.dataInicioFerias && vacation.dataFimFerias ? (
+                        <div className="text-sm">
+                          {new Date(vacation.dataInicioFerias).toLocaleDateString('pt-BR')} até{' '}
+                          {new Date(vacation.dataFimFerias).toLocaleDateString('pt-BR')}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Não agendado</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <span className="text-success">{vacation.diasDisponiveis - vacation.diasUsados}</span>/
+                        <span className="text-muted-foreground">{vacation.diasDisponiveis}</span>
+                        {vacation.diasUsados > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            {vacation.diasUsados} já usados
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(vacation.status)}</TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(vacation)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
