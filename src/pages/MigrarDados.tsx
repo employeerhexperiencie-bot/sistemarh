@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Database, Upload, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Database, Upload, CheckCircle2, XCircle, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface MigrationResults {
   lojas: { inserted: number; errors: string[] };
-  profissionais: { inserted: number; errors: string[] };
+  profissionais: { inserted: number; errors: string[]; warnings?: string[] };
   examesASO: { inserted: number; errors: string[] };
   beneficios: { inserted: number; errors: string[] };
 }
@@ -316,10 +316,39 @@ const MigrarDados = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Profissionais</h3>
-                <Badge variant={results.profissionais.errors.length > 0 ? "destructive" : "default"}>
-                  {results.profissionais.inserted} inseridos
-                </Badge>
+                <div className="flex gap-2">
+                  {results.profissionais.warnings && results.profissionais.warnings.length > 0 && (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                      {results.profissionais.warnings.length} avisos
+                    </Badge>
+                  )}
+                  <Badge variant={results.profissionais.errors.length > 0 ? "destructive" : "default"}>
+                    {results.profissionais.inserted} inseridos
+                  </Badge>
+                </div>
               </div>
+              
+              {/* Warnings - para RH revisar */}
+              {results.profissionais.warnings && results.profissionais.warnings.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-md space-y-1 max-h-60 overflow-y-auto">
+                  <p className="text-sm font-medium text-amber-800 mb-2">
+                    ⚠️ Registros para revisão do RH:
+                  </p>
+                  {results.profissionais.warnings.slice(0, 20).map((warning, idx) => (
+                    <p key={idx} className="text-sm text-amber-700 flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      {warning}
+                    </p>
+                  ))}
+                  {results.profissionais.warnings.length > 20 && (
+                    <p className="text-sm text-amber-600 italic">
+                      ... e mais {results.profissionais.warnings.length - 20} avisos
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* Errors */}
               {results.profissionais.errors.length > 0 && (
                 <div className="bg-destructive/10 p-3 rounded-md space-y-1 max-h-60 overflow-y-auto">
                   {results.profissionais.errors.slice(0, 10).map((error, idx) => (
