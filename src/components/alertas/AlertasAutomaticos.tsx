@@ -13,11 +13,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Bell, AlertTriangle, Calendar, FileText, Stethoscope, 
   Clock, CheckCircle, XCircle, Building2, User, ChevronRight,
-  Filter, Download, RefreshCw, Eye, CheckCircle2, Info
+  Filter, Download, RefreshCw, Eye, CheckCircle2, Info, Loader2
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useMockData } from '@/hooks/useMockData';
+import { supabase } from '@/integrations/supabase/client';
 
 export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
@@ -37,232 +37,6 @@ export interface Alerta {
   lido: boolean;
   resolvido: boolean;
 }
-
-// Gerar alertas baseado em dados reais das planilhas
-const gerarAlertasReais = (mockData: ReturnType<typeof useMockData>): Alerta[] => {
-  const alertas: Alerta[] = [];
-  let id = 1;
-  const hoje = new Date();
-
-  // Verificar se temos dados ASO carregados
-  const dadosASOStr = localStorage.getItem('dadosASO');
-  if (dadosASOStr && mockData.hasMockData) {
-    try {
-      const dadosASO = JSON.parse(dadosASOStr);
-      
-      // Alertas de ASO baseados em dados reais
-      dadosASO.forEach((aso: any) => {
-        if (!aso.proxExame || aso.proxExame === 'NR') return;
-        
-        const dataVenc = new Date(aso.proxExame);
-        const diasRestantes = Math.floor((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-        
-        let nivel: NivelAlerta = 'info';
-        if (diasRestantes <= 0) nivel = 'critico';
-        else if (diasRestantes <= 7) nivel = 'urgente';
-        else if (diasRestantes <= 30) nivel = 'atencao';
-        
-        // Só criar alerta se estiver vencido ou vencendo em até 60 dias
-        if (diasRestantes <= 60) {
-          alertas.push({
-            id: `aso-${id++}`,
-            tipo: 'aso',
-            nivel,
-            titulo: diasRestantes <= 0 ? 'ASO Vencido' : 'ASO Vencendo',
-            descricao: diasRestantes <= 0 
-              ? `Exame ocupacional vencido há ${Math.abs(diasRestantes)} dias`
-              : `Exame ocupacional vence em ${diasRestantes} dias`,
-            dataVencimento: dataVenc.toISOString().split('T')[0],
-            diasRestantes,
-            loja: aso.localTrabalho || 'N/A',
-            profissional: aso.nome,
-            matricula: aso.matricula,
-            acaoUrl: '/gestao-aso',
-            lido: false,
-            resolvido: false,
-          });
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao processar alertas de ASO:', error);
-    }
-  }
-
-  // Alertas de Férias baseados em dados reais
-  if (mockData.hasMockData) {
-    const ferias = mockData.getFerias();
-    ferias.forEach((feria: any) => {
-      if (feria.status === 'vencida' || feria.status === 'vencendo') {
-        const dataVenc = new Date(feria.dataVencimento);
-        const diasRestantes = Math.floor((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-        
-        let nivel: NivelAlerta = 'info';
-        if (diasRestantes <= 0) nivel = 'critico';
-        else if (diasRestantes <= 15) nivel = 'urgente';
-        else if (diasRestantes <= 30) nivel = 'atencao';
-        
-        alertas.push({
-          id: `ferias-${id++}`,
-          tipo: 'ferias',
-          nivel,
-          titulo: diasRestantes <= 0 ? 'Férias Vencidas' : 'Férias a Vencer',
-          descricao: diasRestantes <= 0 
-            ? `Período aquisitivo venceu há ${Math.abs(diasRestantes)} dias - AÇÃO URGENTE`
-            : `Período aquisitivo vence em ${diasRestantes} dias`,
-          dataVencimento: dataVenc.toISOString().split('T')[0],
-          diasRestantes,
-          loja: feria.loja,
-          profissional: feria.nome,
-          matricula: feria.matricula,
-          acaoUrl: '/gestao-ferias',
-          lido: false,
-          resolvido: false,
-        });
-      }
-    });
-  }
-
-  // Alertas de Afastamentos
-  if (mockData.hasMockData) {
-    const afastamentos = mockData.getAfastamentos();
-    afastamentos.forEach((afastamento: any) => {
-      if (afastamento.status === 'AGUARDANDO_PERICIA' && afastamento.dataPericia) {
-        const dataPericia = new Date(afastamento.dataPericia);
-        const diasRestantes = Math.floor((dataPericia.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-        
-        let nivel: NivelAlerta = 'info';
-        if (diasRestantes <= 0) nivel = 'critico';
-        else if (diasRestantes <= 7) nivel = 'urgente';
-        else if (diasRestantes <= 15) nivel = 'atencao';
-        
-        if (diasRestantes <= 30) {
-          alertas.push({
-            id: `afastamento-${id++}`,
-            tipo: 'afastamento',
-            nivel,
-            titulo: diasRestantes <= 0 ? 'Perícia Atrasada' : 'Perícia Agendada',
-            descricao: diasRestantes <= 0 
-              ? `Perícia estava agendada há ${Math.abs(diasRestantes)} dias`
-              : `Perícia agendada em ${diasRestantes} dias`,
-            dataVencimento: dataPericia.toISOString().split('T')[0],
-            diasRestantes,
-            loja: afastamento.loja,
-            profissional: afastamento.nome,
-            matricula: afastamento.matricula,
-            acaoUrl: '/gestao-afastamentos',
-            lido: false,
-            resolvido: false,
-          });
-        }
-      }
-    });
-  }
-
-  return alertas.sort((a, b) => a.diasRestantes - b.diasRestantes);
-};
-
-// Gerar alertas mock baseado nas regras de negócio (fallback)
-const gerarAlertasMock = (): Alerta[] => {
-  const lojas = ['Loja 01', 'Loja 02', 'Loja 03', 'Loja 04', 'Loja 05', 'Loja 06', 'Loja 07'];
-  const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira', 
-    'Julia Souza', 'Lucas Ferreira', 'Fernanda Alves', 'Ricardo Rodrigues', 'Mariana Pereira'];
-  
-  const alertas: Alerta[] = [];
-  let id = 1;
-  
-  const hoje = new Date();
-  
-  // ASO - Vencendo em 30, 15, 7 dias ou vencidos
-  const diasASO = [-5, -2, 3, 7, 12, 15, 22, 28, 35];
-  diasASO.forEach((dias, idx) => {
-    const dataVenc = new Date(hoje);
-    dataVenc.setDate(dataVenc.getDate() + dias);
-    
-    let nivel: NivelAlerta = 'info';
-    if (dias <= 0) nivel = 'critico';
-    else if (dias <= 7) nivel = 'urgente';
-    else if (dias <= 15) nivel = 'atencao';
-    
-    alertas.push({
-      id: `aso-${id++}`,
-      tipo: 'aso',
-      nivel,
-      titulo: dias <= 0 ? 'ASO Vencido' : 'ASO Vencendo',
-      descricao: dias <= 0 
-        ? `Exame ocupacional vencido há ${Math.abs(dias)} dias`
-        : `Exame ocupacional vence em ${dias} dias`,
-      dataVencimento: dataVenc.toISOString().split('T')[0],
-      diasRestantes: dias,
-      loja: lojas[idx % lojas.length],
-      profissional: nomes[idx % nomes.length],
-      matricula: String(100 + idx).padStart(4, '0'),
-      acaoUrl: '/gestao-aso',
-      lido: Math.random() > 0.5,
-      resolvido: false,
-    });
-  });
-  
-  // Férias - Período aquisitivo vencendo
-  const diasFerias = [-10, 5, 15, 25, 30, 45, 60];
-  diasFerias.forEach((dias, idx) => {
-    const dataVenc = new Date(hoje);
-    dataVenc.setDate(dataVenc.getDate() + dias);
-    
-    let nivel: NivelAlerta = 'info';
-    if (dias <= 0) nivel = 'critico';
-    else if (dias <= 15) nivel = 'urgente';
-    else if (dias <= 30) nivel = 'atencao';
-    
-    alertas.push({
-      id: `ferias-${id++}`,
-      tipo: 'ferias',
-      nivel,
-      titulo: dias <= 0 ? 'Férias Vencidas' : 'Férias a Vencer',
-      descricao: dias <= 0 
-        ? `Período aquisitivo venceu há ${Math.abs(dias)} dias - AÇÃO URGENTE`
-        : `Período aquisitivo vence em ${dias} dias`,
-      dataVencimento: dataVenc.toISOString().split('T')[0],
-      diasRestantes: dias,
-      loja: lojas[(idx + 2) % lojas.length],
-      profissional: nomes[(idx + 3) % nomes.length],
-      matricula: String(200 + idx).padStart(4, '0'),
-      acaoUrl: '/gestao-ferias',
-      lido: Math.random() > 0.6,
-      resolvido: false,
-    });
-  });
-  
-  // Documentos - CNH, contratos, etc.
-  const tiposDoc = ['CNH', 'Contrato de Trabalho', 'Certidão Negativa', 'Alvará', 'Certificado NR'];
-  const diasDoc = [-3, 5, 10, 20, 25, 40];
-  diasDoc.forEach((dias, idx) => {
-    const dataVenc = new Date(hoje);
-    dataVenc.setDate(dataVenc.getDate() + dias);
-    
-    let nivel: NivelAlerta = 'info';
-    if (dias <= 0) nivel = 'critico';
-    else if (dias <= 7) nivel = 'urgente';
-    else if (dias <= 15) nivel = 'atencao';
-    
-    alertas.push({
-      id: `doc-${id++}`,
-      tipo: 'documento',
-      nivel,
-      titulo: dias <= 0 ? 'Documento Vencido' : 'Documento Vencendo',
-      descricao: `${tiposDoc[idx % tiposDoc.length]} ${dias <= 0 ? `venceu há ${Math.abs(dias)} dias` : `vence em ${dias} dias`}`,
-      dataVencimento: dataVenc.toISOString().split('T')[0],
-      diasRestantes: dias,
-      loja: lojas[(idx + 1) % lojas.length],
-      profissional: idx < 3 ? nomes[idx % nomes.length] : undefined,
-      matricula: idx < 3 ? String(300 + idx).padStart(4, '0') : undefined,
-      acaoUrl: idx < 3 ? '/painel-profissional' : '/cadastro-lojas',
-      lido: Math.random() > 0.4,
-      resolvido: false,
-    });
-  });
-  
-  return alertas.sort((a, b) => a.diasRestantes - b.diasRestantes);
-};
 
 const getNivelConfig = (nivel: NivelAlerta) => {
   const config = {
@@ -404,35 +178,167 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }
 
 export function CentralAlertas() {
   const navigate = useNavigate();
-  const mockData = useMockData();
+  const [loading, setLoading] = useState(true);
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
   const [nivelFiltro, setNivelFiltro] = useState<string>('todos');
   const [lojaFiltro, setLojaFiltro] = useState<string>('todas');
   const [mostrarResolvidos, setMostrarResolvidos] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Verificar se temos dados completos carregados
-  const [dadosCompletos, setDadosCompletos] = useState(false);
-  
+  const [alertas, setAlertas] = useState<Alerta[]>([]);
+  const [lojas, setLojas] = useState<string[]>([]);
+
   useEffect(() => {
-    const profissionaisStr = localStorage.getItem('profissionaisImportados');
-    const dadosASOStr = localStorage.getItem('dadosASO');
-    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
-    setDadosCompletos(!!(profissionaisStr && dadosASOStr && dadosBeneficiosStr));
+    loadData();
   }, []);
-  
-  // Gerar alertas baseados em dados reais ou mock
-  const [alertas, setAlertas] = useState<Alerta[]>(() => 
-    mockData.hasMockData ? gerarAlertasReais(mockData) : gerarAlertasMock()
-  );
-  
-  // Atualizar alertas quando mockData mudar
-  useEffect(() => {
-    if (mockData.hasMockData) {
-      setAlertas(gerarAlertasReais(mockData));
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const alertasGerados: Alerta[] = [];
+      let id = 1;
+      const hoje = new Date();
+
+      // Carregar lojas
+      const { data: lojasData } = await supabase.from('lojas').select('nome');
+      setLojas((lojasData || []).map((l: any) => l.nome));
+
+      // Carregar exames ASO vencendo
+      const { data: exames } = await supabase
+        .from('exames_aso')
+        .select(`
+          *,
+          profissionais:profissional_id (
+            matricula,
+            nome,
+            lojas:loja_id (nome)
+          )
+        `);
+
+      (exames || []).forEach((e: any) => {
+        if (!e.data_proximo_exame) return;
+        const dataVenc = new Date(e.data_proximo_exame);
+        const diasRestantes = Math.floor((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (diasRestantes > 60) return;
+
+        let nivel: NivelAlerta = 'info';
+        if (diasRestantes <= 0) nivel = 'critico';
+        else if (diasRestantes <= 7) nivel = 'urgente';
+        else if (diasRestantes <= 30) nivel = 'atencao';
+
+        alertasGerados.push({
+          id: `aso-${id++}`,
+          tipo: 'aso',
+          nivel,
+          titulo: diasRestantes <= 0 ? 'ASO Vencido' : 'ASO Vencendo',
+          descricao: diasRestantes <= 0 
+            ? `Exame ocupacional vencido há ${Math.abs(diasRestantes)} dias`
+            : `Exame ocupacional vence em ${diasRestantes} dias`,
+          dataVencimento: e.data_proximo_exame,
+          diasRestantes,
+          loja: e.profissionais?.lojas?.nome || 'N/A',
+          profissional: e.profissionais?.nome,
+          matricula: e.profissionais?.matricula,
+          acaoUrl: '/gestao-aso',
+          lido: false,
+          resolvido: false,
+        });
+      });
+
+      // Carregar férias vencendo
+      const { data: ferias } = await supabase
+        .from('ferias')
+        .select(`
+          *,
+          profissionais:profissional_id (
+            matricula,
+            nome,
+            lojas:loja_id (nome)
+          )
+        `);
+
+      (ferias || []).forEach((f: any) => {
+        const dataVenc = new Date(f.periodo_aquisitivo_fim);
+        const diasRestantes = Math.floor((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (diasRestantes > 60 || f.status === 'finalizada') return;
+
+        let nivel: NivelAlerta = 'info';
+        if (diasRestantes <= 0) nivel = 'critico';
+        else if (diasRestantes <= 15) nivel = 'urgente';
+        else if (diasRestantes <= 30) nivel = 'atencao';
+
+        alertasGerados.push({
+          id: `ferias-${id++}`,
+          tipo: 'ferias',
+          nivel,
+          titulo: diasRestantes <= 0 ? 'Férias Vencidas' : 'Férias a Vencer',
+          descricao: diasRestantes <= 0 
+            ? `Período aquisitivo venceu há ${Math.abs(diasRestantes)} dias`
+            : `Período aquisitivo vence em ${diasRestantes} dias`,
+          dataVencimento: f.periodo_aquisitivo_fim,
+          diasRestantes,
+          loja: f.profissionais?.lojas?.nome || 'N/A',
+          profissional: f.profissionais?.nome,
+          matricula: f.profissionais?.matricula,
+          acaoUrl: '/gestao-ferias',
+          lido: false,
+          resolvido: false,
+        });
+      });
+
+      // Carregar afastamentos com perícia
+      const { data: afastamentos } = await supabase
+        .from('afastamentos')
+        .select(`
+          *,
+          profissionais:profissional_id (
+            matricula,
+            nome,
+            lojas:loja_id (nome)
+          )
+        `)
+        .eq('status', 'aguardando_pericia');
+
+      (afastamentos || []).forEach((a: any) => {
+        if (!a.data_prevista_retorno) return;
+        const dataPericia = new Date(a.data_prevista_retorno);
+        const diasRestantes = Math.floor((dataPericia.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (diasRestantes > 30) return;
+
+        let nivel: NivelAlerta = 'info';
+        if (diasRestantes <= 0) nivel = 'critico';
+        else if (diasRestantes <= 7) nivel = 'urgente';
+        else if (diasRestantes <= 15) nivel = 'atencao';
+
+        alertasGerados.push({
+          id: `afastamento-${id++}`,
+          tipo: 'afastamento',
+          nivel,
+          titulo: diasRestantes <= 0 ? 'Perícia Atrasada' : 'Perícia Agendada',
+          descricao: diasRestantes <= 0 
+            ? `Perícia estava agendada há ${Math.abs(diasRestantes)} dias`
+            : `Perícia agendada em ${diasRestantes} dias`,
+          dataVencimento: a.data_prevista_retorno,
+          diasRestantes,
+          loja: a.profissionais?.lojas?.nome || 'N/A',
+          profissional: a.profissionais?.nome,
+          matricula: a.profissionais?.matricula,
+          acaoUrl: '/gestao-afastamentos',
+          lido: false,
+          resolvido: false,
+        });
+      });
+
+      setAlertas(alertasGerados.sort((a, b) => a.diasRestantes - b.diasRestantes));
+    } catch (error) {
+      console.error('Erro ao carregar alertas:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [mockData.hasMockData, mockData.totalProfissionais]);
-  
+  };
+
   const alertasFiltrados = useMemo(() => {
     return alertas.filter(a => {
       if (tipoFiltro !== 'todos' && a.tipo !== tipoFiltro) return false;
@@ -454,145 +360,111 @@ export function CentralAlertas() {
     aso: alertas.filter(a => a.tipo === 'aso' && !a.resolvido).length,
     ferias: alertas.filter(a => a.tipo === 'ferias' && !a.resolvido).length,
     documento: alertas.filter(a => a.tipo === 'documento' && !a.resolvido).length,
-    naoLidos: alertas.filter(a => !a.lido && !a.resolvido).length,
   }), [alertas]);
-  
-  const lojas = useMemo(() => [...new Set(alertas.map(a => a.loja))], [alertas]);
-  
-  const marcarLido = (id: string) => {
+
+  const handleMarcarLido = (id: string) => {
     setAlertas(prev => prev.map(a => a.id === id ? { ...a, lido: true } : a));
   };
-  
-  const marcarTodosLidos = () => {
-    setAlertas(prev => prev.map(a => ({ ...a, lido: true })));
-  };
-  
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Status de Validação de Dados */}
-      {dadosCompletos ? (
-        <Alert className="border-success bg-success/5">
-          <CheckCircle2 className="h-5 w-5 text-success" />
-          <AlertTitle className="text-success font-semibold">Alertas Baseados em Dados Reais</AlertTitle>
-          <AlertDescription>
-            <div className="mt-2 space-y-1 text-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Todas as planilhas carregadas (ATIVOS, ASO, Benefícios)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>{alertas.length} alertas gerados automaticamente dos dados reais</span>
-              </div>
-            </div>
-            <p className="mt-3 text-sm font-medium text-success">
-              ✓ Sistema monitorando vencimentos reais de ASO, férias e afastamentos
-            </p>
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <Alert className="border-warning bg-warning/5">
-          <AlertTriangle className="h-5 w-5 text-warning" />
-          <AlertTitle className="text-warning font-semibold">Alertas com Dados Simulados</AlertTitle>
-          <AlertDescription>
-            <p className="mt-2 text-sm">
-              ⚠️ Os alertas exibidos são baseados em dados simulados. Para gerar alertas reais baseados em ASO, férias e afastamentos, carregue todas as planilhas.
-            </p>
-            <div className="mt-3 flex items-center gap-3">
-              <Link to="/carregar-dados-adicionais">
-                <Button size="sm" variant="default">
-                  <Info className="h-4 w-4 mr-2" />
-                  Carregar Dados Reais
-                </Button>
-              </Link>
-              <Link to="/validacao-dados">
-                <Button size="sm" variant="outline">
-                  Ver Validação
-                </Button>
-              </Link>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Bell className="h-5 w-5 text-primary" />
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Bell className="h-8 w-8 text-primary" />
             Central de Alertas
-            {contadores.naoLidos > 0 && (
-              <Badge variant="destructive" className="ml-2">{contadores.naoLidos} novos</Badge>
-            )}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Monitoramento de vencimentos e pendências
+          </h1>
+          <p className="text-muted-foreground">
+            Monitore vencimentos, pendências e ações necessárias
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={marcarTodosLidos}>
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Marcar todos como lidos
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
+          <Button variant="outline" onClick={loadData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
           </Button>
         </div>
       </div>
-      
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+
+      {/* Cards de contadores */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-destructive/5 border-destructive/20">
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-destructive">{contadores.critico}</p>
-            <p className="text-xs text-muted-foreground">Críticos</p>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <div>
+                <p className="text-2xl font-bold text-destructive">{contadores.critico}</p>
+                <p className="text-sm text-muted-foreground">Críticos</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
+        
         <Card className="bg-warning/5 border-warning/20">
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-warning">{contadores.urgente}</p>
-            <p className="text-xs text-muted-foreground">Urgentes</p>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Clock className="h-8 w-8 text-warning" />
+              <div>
+                <p className="text-2xl font-bold text-warning">{contadores.urgente}</p>
+                <p className="text-sm text-muted-foreground">Urgentes</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
+        
         <Card className="bg-info/5 border-info/20">
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-info">{contadores.atencao}</p>
-            <p className="text-xs text-muted-foreground">Atenção</p>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Info className="h-8 w-8 text-info" />
+              <div>
+                <p className="text-2xl font-bold text-info">{contadores.atencao}</p>
+                <p className="text-sm text-muted-foreground">Atenção</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <Card className="bg-muted/50">
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold">{contadores.total}</p>
-            <p className="text-xs text-muted-foreground">Total</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-success/5 border-success/20">
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-success">{contadores.aso}</p>
-            <p className="text-xs text-muted-foreground">ASOs</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-info/5 border-info/20">
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-info">{contadores.ferias}</p>
-            <p className="text-xs text-muted-foreground">Férias</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-warning/5 border-warning/20">
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold text-warning">{contadores.documento}</p>
-            <p className="text-xs text-muted-foreground">Documentos</p>
+        
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Bell className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-2xl font-bold text-primary">{contadores.total}</p>
+                <p className="text-sm text-muted-foreground">Total</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Filtros */}
       <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 items-end">
-            <div className="space-y-1">
-              <Label className="text-xs">Tipo</Label>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="space-y-2">
+              <Label>Buscar</Label>
+              <Input
+                placeholder="Nome, título..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo</Label>
               <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
                 <SelectTrigger>
                   <SelectValue />
@@ -602,11 +474,12 @@ export function CentralAlertas() {
                   <SelectItem value="aso">ASO</SelectItem>
                   <SelectItem value="ferias">Férias</SelectItem>
                   <SelectItem value="documento">Documento</SelectItem>
+                  <SelectItem value="afastamento">Afastamento</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Nível</Label>
+            <div className="space-y-2">
+              <Label>Nível</Label>
               <Select value={nivelFiltro} onValueChange={setNivelFiltro}>
                 <SelectTrigger>
                   <SelectValue />
@@ -620,184 +493,183 @@ export function CentralAlertas() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Loja</Label>
+            <div className="space-y-2">
+              <Label>Loja</Label>
               <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas</SelectItem>
-                  {lojas.map(l => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  {lojas.map((loja) => (
+                    <SelectItem key={loja} value={loja}>{loja}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Buscar</Label>
-              <Input
-                placeholder="Nome, descrição..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={mostrarResolvidos}
-                onCheckedChange={setMostrarResolvidos}
-              />
-              <Label className="text-xs">Mostrar resolvidos</Label>
+            <div className="flex items-end">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={mostrarResolvidos}
+                  onCheckedChange={setMostrarResolvidos}
+                />
+                <Label>Mostrar resolvidos</Label>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
-      
-      {/* Tabela */}
+
+      {/* Tabela de alertas */}
       <Card>
-        <CardContent className="p-0">
-          <ScrollArea className="w-full">
-            <Table className="table-zebra">
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-28">Tipo</TableHead>
-                  <TableHead className="w-24">Nível</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="w-24">Loja</TableHead>
-                  <TableHead className="w-32">Profissional</TableHead>
-                  <TableHead className="w-24 text-center">Vencimento</TableHead>
-                  <TableHead className="w-20">Ações</TableHead>
+        <CardHeader>
+          <CardTitle>Alertas ({alertasFiltrados.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Nível</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Loja</TableHead>
+                <TableHead>Profissional</TableHead>
+                <TableHead className="text-center">Prazo</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {alertasFiltrados.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Nenhum alerta encontrado
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {alertasFiltrados.map((alerta) => (
+              ) : (
+                alertasFiltrados.map((alerta) => (
                   <AlertaItem 
                     key={alerta.id} 
                     alerta={alerta} 
-                    onMarcarLido={marcarLido}
+                    onMarcarLido={handleMarcarLido}
                   />
-                ))}
-                {alertasFiltrados.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Nenhum alerta encontrado com os filtros selecionados
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-// Componente de Resumo para uso no Dashboard
-export function AlertasResumo({ maxItems = 5 }: { maxItems?: number }) {
+// Componente de resumo para o Dashboard
+export function AlertasResumo() {
   const navigate = useNavigate();
-  const mockData = useMockData();
-  
-  const alertas = useMemo(() => {
-    const alertasGerados = mockData.hasMockData 
-      ? gerarAlertasReais(mockData) 
-      : gerarAlertasMock();
-    return alertasGerados.filter(a => !a.resolvido).slice(0, maxItems);
-  }, [mockData.hasMockData, mockData.totalProfissionais, maxItems]);
-  
-  const criticos = alertas.filter(a => a.nivel === 'critico').length;
-  const urgentes = alertas.filter(a => a.nivel === 'urgente').length;
-  
+  const [loading, setLoading] = useState(true);
+  const [alertas, setAlertas] = useState<Alerta[]>([]);
+
+  useEffect(() => {
+    loadAlertas();
+  }, []);
+
+  const loadAlertas = async () => {
+    try {
+      const alertasGerados: Alerta[] = [];
+      let id = 1;
+      const hoje = new Date();
+
+      // Carregar exames ASO vencendo
+      const { data: exames } = await supabase
+        .from('exames_aso')
+        .select(`
+          data_proximo_exame,
+          profissionais:profissional_id (
+            nome,
+            lojas:loja_id (nome)
+          )
+        `);
+
+      (exames || []).forEach((e: any) => {
+        if (!e.data_proximo_exame) return;
+        const dataVenc = new Date(e.data_proximo_exame);
+        const diasRestantes = Math.floor((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (diasRestantes > 30) return;
+
+        let nivel: NivelAlerta = 'info';
+        if (diasRestantes <= 0) nivel = 'critico';
+        else if (diasRestantes <= 7) nivel = 'urgente';
+        else if (diasRestantes <= 30) nivel = 'atencao';
+
+        alertasGerados.push({
+          id: `aso-${id++}`,
+          tipo: 'aso',
+          nivel,
+          titulo: diasRestantes <= 0 ? 'ASO Vencido' : 'ASO Vencendo',
+          descricao: `${e.profissionais?.nome || 'Profissional'}`,
+          dataVencimento: e.data_proximo_exame,
+          diasRestantes,
+          loja: e.profissionais?.lojas?.nome || 'N/A',
+          profissional: e.profissionais?.nome,
+          acaoUrl: '/gestao-aso',
+          lido: false,
+          resolvido: false,
+        });
+      });
+
+      setAlertas(alertasGerados.sort((a, b) => a.diasRestantes - b.diasRestantes).slice(0, 5));
+    } catch (error) {
+      console.error('Erro ao carregar alertas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const alertasCriticos = alertas.filter(a => a.nivel === 'critico').length;
+  const alertasUrgentes = alertas.filter(a => a.nivel === 'urgente').length;
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-32">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (alertas.length === 0) {
+    return null;
+  }
+
   return (
-    <Card className={criticos > 0 ? 'border-destructive/30' : urgentes > 0 ? 'border-warning/30' : ''}>
-      <CardHeader className="pb-3">
+    <Card className={alertasCriticos > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-warning/50 bg-warning/5'}>
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className={`p-1.5 rounded-lg ${criticos > 0 ? 'bg-destructive/10' : 'bg-warning/10'}`}>
-              <AlertTriangle className={`h-4 w-4 ${criticos > 0 ? 'text-destructive' : 'text-warning'}`} />
-            </div>
-            Alertas Pendentes
-            {mockData.hasMockData && (
-              <Badge variant="outline" className="bg-success/10 text-success border-success/20 ml-2">
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                Dados Reais
-              </Badge>
-            )}
-            {(criticos + urgentes) > 0 && (
-              <Badge variant={criticos > 0 ? 'destructive' : 'secondary'}>
-                {criticos > 0 ? `${criticos} críticos` : `${urgentes} urgentes`}
-              </Badge>
-            )}
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className={`h-5 w-5 ${alertasCriticos > 0 ? 'text-destructive' : 'text-warning'}`} />
+            Alertas Urgentes
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={() => navigate('/alertas')}>
             Ver todos
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {alertas.map((alerta) => (
-          <AlertaItem key={alerta.id} alerta={alerta} compact />
-        ))}
-        {alertas.length === 0 && (
-          <div className="text-center py-4 text-muted-foreground">
-            <CheckCircle className="h-8 w-8 mx-auto mb-2 text-success" />
-            <p className="text-sm">Nenhum alerta pendente!</p>
-          </div>
+        {alertasCriticos > 0 && (
+          <CardDescription className="text-destructive">
+            {alertasCriticos} alerta(s) crítico(s) requer(em) ação imediata
+          </CardDescription>
         )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// Componente de Badge para o Header
-export function AlertasBadge() {
-  const mockData = useMockData();
-  
-  const alertas = useMemo(() => {
-    const alertasGerados = mockData.hasMockData 
-      ? gerarAlertasReais(mockData) 
-      : gerarAlertasMock();
-    return alertasGerados.filter(a => !a.resolvido && !a.lido);
-  }, [mockData.hasMockData, mockData.totalProfissionais]);
-  
-  const criticos = alertas.filter(a => a.nivel === 'critico').length;
-  
-  if (alertas.length === 0) return null;
-  
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className={`absolute -top-1 -right-1 h-5 w-5 rounded-full text-[10px] font-bold flex items-center justify-center ${
-            criticos > 0 ? 'bg-destructive text-destructive-foreground animate-pulse' : 'bg-warning text-warning-foreground'
-          }`}>
-            {alertas.length > 9 ? '9+' : alertas.length}
-          </span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Alertas ({alertas.length})
-            {mockData.hasMockData && (
-              <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                Dados Reais
-              </Badge>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="space-y-2 pb-4">
-            {alertas.slice(0, 10).map((alerta) => (
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[200px]">
+          <div className="space-y-2">
+            {alertas.map((alerta) => (
               <AlertaItem key={alerta.id} alerta={alerta} compact />
             ))}
           </div>
         </ScrollArea>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 }

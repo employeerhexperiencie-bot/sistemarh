@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { DocumentNotifications } from '@/components/DocumentNotifications';
-import { AlertasBadge } from '@/components/alertas/AlertasAutomaticos';
+// AlertasBadge removed - using DocumentNotifications instead
 import { Input } from '@/components/ui/input';
 
 interface LayoutProps {
