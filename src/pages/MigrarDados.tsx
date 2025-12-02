@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Database, Upload, CheckCircle2, XCircle, Loader2, AlertTriangle } from "lucide-react";
+import { Database, Upload, CheckCircle2, XCircle, Loader2, AlertTriangle, Calendar, UserX, Plane } from "lucide-react";
 import { toast } from "sonner";
 
 interface MigrationResults {
@@ -12,25 +12,40 @@ interface MigrationResults {
   profissionais: { inserted: number; errors: string[]; warnings?: string[] };
   examesASO: { inserted: number; errors: string[] };
   beneficios: { inserted: number; errors: string[] };
+  ferias: { inserted: number; errors: string[] };
+  faltas: { inserted: number; errors: string[] };
+  afastamentos: { inserted: number; errors: string[] };
 }
 
 const MigrarDados = () => {
   const [migrating, setMigrating] = useState(false);
   const [results, setResults] = useState<MigrationResults | null>(null);
   const [clearing, setClearing] = useState(false);
-  const [dbStatus, setDbStatus] = useState({ profissionais: 0, lojas: 0 });
+  const [dbStatus, setDbStatus] = useState({ 
+    profissionais: 0, 
+    lojas: 0,
+    ferias: 0,
+    faltas: 0,
+    afastamentos: 0
+  });
 
   // Carregar status do banco ao montar
   useEffect(() => {
     const loadDbStatus = async () => {
-      const [profResult, lojaResult] = await Promise.all([
+      const [profResult, lojaResult, feriasResult, faltasResult, afastamentosResult] = await Promise.all([
         supabase.from('profissionais').select('id', { count: 'exact', head: true }),
-        supabase.from('lojas').select('id', { count: 'exact', head: true })
+        supabase.from('lojas').select('id', { count: 'exact', head: true }),
+        supabase.from('ferias').select('id', { count: 'exact', head: true }),
+        supabase.from('faltas').select('id', { count: 'exact', head: true }),
+        supabase.from('afastamentos').select('id', { count: 'exact', head: true })
       ]);
       
       setDbStatus({
         profissionais: profResult.count || 0,
-        lojas: lojaResult.count || 0
+        lojas: lojaResult.count || 0,
+        ferias: feriasResult.count || 0,
+        faltas: faltasResult.count || 0,
+        afastamentos: afastamentosResult.count || 0
       });
     };
     
@@ -53,12 +68,13 @@ const MigrarDados = () => {
       await supabase.from('professional_vales').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       await supabase.from('professional_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       await supabase.from('loja_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('historico_salarios').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       await supabase.from('profissionais').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       await supabase.from('lojas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
       toast.success("Banco de dados limpo com sucesso!");
       setResults(null);
-      setDbStatus({ profissionais: 0, lojas: 0 });
+      setDbStatus({ profissionais: 0, lojas: 0, ferias: 0, faltas: 0, afastamentos: 0 });
     } catch (error: any) {
       toast.error(`Erro ao limpar banco: ${error.message}`);
     } finally {
@@ -76,6 +92,9 @@ const MigrarDados = () => {
       const lojasData = localStorage.getItem('lojas');
       const dadosASO = localStorage.getItem('dadosASO');
       const dadosBeneficios = localStorage.getItem('dadosBeneficios');
+      const dadosFerias = localStorage.getItem('dadosFerias');
+      const dadosFaltas = localStorage.getItem('dadosFaltas');
+      const dadosAfastamentos = localStorage.getItem('dadosAfastamentos');
 
       if (!profissionaisImportados) {
         toast.error("Dados não encontrados! Carregue os arquivos Excel primeiro.");
@@ -86,6 +105,9 @@ const MigrarDados = () => {
       const lojas = lojasData ? JSON.parse(lojasData) : [];
       const examesASO = dadosASO ? JSON.parse(dadosASO).dados : [];
       const beneficios = dadosBeneficios ? JSON.parse(dadosBeneficios).dados : [];
+      const ferias = dadosFerias ? JSON.parse(dadosFerias).dados : [];
+      const faltas = dadosFaltas ? JSON.parse(dadosFaltas).dados : [];
+      const afastamentos = dadosAfastamentos ? JSON.parse(dadosAfastamentos).dados : [];
 
       // Chamar edge function
       const { data, error } = await supabase.functions.invoke('migrate-excel-data', {
@@ -93,7 +115,10 @@ const MigrarDados = () => {
           profissionais,
           lojas,
           examesASO,
-          beneficios
+          beneficios,
+          ferias,
+          faltas,
+          afastamentos
         }
       });
 
@@ -108,14 +133,20 @@ const MigrarDados = () => {
         toast.success("Migração concluída com sucesso!");
         
         // Atualizar status do banco
-        const [profResult, lojaResult] = await Promise.all([
+        const [profResult, lojaResult, feriasResult, faltasResult, afastamentosResult] = await Promise.all([
           supabase.from('profissionais').select('id', { count: 'exact', head: true }),
-          supabase.from('lojas').select('id', { count: 'exact', head: true })
+          supabase.from('lojas').select('id', { count: 'exact', head: true }),
+          supabase.from('ferias').select('id', { count: 'exact', head: true }),
+          supabase.from('faltas').select('id', { count: 'exact', head: true }),
+          supabase.from('afastamentos').select('id', { count: 'exact', head: true })
         ]);
         
         setDbStatus({
           profissionais: profResult.count || 0,
-          lojas: lojaResult.count || 0
+          lojas: lojaResult.count || 0,
+          ferias: feriasResult.count || 0,
+          faltas: faltasResult.count || 0,
+          afastamentos: afastamentosResult.count || 0
         });
       } else {
         toast.error("Erro na migração dos dados");
@@ -133,12 +164,18 @@ const MigrarDados = () => {
     const lojasData = localStorage.getItem('lojas');
     const dadosASO = localStorage.getItem('dadosASO');
     const dadosBeneficios = localStorage.getItem('dadosBeneficios');
+    const dadosFerias = localStorage.getItem('dadosFerias');
+    const dadosFaltas = localStorage.getItem('dadosFaltas');
+    const dadosAfastamentos = localStorage.getItem('dadosAfastamentos');
 
     return {
       profissionais: profissionaisImportados ? JSON.parse(profissionaisImportados).length : 0,
       lojas: lojasData ? JSON.parse(lojasData).length : 0,
       aso: dadosASO ? JSON.parse(dadosASO).dados?.length || 0 : 0,
-      beneficios: dadosBeneficios ? JSON.parse(dadosBeneficios).dados?.length || 0 : 0
+      beneficios: dadosBeneficios ? JSON.parse(dadosBeneficios).dados?.length || 0 : 0,
+      ferias: dadosFerias ? JSON.parse(dadosFerias).dados?.length || 0 : 0,
+      faltas: dadosFaltas ? JSON.parse(dadosFaltas).dados?.length || 0 : 0,
+      afastamentos: dadosAfastamentos ? JSON.parse(dadosAfastamentos).dados?.length || 0 : 0
     };
   };
 
@@ -166,7 +203,7 @@ const MigrarDados = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Profissionais</p>
               <p className="text-2xl font-bold">{dadosDisponiveis.profissionais}</p>
@@ -182,6 +219,27 @@ const MigrarDados = () => {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Benefícios</p>
               <p className="text-2xl font-bold">{dadosDisponiveis.beneficios}</p>
+            </div>
+            <div className="space-y-1 flex items-center gap-2">
+              <Plane className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Férias</p>
+                <p className="text-2xl font-bold">{dadosDisponiveis.ferias}</p>
+              </div>
+            </div>
+            <div className="space-y-1 flex items-center gap-2">
+              <UserX className="h-4 w-4 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Faltas</p>
+                <p className="text-2xl font-bold">{dadosDisponiveis.faltas}</p>
+              </div>
+            </div>
+            <div className="space-y-1 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-purple-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Afastamentos</p>
+                <p className="text-2xl font-bold">{dadosDisponiveis.afastamentos}</p>
+              </div>
             </div>
           </div>
 
@@ -208,14 +266,26 @@ const MigrarDados = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Profissionais no BD</p>
+              <p className="text-sm text-muted-foreground">Profissionais</p>
               <p className="text-2xl font-bold text-green-600">{dbStatus.profissionais}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Lojas no BD</p>
+              <p className="text-sm text-muted-foreground">Lojas</p>
               <p className="text-2xl font-bold text-green-600">{dbStatus.lojas}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Férias</p>
+              <p className="text-2xl font-bold text-blue-600">{dbStatus.ferias}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Faltas</p>
+              <p className="text-2xl font-bold text-orange-600">{dbStatus.faltas}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Afastamentos</p>
+              <p className="text-2xl font-bold text-purple-600">{dbStatus.afastamentos}</p>
             </div>
           </div>
         </CardContent>
@@ -367,28 +437,123 @@ const MigrarDados = () => {
             </div>
 
             {/* Exames ASO */}
-            {results.examesASO.inserted > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Exames ASO</h3>
-                  <Badge variant={results.examesASO.errors.length > 0 ? "destructive" : "default"}>
-                    {results.examesASO.inserted} inseridos
-                  </Badge>
-                </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Exames ASO</h3>
+                <Badge variant={results.examesASO.errors.length > 0 ? "destructive" : "default"}>
+                  {results.examesASO.inserted} inseridos
+                </Badge>
               </div>
-            )}
+              {results.examesASO.errors.length > 0 && (
+                <div className="bg-destructive/10 p-3 rounded-md space-y-1 max-h-40 overflow-y-auto">
+                  {results.examesASO.errors.slice(0, 5).map((error, idx) => (
+                    <p key={idx} className="text-sm text-destructive flex items-start gap-2">
+                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      {error}
+                    </p>
+                  ))}
+                  {results.examesASO.errors.length > 5 && (
+                    <p className="text-sm text-muted-foreground italic">
+                      ... e mais {results.examesASO.errors.length - 5} erros
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Benefícios */}
-            {results.beneficios.inserted > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Benefícios</h3>
-                  <Badge variant={results.beneficios.errors.length > 0 ? "destructive" : "default"}>
-                    {results.beneficios.inserted} inseridos
-                  </Badge>
-                </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Benefícios</h3>
+                <Badge variant={results.beneficios.errors.length > 0 ? "destructive" : "default"}>
+                  {results.beneficios.inserted} inseridos
+                </Badge>
               </div>
-            )}
+            </div>
+
+            {/* Férias */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Plane className="h-4 w-4 text-blue-500" />
+                  Férias
+                </h3>
+                <Badge variant={results.ferias.errors.length > 0 ? "destructive" : "default"} className="bg-blue-100 text-blue-800">
+                  {results.ferias.inserted} inseridas
+                </Badge>
+              </div>
+              {results.ferias.errors.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-md space-y-1 max-h-40 overflow-y-auto">
+                  {results.ferias.errors.slice(0, 5).map((error, idx) => (
+                    <p key={idx} className="text-sm text-blue-700 flex items-start gap-2">
+                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      {error}
+                    </p>
+                  ))}
+                  {results.ferias.errors.length > 5 && (
+                    <p className="text-sm text-blue-600 italic">
+                      ... e mais {results.ferias.errors.length - 5} erros
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Faltas */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <UserX className="h-4 w-4 text-orange-500" />
+                  Faltas
+                </h3>
+                <Badge variant={results.faltas.errors.length > 0 ? "destructive" : "default"} className="bg-orange-100 text-orange-800">
+                  {results.faltas.inserted} inseridas
+                </Badge>
+              </div>
+              {results.faltas.errors.length > 0 && (
+                <div className="bg-orange-50 border border-orange-200 p-3 rounded-md space-y-1 max-h-40 overflow-y-auto">
+                  {results.faltas.errors.slice(0, 5).map((error, idx) => (
+                    <p key={idx} className="text-sm text-orange-700 flex items-start gap-2">
+                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      {error}
+                    </p>
+                  ))}
+                  {results.faltas.errors.length > 5 && (
+                    <p className="text-sm text-orange-600 italic">
+                      ... e mais {results.faltas.errors.length - 5} erros
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Afastamentos */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-purple-500" />
+                  Afastamentos
+                </h3>
+                <Badge variant={results.afastamentos.errors.length > 0 ? "destructive" : "default"} className="bg-purple-100 text-purple-800">
+                  {results.afastamentos.inserted} inseridos
+                </Badge>
+              </div>
+              {results.afastamentos.errors.length > 0 && (
+                <div className="bg-purple-50 border border-purple-200 p-3 rounded-md space-y-1 max-h-40 overflow-y-auto">
+                  {results.afastamentos.errors.slice(0, 5).map((error, idx) => (
+                    <p key={idx} className="text-sm text-purple-700 flex items-start gap-2">
+                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      {error}
+                    </p>
+                  ))}
+                  {results.afastamentos.errors.length > 5 && (
+                    <p className="text-sm text-purple-600 italic">
+                      ... e mais {results.afastamentos.errors.length - 5} erros
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
