@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Bus, Utensils, ShoppingBasket, Heart, CreditCard, Calculator, AlertTriangle, Info, Download } from 'lucide-react';
-import { useMockData } from '@/hooks/useMockData';
+import { supabase } from '@/integrations/supabase/client';
+import { formatCurrencyFromNumber } from '@/lib/utils';
 
 interface BeneficioConfig {
   diasUteis6x1: number;
@@ -17,20 +19,19 @@ interface BeneficioConfig {
   valorCestaBasica: number;
 }
 
-export default function GestaoBeneficios() {
-  const mockData = useMockData();
-  const [beneficiosData, setBeneficiosData] = useState<any[]>([]);
-  const [dataSource, setDataSource] = useState<'real' | 'mock'>('mock');
+interface BeneficioData {
+  matricula: string;
+  nome: string;
+  loja: string;
+  escala: string;
+  valorVT: number;
+  valorVR: number;
+  cestaBasica: number;
+}
 
-  useEffect(() => {
-    // Verificar se há dados reais carregados
-    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
-    const hasRealData = !!dadosBeneficiosStr;
-    
-    const beneficios = mockData.getBeneficios();
-    setDataSource(hasRealData ? 'real' : 'mock');
-    setBeneficiosData(beneficios.slice(0, 100)); // Limitar para performance
-  }, [mockData]);
+export default function GestaoBeneficios() {
+  const [beneficiosData, setBeneficiosData] = useState<BeneficioData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [config, setConfig] = useState<BeneficioConfig>({
     diasUteis6x1: 26,
@@ -48,31 +49,91 @@ export default function GestaoBeneficios() {
     afastado: false,
   });
 
+  useEffect(() => {
+    const loadBeneficios = async () => {
+      setIsLoading(true);
+      try {
+        // Carregar profissionais ativos com benefícios configurados
+        const { data: profissionais, error } = await supabase
+          .from('profissionais')
+          .select(`
+            id, matricula, nome, 
+            vale_transporte, vale_refeicao, cesta_basica,
+            salario_nominal,
+            lojas(nome)
+          `)
+          .eq('status', 'ativo')
+          .order('nome');
+
+        if (error) throw error;
+
+        // Calcular benefícios estimados para cada profissional
+        const beneficios: BeneficioData[] = (profissionais || []).map((prof: any) => {
+          const diasUteis = 22; // Média padrão
+          const valorVT = prof.vale_transporte ? diasUteis * 2 * config.valorPassagem : 0;
+          const valorVR = prof.vale_refeicao ? diasUteis * config.valorVR : 0;
+          const cestaBasica = prof.cesta_basica ? config.valorCestaBasica : 0;
+
+          return {
+            matricula: prof.matricula,
+            nome: prof.nome,
+            loja: prof.lojas?.nome || '-',
+            escala: '6x1',
+            valorVT,
+            valorVR,
+            cestaBasica,
+          };
+        });
+
+        setBeneficiosData(beneficios);
+      } catch (error) {
+        console.error('Erro ao carregar benefícios:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadBeneficios();
+  }, [config]);
+
   const diasUteis = calcForm.escala === '6x1' ? config.diasUteis6x1 : config.diasUteis5x2;
   const diasAbatidos = calcForm.faltas + calcForm.atestados + calcForm.ferias;
   const diasTrabalhados = Math.max(0, diasUteis - diasAbatidos);
 
-  const valorVT = diasTrabalhados * 2 * config.valorPassagem; // 2 passagens por dia
+  const valorVT = diasTrabalhados * 2 * config.valorPassagem;
   const valorVR = diasTrabalhados * config.valorVR;
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  // Totais
+  const totalVT = beneficiosData.reduce((sum, b) => sum + b.valorVT, 0);
+  const totalVR = beneficiosData.reduce((sum, b) => sum + b.valorVR, 0);
+  const totalCesta = beneficiosData.reduce((sum, b) => sum + b.cestaBasica, 0);
+  const totalGeral = totalVT + totalVR + totalCesta;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 max-w-[1600px] mx-auto">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-64 rounded-lg" />
+        </div>
+        <Skeleton className="h-96 rounded-lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold">Gestão de Benefícios</h1>
-          {dataSource === 'real' ? (
-            <Badge className="bg-success/10 text-success border-success/20">
-              Dados BASE_Beneficios.xlsx
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-muted-foreground">
-              Dados simulados
-            </Badge>
-          )}
+          <Badge className="bg-success/10 text-success border-success/20">
+            Dados do Sistema
+          </Badge>
         </div>
         <p className="text-muted-foreground text-sm sm:text-base">Vale Transporte, Vale Refeição, Cesta Básica e Seguros</p>
       </div>
@@ -93,7 +154,7 @@ export default function GestaoBeneficios() {
           </TabsTrigger>
           <TabsTrigger value="alelo" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
             <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
-            Alelo
+            Resumo
           </TabsTrigger>
           <TabsTrigger value="seguros" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
             <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -336,12 +397,12 @@ export default function GestaoBeneficios() {
           </Card>
         </TabsContent>
 
-        {/* CARTÃO ALELO */}
+        {/* RESUMO BENEFÍCIOS */}
         <TabsContent value="alelo" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-red-500" />
+                <CreditCard className="h-5 w-5 text-primary" />
                 Benefícios por Profissional
               </CardTitle>
               <CardDescription>Resumo de VT, VR e Cesta Básica ({beneficiosData.length} profissionais)</CardDescription>
@@ -351,27 +412,19 @@ export default function GestaoBeneficios() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-4 bg-primary/5 rounded-lg">
                     <p className="text-sm text-muted-foreground">Total VT</p>
-                    <p className="text-2xl font-bold text-primary">
-                      {beneficiosData.reduce((sum, b) => sum + b.valorVT, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </p>
+                    <p className="text-2xl font-bold text-primary">{formatCurrency(totalVT)}</p>
                   </div>
                   <div className="p-4 bg-orange-500/5 rounded-lg">
                     <p className="text-sm text-muted-foreground">Total VR</p>
-                    <p className="text-2xl font-bold text-orange-500">
-                      {beneficiosData.reduce((sum, b) => sum + b.valorVR, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </p>
+                    <p className="text-2xl font-bold text-orange-500">{formatCurrency(totalVR)}</p>
                   </div>
                   <div className="p-4 bg-green-600/5 rounded-lg">
                     <p className="text-sm text-muted-foreground">Total Cesta</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {beneficiosData.reduce((sum, b) => sum + b.cestaBasica, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(totalCesta)}</p>
                   </div>
                   <div className="p-4 bg-accent/5 rounded-lg">
                     <p className="text-sm text-muted-foreground">Total Geral</p>
-                    <p className="text-2xl font-bold text-accent">
-                      {beneficiosData.reduce((sum, b) => sum + b.valorVT + b.valorVR + b.cestaBasica, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </p>
+                    <p className="text-2xl font-bold text-accent">{formatCurrency(totalGeral)}</p>
                   </div>
                 </div>
                 <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
@@ -381,7 +434,6 @@ export default function GestaoBeneficios() {
                         <TableHead>Matrícula</TableHead>
                         <TableHead>Nome</TableHead>
                         <TableHead>Loja</TableHead>
-                        <TableHead>Escala</TableHead>
                         <TableHead>VT</TableHead>
                         <TableHead>VR</TableHead>
                         <TableHead>Cesta</TableHead>
@@ -389,39 +441,25 @@ export default function GestaoBeneficios() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {beneficiosData.map((ben, index) => (
+                      {beneficiosData.slice(0, 50).map((ben, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-mono">{ben.matricula}</TableCell>
                           <TableCell className="font-medium">{ben.nome}</TableCell>
                           <TableCell>{ben.loja}</TableCell>
-                          <TableCell>{ben.escala}</TableCell>
-                          <TableCell className="font-mono text-primary">
-                            {ben.valorVT.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                          </TableCell>
-                          <TableCell className="font-mono text-orange-500">
-                            {ben.valorVR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                          </TableCell>
-                          <TableCell className="font-mono">
-                            {ben.temCestaBasica ? (
-                              <span className="text-success">
-                                {ben.cestaBasica.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                              </span>
-                            ) : (
-                              <span className="text-destructive">R$ 0,00</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="font-mono font-bold">
-                            {(ben.valorVT + ben.valorVR + ben.cestaBasica).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                          </TableCell>
+                          <TableCell className="text-primary">{formatCurrency(ben.valorVT)}</TableCell>
+                          <TableCell className="text-orange-500">{formatCurrency(ben.valorVR)}</TableCell>
+                          <TableCell className="text-green-600">{formatCurrency(ben.cestaBasica)}</TableCell>
+                          <TableCell className="font-bold">{formatCurrency(ben.valorVT + ben.valorVR + ben.cestaBasica)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
-                <Button className="w-full">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar Relatório CSV
-                </Button>
+                {beneficiosData.length > 50 && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Mostrando 50 de {beneficiosData.length} profissionais
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -429,43 +467,22 @@ export default function GestaoBeneficios() {
 
         {/* SEGUROS */}
         <TabsContent value="seguros" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-red-500" />
-                  Seguro de Vida
-                </CardTitle>
-                <CardDescription>Porto Seguro</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm">Relatório para envio à Porto Seguro</p>
-                  <Button variant="outline" className="w-full">
-                    Gerar Relatório
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-blue-500" />
-                  Odontológico
-                </CardTitle>
-                <CardDescription>Porto Seguro</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm">Relatório para envio à Porto Seguro</p>
-                  <Button variant="outline" className="w-full">
-                    Gerar Relatório
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-red-500" />
+                Seguros e Planos
+              </CardTitle>
+              <CardDescription>Gestão de seguros de vida e planos de saúde</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Módulo de seguros em desenvolvimento</p>
+                <p className="text-sm">Em breve você poderá gerenciar seguros de vida e planos de saúde</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

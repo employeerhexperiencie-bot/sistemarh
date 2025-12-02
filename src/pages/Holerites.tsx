@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { gerarHoleritePDF, gerarHoleriteMock } from '@/components/folha/HoleritePDF';
-import { useMockData } from '@/hooks/useMockData';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
 
 interface HoleriteItem {
@@ -48,7 +48,7 @@ const gerarHoleritesMock = (): HoleriteItem[] => {
 
 export default function Holerites() {
   const { toast } = useToast();
-  const mockData = useMockData();
+  const supabaseData = useSupabaseData();
   const [competencia, setCompetencia] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -70,38 +70,36 @@ export default function Holerites() {
     beneficiosCarregados: false,
   });
 
-  // Verificar dados carregados
+  // Verificar dados do Supabase
   useEffect(() => {
-    const profissionaisStr = localStorage.getItem('profissionaisImportados');
-    const dadosASOStr = localStorage.getItem('dadosASO');
-    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
-
-    setValidacaoDados({
-      ativosCarregados: !!profissionaisStr,
-      asoCarregados: !!dadosASOStr,
-      beneficiosCarregados: !!dadosBeneficiosStr,
-    });
-  }, []);
+    if (!supabaseData.isLoading) {
+      setValidacaoDados({
+        ativosCarregados: supabaseData.totalProfissionais > 0,
+        asoCarregados: true,
+        beneficiosCarregados: true,
+      });
+    }
+  }, [supabaseData.isLoading, supabaseData.totalProfissionais]);
 
   const dadosCompletos = validacaoDados.ativosCarregados && 
                          validacaoDados.asoCarregados && 
                          validacaoDados.beneficiosCarregados;
   
-  // Se tiver dados da planilha, usa eles, senão usa mock
+  // Usar dados do Supabase ou mock
   const holerites = useMemo(() => {
-    if (mockData.hasMockData) {
-      return mockData.profissionais.map(p => ({
-        id: p.matricula,
-        loja: p.localTrabalho,
+    if (supabaseData.totalProfissionais > 0) {
+      return supabaseData.profissionais.map((p: any) => ({
+        id: p.id,
+        loja: p.lojas?.nome || '-',
         matricula: p.matricula,
         nome: p.nome,
-        cargo: p.cargo,
-        salario: mockData.parseSalario(p.salarioReceber || p.salarioCTPS),
+        cargo: p.cargo || '-',
+        salario: p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0,
         status: 'pendente' as const,
       }));
     }
     return gerarHoleritesMock();
-  }, [mockData]);
+  }, [supabaseData.profissionais, supabaseData.totalProfissionais]);
   
   const holeritesFiltrados = useMemo(() => {
     return holerites.filter(h => {
@@ -266,7 +264,7 @@ export default function Holerites() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
-                <span>{mockData.totalProfissionais} profissionais • {mockData.totalLojas} lojas</span>
+                <span>{supabaseData.totalProfissionais} profissionais • {supabaseData.totalLojas} lojas</span>
               </div>
             </div>
             <p className="mt-3 text-sm font-medium text-success">

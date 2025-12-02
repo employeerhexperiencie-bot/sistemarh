@@ -6,86 +6,114 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { FileUploader } from '@/components/FileUploader';
 import { Heart, AlertTriangle, Calendar, Upload, FileText, Plus, Eye } from 'lucide-react';
-import { useN8NAction } from '@/hooks/useN8NAction';
-import { useMockData } from '@/hooks/useMockData';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ASOExam {
+  id: string;
   matricula: string;
   nome: string;
   loja: string;
-  dataEmissao: string;
-  dataValidade: string;
-  tipo: 'SEMESTRAL' | 'ANUAL';
+  cargo: string;
+  dataUltimoExame: string | null;
+  dataProximoExame: string | null;
+  tipoExame: string;
   status: 'VALIDO' | 'VENCIDO' | 'VENCE_30_DIAS';
-  fileId: string | null;
-  observacao?: string;
+  periodicidade: string | null;
+}
+
+interface Profissional {
+  id: string;
+  matricula: string;
+  nome: string;
+  cargo: string | null;
+  lojas?: { nome: string } | null;
 }
 
 export default function GestaoASO() {
-  const mockData = useMockData();
   const [exams, setExams] = useState<ASOExam[]>([]);
-  const [dataSource, setDataSource] = useState<'real' | 'mock'>('mock');
+  const [profissionais, setProfissionais] = useState<Profissional[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    profissional_id: '',
+    tipo_exame: 'Periódico',
+    data_ultimo_exame: '',
+    data_proximo_exame: '',
+    periodicidade: '1 ano',
+  });
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      // Carregar exames ASO com dados do profissional
+      const { data: examesData, error: examesError } = await supabase
+        .from('exames_aso')
+        .select(`
+          *,
+          profissionais(id, matricula, nome, cargo, lojas(nome))
+        `)
+        .order('data_proximo_exame', { ascending: true });
+
+      if (examesError) throw examesError;
+
+      // Carregar profissionais para o formulário
+      const { data: profsData, error: profsError } = await supabase
+        .from('profissionais')
+        .select('id, matricula, nome, cargo, lojas(nome)')
+        .eq('status', 'ativo')
+        .order('nome');
+
+      if (profsError) throw profsError;
+
+      setProfissionais(profsData || []);
+
+      // Formatar dados dos exames
+      const examesFormatados: ASOExam[] = (examesData || []).map((e: any) => {
+        const status = calculateStatus(e.data_proximo_exame);
+        return {
+          id: e.id,
+          matricula: e.profissionais?.matricula || '-',
+          nome: e.profissionais?.nome || '-',
+          loja: e.profissionais?.lojas?.nome || '-',
+          cargo: e.profissionais?.cargo || '-',
+          dataUltimoExame: e.data_ultimo_exame,
+          dataProximoExame: e.data_proximo_exame,
+          tipoExame: e.tipo_exame || 'Periódico',
+          status,
+          periodicidade: e.periodicidade,
+        };
+      });
+
+      setExams(examesFormatados);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados de exames",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Verificar se há dados reais carregados
-    const dadosASOStr = localStorage.getItem('dadosASO');
-    const hasRealData = !!dadosASOStr;
+    loadData();
+  }, []);
+
+  const calculateStatus = (dataProximoExame: string | null): ASOExam['status'] => {
+    if (!dataProximoExame) return 'VENCIDO';
     
-    if (mockData.hasMockData) {
-      const examesData = mockData.getExamesASO();
-      setDataSource(hasRealData ? 'real' : 'mock');
-      const examesFormatados: ASOExam[] = examesData.map((e) => ({
-        matricula: e.matricula,
-        nome: e.nome,
-        loja: e.loja,
-        dataEmissao: e.ultimoExame,
-        dataValidade: e.proximoExame,
-        tipo: e.tipoExame === 'Periódico' ? 'SEMESTRAL' : 'ANUAL',
-        status: e.status === 'vencido' ? 'VENCIDO' : e.status === 'vencendo' ? 'VENCE_30_DIAS' : 'VALIDO',
-        fileId: null,
-      }));
-      setExams(examesFormatados);
-    } else {
-      setDataSource('mock');
-      // Dados de fallback
-      setExams([
-        {
-          matricula: '001',
-          nome: 'João Silva',
-          loja: 'CENTRO',
-          dataEmissao: '2025-02-15',
-          dataValidade: '2025-08-15',
-          tipo: 'SEMESTRAL',
-          status: 'VALIDO',
-          fileId: null,
-        },
-        {
-          matricula: '002',
-          nome: 'Maria Santos',
-          loja: 'BROOKLIN',
-          dataEmissao: '2024-12-10',
-          dataValidade: '2025-06-10',
-          tipo: 'ANUAL',
-          status: 'VENCE_30_DIAS',
-          fileId: null,
-        }
-      ]);
-    }
-  }, [mockData.hasMockData]);
-
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<ASOExam>>({
-    tipo: 'SEMESTRAL'
-  });
-
-  const { execute, loading } = useN8NAction();
-
-  const calculateStatus = (dataValidade: string): ASOExam['status'] => {
     const today = new Date();
-    const validadeDate = new Date(dataValidade);
-    const diffTime = validadeDate.getTime() - today.getTime();
+    const proximoExame = new Date(dataProximoExame);
+    const diffTime = proximoExame.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) return 'VENCIDO';
@@ -94,24 +122,56 @@ export default function GestaoASO() {
   };
 
   const handleSave = async () => {
-    if (!formData.matricula || !formData.dataEmissao || !formData.dataValidade || !formData.fileId) return;
+    if (!formData.profissional_id || !formData.data_ultimo_exame) {
+      toast({
+        title: "Erro",
+        description: "Preencha os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    const payload = {
-      ...formData,
-      status: calculateStatus(formData.dataValidade!),
-    };
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('exames_aso').insert({
+        profissional_id: formData.profissional_id,
+        tipo_exame: formData.tipo_exame,
+        data_ultimo_exame: formData.data_ultimo_exame,
+        data_proximo_exame: formData.data_proximo_exame || null,
+        periodicidade: formData.periodicidade,
+        status: calculateStatus(formData.data_proximo_exame),
+      });
 
-    await execute('aso_cadastrar', payload, {
-      successMessage: 'Exame ASO cadastrado com sucesso!',
-    });
+      if (error) throw error;
 
-    setExams(prev => [...prev, payload as ASOExam]);
-    handleCloseDialog();
+      toast({
+        title: "Sucesso",
+        description: "Exame ASO cadastrado com sucesso"
+      });
+
+      handleCloseDialog();
+      loadData();
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao cadastrar exame",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
-    setFormData({ tipo: 'SEMESTRAL' });
+    setFormData({
+      profissional_id: '',
+      tipo_exame: 'Periódico',
+      data_ultimo_exame: '',
+      data_proximo_exame: '',
+      periodicidade: '1 ano',
+    });
   };
 
   const getStatusBadge = (status: ASOExam['status']) => {
@@ -125,15 +185,23 @@ export default function GestaoASO() {
     }
   };
 
-  const getTipoBadge = (tipo: ASOExam['tipo']) => {
-    return tipo === 'SEMESTRAL' 
-      ? <Badge variant="outline">6 meses</Badge>
-      : <Badge variant="secondary">Anual</Badge>;
-  };
-
   const vencendoEm30Dias = exams.filter(e => e.status === 'VENCE_30_DIAS').length;
   const vencidos = exams.filter(e => e.status === 'VENCIDO').length;
   const validos = exams.filter(e => e.status === 'VALIDO').length;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-96 rounded-lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -141,15 +209,9 @@ export default function GestaoASO() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">Gestão de Exames ASO</h1>
-            {dataSource === 'real' ? (
-              <Badge className="bg-success/10 text-success border-success/20">
-                Dados BASE_ASO.xlsx
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-muted-foreground">
-                Dados simulados
-              </Badge>
-            )}
+            <Badge className="bg-success/10 text-success border-success/20">
+              Dados do Sistema
+            </Badge>
           </div>
           <p className="text-muted-foreground">Controle de exames ocupacionais e periódicos</p>
         </div>
@@ -168,105 +230,85 @@ export default function GestaoASO() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="matricula">Matrícula</Label>
-                  <Input
-                    id="matricula"
-                    placeholder="001"
-                    value={formData.matricula || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, matricula: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nome">Nome</Label>
-                  <Input
-                    id="nome"
-                    placeholder="Nome do funcionário"
-                    value={formData.nome || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="loja">Loja</Label>
-                <Input
-                  id="loja"
-                  placeholder="CENTRO"
-                  value={formData.loja || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, loja: e.target.value }))}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dataEmissao">Data de Emissão</Label>
-                  <Input
-                    id="dataEmissao"
-                    type="date"
-                    value={formData.dataEmissao || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dataEmissao: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dataValidade">Data de Validade</Label>
-                  <Input
-                    id="dataValidade"
-                    type="date"
-                    value={formData.dataValidade || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dataValidade: e.target.value }))}
-                  />
-                </div>
+                <Label>Profissional</Label>
+                <Select
+                  value={formData.profissional_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, profissional_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profissionais.map(prof => (
+                      <SelectItem key={prof.id} value={prof.id}>
+                        {prof.matricula} - {prof.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label>Tipo de Exame</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={formData.tipo === 'SEMESTRAL' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFormData(prev => ({ ...prev, tipo: 'SEMESTRAL' }))}
-                  >
-                    Semestral
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={formData.tipo === 'ANUAL' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFormData(prev => ({ ...prev, tipo: 'ANUAL' }))}
-                  >
-                    Anual
-                  </Button>
+                <Select
+                  value={formData.tipo_exame}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, tipo_exame: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Admissional">Admissional</SelectItem>
+                    <SelectItem value="Periódico">Periódico</SelectItem>
+                    <SelectItem value="Demissional">Demissional</SelectItem>
+                    <SelectItem value="Mudança de Função">Mudança de Função</SelectItem>
+                    <SelectItem value="Retorno ao Trabalho">Retorno ao Trabalho</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Data do Exame</Label>
+                  <Input
+                    type="date"
+                    value={formData.data_ultimo_exame}
+                    onChange={(e) => setFormData(prev => ({ ...prev, data_ultimo_exame: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Próximo Exame</Label>
+                  <Input
+                    type="date"
+                    value={formData.data_proximo_exame}
+                    onChange={(e) => setFormData(prev => ({ ...prev, data_proximo_exame: e.target.value }))}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Upload do Exame ASO</Label>
-                <FileUploader
-                  onFileUploaded={(fileId) => setFormData(prev => ({ ...prev, fileId }))}
-                />
-                {formData.fileId && (
-                  <p className="text-sm text-success">✓ Arquivo enviado</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="observacao">Observação (opcional)</Label>
-                <Input
-                  id="observacao"
-                  placeholder="Informações adicionais"
-                  value={formData.observacao || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, observacao: e.target.value }))}
-                />
+                <Label>Periodicidade</Label>
+                <Select
+                  value={formData.periodicidade}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, periodicidade: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="6 meses">6 meses</SelectItem>
+                    <SelectItem value="1 ano">1 ano</SelectItem>
+                    <SelectItem value="2 anos">2 anos</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="flex gap-2 mt-6">
               <Button onClick={handleCloseDialog} variant="outline" className="flex-1">
                 Cancelar
               </Button>
-              <Button onClick={handleSave} disabled={loading || !formData.fileId} className="flex-1">
+              <Button onClick={handleSave} disabled={loading} className="flex-1">
                 {loading ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>
@@ -329,43 +371,54 @@ export default function GestaoASO() {
           <CardTitle>Controle de Exames ASO</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Matrícula</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Loja</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Emissão</TableHead>
-                <TableHead>Validade</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {exams.map((exam, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-mono">{exam.matricula}</TableCell>
-                  <TableCell className="font-medium">{exam.nome}</TableCell>
-                  <TableCell>{exam.loja}</TableCell>
-                  <TableCell>{getTipoBadge(exam.tipo)}</TableCell>
-                  <TableCell>{new Date(exam.dataEmissao).toLocaleDateString('pt-BR')}</TableCell>
-                  <TableCell>{new Date(exam.dataValidade).toLocaleDateString('pt-BR')}</TableCell>
-                  <TableCell>{getStatusBadge(exam.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="ghost">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost">
-                        <Upload className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {exams.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum exame cadastrado</p>
+              <p className="text-sm">Clique em "Cadastrar ASO" para adicionar</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Matrícula</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Loja</TableHead>
+                  <TableHead>Cargo</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Último Exame</TableHead>
+                  <TableHead>Próximo Exame</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {exams.map((exam) => (
+                  <TableRow key={exam.id}>
+                    <TableCell className="font-mono">{exam.matricula}</TableCell>
+                    <TableCell className="font-medium">{exam.nome}</TableCell>
+                    <TableCell>{exam.loja}</TableCell>
+                    <TableCell>{exam.cargo}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{exam.tipoExame}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {exam.dataUltimoExame 
+                        ? new Date(exam.dataUltimoExame).toLocaleDateString('pt-BR')
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      {exam.dataProximoExame 
+                        ? new Date(exam.dataProximoExame).toLocaleDateString('pt-BR')
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell>{getStatusBadge(exam.status)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
