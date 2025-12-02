@@ -14,6 +14,15 @@ export const formatCurrency = (value: string) => {
   });
 };
 
+// Formata valor numérico (reais) para moeda brasileira
+export const formatCurrencyFromNumber = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return '-';
+  return value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  });
+};
+
 export const parseCurrencyToCentavos = (value: string) => {
   const numericValue = value.replace(/\D/g, '');
   return parseInt(numericValue) || 0;
