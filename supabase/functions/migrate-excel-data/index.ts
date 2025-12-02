@@ -69,15 +69,19 @@ Deno.serve(async (req) => {
     );
 
     // Receber dados do body
-    const { profissionais, lojas, examesASO, beneficios } = await req.json();
+    const { profissionais, lojas, examesASO, beneficios, ferias, faltas, afastamentos } = await req.json();
 
     console.log(`Iniciando migração: ${lojas?.length || 0} lojas fornecidas, ${profissionais?.length || 0} profissionais`);
+    console.log(`Dados adicionais: ${ferias?.length || 0} férias, ${faltas?.length || 0} faltas, ${afastamentos?.length || 0} afastamentos`);
 
     const results = {
       lojas: { inserted: 0, errors: [] as string[] },
       profissionais: { inserted: 0, errors: [] as string[], warnings: [] as string[] },
       examesASO: { inserted: 0, errors: [] as string[] },
       beneficios: { inserted: 0, errors: [] as string[] },
+      ferias: { inserted: 0, errors: [] as string[] },
+      faltas: { inserted: 0, errors: [] as string[] },
+      afastamentos: { inserted: 0, errors: [] as string[] },
     };
 
     // Contador para gerar matrículas automáticas
@@ -90,6 +94,38 @@ Deno.serve(async (req) => {
     // Função para normalizar nomes (remover espaços extras, lowercase)
     const normalizarNome = (nome: string) => {
       return nome.trim().toLowerCase().replace(/\s+/g, ' ');
+    };
+
+    // Função para buscar profissional por CPF ou matrícula
+    const buscarProfissional = async (cpf?: string, matricula?: string, nome?: string) => {
+      if (cpf) {
+        const { data } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('cpf', cpf)
+          .maybeSingle();
+        if (data) return data.id;
+      }
+      
+      if (matricula) {
+        const { data } = await supabase
+          .from('profissionais')
+          .select('id')
+          .eq('matricula', matricula)
+          .maybeSingle();
+        if (data) return data.id;
+      }
+      
+      if (nome) {
+        const { data } = await supabase
+          .from('profissionais')
+          .select('id')
+          .ilike('nome', `%${nome}%`)
+          .maybeSingle();
+        if (data) return data.id;
+      }
+      
+      return null;
     };
 
     // 1. EXTRAIR E CRIAR LOJAS a partir dos profissionais
@@ -232,9 +268,9 @@ Deno.serve(async (req) => {
             data_admissao: prof.dataAdmissao || null,
             cbo: prof.cbo || null,
             cracha: prof.cracha || null,
-            primeiro_salario: salarioCTPS || prof.primeiroSalario || null, // salarioCTPS = salário CTPS registrado
+            primeiro_salario: salarioCTPS || prof.primeiroSalario || null,
             ultimo_salario: prof.ultimoSalario || null,
-            salario_nominal: salario, // salário a receber (base para cálculos)
+            salario_nominal: salario,
             cesta_basica: prof.cestaBasica || false,
             vale_transporte: prof.valeTransporte || false,
             vale_refeicao: prof.valeRefeicao || false,
@@ -259,7 +295,6 @@ Deno.serve(async (req) => {
           .single();
 
         if (error) {
-          // Ignorar erros de duplicata
           if (error.code === '23505') {
             console.log(`Profissional ${matricula} já existe, pulando...`);
           } else {
@@ -278,16 +313,11 @@ Deno.serve(async (req) => {
     // 3. Inserir Exames ASO (se houver)
     if (examesASO && examesASO.length > 0) {
       for (const exame of examesASO) {
-        // Buscar profissional por CPF
-        const { data: profData } = await supabase
-          .from('profissionais')
-          .select('id')
-          .eq('cpf', exame.cpf)
-          .single();
+        const profId = await buscarProfissional(exame.cpf, exame.matricula, exame.nome);
 
-        if (profData) {
+        if (profId) {
           const { error } = await supabase.from('exames_aso').insert({
-            profissional_id: profData.id,
+            profissional_id: profId,
             tipo_exame: exame.tipoExame || 'Periódico',
             data_ultimo_exame: exame.dataUltimoExame || null,
             data_proximo_exame: exame.dataProximoExame || null,
@@ -296,10 +326,12 @@ Deno.serve(async (req) => {
           });
 
           if (error) {
-            results.examesASO.errors.push(`${exame.nome}: ${error.message}`);
+            results.examesASO.errors.push(`${exame.nome || exame.cpf}: ${error.message}`);
           } else {
             results.examesASO.inserted++;
           }
+        } else {
+          results.examesASO.errors.push(`${exame.nome || exame.cpf}: profissional não encontrado`);
         }
       }
     }
@@ -309,16 +341,11 @@ Deno.serve(async (req) => {
       const mesReferencia = new Date().toISOString().split('T')[0];
       
       for (const beneficio of beneficios) {
-        // Buscar profissional por CPF
-        const { data: profData } = await supabase
-          .from('profissionais')
-          .select('id')
-          .eq('cpf', beneficio.cpf)
-          .single();
+        const profId = await buscarProfissional(beneficio.cpf, beneficio.matricula, beneficio.nome);
 
-        if (profData) {
+        if (profId) {
           const { error } = await supabase.from('beneficios').insert({
-            profissional_id: profData.id,
+            profissional_id: profId,
             mes_referencia: mesReferencia,
             valor_diario_vt: beneficio.valorVT || null,
             valor_diario_vr: 25.00,
@@ -327,7 +354,7 @@ Deno.serve(async (req) => {
           });
 
           if (error) {
-            results.beneficios.errors.push(`${beneficio.nome}: ${error.message}`);
+            results.beneficios.errors.push(`${beneficio.nome || beneficio.cpf}: ${error.message}`);
           } else {
             results.beneficios.inserted++;
           }
@@ -335,7 +362,108 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. Inserir configurações padrão do sistema
+    // 5. Inserir Férias (se houver)
+    if (ferias && ferias.length > 0) {
+      console.log(`Processando ${ferias.length} registros de férias...`);
+      
+      for (const feriaItem of ferias) {
+        const profId = await buscarProfissional(feriaItem.cpf, feriaItem.matricula, feriaItem.nome);
+
+        if (profId) {
+          // Calcular período aquisitivo se não fornecido
+          const periodoInicio = feriaItem.periodoAquisitivoInicio || 
+            feriaItem.dataAdmissao || 
+            new Date(new Date().getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+          
+          const periodoFim = feriaItem.periodoAquisitivoFim || 
+            new Date(new Date(periodoInicio).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+          const { error } = await supabase.from('ferias').insert({
+            profissional_id: profId,
+            periodo_aquisitivo_inicio: periodoInicio,
+            periodo_aquisitivo_fim: periodoFim,
+            periodo_gozo_inicio: feriaItem.periodoGozoInicio || null,
+            periodo_gozo_fim: feriaItem.periodoGozoFim || null,
+            dias_direito: feriaItem.diasDireito || 30,
+            dias_vendidos: feriaItem.diasVendidos || 0,
+            dias_gozados: feriaItem.diasGozados || 0,
+            valor_ferias: feriaItem.valorFerias || null,
+            valor_terco_constitucional: feriaItem.valorTerco || null,
+            status: feriaItem.status || 'pendente',
+          });
+
+          if (error) {
+            results.ferias.errors.push(`${feriaItem.nome || feriaItem.cpf}: ${error.message}`);
+          } else {
+            results.ferias.inserted++;
+          }
+        } else {
+          results.ferias.errors.push(`${feriaItem.nome || feriaItem.cpf || feriaItem.matricula}: profissional não encontrado`);
+        }
+      }
+      console.log(`Férias inseridas: ${results.ferias.inserted}`);
+    }
+
+    // 6. Inserir Faltas (se houver)
+    if (faltas && faltas.length > 0) {
+      console.log(`Processando ${faltas.length} registros de faltas...`);
+      
+      for (const falta of faltas) {
+        const profId = await buscarProfissional(falta.cpf, falta.matricula, falta.nome);
+
+        if (profId) {
+          const { error } = await supabase.from('faltas').insert({
+            profissional_id: profId,
+            data_falta: falta.dataFalta || falta.data,
+            tipo: falta.tipo || (falta.justificada ? 'justificada' : 'injustificada'),
+            motivo: falta.motivo || null,
+            documento_comprovante: falta.documentoComprovante || null,
+          });
+
+          if (error) {
+            results.faltas.errors.push(`${falta.nome || falta.cpf}: ${error.message}`);
+          } else {
+            results.faltas.inserted++;
+          }
+        } else {
+          results.faltas.errors.push(`${falta.nome || falta.cpf || falta.matricula}: profissional não encontrado`);
+        }
+      }
+      console.log(`Faltas inseridas: ${results.faltas.inserted}`);
+    }
+
+    // 7. Inserir Afastamentos (se houver)
+    if (afastamentos && afastamentos.length > 0) {
+      console.log(`Processando ${afastamentos.length} registros de afastamentos...`);
+      
+      for (const afastamento of afastamentos) {
+        const profId = await buscarProfissional(afastamento.cpf, afastamento.matricula, afastamento.nome);
+
+        if (profId) {
+          const { error } = await supabase.from('afastamentos').insert({
+            profissional_id: profId,
+            tipo: afastamento.tipo || 'outros',
+            data_inicio: afastamento.dataInicio || afastamento.data,
+            data_prevista_retorno: afastamento.dataPrevistaRetorno || null,
+            data_retorno_efetivo: afastamento.dataRetornoEfetivo || null,
+            motivo: afastamento.motivo || null,
+            documento_comprovante: afastamento.documentoComprovante || null,
+            status: afastamento.status || 'ativo',
+          });
+
+          if (error) {
+            results.afastamentos.errors.push(`${afastamento.nome || afastamento.cpf}: ${error.message}`);
+          } else {
+            results.afastamentos.inserted++;
+          }
+        } else {
+          results.afastamentos.errors.push(`${afastamento.nome || afastamento.cpf || afastamento.matricula}: profissional não encontrado`);
+        }
+      }
+      console.log(`Afastamentos inseridos: ${results.afastamentos.inserted}`);
+    }
+
+    // 8. Inserir configurações padrão do sistema
     const configuracoesDefault = [
       { chave: 'percentual_vr_desconto', valor: '6.00', tipo: 'number', categoria: 'beneficios', descricao: 'Percentual de desconto do VR na folha' },
       { chave: 'valor_diario_vr', valor: '25.00', tipo: 'number', categoria: 'beneficios', descricao: 'Valor diário padrão do Vale Refeição' },
@@ -355,7 +483,7 @@ Deno.serve(async (req) => {
 
     console.log(`${configsInseridas} configurações inseridas`);
 
-    // 6. Criar histórico de salários para profissionais
+    // 9. Criar histórico de salários para profissionais
     const { data: profsComSalario } = await supabase
       .from('profissionais')
       .select('id, salario_nominal, data_admissao')
