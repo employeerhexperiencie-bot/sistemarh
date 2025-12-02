@@ -702,6 +702,132 @@ export type Database = {
           },
         ]
       }
+      folha_pagamento: {
+        Row: {
+          adicional_noturno: number | null
+          atestados: number | null
+          bonus: number | null
+          competencia: string
+          created_at: string
+          desconto_faltas: number | null
+          desconto_inss: number | null
+          desconto_ir: number | null
+          desconto_pensao: number | null
+          desconto_sindicato: number | null
+          desconto_vr: number | null
+          desconto_vt: number | null
+          dias_ferias: number | null
+          dias_trabalhados: number | null
+          elegivel_dia20: boolean | null
+          faltas: number | null
+          horas_extras: number | null
+          id: string
+          loja_id: string | null
+          motivo_dia20: string | null
+          outras_adicoes: number | null
+          outros_descontos: number | null
+          profissional_id: string
+          salario_base: number
+          status: string | null
+          total_descontos: number | null
+          total_proventos: number | null
+          updated_at: string
+          valor_cesta_basica: number | null
+          valor_dia20: number | null
+          valor_dia5: number | null
+          valor_liquido: number | null
+          valor_vr: number | null
+          valor_vt: number | null
+        }
+        Insert: {
+          adicional_noturno?: number | null
+          atestados?: number | null
+          bonus?: number | null
+          competencia: string
+          created_at?: string
+          desconto_faltas?: number | null
+          desconto_inss?: number | null
+          desconto_ir?: number | null
+          desconto_pensao?: number | null
+          desconto_sindicato?: number | null
+          desconto_vr?: number | null
+          desconto_vt?: number | null
+          dias_ferias?: number | null
+          dias_trabalhados?: number | null
+          elegivel_dia20?: boolean | null
+          faltas?: number | null
+          horas_extras?: number | null
+          id?: string
+          loja_id?: string | null
+          motivo_dia20?: string | null
+          outras_adicoes?: number | null
+          outros_descontos?: number | null
+          profissional_id: string
+          salario_base?: number
+          status?: string | null
+          total_descontos?: number | null
+          total_proventos?: number | null
+          updated_at?: string
+          valor_cesta_basica?: number | null
+          valor_dia20?: number | null
+          valor_dia5?: number | null
+          valor_liquido?: number | null
+          valor_vr?: number | null
+          valor_vt?: number | null
+        }
+        Update: {
+          adicional_noturno?: number | null
+          atestados?: number | null
+          bonus?: number | null
+          competencia?: string
+          created_at?: string
+          desconto_faltas?: number | null
+          desconto_inss?: number | null
+          desconto_ir?: number | null
+          desconto_pensao?: number | null
+          desconto_sindicato?: number | null
+          desconto_vr?: number | null
+          desconto_vt?: number | null
+          dias_ferias?: number | null
+          dias_trabalhados?: number | null
+          elegivel_dia20?: boolean | null
+          faltas?: number | null
+          horas_extras?: number | null
+          id?: string
+          loja_id?: string | null
+          motivo_dia20?: string | null
+          outras_adicoes?: number | null
+          outros_descontos?: number | null
+          profissional_id?: string
+          salario_base?: number
+          status?: string | null
+          total_descontos?: number | null
+          total_proventos?: number | null
+          updated_at?: string
+          valor_cesta_basica?: number | null
+          valor_dia20?: number | null
+          valor_dia5?: number | null
+          valor_liquido?: number | null
+          valor_vr?: number | null
+          valor_vt?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folha_pagamento_loja_id_fkey"
+            columns: ["loja_id"]
+            isOneToOne: false
+            referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folha_pagamento_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historico_acoes: {
         Row: {
           acao: string
