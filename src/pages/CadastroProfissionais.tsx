@@ -21,7 +21,7 @@ import { ValesManager } from '@/components/ValesManager';
 import { ValeTransporteManager } from '@/components/ValeTransporteManager';
 import { AdvertenciasManager } from '@/components/AdvertenciasManager';
 import { HistoricoCompleto } from '@/components/HistoricoCompleto';
-import { formatCurrency, parseCurrencyToCentavos } from '@/lib/utils';
+import { formatCurrency, formatCurrencyFromNumber, parseCurrencyToCentavos } from '@/lib/utils';
 import { useAuditLog } from '@/contexts/AuditLogContext';
 
 interface Professional {
@@ -289,37 +289,14 @@ export const CadastroProfissionais: React.FC = () => {
 
   const loadProfessionals = async () => {
     try {
-      // Primeiro, tentar carregar dados importados do localStorage
-      const importedDataStr = localStorage.getItem('profissionaisImportados');
-      
-      if (importedDataStr) {
-        const importedData = JSON.parse(importedDataStr);
-        const convertedProfessionals = importedData.map(convertImportedToProfessional);
-        setProfessionals(convertedProfessionals);
-        setUsingImportedData(true);
-        
-        // Carregar lojas importadas também
-        const lojasImportadasStr = localStorage.getItem('lojasImportadas');
-        if (lojasImportadasStr) {
-          const lojasImportadas = JSON.parse(lojasImportadasStr);
-          const lojasFormatadas = lojasImportadas.map((nome: string, index: number) => ({
-            id: `imported-${index}`,
-            nome: nome
-          }));
-          setLojas(lojasFormatadas);
-        }
-        
-        return;
-      }
-
-      // Se não houver dados importados, carrega do Supabase normalmente
+      // Carregar dados do Supabase como fonte principal
       const { data, error } = await supabase
         .from('profissionais')
         .select(`
           *,
           loja:lojas(nome)
         `)
-        .order('created_at', { ascending: false });
+        .order('nome', { ascending: true });
 
       if (error) throw error;
       setProfessionals((data || []) as Professional[]);
@@ -633,9 +610,15 @@ export const CadastroProfissionais: React.FC = () => {
                   <p className="font-medium">{selectedProfessional?.cargo || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Salário</Label>
+                  <Label className="text-xs text-muted-foreground">Salário a Receber</Label>
                   <p className="font-medium">
-                    {formatCurrency((selectedProfessional?.salario_nominal || 0).toString())}
+                    {formatCurrencyFromNumber(selectedProfessional?.salario_nominal)}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Salário CTPS</Label>
+                  <p className="font-medium">
+                    {formatCurrencyFromNumber(selectedProfessional?.primeiro_salario)}
                   </p>
                 </div>
                 <div>
@@ -1910,7 +1893,7 @@ export const CadastroProfissionais: React.FC = () => {
                   <TableCell className="hidden md:table-cell">{professional.loja?.nome || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{professional.cargo || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {formatCurrency((professional.salario_nominal || 0).toString())}
+                    {formatCurrencyFromNumber(professional.salario_nominal)}
                   </TableCell>
                   <TableCell>{getStatusBadge(professional.status)}</TableCell>
                   <TableCell>
