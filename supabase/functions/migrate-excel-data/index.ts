@@ -191,12 +191,15 @@ Deno.serve(async (req) => {
           return isNaN(parsed) ? null : parsed;
         };
         
-        const salario = parseSalario(prof.salarioNominal) || 
+        // Priorizar salarioReceber como salário base (nominal)
+        const salario = parseSalario((prof as any).salarioReceber) ||
+                        parseSalario(prof.salarioNominal) || 
                         parseSalario(prof.ultimoSalario) || 
                         parseSalario(prof.primeiroSalario) ||
-                        parseSalario((prof as any).salarioReceber) ||
-                        parseSalario((prof as any).salarioCTPS) ||
                         null;
+        
+        // salarioCTPS é o salário registrado em carteira (armazenar separadamente)
+        const salarioCTPS = parseSalario((prof as any).salarioCTPS) || null;
         
         if (!salario) {
           results.profissionais.warnings.push(`${prof.nome} (${matricula}): sem salário definido`);
@@ -229,9 +232,9 @@ Deno.serve(async (req) => {
             data_admissao: prof.dataAdmissao || null,
             cbo: prof.cbo || null,
             cracha: prof.cracha || null,
-            primeiro_salario: prof.primeiroSalario || null,
+            primeiro_salario: salarioCTPS || prof.primeiroSalario || null, // salarioCTPS = salário CTPS registrado
             ultimo_salario: prof.ultimoSalario || null,
-            salario_nominal: salario,
+            salario_nominal: salario, // salário a receber (base para cálculos)
             cesta_basica: prof.cestaBasica || false,
             vale_transporte: prof.valeTransporte || false,
             vale_refeicao: prof.valeRefeicao || false,
