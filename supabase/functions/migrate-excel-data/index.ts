@@ -182,8 +182,21 @@ Deno.serve(async (req) => {
           results.profissionais.warnings.push(`${prof.nome} (${matricula}): sem loja definida`);
         }
 
-        // Determinar salário (priorizar salarioNominal, depois ultimoSalario, depois primeiroSalario)
-        const salario = prof.salarioNominal || prof.ultimoSalario || prof.primeiroSalario || null;
+        // Determinar salário (verificar múltiplos campos possíveis)
+        const parseSalario = (valor: any): number | null => {
+          if (!valor) return null;
+          if (typeof valor === 'number') return valor;
+          const strValue = String(valor).replace(/[R$\s.]/g, '').replace(',', '.');
+          const parsed = parseFloat(strValue);
+          return isNaN(parsed) ? null : parsed;
+        };
+        
+        const salario = parseSalario(prof.salarioNominal) || 
+                        parseSalario(prof.ultimoSalario) || 
+                        parseSalario(prof.primeiroSalario) ||
+                        parseSalario((prof as any).salarioReceber) ||
+                        parseSalario((prof as any).salarioCTPS) ||
+                        null;
         
         if (!salario) {
           results.profissionais.warnings.push(`${prof.nome} (${matricula}): sem salário definido`);
