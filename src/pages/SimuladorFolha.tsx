@@ -49,7 +49,7 @@ interface Profissional {
   salario: number;
   escala: '6x1' | '5x2';
   valorPassagem: number;
-  dataAdmissao: string;
+  dataAdmissao: string | null;
   status: 'ativo' | 'ferias' | 'afastado_acidente' | 'afastado_doenca' | 'licenca_maternidade';
   recebeCesta: boolean;
   recebeVT: boolean;
@@ -132,14 +132,22 @@ const calcularProfissional = (
   let recebeDia20 = true;
   let motivoDia20 = '';
   
-  const dataAdmissao = new Date(p.dataAdmissao);
+  // Tratamento seguro para data de admissão
+  const temDataAdmissao = p.dataAdmissao && p.dataAdmissao !== '';
+  const dataAdmissao = temDataAdmissao ? new Date(p.dataAdmissao) : null;
   const mesCompetencia = new Date(competencia + '-01');
-  const mesmaCompetencia = dataAdmissao.getMonth() === mesCompetencia.getMonth() && 
-                          dataAdmissao.getFullYear() === mesCompetencia.getFullYear();
   
-  if (mesmaCompetencia && dataAdmissao.getDate() > 10) {
-    recebeDia20 = false;
-    motivoDia20 = 'Admitido após dia 10';
+  // Verificar se é mesmo mês de admissão (só se tiver data válida)
+  const mesmaCompetencia = dataAdmissao 
+    ? (dataAdmissao.getMonth() === mesCompetencia.getMonth() && 
+       dataAdmissao.getFullYear() === mesCompetencia.getFullYear())
+    : false;
+  
+  // Regras de elegibilidade para Dia 20
+  if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() > 10) {
+    // Admitido após dia 10 do mês de competência - recebe apenas 40%
+    valorDia20 = arredondarValor(p.salario * 0.40);
+    motivoDia20 = 'Admitido após dia 10 (40%)';
   } else if (p.status === 'ferias') {
     recebeDia20 = false;
     motivoDia20 = 'Em férias';
@@ -149,12 +157,13 @@ const calcularProfissional = (
   } else if (p.faltas >= 10) {
     recebeDia20 = false;
     motivoDia20 = '+10 faltas';
-  } else if (mesmaCompetencia && dataAdmissao.getDate() <= 10) {
+  } else if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() <= 10) {
     valorDia20 = arredondarValor(p.salario * 0.40);
-    motivoDia20 = 'Admitido no mês';
+    motivoDia20 = 'Admitido no mês (40%)';
   } else {
+    // Caso padrão - usar percentual configurado
     valorDia20 = arredondarValor(p.salario * (percentualDia20 / 100));
-    motivoDia20 = `${percentualDia20}%`;
+    motivoDia20 = temDataAdmissao ? `${percentualDia20}%` : `${percentualDia20}% (sem data adm.)`;
   }
   
   let valorVT = 0;
@@ -269,6 +278,9 @@ export default function SimuladorFolha() {
   const profissionais = supabaseData.totalProfissionais > 0
     ? supabaseData.profissionais.map((p: any) => {
         const salario = p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0;
+        // Determinar status baseado em afastamentos (se houver implementação futura)
+        const status = p.status === 'inativo' ? 'afastado_doenca' : 'ativo';
+        
         return {
           id: p.id,
           nome: p.nome,
@@ -276,12 +288,12 @@ export default function SimuladorFolha() {
           lojaId: p.loja_id || 'sem-loja',
           salario,
           escala: '6x1' as '6x1' | '5x2',
-          valorPassagem: 4.40,
-          dataAdmissao: p.data_admissao || '2020-01-01',
-          status: 'ativo' as const,
-          recebeCesta: p.cesta_basica || false,
-          recebeVT: p.vale_transporte || false,
-          recebeVR: p.vale_refeicao || false,
+          valorPassagem: p.valor_diario_rota || 4.40,
+          dataAdmissao: p.data_admissao || null, // Mantém null para tratamento correto
+          status: status as 'ativo' | 'ferias' | 'afastado_acidente' | 'afastado_doenca' | 'licenca_maternidade',
+          recebeCesta: p.cesta_basica === true,
+          recebeVT: p.vale_transporte === true,
+          recebeVR: p.vale_refeicao === true,
           faltas: 0,
           atestados: 0,
           diasFerias: 0,
