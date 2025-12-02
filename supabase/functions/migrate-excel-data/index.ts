@@ -80,11 +80,16 @@ Deno.serve(async (req) => {
       beneficios: { inserted: 0, errors: [] as string[] },
     };
 
-    // Mapa para relacionar nomes de lojas com IDs
+    // Mapa para relacionar nomes de lojas com IDs (case-insensitive)
     const lojaIdMap = new Map<string, string>();
+    const lojaNomeNormalizado = new Map<string, string>(); // normalizado -> original
+
+    // Função para normalizar nomes (remover espaços extras, lowercase)
+    const normalizarNome = (nome: string) => {
+      return nome.trim().toLowerCase().replace(/\s+/g, ' ');
+    };
 
     // 1. EXTRAIR E CRIAR LOJAS a partir dos profissionais
-    // Se não temos lojas no array, extraímos dos profissionais
     const lojasUnicas = new Set<string>();
     
     if (profissionais && profissionais.length > 0) {
@@ -105,14 +110,17 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Total de lojas únicas encontradas: ${lojasUnicas.size}`);
+    console.log(`Lojas: ${Array.from(lojasUnicas).join(', ')}`);
 
     // Inserir cada loja única
     for (const nomeLoja of lojasUnicas) {
+      const nomeNormalizado = normalizarNome(nomeLoja);
+      
       const { data, error } = await supabase
         .from('lojas')
         .upsert({
           nome: nomeLoja,
-          cnpj: null, // Será preenchido depois
+          cnpj: null,
           endereco: null,
           telefone: null,
           email: null,
@@ -130,6 +138,7 @@ Deno.serve(async (req) => {
       } else if (data) {
         results.lojas.inserted++;
         lojaIdMap.set(nomeLoja, data.id);
+        lojaNomeNormalizado.set(nomeNormalizado, nomeLoja);
         console.log(`Loja criada: ${nomeLoja} -> ${data.id}`);
       }
     }
@@ -143,8 +152,25 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Buscar ID da loja pelo nome
-        const lojaId = lojaIdMap.get(prof.localTrabalho || '');
+        // Buscar ID da loja pelo nome (com matching case-insensitive)
+        let lojaId = null;
+        if (prof.localTrabalho && prof.localTrabalho.trim()) {
+          const localNormalizado = normalizarNome(prof.localTrabalho);
+          const nomeLojaOriginal = lojaNomeNormalizado.get(localNormalizado);
+          lojaId = nomeLojaOriginal ? lojaIdMap.get(nomeLojaOriginal) : null;
+          
+          if (!lojaId) {
+            // Tentar match direto também
+            lojaId = lojaIdMap.get(prof.localTrabalho.trim());
+          }
+          
+          if (!lojaId) {
+            console.warn(`Loja não encontrada para profissional ${prof.matricula}: "${prof.localTrabalho}"`);
+          }
+        }
+
+        // Determinar salário (priorizar salarioNominal, depois ultimoSalario, depois primeiroSalario)
+        const salario = prof.salarioNominal || prof.ultimoSalario || prof.primeiroSalario || null;
 
         const { data, error } = await supabase
           .from('profissionais')
@@ -175,7 +201,7 @@ Deno.serve(async (req) => {
             cracha: prof.cracha || null,
             primeiro_salario: prof.primeiroSalario || null,
             ultimo_salario: prof.ultimoSalario || null,
-            salario_nominal: prof.salarioNominal || null,
+            salario_nominal: salario,
             cesta_basica: prof.cestaBasica || false,
             vale_transporte: prof.valeTransporte || false,
             vale_refeicao: prof.valeRefeicao || false,
