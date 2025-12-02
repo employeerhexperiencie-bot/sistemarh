@@ -10,10 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
   Calculator, DollarSign, Calendar, Bus, Utensils, 
   TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet,
-  FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info
+  FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info, ChevronRight
 } from 'lucide-react';
 import { RelatorioFolha } from '@/components/folha/RelatorioFolha';
 import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
@@ -201,15 +202,22 @@ const calcularProfissional = (
   };
 };
 
+type CardType = 'dia20' | 'dia5' | 'vt' | 'vr' | 'total' | 'funcionarios' | null;
+
 // Summary Card Component
-function SummaryCard({ icon: Icon, label, value, color }: {
+function SummaryCard({ icon: Icon, label, value, color, onClick, clickable = true }: {
   icon: React.ElementType;
   label: string;
   value: string;
   color: string;
+  onClick?: () => void;
+  clickable?: boolean;
 }) {
   return (
-    <Card className="overflow-hidden">
+    <Card 
+      className={`overflow-hidden transition-all ${clickable ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : ''}`}
+      onClick={onClick}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className={`p-2.5 rounded-lg ${color}`}>
@@ -219,6 +227,7 @@ function SummaryCard({ icon: Icon, label, value, color }: {
             <p className="text-xs text-muted-foreground truncate">{label}</p>
             <p className="text-lg font-bold tracking-tight">{value}</p>
           </div>
+          {clickable && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </div>
       </CardContent>
     </Card>
@@ -238,6 +247,7 @@ export default function SimuladorFolha() {
   const [percentualDia20, setPercentualDia20] = useState(40);
   const [lojaSelecionada, setLojaSelecionada] = useState<string>('todas');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [selectedCardType, setSelectedCardType] = useState<CardType>(null);
 
   // Estado de validação de dados
   const [validacaoDados, setValidacaoDados] = useState<{
@@ -540,36 +550,42 @@ export default function SimuladorFolha() {
           label="Dia 20"
           value={formatCurrency(totaisGerais.totalDia20)}
           color="bg-success/10 text-success"
+          onClick={() => setSelectedCardType('dia20')}
         />
         <SummaryCard
           icon={DollarSign}
           label="Dia 5"
           value={formatCurrency(totaisGerais.totalDia5)}
           color="bg-primary/10 text-primary"
+          onClick={() => setSelectedCardType('dia5')}
         />
         <SummaryCard
           icon={Bus}
           label="Total VT"
           value={formatCurrency(totaisGerais.totalVT)}
           color="bg-info/10 text-info"
+          onClick={() => setSelectedCardType('vt')}
         />
         <SummaryCard
           icon={Utensils}
           label="Total VR"
           value={formatCurrency(totaisGerais.totalVR)}
           color="bg-warning/10 text-warning"
+          onClick={() => setSelectedCardType('vr')}
         />
         <SummaryCard
           icon={TrendingUp}
           label="Total Geral"
           value={formatCurrency(totaisGerais.totalGeral)}
           color="bg-accent/10 text-accent"
+          onClick={() => setSelectedCardType('total')}
         />
         <SummaryCard
           icon={Users}
           label="Funcionários"
           value={totaisGerais.funcionarios.toString()}
           color="bg-muted text-muted-foreground"
+          onClick={() => setSelectedCardType('funcionarios')}
         />
       </div>
 
@@ -861,6 +877,120 @@ export default function SimuladorFolha() {
           <GestaoEmprestimos />
         </TabsContent>
       </Tabs>
+
+      {/* Detail Modal */}
+      <Dialog open={selectedCardType !== null} onOpenChange={(open) => !open && setSelectedCardType(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedCardType === 'dia20' && <><Calendar className="h-5 w-5 text-success" /> Pagamentos Dia 20</>}
+              {selectedCardType === 'dia5' && <><DollarSign className="h-5 w-5 text-primary" /> Pagamentos Dia 5</>}
+              {selectedCardType === 'vt' && <><Bus className="h-5 w-5 text-info" /> Vale Transporte (VT)</>}
+              {selectedCardType === 'vr' && <><Utensils className="h-5 w-5 text-warning" /> Vale Refeição (VR)</>}
+              {selectedCardType === 'total' && <><TrendingUp className="h-5 w-5 text-accent" /> Total Geral</>}
+              {selectedCardType === 'funcionarios' && <><Users className="h-5 w-5 text-muted-foreground" /> Lista de Funcionários</>}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedCardType === 'dia20' && `Total: ${formatCurrency(totaisGerais.totalDia20)} • ${calculosLote.filter(c => c.valorDia20 > 0).length} funcionários`}
+              {selectedCardType === 'dia5' && `Total: ${formatCurrency(totaisGerais.totalDia5)} • ${calculosLote.filter(c => c.salarioLiquido > 0).length} funcionários`}
+              {selectedCardType === 'vt' && `Total: ${formatCurrency(totaisGerais.totalVT)} • ${calculosLote.filter(c => c.valorVT > 0).length} funcionários`}
+              {selectedCardType === 'vr' && `Total: ${formatCurrency(totaisGerais.totalVR)} • ${calculosLote.filter(c => c.valorVR > 0).length} funcionários`}
+              {selectedCardType === 'total' && `Total: ${formatCurrency(totaisGerais.totalGeral)} • ${calculosLote.length} funcionários`}
+              {selectedCardType === 'funcionarios' && `${totaisGerais.funcionarios} funcionários cadastrados`}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>Matrícula</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Loja</TableHead>
+                  {selectedCardType === 'dia20' && <TableHead className="text-right">Valor Dia 20</TableHead>}
+                  {selectedCardType === 'dia20' && <TableHead>Motivo</TableHead>}
+                  {selectedCardType === 'dia5' && <TableHead className="text-right">Salário Base</TableHead>}
+                  {selectedCardType === 'dia5' && <TableHead className="text-right">Valor Dia 5</TableHead>}
+                  {selectedCardType === 'vt' && <TableHead className="text-center">Dias</TableHead>}
+                  {selectedCardType === 'vt' && <TableHead className="text-right">Valor VT</TableHead>}
+                  {selectedCardType === 'vr' && <TableHead className="text-center">Dias</TableHead>}
+                  {selectedCardType === 'vr' && <TableHead className="text-right">Valor VR</TableHead>}
+                  {selectedCardType === 'total' && <TableHead className="text-right">Dia 20</TableHead>}
+                  {selectedCardType === 'total' && <TableHead className="text-right">Dia 5</TableHead>}
+                  {selectedCardType === 'total' && <TableHead className="text-right">VT</TableHead>}
+                  {selectedCardType === 'total' && <TableHead className="text-right">VR</TableHead>}
+                  {selectedCardType === 'total' && <TableHead className="text-right text-primary">Total</TableHead>}
+                  {selectedCardType === 'funcionarios' && <TableHead>Status</TableHead>}
+                  {selectedCardType === 'funcionarios' && <TableHead className="text-right">Salário</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {calculosLote
+                  .filter(c => {
+                    if (selectedCardType === 'dia20') return c.valorDia20 > 0;
+                    if (selectedCardType === 'dia5') return c.salarioLiquido > 0;
+                    if (selectedCardType === 'vt') return c.valorVT > 0;
+                    if (selectedCardType === 'vr') return c.valorVR > 0;
+                    return true;
+                  })
+                  .sort((a, b) => {
+                    if (selectedCardType === 'dia20') return b.valorDia20 - a.valorDia20;
+                    if (selectedCardType === 'dia5') return b.salarioLiquido - a.salarioLiquido;
+                    if (selectedCardType === 'vt') return b.valorVT - a.valorVT;
+                    if (selectedCardType === 'vr') return b.valorVR - a.valorVR;
+                    if (selectedCardType === 'total') return b.totalMes - a.totalMes;
+                    return a.profissional.nome.localeCompare(b.profissional.nome);
+                  })
+                  .map((c) => (
+                    <TableRow key={c.profissional.id}>
+                      <TableCell className="font-mono text-xs">{c.profissional.matricula}</TableCell>
+                      <TableCell className="font-medium">{c.profissional.nome}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.loja?.nome || '-'}</TableCell>
+                      {selectedCardType === 'dia20' && (
+                        <TableCell className="text-right font-semibold text-success">{formatCurrency(c.valorDia20)}</TableCell>
+                      )}
+                      {selectedCardType === 'dia20' && (
+                        <TableCell className="text-xs text-muted-foreground">{c.motivoDia20}</TableCell>
+                      )}
+                      {selectedCardType === 'dia5' && (
+                        <TableCell className="text-right text-muted-foreground">{formatCurrency(c.profissional.salario)}</TableCell>
+                      )}
+                      {selectedCardType === 'dia5' && (
+                        <TableCell className="text-right font-semibold text-primary">{formatCurrency(c.salarioLiquido)}</TableCell>
+                      )}
+                      {selectedCardType === 'vt' && (
+                        <TableCell className="text-center">{c.diasTrabalhados}</TableCell>
+                      )}
+                      {selectedCardType === 'vt' && (
+                        <TableCell className="text-right font-semibold text-info">{formatCurrency(c.valorVT)}</TableCell>
+                      )}
+                      {selectedCardType === 'vr' && (
+                        <TableCell className="text-center">{c.diasTrabalhados}</TableCell>
+                      )}
+                      {selectedCardType === 'vr' && (
+                        <TableCell className="text-right font-semibold text-warning">{formatCurrency(c.valorVR)}</TableCell>
+                      )}
+                      {selectedCardType === 'total' && (
+                        <>
+                          <TableCell className="text-right text-success">{formatCurrency(c.valorDia20)}</TableCell>
+                          <TableCell className="text-right text-primary">{formatCurrency(c.salarioLiquido)}</TableCell>
+                          <TableCell className="text-right text-info">{formatCurrency(c.valorVT)}</TableCell>
+                          <TableCell className="text-right text-warning">{formatCurrency(c.valorVR)}</TableCell>
+                          <TableCell className="text-right font-bold text-primary">{formatCurrency(c.totalMes)}</TableCell>
+                        </>
+                      )}
+                      {selectedCardType === 'funcionarios' && (
+                        <>
+                          <TableCell>{getStatusBadge(c.profissional.status)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(c.profissional.salario)}</TableCell>
+                        </>
+                      )}
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
