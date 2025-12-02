@@ -964,6 +964,7 @@ export type Database = {
           id: string
           loja_id: string | null
           nome: string
+          tipo: string | null
           updated_at: string | null
         }
         Insert: {
@@ -975,6 +976,7 @@ export type Database = {
           id?: string
           loja_id?: string | null
           nome: string
+          tipo?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -986,6 +988,7 @@ export type Database = {
           id?: string
           loja_id?: string | null
           nome?: string
+          tipo?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1092,6 +1095,7 @@ export type Database = {
       }
       professional_documents: {
         Row: {
+          categoria: string | null
           created_at: string | null
           data_validade: string | null
           data_vencimento: string | null
@@ -1103,6 +1107,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          categoria?: string | null
           created_at?: string | null
           data_validade?: string | null
           data_vencimento?: string | null
@@ -1114,6 +1119,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          categoria?: string | null
           created_at?: string | null
           data_validade?: string | null
           data_vencimento?: string | null
