@@ -94,7 +94,6 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
       
       {/* Right side */}
       <div className="flex items-center gap-2">
-        <AlertasBadge />
         <DocumentNotifications />
         
         <Button 
