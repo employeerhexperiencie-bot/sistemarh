@@ -69,6 +69,11 @@ const GestaoBeneficiosDetalhado = () => {
       
       if (lojasData) setLojas(lojasData);
 
+      // Calcular início e fim do mês corretamente
+      const [year, month] = mesReferencia.split('-').map(Number);
+      const inicioMes = `${mesReferencia}-01`;
+      const proximoMes = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+
       // Carregar benefícios com profissionais
       const { data: beneficiosData, error } = await supabase
         .from('beneficios')
@@ -76,8 +81,8 @@ const GestaoBeneficiosDetalhado = () => {
           *,
           profissional:profissionais(nome, matricula, cargo, loja_id)
         `)
-        .gte('mes_referencia', `${mesReferencia}-01`)
-        .lt('mes_referencia', `${mesReferencia}-32`);
+        .gte('mes_referencia', inicioMes)
+        .lt('mes_referencia', proximoMes);
 
       if (error) throw error;
       
