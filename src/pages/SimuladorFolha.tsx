@@ -19,7 +19,7 @@ import { RelatorioFolha } from '@/components/folha/RelatorioFolha';
 import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
 import { GestaoEmprestimos } from '@/components/folha/GestaoEmprestimos';
 import { AdiantamentoSalario } from '@/components/folha/AdiantamentoSalario';
-import { useMockData } from '@/hooks/useMockData';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
 
 // Função de arredondamento conforme regra do sistema
@@ -217,7 +217,7 @@ function SummaryCard({ icon: Icon, label, value, color }: {
 }
 
 export default function SimuladorFolha() {
-  const mockData = useMockData();
+  const supabaseData = useSupabaseData();
   const [competencia, setCompetencia] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -247,63 +247,56 @@ export default function SimuladorFolha() {
     timestampBeneficios: null,
   });
 
-  // Verificar dados carregados
+  // Verificar dados carregados do Supabase
   useEffect(() => {
-    const profissionaisStr = localStorage.getItem('profissionaisImportados');
-    const dadosASOStr = localStorage.getItem('dadosASO');
-    const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
-    
-    const timestampAtivos = localStorage.getItem('profissionaisImportados_timestamp');
-    const timestampASO = localStorage.getItem('dadosASO_timestamp');
-    const timestampBeneficios = localStorage.getItem('dadosBeneficios_timestamp');
-
-    setValidacaoDados({
-      ativosCarregados: !!profissionaisStr,
-      asoCarregados: !!dadosASOStr,
-      beneficiosCarregados: !!dadosBeneficiosStr,
-      timestampAtivos,
-      timestampASO,
-      timestampBeneficios,
-    });
-  }, []);
+    if (!supabaseData.isLoading) {
+      setValidacaoDados({
+        ativosCarregados: supabaseData.totalProfissionais > 0,
+        asoCarregados: true, // Dados no Supabase
+        beneficiosCarregados: true, // Dados no Supabase
+        timestampAtivos: new Date().toISOString(),
+        timestampASO: new Date().toISOString(),
+        timestampBeneficios: new Date().toISOString(),
+      });
+    }
+  }, [supabaseData.isLoading, supabaseData.totalProfissionais]);
 
   const dadosCompletos = validacaoDados.ativosCarregados && 
                          validacaoDados.asoCarregados && 
                          validacaoDados.beneficiosCarregados;
 
-  // Se tiver dados da planilha, usa eles, senão usa mock
-  const profissionais = mockData.hasMockData 
-    ? mockData.profissionais.map((p, index) => {
-        const salario = mockData.parseSalario(p.salarioReceber || p.salarioCTPS);
-        const lojaIndex = mockData.lojas.indexOf(p.localTrabalho);
+  // Usar dados do Supabase
+  const profissionais = supabaseData.totalProfissionais > 0
+    ? supabaseData.profissionais.map((p: any) => {
+        const salario = p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0;
         return {
-          id: p.matricula,
+          id: p.id,
           nome: p.nome,
           matricula: p.matricula,
-          lojaId: lojaIndex >= 0 ? `loja-${lojaIndex + 1}` : p.localTrabalho,
+          lojaId: p.loja_id || 'sem-loja',
           salario,
-          escala: (p.escala?.includes('6') ? '6x1' : '5x2') as '6x1' | '5x2',
+          escala: '6x1' as '6x1' | '5x2',
           valorPassagem: 4.40,
-          dataAdmissao: p.admissaoCTPS || '2020-01-01',
+          dataAdmissao: p.data_admissao || '2020-01-01',
           status: 'ativo' as const,
-          recebeCesta: true,
-          recebeVT: true,
-          recebeVR: true,
+          recebeCesta: p.cesta_basica || false,
+          recebeVT: p.vale_transporte || false,
+          recebeVR: p.vale_refeicao || false,
           faltas: 0,
           atestados: 0,
           diasFerias: 0,
           vales: 0,
           emprestimos: 0,
-          pensao: p.pensao === 'SIM' ? salario * 0.30 : 0,
+          pensao: p.pensao_alimenticia || 0,
         };
       })
     : mockProfissionais;
 
-  const lojas = mockData.hasMockData
-    ? mockData.lojas.map((nome, index) => ({
-        id: `loja-${index + 1}`,
-        nome: nome,
-        codigo: String(index + 1).padStart(3, '0'),
+  const lojas = supabaseData.totalLojas > 0
+    ? supabaseData.lojas.map((l: any) => ({
+        id: l.id,
+        nome: l.nome,
+        codigo: l.id.substring(0, 3),
       }))
     : mockLojas;
 
@@ -428,10 +421,10 @@ export default function SimuladorFolha() {
             <div className="mt-2 space-y-1 text-sm">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
-                <span>ATIVOS.xlsx: {mockData.totalProfissionais} profissionais • {mockData.totalLojas} lojas</span>
+                <span>Profissionais: {supabaseData.totalProfissionais} • Lojas: {supabaseData.totalLojas}</span>
                 {validacaoDados.timestampAtivos && (
                   <span className="text-xs text-muted-foreground">
-                    (Carregado: {new Date(validacaoDados.timestampAtivos).toLocaleString('pt-BR')})
+                    (Sistema atualizado)
                   </span>
                 )}
               </div>
