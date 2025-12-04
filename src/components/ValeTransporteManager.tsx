@@ -65,11 +65,11 @@ export function ValeTransporteManager({ profissionalId, valorRotaDiaria }: ValeT
     setFormData({ data: '', diasTrabalhados: '', observacao: '', documentoId: null });
   };
 
-  const formatCurrency = (centavos: number) => {
+  const formatCurrency = (valor: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(centavos / 100);
+    }).format(valor);
   };
 
   const totalValorRecebido = vales.reduce((acc, vale) => acc + vale.valorTotal, 0);
