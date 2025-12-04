@@ -16,6 +16,7 @@ interface Profissional {
   vale_refeicao: boolean | null;
   cesta_basica: boolean | null;
   pensao_alimenticia: number | null;
+  valor_diario_rota: number | null;
   lojas?: { nome: string } | null;
 }
 
@@ -276,15 +277,17 @@ export const useSupabaseData = () => {
   const getBeneficios = () => {
     const diasUteisBase = 22;
     const valorVRDiario = 25;
-    const valorCestaBasica = 150;
+    const valorCestaBasica = 180; // Valor padronizado R$ 180,00
     
     return profissionais.map(prof => {
       const temVT = prof.vale_transporte || false;
       const temVR = prof.vale_refeicao || false;
       const temCesta = prof.cesta_basica || false;
       
-      // Valor estimado de VT baseado em média
-      const valorVT = temVT ? diasUteisBase * 4.40 * 2 : 0; // ida e volta
+      // VT: valor_diario_rota já representa o custo diário total (ida e volta)
+      // Usar valor do banco ou padrão de R$ 4,40 × 22 dias úteis
+      const valorDiarioRota = prof.valor_diario_rota || 4.40;
+      const valorVT = temVT ? diasUteisBase * valorDiarioRota : 0;
       const valorVR = temVR ? diasUteisBase * valorVRDiario : 0;
       const valorCesta = temCesta ? valorCestaBasica : 0;
       

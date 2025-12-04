@@ -169,7 +169,8 @@ const calcularProfissional = (
   
   let valorVT = 0;
   if (p.recebeVT && p.status === 'ativo') {
-    valorVT = arredondarValor(diasTrabalhados * 2 * p.valorPassagem);
+    // valor_diario_rota já representa o custo diário total de transporte
+    valorVT = arredondarValor(diasTrabalhados * p.valorPassagem);
   }
   
   let valorVRTotal = 0;
@@ -179,7 +180,8 @@ const calcularProfissional = (
   
   let recebeCesta = p.recebeCesta;
   if (p.faltas > 0) recebeCesta = false;
-  if (mesmaCompetencia && dataAdmissao.getDate() > 15) recebeCesta = false;
+  // Verificar data de admissão apenas se existir
+  if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() > 15) recebeCesta = false;
   
   const descontoFaltas = arredondarValor(p.faltas * valorDia);
   const totalDescontos = p.vales + p.emprestimos + p.pensao + descontoFaltas;
