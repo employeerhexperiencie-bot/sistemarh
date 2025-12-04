@@ -80,23 +80,30 @@ export function LojaComparison() {
           vale_transporte,
           vale_refeicao,
           cesta_basica,
+          valor_diario_rota,
           lojas:loja_id (nome)
         `)
         .eq('status', 'ativo');
 
-      // Agrupar benefícios por loja
+      // Agrupar benefícios por loja - valores padronizados
+      const DIAS_UTEIS = 22;
+      const VALOR_DIARIO_VR = 25;
+      const VALOR_CESTA = 180;
+      const VALOR_DIARIO_VT_PADRAO = 4.40;
+      
       const beneficiosPorLoja: Record<string, LojaBeneficio> = {};
       (profissionais || []).forEach((p: any) => {
         const loja = p.lojas?.nome || 'Sem Loja';
-        const salario = p.salario_nominal || 0;
         
         if (!beneficiosPorLoja[loja]) {
           beneficiosPorLoja[loja] = { loja, vt: 0, vr: 0, cesta: 0, total: 0, profissionais: 0 };
         }
         
-        const vt = p.vale_transporte ? salario * 0.06 : 0;
-        const vr = p.vale_refeicao ? 25 * 22 : 0; // R$25/dia * 22 dias
-        const cesta = p.cesta_basica ? 150 : 0;
+        // VT: usar valor_diario_rota do banco ou valor padrão × dias úteis
+        const valorDiarioRota = p.valor_diario_rota || VALOR_DIARIO_VT_PADRAO;
+        const vt = p.vale_transporte ? valorDiarioRota * DIAS_UTEIS : 0;
+        const vr = p.vale_refeicao ? VALOR_DIARIO_VR * DIAS_UTEIS : 0;
+        const cesta = p.cesta_basica ? VALOR_CESTA : 0;
         
         beneficiosPorLoja[loja].vt += vt;
         beneficiosPorLoja[loja].vr += vr;

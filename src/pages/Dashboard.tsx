@@ -118,7 +118,6 @@ export function Dashboard() {
   // Calcular KPIs baseados nos dados do Supabase
   const totalSalarios = data.totalSalarios;
   const adiantamento20 = totalSalarios * 0.4; // 40% para adiantamento dia 20
-  const valesEstimados = data.totalProfissionais * 150; // Média de R$ 150 por profissional
   
   // Calcular afastamentos
   const afastamentos = data.getAfastamentos();
@@ -128,12 +127,15 @@ export function Dashboard() {
     a.motivo === 'ACIDENTE_TRABALHO' || a.motivo === 'ACIDENTE_TRAJETO'
   );
   
-  // Calcular benefícios
+  // Calcular benefícios com valores reais
   const beneficios = data.getBeneficios();
   const totalVT = beneficios.reduce((sum: number, b: any) => sum + b.valorVT, 0);
   const totalVR = beneficios.reduce((sum: number, b: any) => sum + b.valorVR, 0);
   const totalCesta = beneficios.reduce((sum: number, b: any) => sum + b.cestaBasica, 0);
   const totalBeneficios = totalVT + totalVR + totalCesta;
+  
+  // Vales usando valor real calculado dos benefícios
+  const valesEstimados = totalBeneficios;
 
   // Calcular faltas
   const faltasData = data.getFaltas();
