@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
-  Calculator, DollarSign, Calendar, Bus, Utensils, 
+  Calculator, DollarSign, Calendar, Bus, Utensils, ShoppingBasket,
   TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet,
   FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info, ChevronRight
 } from 'lucide-react';
@@ -178,10 +178,15 @@ const calcularProfissional = (
     valorVRTotal = arredondarValor(diasTrabalhados * valorVR);
   }
   
+  // Valor da Cesta Básica padronizado
+  const VALOR_CESTA_BASICA = 180;
+  
   let recebeCesta = p.recebeCesta;
   if (p.faltas > 0) recebeCesta = false;
   // Verificar data de admissão apenas se existir
   if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() > 15) recebeCesta = false;
+  
+  const valorCesta = recebeCesta ? VALOR_CESTA_BASICA : 0;
   
   const descontoFaltas = arredondarValor(p.faltas * valorDia);
   const totalDescontos = p.vales + p.emprestimos + p.pensao + descontoFaltas;
@@ -197,14 +202,15 @@ const calcularProfissional = (
     valorVT,
     valorVR: valorVRTotal,
     recebeCesta,
+    valorCesta,
     descontoFaltas,
     totalDescontos,
     salarioLiquido: Math.max(0, salarioLiquido),
-    totalMes: arredondarValor((recebeDia20 ? valorDia20 : 0) + Math.max(0, salarioLiquido) + valorVT + valorVRTotal),
+    totalMes: arredondarValor((recebeDia20 ? valorDia20 : 0) + Math.max(0, salarioLiquido) + valorVT + valorVRTotal + valorCesta),
   };
 };
 
-type CardType = 'dia20' | 'dia5' | 'vt' | 'vr' | 'total' | 'funcionarios' | null;
+type CardType = 'dia20' | 'dia5' | 'vt' | 'vr' | 'cesta' | 'total' | 'funcionarios' | null;
 
 // Summary Card Component
 function SummaryCard({ icon: Icon, label, value, color, onClick, clickable = true }: {
@@ -348,6 +354,7 @@ export default function SimuladorFolha() {
       totalDia5: number;
       totalVT: number;
       totalVR: number;
+      totalCesta: number;
       totalGeral: number;
       funcionariosAtivos: number;
       funcionariosFerias: number;
@@ -362,6 +369,7 @@ export default function SimuladorFolha() {
         totalDia5: 0,
         totalVT: 0,
         totalVR: 0,
+        totalCesta: 0,
         totalGeral: 0,
         funcionariosAtivos: 0,
         funcionariosFerias: 0,
@@ -377,6 +385,7 @@ export default function SimuladorFolha() {
         r.totalDia5 += c.salarioLiquido;
         r.totalVT += c.valorVT;
         r.totalVR += c.valorVR;
+        r.totalCesta += c.valorCesta;
         r.totalGeral += c.totalMes;
         
         if (c.profissional.status === 'ativo') r.funcionariosAtivos++;
@@ -394,9 +403,10 @@ export default function SimuladorFolha() {
       totalDia5: acc.totalDia5 + r.totalDia5,
       totalVT: acc.totalVT + r.totalVT,
       totalVR: acc.totalVR + r.totalVR,
+      totalCesta: acc.totalCesta + r.totalCesta,
       totalGeral: acc.totalGeral + r.totalGeral,
       funcionarios: acc.funcionarios + r.qtdFuncionarios,
-    }), { totalDia20: 0, totalDia5: 0, totalVT: 0, totalVR: 0, totalGeral: 0, funcionarios: 0 });
+    }), { totalDia20: 0, totalDia5: 0, totalVT: 0, totalVR: 0, totalCesta: 0, totalGeral: 0, funcionarios: 0 });
   }, [resumoPorLoja]);
 
   const getStatusBadge = (status: Profissional['status']) => {
@@ -546,7 +556,7 @@ export default function SimuladorFolha() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 stagger-children">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 stagger-children">
         <SummaryCard
           icon={Calendar}
           label="Dia 20"
@@ -574,6 +584,13 @@ export default function SimuladorFolha() {
           value={formatCurrency(totaisGerais.totalVR)}
           color="bg-warning/10 text-warning"
           onClick={() => setSelectedCardType('vr')}
+        />
+        <SummaryCard
+          icon={ShoppingBasket}
+          label="Cesta Básica"
+          value={formatCurrency(totaisGerais.totalCesta)}
+          color="bg-orange-500/10 text-orange-600"
+          onClick={() => setSelectedCardType('cesta')}
         />
         <SummaryCard
           icon={TrendingUp}
@@ -647,6 +664,7 @@ export default function SimuladorFolha() {
                       <TableHead className="text-right font-semibold">Dia 5</TableHead>
                       <TableHead className="text-right font-semibold">VT</TableHead>
                       <TableHead className="text-right font-semibold">VR</TableHead>
+                      <TableHead className="text-right font-semibold">Cesta</TableHead>
                       <TableHead className="text-right font-semibold text-primary">Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -681,6 +699,9 @@ export default function SimuladorFolha() {
                         </TableCell>
                         <TableCell className="text-right text-muted-foreground">
                           {formatCurrency(r.totalVR)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatCurrency(r.totalCesta)}
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">
                           {formatCurrency(r.totalGeral)}
@@ -757,6 +778,7 @@ export default function SimuladorFolha() {
                       <TableHead className="text-right font-semibold">Dia 5</TableHead>
                       <TableHead className="text-right font-semibold">VT</TableHead>
                       <TableHead className="text-right font-semibold">VR</TableHead>
+                      <TableHead className="text-right font-semibold">Cesta</TableHead>
                       <TableHead className="text-right font-semibold text-primary">Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -781,6 +803,9 @@ export default function SimuladorFolha() {
                         </TableCell>
                         <TableCell className="text-right font-mono text-muted-foreground">
                           {formatCurrency(c.valorVR)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-muted-foreground">
+                          {formatCurrency(c.valorCesta)}
                         </TableCell>
                         <TableCell className="text-right font-mono font-bold text-primary">
                           {formatCurrency(c.totalMes)}
