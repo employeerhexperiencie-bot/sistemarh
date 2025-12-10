@@ -13,6 +13,7 @@ import {
   TrendingUp, Download, Calendar, Users, 
   DollarSign, AlertTriangle, CheckCircle, XCircle, Info
 } from 'lucide-react';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 
 const arredondarValor = (valor: number): number => {
   const centavos = valor % 1;
@@ -24,11 +25,12 @@ const formatCurrency = (value: number): string => {
 };
 
 interface ProfissionalAdiantamento {
+  id: string;
   matricula: string;
   nome: string;
   loja: string;
   salario: number;
-  dataAdmissao: string;
+  dataAdmissao: string | null;
   status: 'ativo' | 'ferias' | 'afastado' | 'licenca_maternidade';
   faltas: number;
   elegivel: boolean;
@@ -37,76 +39,8 @@ interface ProfissionalAdiantamento {
   percentual: number;
 }
 
-// Gerar dados mock
-const gerarAdiantamentosMock = (competencia: string, percentualPadrao: number): ProfissionalAdiantamento[] => {
-  const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira', 
-    'Julia Souza', 'Lucas Ferreira', 'Fernanda Alves', 'Ricardo Rodrigues', 'Mariana Pereira',
-    'Bruno Carvalho', 'Camila Gomes', 'Gabriel Martins'];
-  const lojas = ['Loja 01', 'Loja 02', 'Loja 03', 'Loja 04', 'Loja 05'];
-  const statusOptions: ProfissionalAdiantamento['status'][] = ['ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ferias', 'afastado', 'licenca_maternidade', 'ativo'];
-  
-  const [anoComp, mesComp] = competencia.split('-').map(Number);
-  
-  return Array.from({ length: 50 }, (_, i) => {
-    const salario = 1800 + Math.floor(Math.random() * 1500);
-    const status = statusOptions[i % statusOptions.length];
-    const faltas = Math.floor(Math.random() * 15);
-    
-    // Data admissão aleatória
-    const anoAdm = anoComp - Math.floor(Math.random() * 3);
-    const mesAdm = Math.floor(Math.random() * 12) + 1;
-    const diaAdm = Math.floor(Math.random() * 28) + 1;
-    const dataAdmissao = `${anoAdm}-${String(mesAdm).padStart(2, '0')}-${String(diaAdm).padStart(2, '0')}`;
-    
-    // Verificar elegibilidade
-    let elegivel = true;
-    let motivoInelegibilidade: string | undefined;
-    let percentual = percentualPadrao;
-    
-    // Regra: Em férias não recebe
-    if (status === 'ferias') {
-      elegivel = false;
-      motivoInelegibilidade = 'Em férias';
-    }
-    // Regra: Afastado (exceto maternidade) não recebe
-    else if (status === 'afastado') {
-      elegivel = false;
-      motivoInelegibilidade = 'Afastado';
-    }
-    // Regra: +10 faltas não recebe
-    else if (faltas >= 10) {
-      elegivel = false;
-      motivoInelegibilidade = `${faltas} faltas (limite: 10)`;
-    }
-    // Regra: Admitido após dia 10 do mês recebe apenas 40%
-    else if (anoAdm === anoComp && mesAdm === mesComp && diaAdm > 10) {
-      elegivel = false;
-      motivoInelegibilidade = `Admitido após dia 10 (${diaAdm}/${mesComp})`;
-    }
-    // Regra: Admitido no mês até dia 10 recebe 40%
-    else if (anoAdm === anoComp && mesAdm === mesComp && diaAdm <= 10) {
-      percentual = 40;
-    }
-    
-    const valorAdiantamento = elegivel ? arredondarValor(salario * (percentual / 100)) : 0;
-    
-    return {
-      matricula: String(i + 1).padStart(4, '0'),
-      nome: nomes[i % nomes.length],
-      loja: lojas[Math.floor(Math.random() * lojas.length)],
-      salario,
-      dataAdmissao,
-      status,
-      faltas,
-      elegivel,
-      motivoInelegibilidade,
-      valorAdiantamento,
-      percentual,
-    };
-  });
-};
-
 export function AdiantamentoSalario() {
+  const supabaseData = useSupabaseData();
   const [competencia, setCompetencia] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -116,10 +50,73 @@ export function AdiantamentoSalario() {
   const [mostrarInelegiveis, setMostrarInelegiveis] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const profissionais = useMemo(() => 
-    gerarAdiantamentosMock(competencia, percentualPadrao), 
-    [competencia, percentualPadrao]
-  );
+  const profissionais = useMemo(() => {
+    if (supabaseData.isLoading || supabaseData.totalProfissionais === 0) {
+      return [];
+    }
+
+    const [anoComp, mesComp] = competencia.split('-').map(Number);
+
+    return supabaseData.profissionais.map((p: any): ProfissionalAdiantamento => {
+      const salario = p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0;
+      const loja = supabaseData.lojas.find((l: any) => l.id === p.loja_id);
+      const status = p.status === 'ativo' ? 'ativo' : 'afastado';
+      const faltas = 0; // TODO: buscar da tabela de faltas
+
+      // Verificar elegibilidade
+      let elegivel = true;
+      let motivoInelegibilidade: string | undefined;
+      let percentual = percentualPadrao;
+
+      // Verificar data de admissão
+      const dataAdmissao = p.data_admissao ? new Date(p.data_admissao) : null;
+      const anoAdm = dataAdmissao?.getFullYear();
+      const mesAdm = dataAdmissao ? dataAdmissao.getMonth() + 1 : 0;
+      const diaAdm = dataAdmissao?.getDate() || 0;
+
+      // Regra: Afastado não recebe (baseado no status original do profissional)
+      if (p.status === 'inativo') {
+        elegivel = false;
+        motivoInelegibilidade = 'Inativo';
+      }
+      // Regra: +10 faltas não recebe
+      else if (faltas >= 10) {
+        elegivel = false;
+        motivoInelegibilidade = `${faltas} faltas (limite: 10)`;
+      }
+      // Regra: Admitido após dia 10 do mês não recebe
+      else if (dataAdmissao && anoAdm === anoComp && mesAdm === mesComp && diaAdm > 10) {
+        elegivel = false;
+        motivoInelegibilidade = `Admitido após dia 10 (${diaAdm}/${mesComp})`;
+      }
+      // Regra: Admitido no mês até dia 10 recebe 40%
+      else if (dataAdmissao && anoAdm === anoComp && mesAdm === mesComp && diaAdm <= 10) {
+        percentual = 40;
+      }
+      // Regra: Sem salário definido
+      else if (salario === 0) {
+        elegivel = false;
+        motivoInelegibilidade = 'Salário não definido';
+      }
+
+      const valorAdiantamento = elegivel ? arredondarValor(salario * (percentual / 100)) : 0;
+
+      return {
+        id: p.id,
+        matricula: p.matricula,
+        nome: p.nome,
+        loja: loja?.nome || 'Sem loja',
+        salario,
+        dataAdmissao: p.data_admissao,
+        status: status as 'ativo' | 'ferias' | 'afastado' | 'licenca_maternidade',
+        faltas,
+        elegivel,
+        motivoInelegibilidade,
+        valorAdiantamento,
+        percentual,
+      };
+    });
+  }, [supabaseData, competencia, percentualPadrao]);
   
   const profissionaisFiltrados = useMemo(() => {
     return profissionais.filter(p => {
@@ -143,10 +140,11 @@ export function AdiantamentoSalario() {
       afastados: inelegiveis.filter(p => p.motivoInelegibilidade === 'Afastado').length,
       muitasFaltas: inelegiveis.filter(p => p.motivoInelegibilidade?.includes('faltas')).length,
       admissaoTardia: inelegiveis.filter(p => p.motivoInelegibilidade?.includes('Admitido após')).length,
+      semSalario: inelegiveis.filter(p => p.motivoInelegibilidade?.includes('Salário não definido')).length,
     };
   }, [profissionais]);
   
-  const lojas = useMemo(() => [...new Set(profissionais.map(p => p.loja))], [profissionais]);
+  const lojas = useMemo(() => [...new Set(profissionais.map(p => p.loja))].sort(), [profissionais]);
   
   const getStatusBadge = (p: ProfissionalAdiantamento) => {
     if (p.elegivel) {
@@ -178,6 +176,14 @@ export function AdiantamentoSalario() {
     link.download = `adiantamento_${competencia}.csv`;
     link.click();
   };
+
+  if (supabaseData.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -189,7 +195,7 @@ export function AdiantamentoSalario() {
             Adiantamento de Salário (Dia 20)
           </h2>
           <p className="text-sm text-muted-foreground">
-            Elegibilidade automática conforme regras trabalhistas
+            Elegibilidade automática conforme regras trabalhistas • {supabaseData.totalProfissionais} profissionais
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={exportarCSV}>
@@ -265,7 +271,7 @@ export function AdiantamentoSalario() {
       </div>
       
       {/* Motivos de Inelegibilidade */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <Card className="bg-muted/30">
           <CardContent className="p-3 text-center">
             <p className="text-xl font-bold text-info">{totais.emFerias}</p>
@@ -288,6 +294,12 @@ export function AdiantamentoSalario() {
           <CardContent className="p-3 text-center">
             <p className="text-xl font-bold text-accent">{totais.admissaoTardia}</p>
             <p className="text-xs text-muted-foreground">Admissão Tardia</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-muted/30">
+          <CardContent className="p-3 text-center">
+            <p className="text-xl font-bold text-orange-500">{totais.semSalario}</p>
+            <p className="text-xs text-muted-foreground">Sem Salário</p>
           </CardContent>
         </Card>
       </div>
@@ -353,7 +365,7 @@ export function AdiantamentoSalario() {
       {/* Tabela */}
       <Card>
         <CardContent className="p-0">
-          <ScrollArea className="w-full">
+          <ScrollArea className="w-full max-h-[600px]">
             <Table className="table-zebra">
               <TableHeader>
                 <TableRow className="bg-muted/50">
@@ -369,9 +381,9 @@ export function AdiantamentoSalario() {
               </TableHeader>
               <TableBody>
                 {profissionaisFiltrados.map((p) => (
-                  <TableRow key={p.matricula} className={!p.elegivel ? 'opacity-60' : ''}>
+                  <TableRow key={p.id} className={!p.elegivel ? 'opacity-60' : ''}>
                     <TableCell className="font-mono text-sm">{p.matricula}</TableCell>
-                    <TableCell className="font-medium">{p.nome}</TableCell>
+                    <TableCell className="font-medium max-w-[200px] truncate">{p.nome}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">{p.loja}</Badge>
                     </TableCell>
