@@ -10,10 +10,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
   FileText, Download, Filter, DollarSign, Calendar,
-  TrendingDown, Users, Building2, Printer, Eye, CheckCircle2
+  TrendingDown, Users, Building2, Printer, Eye, CheckCircle2, ShoppingBasket, Bus, Utensils
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useMockData } from '@/hooks/useMockData';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 
 // Tipos
 interface EventoFolha {
@@ -25,6 +25,7 @@ interface EventoFolha {
 }
 
 interface FolhaProfissional {
+  id: string;
   matricula: string;
   nome: string;
   cargo: string;
@@ -34,7 +35,15 @@ interface FolhaProfissional {
   totalProventos: number;
   totalDescontos: number;
   liquido: number;
+  valorVT: number;
+  valorVR: number;
+  valorCesta: number;
 }
+
+// Constantes de benefícios
+const VALOR_VR_DIARIO = 25;
+const VALOR_CESTA_BASICA = 180;
+const DIAS_UTEIS = 22;
 
 // Função de arredondamento
 const arredondarValor = (valor: number): number => {
@@ -44,98 +53,6 @@ const arredondarValor = (valor: number): number => {
 
 const formatCurrency = (value: number): string => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
-// Mock de eventos padrão
-const codigosEventos = {
-  '001': { descricao: 'Salário Base', tipo: 'provento' as const },
-  '002': { descricao: 'Horas Extras 50%', tipo: 'provento' as const },
-  '003': { descricao: 'Horas Extras 100%', tipo: 'provento' as const },
-  '004': { descricao: 'Adicional Noturno', tipo: 'provento' as const },
-  '005': { descricao: 'Comissões', tipo: 'provento' as const },
-  '006': { descricao: 'Gratificação', tipo: 'provento' as const },
-  '007': { descricao: 'DSR', tipo: 'provento' as const },
-  '008': { descricao: 'Férias', tipo: 'provento' as const },
-  '009': { descricao: '1/3 Férias', tipo: 'provento' as const },
-  '010': { descricao: '13º Salário', tipo: 'provento' as const },
-  '101': { descricao: 'INSS', tipo: 'desconto' as const },
-  '102': { descricao: 'IRRF', tipo: 'desconto' as const },
-  '103': { descricao: 'Vale Transporte', tipo: 'desconto' as const },
-  '104': { descricao: 'Vale Refeição', tipo: 'desconto' as const },
-  '105': { descricao: 'Faltas', tipo: 'desconto' as const },
-  '106': { descricao: 'Adiantamento', tipo: 'desconto' as const },
-  '107': { descricao: 'Empréstimo', tipo: 'desconto' as const },
-  '108': { descricao: 'Empréstimo CLT', tipo: 'desconto' as const },
-  '109': { descricao: 'Pensão Alimentícia', tipo: 'desconto' as const },
-  '110': { descricao: 'Sindicato', tipo: 'desconto' as const },
-  '111': { descricao: 'Plano de Saúde', tipo: 'desconto' as const },
-  '112': { descricao: 'Seguro de Vida', tipo: 'desconto' as const },
-};
-
-// Gerar dados mock
-const gerarFolhaMock = (): FolhaProfissional[] => {
-  const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira', 
-    'Julia Souza', 'Lucas Ferreira', 'Fernanda Alves', 'Ricardo Rodrigues', 'Mariana Pereira',
-    'Bruno Carvalho', 'Camila Gomes', 'Gabriel Martins'];
-  const lojas = ['Loja 01', 'Loja 02', 'Loja 03', 'Loja 04', 'Loja 05'];
-  const cargos = ['Vendedor', 'Caixa', 'Repositor', 'Supervisor', 'Gerente'];
-  
-  return Array.from({ length: 50 }, (_, i) => {
-    const salarioBase = 1800 + Math.floor(Math.random() * 1500);
-    const eventos: EventoFolha[] = [
-      { codigo: '001', descricao: 'Salário Base', tipo: 'provento', valor: salarioBase },
-    ];
-    
-    // Adicionar eventos aleatórios
-    if (Math.random() > 0.7) {
-      eventos.push({ codigo: '002', descricao: 'Horas Extras 50%', tipo: 'provento', valor: arredondarValor(salarioBase * 0.05), referencia: '5h' });
-    }
-    if (Math.random() > 0.8) {
-      eventos.push({ codigo: '004', descricao: 'Adicional Noturno', tipo: 'provento', valor: arredondarValor(salarioBase * 0.03) });
-    }
-    
-    // Descontos obrigatórios
-    const inss = arredondarValor(salarioBase * 0.08);
-    eventos.push({ codigo: '101', descricao: 'INSS', tipo: 'desconto', valor: inss });
-    
-    if (salarioBase > 2500) {
-      eventos.push({ codigo: '102', descricao: 'IRRF', tipo: 'desconto', valor: arredondarValor(salarioBase * 0.03) });
-    }
-    
-    // VT (6% do salário)
-    eventos.push({ codigo: '103', descricao: 'Vale Transporte', tipo: 'desconto', valor: arredondarValor(salarioBase * 0.06) });
-    
-    // Adiantamento
-    if (Math.random() > 0.3) {
-      eventos.push({ codigo: '106', descricao: 'Adiantamento', tipo: 'desconto', valor: arredondarValor(salarioBase * 0.4) });
-    }
-    
-    // Empréstimo
-    if (Math.random() > 0.8) {
-      eventos.push({ codigo: '107', descricao: 'Empréstimo', tipo: 'desconto', valor: Math.floor(Math.random() * 300) + 100 });
-    }
-    
-    // Faltas
-    if (Math.random() > 0.85) {
-      const diasFalta = Math.floor(Math.random() * 2) + 1;
-      eventos.push({ codigo: '105', descricao: 'Faltas', tipo: 'desconto', valor: arredondarValor((salarioBase / 30) * diasFalta), referencia: `${diasFalta}d` });
-    }
-    
-    const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
-    const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
-    
-    return {
-      matricula: String(i + 1).padStart(4, '0'),
-      nome: nomes[i % nomes.length],
-      cargo: cargos[Math.floor(Math.random() * cargos.length)],
-      loja: lojas[Math.floor(Math.random() * lojas.length)],
-      salarioBase,
-      eventos,
-      totalProventos,
-      totalDescontos,
-      liquido: arredondarValor(totalProventos - totalDescontos),
-    };
-  });
 };
 
 interface DetalheHoleriteProps {
@@ -255,7 +172,7 @@ function DetalheHolerite({ folha, competencia }: DetalheHoleriteProps) {
 }
 
 export function RelatorioFolha() {
-  const mockData = useMockData();
+  const supabaseData = useSupabaseData();
   const [competencia, setCompetencia] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -263,52 +180,71 @@ export function RelatorioFolha() {
   const [lojaFiltro, setLojaFiltro] = useState('todas');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Verificar se temos dados das planilhas BASE
-  const dadosASOStr = localStorage.getItem('dadosASO');
-  const dadosBeneficiosStr = localStorage.getItem('dadosBeneficios');
-  const dadosCompletos = mockData.hasMockData && dadosASOStr && dadosBeneficiosStr;
-  
-  const folhaCompleta = useMemo(() => {
-    if (mockData.hasMockData) {
-      // Usar dados reais da planilha
-      return mockData.profissionais.map(p => {
-        const salarioBase = mockData.parseSalario(p.salarioReceber || p.salarioCTPS);
-        const eventos: EventoFolha[] = [
-          { codigo: '001', descricao: 'Salário Base', tipo: 'provento', valor: salarioBase },
-        ];
-        
-        // INSS
-        const inss = arredondarValor(salarioBase * 0.08);
-        eventos.push({ codigo: '101', descricao: 'INSS', tipo: 'desconto', valor: inss });
-        
-        // Vale Transporte
-        const vt = arredondarValor(salarioBase * 0.06);
-        eventos.push({ codigo: '103', descricao: 'Vale Transporte', tipo: 'desconto', valor: vt });
-        
-        // Pensão Alimentícia
-        if (p.pensao === 'SIM') {
-          const pensao = arredondarValor(salarioBase * 0.30);
-          eventos.push({ codigo: '109', descricao: 'Pensão Alimentícia', tipo: 'desconto', valor: pensao });
-        }
-        
-        const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
-        const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
-        
-        return {
-          matricula: p.matricula,
-          nome: p.nome,
-          cargo: p.cargo,
-          loja: p.localTrabalho,
-          salarioBase,
-          eventos,
-          totalProventos,
-          totalDescontos,
-          liquido: arredondarValor(totalProventos - totalDescontos),
-        };
-      });
+  const folhaCompleta = useMemo((): FolhaProfissional[] => {
+    if (supabaseData.isLoading || supabaseData.totalProfissionais === 0) {
+      return [];
     }
-    return gerarFolhaMock();
-  }, [mockData]);
+
+    return supabaseData.profissionais.map((p: any) => {
+      const salarioBase = p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0;
+      const loja = supabaseData.lojas.find((l: any) => l.id === p.loja_id);
+      const eventos: EventoFolha[] = [
+        { codigo: '001', descricao: 'Salário Base', tipo: 'provento', valor: salarioBase },
+      ];
+      
+      // Vale Transporte (provento - crédito ao funcionário)
+      const valorVT = p.vale_transporte ? arredondarValor((p.valor_diario_rota || 4.40) * DIAS_UTEIS) : 0;
+      if (valorVT > 0) {
+        eventos.push({ codigo: '020', descricao: 'Vale Transporte', tipo: 'provento', valor: valorVT });
+      }
+
+      // Vale Refeição (provento)
+      const valorVR = p.vale_refeicao ? arredondarValor(VALOR_VR_DIARIO * DIAS_UTEIS) : 0;
+      if (valorVR > 0) {
+        eventos.push({ codigo: '021', descricao: 'Vale Refeição', tipo: 'provento', valor: valorVR });
+      }
+
+      // Cesta Básica (provento)
+      const valorCesta = p.cesta_basica ? VALOR_CESTA_BASICA : 0;
+      if (valorCesta > 0) {
+        eventos.push({ codigo: '022', descricao: 'Cesta Básica', tipo: 'provento', valor: valorCesta });
+      }
+      
+      // INSS (desconto)
+      const inss = arredondarValor(salarioBase * 0.08);
+      eventos.push({ codigo: '101', descricao: 'INSS', tipo: 'desconto', valor: inss });
+      
+      // Vale Transporte (desconto 6%)
+      if (p.vale_transporte) {
+        const descontoVT = arredondarValor(salarioBase * 0.06);
+        eventos.push({ codigo: '103', descricao: 'Desconto VT (6%)', tipo: 'desconto', valor: descontoVT });
+      }
+      
+      // Pensão Alimentícia
+      if (p.pensao_alimenticia && p.pensao_alimenticia > 0) {
+        eventos.push({ codigo: '109', descricao: 'Pensão Alimentícia', tipo: 'desconto', valor: p.pensao_alimenticia });
+      }
+      
+      const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
+      const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
+      
+      return {
+        id: p.id,
+        matricula: p.matricula,
+        nome: p.nome,
+        cargo: p.cargo || 'Não informado',
+        loja: loja?.nome || 'Sem loja',
+        salarioBase,
+        eventos,
+        totalProventos,
+        totalDescontos,
+        liquido: arredondarValor(totalProventos - totalDescontos),
+        valorVT,
+        valorVR,
+        valorCesta,
+      };
+    });
+  }, [supabaseData]);
   
   const folhaFiltrada = useMemo(() => {
     return folhaCompleta.filter(f => {
@@ -323,15 +259,18 @@ export function RelatorioFolha() {
       proventos: acc.proventos + f.totalProventos,
       descontos: acc.descontos + f.totalDescontos,
       liquido: acc.liquido + f.liquido,
-    }), { proventos: 0, descontos: 0, liquido: 0 });
+      vt: acc.vt + f.valorVT,
+      vr: acc.vr + f.valorVR,
+      cesta: acc.cesta + f.valorCesta,
+    }), { proventos: 0, descontos: 0, liquido: 0, vt: 0, vr: 0, cesta: 0 });
   }, [folhaFiltrada]);
   
-  const lojas = useMemo(() => [...new Set(folhaCompleta.map(f => f.loja))], [folhaCompleta]);
+  const lojas = useMemo(() => [...new Set(folhaCompleta.map(f => f.loja))].sort(), [folhaCompleta]);
   
   const exportarCSV = () => {
-    const headers = ['Matrícula', 'Nome', 'Cargo', 'Loja', 'Salário Base', 'Total Proventos', 'Total Descontos', 'Líquido'];
+    const headers = ['Matrícula', 'Nome', 'Cargo', 'Loja', 'Salário Base', 'VT', 'VR', 'Cesta', 'Total Proventos', 'Total Descontos', 'Líquido'];
     const rows = folhaFiltrada.map(f => [
-      f.matricula, f.nome, f.cargo, f.loja, f.salarioBase, f.totalProventos, f.totalDescontos, f.liquido
+      f.matricula, f.nome, f.cargo, f.loja, f.salarioBase, f.valorVT, f.valorVR, f.valorCesta, f.totalProventos, f.totalDescontos, f.liquido
     ]);
     const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -340,6 +279,14 @@ export function RelatorioFolha() {
     link.download = `folha_geral_${competencia}.csv`;
     link.click();
   };
+
+  if (supabaseData.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -349,18 +296,13 @@ export function RelatorioFolha() {
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             Relatório Geral de Folha
-            {dadosCompletos && (
-              <Badge variant="outline" className="bg-success/10 text-success border-success/20 ml-2">
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                Dados Validados
-              </Badge>
-            )}
+            <Badge variant="outline" className="bg-success/10 text-success border-success/20 ml-2">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Dados Reais
+            </Badge>
           </h2>
           <p className="text-sm text-muted-foreground">
-            {dadosCompletos 
-              ? `Usando dados reais de ${mockData.totalProfissionais} profissionais`
-              : 'Consolidação de todos os eventos de pagamento (dados simulados)'
-            }
+            Consolidação de todos os eventos de pagamento • {supabaseData.totalProfissionais} profissionais
           </p>
         </div>
         <div className="flex gap-2">
@@ -414,7 +356,7 @@ export function RelatorioFolha() {
       </Card>
       
       {/* Resumo */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -435,7 +377,7 @@ export function RelatorioFolha() {
                 <TrendingDown className="h-4 w-4 text-success rotate-180" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total Proventos</p>
+                <p className="text-xs text-muted-foreground">Proventos</p>
                 <p className="text-lg font-bold text-success">{formatCurrency(totais.proventos)}</p>
               </div>
             </div>
@@ -448,8 +390,47 @@ export function RelatorioFolha() {
                 <TrendingDown className="h-4 w-4 text-destructive" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total Descontos</p>
+                <p className="text-xs text-muted-foreground">Descontos</p>
                 <p className="text-lg font-bold text-destructive">{formatCurrency(totais.descontos)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-info/10">
+                <Bus className="h-4 w-4 text-info" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total VT</p>
+                <p className="text-lg font-bold text-info">{formatCurrency(totais.vt)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-warning/10">
+                <Utensils className="h-4 w-4 text-warning" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total VR</p>
+                <p className="text-lg font-bold text-warning">{formatCurrency(totais.vr)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-orange-500/10">
+                <ShoppingBasket className="h-4 w-4 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Cesta Básica</p>
+                <p className="text-lg font-bold text-orange-500">{formatCurrency(totais.cesta)}</p>
               </div>
             </div>
           </CardContent>
@@ -461,7 +442,7 @@ export function RelatorioFolha() {
                 <DollarSign className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total Líquido</p>
+                <p className="text-xs text-muted-foreground">Líquido Total</p>
                 <p className="text-lg font-bold text-primary">{formatCurrency(totais.liquido)}</p>
               </div>
             </div>
@@ -471,49 +452,54 @@ export function RelatorioFolha() {
       
       {/* Tabela */}
       <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Detalhamento por Funcionário</CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
-          <ScrollArea className="w-full">
+          <ScrollArea className="w-full max-h-[600px]">
             <Table className="table-zebra">
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-20">Mat.</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Loja</TableHead>
-                  <TableHead className="text-right">Proventos</TableHead>
-                  <TableHead className="text-right">Descontos</TableHead>
-                  <TableHead className="text-right">Líquido</TableHead>
-                  <TableHead className="w-20 text-center">Ações</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-20 font-semibold">Mat.</TableHead>
+                  <TableHead className="font-semibold">Nome</TableHead>
+                  <TableHead className="font-semibold">Cargo</TableHead>
+                  <TableHead className="font-semibold">Loja</TableHead>
+                  <TableHead className="text-right font-semibold">Salário</TableHead>
+                  <TableHead className="text-right font-semibold">VT</TableHead>
+                  <TableHead className="text-right font-semibold">VR</TableHead>
+                  <TableHead className="text-right font-semibold">Cesta</TableHead>
+                  <TableHead className="text-right font-semibold text-success">Proventos</TableHead>
+                  <TableHead className="text-right font-semibold text-destructive">Descontos</TableHead>
+                  <TableHead className="text-right font-semibold text-primary">Líquido</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {folhaFiltrada.map((f, index) => (
-                  <TableRow key={`${f.matricula}-${index}`}>
-                    <TableCell className="font-mono text-sm">{f.matricula}</TableCell>
-                    <TableCell className="font-medium">{f.nome}</TableCell>
-                    <TableCell className="text-muted-foreground">{f.cargo}</TableCell>
+                {folhaFiltrada.map((f) => (
+                  <TableRow key={f.id}>
+                    <TableCell className="font-mono text-xs">{f.matricula}</TableCell>
+                    <TableCell className="font-medium max-w-[180px] truncate">{f.nome}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{f.cargo}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">{f.loja}</Badge>
                     </TableCell>
-                    <TableCell className="text-right text-success font-medium">
-                      {formatCurrency(f.totalProventos)}
-                    </TableCell>
-                    <TableCell className="text-right text-destructive font-medium">
-                      {formatCurrency(f.totalDescontos)}
-                    </TableCell>
-                    <TableCell className="text-right font-bold">
-                      {formatCurrency(f.liquido)}
-                    </TableCell>
+                    <TableCell className="text-right">{formatCurrency(f.salarioBase)}</TableCell>
+                    <TableCell className="text-right text-info">{formatCurrency(f.valorVT)}</TableCell>
+                    <TableCell className="text-right text-warning">{formatCurrency(f.valorVR)}</TableCell>
+                    <TableCell className="text-right text-orange-500">{formatCurrency(f.valorCesta)}</TableCell>
+                    <TableCell className="text-right text-success font-medium">{formatCurrency(f.totalProventos)}</TableCell>
+                    <TableCell className="text-right text-destructive font-medium">{formatCurrency(f.totalDescontos)}</TableCell>
+                    <TableCell className="text-right text-primary font-bold">{formatCurrency(f.liquido)}</TableCell>
                     <TableCell>
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
                           <DialogHeader>
-                            <DialogTitle>Holerite - {f.nome}</DialogTitle>
+                            <DialogTitle>Demonstrativo de Pagamento</DialogTitle>
                           </DialogHeader>
                           <DetalheHolerite folha={f} competencia={competencia} />
                         </DialogContent>
