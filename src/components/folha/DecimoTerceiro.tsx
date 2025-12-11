@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Gift, Download, Calculator, Calendar, Users, 
-  DollarSign, AlertTriangle, CheckCircle, Clock
+  DollarSign, AlertTriangle, CheckCircle, Clock, Loader2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 // Função de arredondamento
 const arredondarValor = (valor: number): number => {
@@ -45,71 +45,6 @@ interface DecimoTerceiroCalculo {
   segundaParcela: number;
   status: 'pendente' | 'primeira_paga' | 'quitado';
 }
-
-// Gerar dados mock
-const gerarDecimoTerceiroMock = (ano: number): DecimoTerceiroCalculo[] => {
-  const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira', 
-    'Julia Souza', 'Lucas Ferreira', 'Fernanda Alves', 'Ricardo Rodrigues', 'Mariana Pereira'];
-  const lojas = ['Loja 01', 'Loja 02', 'Loja 03', 'Loja 04', 'Loja 05'];
-  
-  return Array.from({ length: 50 }, (_, i) => {
-    const salarioBase = 1800 + Math.floor(Math.random() * 1500);
-    const mesAdmissao = Math.floor(Math.random() * 12) + 1;
-    const diaAdmissao = Math.floor(Math.random() * 28) + 1;
-    const anoAdmissao = ano - Math.floor(Math.random() * 3);
-    const dataAdmissao = `${anoAdmissao}-${String(mesAdmissao).padStart(2, '0')}-${String(diaAdmissao).padStart(2, '0')}`;
-    
-    // Calcular avos
-    let avosCompletos = 12;
-    if (anoAdmissao === ano) {
-      // Admissão no ano corrente - conta avos proporcionais
-      avosCompletos = 12 - mesAdmissao + 1;
-      // Se admitido depois do dia 15, não conta o mês
-      if (diaAdmissao > 15) avosCompletos--;
-    }
-    
-    // Afastamentos (descontam avos)
-    const afastamentos = Math.random() > 0.9 ? Math.floor(Math.random() * 3) : 0;
-    const avosDescontados = afastamentos;
-    const avosFinais = Math.max(0, avosCompletos - avosDescontados);
-    
-    // Cálculos
-    const valorBruto = arredondarValor((salarioBase / 12) * avosFinais);
-    const inss = arredondarValor(valorBruto * 0.08);
-    const irrf = valorBruto > 2500 ? arredondarValor(valorBruto * 0.05) : 0;
-    const pensao = Math.random() > 0.95 ? arredondarValor(valorBruto * 0.15) : 0;
-    const adiantamentos = Math.random() > 0.7 ? arredondarValor(valorBruto * 0.5) : 0;
-    
-    const valorLiquido = arredondarValor(valorBruto - inss - irrf - pensao);
-    const primeiraParcela = arredondarValor(valorBruto * 0.5);
-    const segundaParcela = arredondarValor(valorLiquido - adiantamentos);
-    
-    // Status aleatório
-    const statusOptions: DecimoTerceiroCalculo['status'][] = ['pendente', 'primeira_paga', 'primeira_paga', 'quitado'];
-    const status = statusOptions[Math.floor(Math.random() * statusOptions.length)];
-    
-    return {
-      matricula: String(i + 1).padStart(4, '0'),
-      nome: nomes[i % nomes.length],
-      loja: lojas[Math.floor(Math.random() * lojas.length)],
-      dataAdmissao,
-      salarioBase,
-      avosCompletos,
-      afastamentos,
-      avosDescontados,
-      avosFinais,
-      valorBruto,
-      inss,
-      irrf,
-      pensao,
-      adiantamentos,
-      valorLiquido,
-      primeiraParcela,
-      segundaParcela,
-      status,
-    };
-  });
-};
 
 interface DetalheDecimoProps {
   calculo: DecimoTerceiroCalculo;
@@ -260,8 +195,135 @@ export function DecimoTerceiro() {
   const [lojaFiltro, setLojaFiltro] = useState('todas');
   const [statusFiltro, setStatusFiltro] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const calculos = useMemo(() => gerarDecimoTerceiroMock(ano), [ano]);
+  const [loading, setLoading] = useState(true);
+  const [calculos, setCalculos] = useState<DecimoTerceiroCalculo[]>([]);
+  const [lojas, setLojas] = useState<string[]>([]);
+
+  // Buscar dados reais do Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Buscar profissionais ativos
+        const { data: profissionais, error: profError } = await supabase
+          .from('profissionais')
+          .select(`
+            matricula,
+            nome,
+            data_admissao,
+            salario_nominal,
+            pensao_alimenticia,
+            status,
+            lojas (nome)
+          `)
+          .eq('status', 'ativo');
+
+        if (profError) throw profError;
+
+        // Buscar afastamentos do ano
+        const { data: afastamentos, error: afastError } = await supabase
+          .from('afastamentos')
+          .select('profissional_id, data_inicio')
+          .gte('data_inicio', `${ano}-01-01`)
+          .lte('data_inicio', `${ano}-12-31`);
+
+        // Buscar registros existentes de décimo terceiro
+        const { data: decimoRegistros, error: decimoError } = await supabase
+          .from('decimo_terceiro')
+          .select('*')
+          .eq('ano', ano);
+
+        // Contar afastamentos por profissional
+        const afastamentosPorProf: Record<string, number> = {};
+        afastamentos?.forEach(a => {
+          if (a.profissional_id) {
+            afastamentosPorProf[a.profissional_id] = (afastamentosPorProf[a.profissional_id] || 0) + 1;
+          }
+        });
+
+        // Mapear registros existentes
+        const decimoMap = new Map(decimoRegistros?.map(d => [d.profissional_id, d]) || []);
+
+        // Calcular décimo terceiro para cada profissional
+        const calculosData: DecimoTerceiroCalculo[] = (profissionais || []).map(p => {
+          const lojaNome = (p.lojas as any)?.nome || 'Sem Loja';
+          const salarioBase = Number(p.salario_nominal) || 0;
+          const dataAdmissao = p.data_admissao ? new Date(p.data_admissao) : null;
+          
+          // Calcular avos
+          let avosCompletos = 12;
+          if (dataAdmissao) {
+            const anoAdm = dataAdmissao.getFullYear();
+            const mesAdm = dataAdmissao.getMonth() + 1;
+            const diaAdm = dataAdmissao.getDate();
+            
+            if (anoAdm === ano) {
+              avosCompletos = 12 - mesAdm + 1;
+              if (diaAdm > 15) avosCompletos--;
+            } else if (anoAdm > ano) {
+              avosCompletos = 0;
+            }
+          }
+          
+          // Afastamentos descontam avos
+          const numAfastamentos = afastamentosPorProf[p.matricula] || 0;
+          const avosDescontados = Math.min(numAfastamentos, avosCompletos);
+          const avosFinais = Math.max(0, avosCompletos - avosDescontados);
+          
+          // Cálculos financeiros
+          const valorBruto = arredondarValor((salarioBase / 12) * avosFinais);
+          const inss = arredondarValor(valorBruto * 0.08);
+          const irrf = valorBruto > 2500 ? arredondarValor(valorBruto * 0.05) : 0;
+          const pensao = p.pensao_alimenticia ? arredondarValor(valorBruto * (Number(p.pensao_alimenticia) / 100)) : 0;
+          
+          const valorLiquido = arredondarValor(valorBruto - inss - irrf - pensao);
+          const primeiraParcela = arredondarValor(valorBruto * 0.5);
+          const segundaParcela = arredondarValor(valorLiquido - primeiraParcela);
+          
+          // Verificar status do registro existente
+          let status: 'pendente' | 'primeira_paga' | 'quitado' = 'pendente';
+          const registro = decimoMap.get(p.matricula);
+          if (registro) {
+            if (registro.segunda_parcela_paga) status = 'quitado';
+            else if (registro.primeira_parcela_paga) status = 'primeira_paga';
+          }
+          
+          return {
+            matricula: p.matricula,
+            nome: p.nome,
+            loja: lojaNome,
+            dataAdmissao: p.data_admissao || '',
+            salarioBase,
+            avosCompletos,
+            afastamentos: numAfastamentos,
+            avosDescontados,
+            avosFinais,
+            valorBruto,
+            inss,
+            irrf,
+            pensao,
+            adiantamentos: registro?.primeira_parcela_paga ? primeiraParcela : 0,
+            valorLiquido,
+            primeiraParcela,
+            segundaParcela,
+            status,
+          };
+        });
+
+        setCalculos(calculosData);
+        
+        // Extrair lojas únicas
+        const lojasUnicas = [...new Set(calculosData.map(c => c.loja))].filter(l => l !== 'Sem Loja').sort();
+        setLojas(lojasUnicas);
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [ano]);
   
   const calculosFiltrados = useMemo(() => {
     return calculos.filter(c => {
@@ -283,8 +345,6 @@ export function DecimoTerceiro() {
       quitados: acc.quitados + (c.status === 'quitado' ? 1 : 0),
     }), { bruto: 0, liquido: 0, primeiraParcela: 0, segundaParcela: 0, pendentes: 0, primeiraPaga: 0, quitados: 0 });
   }, [calculosFiltrados]);
-  
-  const lojas = useMemo(() => [...new Set(calculos.map(c => c.loja))], [calculos]);
   
   const getStatusBadge = (status: DecimoTerceiroCalculo['status']) => {
     const config = {
@@ -309,6 +369,15 @@ export function DecimoTerceiro() {
     link.download = `decimo_terceiro_${ano}.csv`;
     link.click();
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Carregando dados...</span>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -320,7 +389,7 @@ export function DecimoTerceiro() {
             13º Salário - {ano}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Cálculo e controle de décimo terceiro
+            Cálculo e controle de décimo terceiro ({calculos.length} profissionais)
           </p>
         </div>
         <div className="flex gap-2">
@@ -472,51 +541,56 @@ export function DecimoTerceiro() {
                   <TableHead className="w-20">Mat.</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Loja</TableHead>
+                  <TableHead className="text-right">Salário</TableHead>
                   <TableHead className="text-center">Avos</TableHead>
-                  <TableHead className="text-right">Bruto</TableHead>
-                  <TableHead className="text-right">Líquido</TableHead>
+                  <TableHead className="text-right">13º Bruto</TableHead>
+                  <TableHead className="text-right">13º Líquido</TableHead>
                   <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="w-20 text-center">Ver</TableHead>
+                  <TableHead className="w-16">Ver</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {calculosFiltrados.map((c) => (
-                  <TableRow key={c.matricula}>
-                    <TableCell className="font-mono text-sm">{c.matricula}</TableCell>
-                    <TableCell className="font-medium">{c.nome}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">{c.loja}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="font-semibold">{c.avosFinais}</span>
-                      <span className="text-muted-foreground">/12</span>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(c.valorBruto)}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-success">
-                      {formatCurrency(c.valorLiquido)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {getStatusBadge(c.status)}
-                    </TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Calculator className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>13º Salário - {c.nome}</DialogTitle>
-                          </DialogHeader>
-                          <DetalheDecimo calculo={c} ano={ano} />
-                        </DialogContent>
-                      </Dialog>
+                {calculosFiltrados.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      Nenhum registro encontrado
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  calculosFiltrados.map((c) => (
+                    <TableRow key={c.matricula}>
+                      <TableCell className="font-mono text-sm">{c.matricula}</TableCell>
+                      <TableCell className="font-medium">{c.nome}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">{c.loja}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{formatCurrency(c.salarioBase)}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary" className="font-mono">
+                          {c.avosFinais}/12
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">{formatCurrency(c.valorBruto)}</TableCell>
+                      <TableCell className="text-right font-semibold text-primary">{formatCurrency(c.valorLiquido)}</TableCell>
+                      <TableCell className="text-center">{getStatusBadge(c.status)}</TableCell>
+                      <TableCell>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Calculator className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Detalhes 13º - {c.nome}</DialogTitle>
+                            </DialogHeader>
+                            <DetalheDecimo calculo={c} ano={ano} />
+                          </DialogContent>
+                        </Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </ScrollArea>
