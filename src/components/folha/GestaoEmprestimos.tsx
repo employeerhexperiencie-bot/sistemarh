@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,10 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Banknote, Download, Plus, Calendar, Users, 
-  DollarSign, AlertTriangle, CheckCircle, Clock, Building2
+  DollarSign, AlertTriangle, CheckCircle, Clock, Building2, Loader2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const arredondarValor = (valor: number): number => {
   const centavos = valor % 1;
@@ -39,45 +40,6 @@ interface Emprestimo {
   status: 'ativo' | 'quitado' | 'atrasado';
   observacao?: string;
 }
-
-// Gerar dados mock
-const gerarEmprestimosMock = (): Emprestimo[] => {
-  const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira', 
-    'Julia Souza', 'Lucas Ferreira', 'Fernanda Alves', 'Ricardo Rodrigues', 'Mariana Pereira'];
-  const lojas = ['Loja 01', 'Loja 02', 'Loja 03', 'Loja 04', 'Loja 05'];
-  
-  return Array.from({ length: 30 }, (_, i) => {
-    const valorTotal = (Math.floor(Math.random() * 30) + 5) * 100; // 500 a 3500
-    const parcelasTotal = Math.floor(Math.random() * 10) + 3; // 3 a 12 parcelas
-    const parcelasPagas = Math.floor(Math.random() * parcelasTotal);
-    const valorParcela = arredondarValor(valorTotal / parcelasTotal);
-    
-    const dataInicio = new Date();
-    dataInicio.setMonth(dataInicio.getMonth() - parcelasPagas);
-    
-    const dataFim = new Date(dataInicio);
-    dataFim.setMonth(dataFim.getMonth() + parcelasTotal);
-    
-    let status: Emprestimo['status'] = 'ativo';
-    if (parcelasPagas >= parcelasTotal) status = 'quitado';
-    else if (Math.random() > 0.9) status = 'atrasado';
-    
-    return {
-      id: `emp-${i + 1}`,
-      matricula: String(i + 1).padStart(4, '0'),
-      nome: nomes[i % nomes.length],
-      loja: lojas[Math.floor(Math.random() * lojas.length)],
-      tipo: Math.random() > 0.4 ? 'empresa' : 'clt',
-      valorTotal,
-      parcelasTotal,
-      parcelasPagas,
-      valorParcela,
-      dataInicio: dataInicio.toISOString().split('T')[0],
-      dataFim: dataFim.toISOString().split('T')[0],
-      status,
-    };
-  });
-};
 
 interface DetalheEmprestimoProps {
   emprestimo: Emprestimo;
@@ -195,8 +157,74 @@ export function GestaoEmprestimos() {
   const [statusFiltro, setStatusFiltro] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [novoEmprestimoOpen, setNovoEmprestimoOpen] = useState(false);
-  
-  const emprestimos = useMemo(() => gerarEmprestimosMock(), []);
+  const [loading, setLoading] = useState(true);
+  const [emprestimos, setEmprestimos] = useState<Emprestimo[]>([]);
+  const [lojas, setLojas] = useState<string[]>([]);
+
+  // Buscar dados reais do Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Buscar empréstimos com dados do profissional
+        const { data: emprestimosData, error: empError } = await supabase
+          .from('emprestimos')
+          .select(`
+            id,
+            tipo,
+            valor_total,
+            numero_parcelas,
+            parcelas_pagas,
+            valor_parcela,
+            data_inicio,
+            data_previsao_termino,
+            status,
+            observacoes,
+            profissionais (
+              matricula,
+              nome,
+              lojas (nome)
+            )
+          `);
+
+        if (empError) throw empError;
+
+        // Mapear dados
+        const emprestimosFormatados: Emprestimo[] = (emprestimosData || []).map(e => {
+          const prof = e.profissionais as any;
+          const lojaNome = prof?.lojas?.nome || 'Sem Loja';
+          
+          return {
+            id: e.id,
+            matricula: prof?.matricula || '',
+            nome: prof?.nome || 'Sem Nome',
+            loja: lojaNome,
+            tipo: e.tipo === 'empresa' ? 'empresa' : 'clt',
+            valorTotal: Number(e.valor_total) || 0,
+            parcelasTotal: e.numero_parcelas || 0,
+            parcelasPagas: e.parcelas_pagas || 0,
+            valorParcela: Number(e.valor_parcela) || 0,
+            dataInicio: e.data_inicio || '',
+            dataFim: e.data_previsao_termino || '',
+            status: (e.status as Emprestimo['status']) || 'ativo',
+            observacao: e.observacoes || undefined,
+          };
+        });
+
+        setEmprestimos(emprestimosFormatados);
+        
+        // Extrair lojas únicas
+        const lojasUnicas = [...new Set(emprestimosFormatados.map(e => e.loja))].filter(l => l !== 'Sem Loja').sort();
+        setLojas(lojasUnicas);
+      } catch (error) {
+        console.error('Erro ao buscar empréstimos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
   
   const emprestimosFiltrados = useMemo(() => {
     return emprestimos.filter(e => {
@@ -221,8 +249,6 @@ export function GestaoEmprestimos() {
     };
   }, [emprestimosFiltrados]);
   
-  const lojas = useMemo(() => [...new Set(emprestimos.map(e => e.loja))], [emprestimos]);
-  
   const getStatusBadge = (status: Emprestimo['status']) => {
     const config = {
       ativo: { label: 'Ativo', className: 'bg-info/10 text-info border-info/20' },
@@ -246,6 +272,15 @@ export function GestaoEmprestimos() {
     link.download = `emprestimos_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Carregando empréstimos...</span>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -257,7 +292,7 @@ export function GestaoEmprestimos() {
             Gestão de Empréstimos
           </h2>
           <p className="text-sm text-muted-foreground">
-            Controle de empréstimos empresa e CLT
+            Controle de empréstimos empresa e CLT ({emprestimos.length} registros)
           </p>
         </div>
         <div className="flex gap-2">
@@ -271,196 +306,215 @@ export function GestaoEmprestimos() {
           </Button>
         </div>
       </div>
-      
-      {/* Cards Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+
+      {emprestimos.length === 0 ? (
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Empréstimos Ativos</p>
-                <p className="text-lg font-bold">{totais.totalAtivos}</p>
-              </div>
-            </div>
+          <CardContent className="py-12 text-center">
+            <Banknote className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum empréstimo cadastrado</h3>
+            <p className="text-muted-foreground mb-4">
+              Ainda não há empréstimos registrados no sistema.
+            </p>
+            <Button onClick={() => setNovoEmprestimoOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Cadastrar Primeiro Empréstimo
+            </Button>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-info/10">
-                <DollarSign className="h-4 w-4 text-info" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Valor Total</p>
-                <p className="text-lg font-bold text-info">{formatCurrency(totais.valorTotal)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Banknote className="h-4 w-4 text-warning" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Saldo Restante</p>
-                <p className="text-lg font-bold text-warning">{formatCurrency(totais.valorRestante)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Calendar className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Desconto Mensal</p>
-                <p className="text-lg font-bold text-primary">{formatCurrency(totais.parcelasMes)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Tabs por Tipo */}
-      <Tabs defaultValue="todos" onValueChange={setTipoFiltro}>
-        <TabsList>
-          <TabsTrigger value="todos" className="gap-2">
-            Todos
-            <Badge variant="secondary" className="ml-1">{emprestimos.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="empresa" className="gap-2">
-            <Building2 className="h-4 w-4" />
-            Empresa
-            <Badge variant="secondary" className="ml-1">{totais.emprestimoEmpresa}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="clt" className="gap-2">
-            <Banknote className="h-4 w-4" />
-            CLT
-            <Badge variant="secondary" className="ml-1">{totais.emprestimoCLT}</Badge>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
-      {/* Filtros */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs">Loja</Label>
-              <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as Lojas</SelectItem>
-                  {lojas.map(l => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Status</Label>
-              <Select value={statusFiltro} onValueChange={setStatusFiltro}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="quitado">Quitado</SelectItem>
-                  <SelectItem value="atrasado">Atrasado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Buscar</Label>
-              <Input
-                placeholder="Nome ou matrícula..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+      ) : (
+        <>
+          {/* Cards Resumo */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Empréstimos Ativos</p>
+                    <p className="text-lg font-bold">{totais.totalAtivos}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-info/10">
+                    <DollarSign className="h-4 w-4 text-info" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Valor Total</p>
+                    <p className="text-lg font-bold text-info">{formatCurrency(totais.valorTotal)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-warning/10">
+                    <Banknote className="h-4 w-4 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Saldo Restante</p>
+                    <p className="text-lg font-bold text-warning">{formatCurrency(totais.valorRestante)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Calendar className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Desconto Mensal</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(totais.parcelasMes)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Tabela */}
-      <Card>
-        <CardContent className="p-0">
-          <ScrollArea className="w-full">
-            <Table className="table-zebra">
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-20">Mat.</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Loja</TableHead>
-                  <TableHead className="text-center">Tipo</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="text-center">Parcelas</TableHead>
-                  <TableHead className="text-right">Restante</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="w-16">Ver</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {emprestimosFiltrados.map((e) => {
-                  const restante = e.valorTotal - (e.valorParcela * e.parcelasPagas);
-                  return (
-                    <TableRow key={e.id}>
-                      <TableCell className="font-mono text-sm">{e.matricula}</TableCell>
-                      <TableCell className="font-medium">{e.nome}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">{e.loja}</Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={e.tipo === 'empresa' ? 'default' : 'secondary'} className="text-xs">
-                          {e.tipo === 'empresa' ? 'Empresa' : 'CLT'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(e.valorTotal)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-semibold">{e.parcelasPagas}</span>
-                        <span className="text-muted-foreground">/{e.parcelasTotal}</span>
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-warning">
-                        {formatCurrency(restante)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getStatusBadge(e.status)}
-                      </TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <Banknote className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Empréstimo - {e.nome}</DialogTitle>
-                            </DialogHeader>
-                            <DetalheEmprestimo emprestimo={e} />
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
+          
+          {/* Tabs por Tipo */}
+          <Tabs defaultValue="todos" onValueChange={setTipoFiltro}>
+            <TabsList>
+              <TabsTrigger value="todos" className="gap-2">
+                Todos
+                <Badge variant="secondary" className="ml-1">{emprestimos.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="empresa" className="gap-2">
+                <Building2 className="h-4 w-4" />
+                Empresa
+                <Badge variant="secondary" className="ml-1">{totais.emprestimoEmpresa}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="clt" className="gap-2">
+                <Banknote className="h-4 w-4" />
+                CLT
+                <Badge variant="secondary" className="ml-1">{totais.emprestimoCLT}</Badge>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          {/* Filtros */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs">Loja</Label>
+                  <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas as Lojas</SelectItem>
+                      {lojas.map(l => (
+                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Status</Label>
+                  <Select value={statusFiltro} onValueChange={setStatusFiltro}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="quitado">Quitado</SelectItem>
+                      <SelectItem value="atrasado">Atrasado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Buscar</Label>
+                  <Input
+                    placeholder="Nome ou matrícula..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Tabela */}
+          <Card>
+            <CardContent className="p-0">
+              <ScrollArea className="w-full">
+                <Table className="table-zebra">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-20">Mat.</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Loja</TableHead>
+                      <TableHead className="text-center">Tipo</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="text-center">Parcelas</TableHead>
+                      <TableHead className="text-right">Restante</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="w-16">Ver</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {emprestimosFiltrados.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                          Nenhum empréstimo encontrado com os filtros aplicados
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      emprestimosFiltrados.map((e) => {
+                        const restante = e.valorTotal - (e.valorParcela * e.parcelasPagas);
+                        return (
+                          <TableRow key={e.id}>
+                            <TableCell className="font-mono text-sm">{e.matricula}</TableCell>
+                            <TableCell className="font-medium">{e.nome}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">{e.loja}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant={e.tipo === 'empresa' ? 'default' : 'secondary'} className="text-xs">
+                                {e.tipo === 'empresa' ? 'Empresa' : 'CLT'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">{formatCurrency(e.valorTotal)}</TableCell>
+                            <TableCell className="text-center">
+                              <span className="font-mono text-sm">{e.parcelasPagas}/{e.parcelasTotal}</span>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-warning">{formatCurrency(restante)}</TableCell>
+                            <TableCell className="text-center">{getStatusBadge(e.status)}</TableCell>
+                            <TableCell>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <DollarSign className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Detalhes do Empréstimo - {e.nome}</DialogTitle>
+                                  </DialogHeader>
+                                  <DetalheEmprestimo emprestimo={e} />
+                                </DialogContent>
+                              </Dialog>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </>
+      )}
       
       {/* Dialog Novo Empréstimo */}
       <Dialog open={novoEmprestimoOpen} onOpenChange={setNovoEmprestimoOpen}>
@@ -468,43 +522,13 @@ export function GestaoEmprestimos() {
           <DialogHeader>
             <DialogTitle>Novo Empréstimo</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Matrícula</Label>
-                <Input placeholder="0000" />
-              </div>
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select defaultValue="empresa">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="empresa">Empresa</SelectItem>
-                    <SelectItem value="clt">CLT</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Valor Total</Label>
-                <Input placeholder="R$ 0,00" />
-              </div>
-              <div className="space-y-2">
-                <Label>Nº Parcelas</Label>
-                <Input type="number" placeholder="6" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Data Início</Label>
-              <Input type="date" />
-            </div>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Para cadastrar um novo empréstimo, acesse o cadastro do profissional e adicione os dados do empréstimo na aba correspondente.
+            </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNovoEmprestimoOpen(false)}>Cancelar</Button>
-            <Button>Salvar Empréstimo</Button>
+            <Button variant="outline" onClick={() => setNovoEmprestimoOpen(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
