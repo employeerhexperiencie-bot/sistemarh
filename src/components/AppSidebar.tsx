@@ -93,6 +93,7 @@ const navSections = [
   {
     label: 'Sistema',
     items: [
+      { title: 'Importar Excel', url: '/importar-dados-excel', icon: FileSpreadsheet },
       { title: 'Análise Ativos', url: '/analisar-ativos', icon: FileBox },
       { title: 'Dados Adicionais', url: '/carregar-dados-adicionais', icon: FileSpreadsheet },
       { title: 'Migrar para BD', url: '/migrar-dados', icon: Database },

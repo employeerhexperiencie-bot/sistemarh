@@ -443,28 +443,72 @@ Deno.serve(async (req) => {
 
     // 3. Inserir Exames ASO (se houver)
     if (examesASO && examesASO.length > 0) {
+      console.log(`Processando ${examesASO.length} registros de ASO...`);
+      
       for (const exame of examesASO) {
-        const profId = await buscarProfissional(exame.cpf, exame.matricula, exame.nome);
+        // Buscar por matrícula primeiro, depois por nome
+        let profId = null;
+        
+        if (exame.matricula) {
+          const { data } = await supabase
+            .from('profissionais')
+            .select('id')
+            .eq('matricula', String(exame.matricula).trim())
+            .maybeSingle();
+          if (data) profId = data.id;
+        }
+        
+        if (!profId && exame.nome) {
+          const { data } = await supabase
+            .from('profissionais')
+            .select('id')
+            .ilike('nome', `%${exame.nome.trim()}%`)
+            .maybeSingle();
+          if (data) profId = data.id;
+        }
 
         if (profId) {
-          const { error } = await supabase.from('exames_aso').insert({
+          // Verificar se já existe um exame para este profissional
+          const { data: existingExame } = await supabase
+            .from('exames_aso')
+            .select('id')
+            .eq('profissional_id', profId)
+            .maybeSingle();
+            
+          const exameData = {
             profissional_id: profId,
             tipo_exame: exame.tipoExame || 'Periódico',
             data_ultimo_exame: parseExcelDate(exame.dataUltimoExame) || parseExcelDate(exame.ultimoASO),
             data_proximo_exame: parseExcelDate(exame.dataProximoExame) || parseExcelDate(exame.proxASO),
             periodicidade: exame.periodicidade || '1 ano',
             status: exame.status || exame.statusASO || 'pendente',
-          });
+          };
+          
+          let error;
+          if (existingExame) {
+            // Update existing
+            const result = await supabase
+              .from('exames_aso')
+              .update(exameData)
+              .eq('id', existingExame.id);
+            error = result.error;
+          } else {
+            // Insert new
+            const result = await supabase.from('exames_aso').insert(exameData);
+            error = result.error;
+          }
 
           if (error) {
-            results.examesASO.errors.push(`${exame.nome || exame.cpf}: ${error.message}`);
+            results.examesASO.errors.push(`${exame.nome || exame.matricula}: ${error.message}`);
           } else {
             results.examesASO.inserted++;
           }
         } else {
-          results.examesASO.errors.push(`${exame.nome || exame.cpf}: profissional não encontrado`);
+          console.log(`ASO: profissional não encontrado - matrícula: ${exame.matricula}, nome: ${exame.nome}`);
+          results.examesASO.errors.push(`${exame.nome || exame.matricula}: profissional não encontrado`);
         }
       }
+      console.log(`ASO inseridos/atualizados: ${results.examesASO.inserted}`);
     }
 
     // 4. Inserir Benefícios mensais (se houver)
