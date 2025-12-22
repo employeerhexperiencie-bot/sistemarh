@@ -34,6 +34,7 @@ import CarregarDadosAdicionais from "@/pages/CarregarDadosAdicionais";
 import ValidacaoDados from "@/pages/ValidacaoDados";
 import DashboardAnalitico from "@/pages/DashboardAnalitico";
 import MigrarDados from "@/pages/MigrarDados";
+import ImportarDadosExcel from "@/pages/ImportarDadosExcel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -190,6 +191,11 @@ const App = () => (
           <Route path="/migrar-dados" element={
             <Layout>
               <MigrarDados />
+            </Layout>
+          } />
+          <Route path="/importar-dados-excel" element={
+            <Layout>
+              <ImportarDadosExcel />
             </Layout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
