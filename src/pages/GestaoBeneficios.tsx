@@ -59,7 +59,7 @@ export default function GestaoBeneficios() {
           .select(`
             id, matricula, nome, 
             vale_transporte, vale_refeicao, cesta_basica,
-            salario_nominal,
+            salario_nominal, valor_diario_rota,
             lojas(nome)
           `)
           .eq('status', 'ativo')
@@ -67,10 +67,12 @@ export default function GestaoBeneficios() {
 
         if (error) throw error;
 
-        // Calcular benefícios estimados para cada profissional
+        // Calcular benefícios estimados para cada profissional usando valor_diario_rota do banco
         const beneficios: BeneficioData[] = (profissionais || []).map((prof: any) => {
           const diasUteis = 22; // Média padrão
-          const valorVT = prof.vale_transporte ? diasUteis * 2 * config.valorPassagem : 0;
+          // Usar valor_diario_rota do banco (já é o valor diário total)
+          const valorDiarioVT = prof.valor_diario_rota || config.valorPassagem * 2;
+          const valorVT = prof.vale_transporte ? diasUteis * valorDiarioVT : 0;
           const valorVR = prof.vale_refeicao ? diasUteis * config.valorVR : 0;
           const cestaBasica = prof.cesta_basica ? config.valorCestaBasica : 0;
 

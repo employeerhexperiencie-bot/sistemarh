@@ -319,12 +319,17 @@ const ImportarDadosExcel = () => {
       // Preparar dados dos profissionais com benefícios cruzados
       const profissionaisComBeneficios = processedData.profissionais.map(prof => {
         const beneficio = beneficiosMap.get(prof.matricula);
+        const isOptanteVT = beneficio?.vtVc === 'OPTANTE';
+        const temVR = beneficio?.vr === 'SIM';
+        const temCesta = beneficio?.cestaBasica === 'SIM';
+        const valorDiarioRota = typeof beneficio?.valorDiario === 'number' ? beneficio.valorDiario : parseSalario(beneficio?.valorDiario);
+        
         return {
           ...prof,
-          valeTransporte: beneficio?.vtVc === 'OPTANTE' || beneficio?.vtVc === 'SIM',
-          valeRefeicao: beneficio?.vr === 'SIM',
-          cestaBasica: beneficio?.cestaBasica === 'SIM',
-          valorDiarioVT: parseSalario(beneficio?.valorDiario),
+          valeTransporte: isOptanteVT,
+          valeRefeicao: temVR,
+          cestaBasica: temCesta,
+          valorDiarioRota: isOptanteVT ? valorDiarioRota : null,
         };
       });
       

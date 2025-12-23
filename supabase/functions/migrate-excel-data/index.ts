@@ -346,17 +346,23 @@ Deno.serve(async (req) => {
         // Buscar benefícios no mapa de cruzamento
         const beneficioProf = beneficiosMap.get(String(matricula).trim());
         
-        // Determinar flags de benefícios (do próprio registro ou do cruzamento)
+        // Determinar flags de benefícios - priorizar dados já passados pelo frontend
         let temVT = parseBoolean(prof.valeTransporte);
         let temVR = parseBoolean(prof.valeRefeicao);
         let temCesta = parseBoolean(prof.cestaBasica);
+        let valorDiarioRota = prof.valorDiarioRota || null;
         
-        // Se houver dados de benefícios, usar esses
+        // Se houver dados de benefícios no mapa, usar como fallback
         if (beneficioProf) {
-          temVT = parseBoolean(beneficioProf.vtVc) || temVT;
-          temVR = parseBoolean(beneficioProf.vr) || temVR;
-          temCesta = parseBoolean(beneficioProf.cestaBasica) || temCesta;
-          console.log(`Benefícios atualizados para ${matricula}: VT=${temVT}, VR=${temVR}, Cesta=${temCesta}`);
+          if (!temVT) temVT = beneficioProf.vtVc === 'OPTANTE';
+          if (!temVR) temVR = beneficioProf.vr === 'SIM';
+          if (!temCesta) temCesta = beneficioProf.cestaBasica === 'SIM';
+          if (!valorDiarioRota && beneficioProf.valorDiario) {
+            valorDiarioRota = typeof beneficioProf.valorDiario === 'number' 
+              ? beneficioProf.valorDiario 
+              : parseFloat(String(beneficioProf.valorDiario).replace(/[R$\s.]/g, '').replace(',', '.')) || null;
+          }
+          console.log(`Benefícios para ${matricula}: VT=${temVT}, VR=${temVR}, Cesta=${temCesta}, ValorRota=${valorDiarioRota}`);
         }
 
         // Determinar data de nascimento
@@ -407,7 +413,7 @@ Deno.serve(async (req) => {
             vale_refeicao: temVR,
             sindicato: prof.sindicato || null,
             pensao_alimenticia: pensao,
-            valor_diario_rota: prof.valorDiarioRota || null,
+            valor_diario_rota: valorDiarioRota,
             cnh: prof.cnh || null,
             categoria_cnh: prof.categoriaCnh || prof.categoria || null,
             validade_cnh: validadeCnh,
