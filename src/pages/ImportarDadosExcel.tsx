@@ -251,6 +251,9 @@ const ImportarDadosExcel = () => {
         
         const matricula = String(row[0]).trim();
         const nome = String(row[1] || '').trim();
+        const vtVcRaw = String(row[8] || '').trim().toUpperCase();
+        const vrRaw = String(row[12] || '').trim().toUpperCase();
+        const cestaRaw = String(row[13] || '').trim().toUpperCase();
         
         if (!nome) continue;
         
@@ -263,12 +266,12 @@ const ImportarDadosExcel = () => {
           cargo: row[5],
           localTrabalho: row[6],
           localRegistro: row[7],
-          vtVc: row[8],
+          vtVc: vtVcRaw === 'OPTANTE' || vtVcRaw === 'SIM' ? 'OPTANTE' : 'NÃO OPTANTE',
           tiposConducao: row[9],
           valorUnit: row[10],
-          valorDiario: row[11],
-          vr: row[12],
-          cestaBasica: row[13],
+          valorDiario: parseSalario(row[11]),
+          vr: vrRaw === 'SIM' ? 'SIM' : 'NÃO',
+          cestaBasica: cestaRaw === 'SIM' ? 'SIM' : 'NÃO',
           seguroVida: row[14],
           odonto: row[15],
           bemMais: row[16],
