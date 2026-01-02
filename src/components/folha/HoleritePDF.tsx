@@ -269,26 +269,7 @@ export const gerarHoleritePDF = (dados: DadosHolerite): jsPDF => {
   
   yPos += 20;
   
-  // ========== BASES DE CÁLCULO ==========
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(margin, yPos, contentWidth, 16, 2, 2, 'F');
-  
-  doc.setTextColor(...lightGray);
-  doc.setFontSize(7);
-  doc.text('Base INSS', margin + 8, yPos + 5);
-  doc.text('Base FGTS', margin + 50, yPos + 5);
-  doc.text('FGTS Depósito', margin + 92, yPos + 5);
-  doc.text('Base IRRF', margin + 134, yPos + 5);
-  
-  doc.setTextColor(...darkGray);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(formatCurrency(dados.baseINSS || dados.salarioBase), margin + 8, yPos + 11);
-  doc.text(formatCurrency(dados.baseFGTS || dados.salarioBase), margin + 50, yPos + 11);
-  doc.text(formatCurrency(dados.fgtsDeposito || dados.salarioBase * 0.08), margin + 92, yPos + 11);
-  doc.text(formatCurrency(dados.baseIRRF || dados.salarioBase), margin + 134, yPos + 11);
-  
-  yPos += 22;
+  // Nota: Bases de cálculo (INSS, FGTS, IRRF) removidas - holerite simplificado
   
   // ========== DADOS BANCÁRIOS ==========
   if (dados.banco) {
@@ -352,7 +333,101 @@ export const gerarHoleritesEmLote = (funcionarios: DadosHolerite[]): jsPDF => {
   return doc;
 };
 
-// Mock para demonstração
+// Interface para dados reais do holerite
+export interface DadosHoleriteReal {
+  salarioBase: number;
+  faltas?: { dias: number; valor: number };
+  vales?: { descricao: string; valor: number }[];
+  emprestimos?: { descricao: string; valor: number }[];
+  adiantamento?: number;
+}
+
+// Gerar holerite com dados reais (sem descontos legais, apenas empréstimos/vales/faltas)
+export const gerarHoleriteReal = (
+  nome: string,
+  matricula: string,
+  loja: string,
+  salarioBase: number,
+  competencia: string,
+  dados: DadosHoleriteReal
+): DadosHolerite => {
+  const eventos: EventoFolha[] = [
+    { codigo: '001', descricao: 'Salário Combinado', tipo: 'provento', valor: salarioBase },
+  ];
+  
+  // Descontos - APENAS empréstimos, vales e faltas (sem DSR, apenas dias faltados)
+  
+  // Faltas - desconta apenas os dias que faltou (sem DSR)
+  if (dados.faltas && dados.faltas.dias > 0) {
+    const valorDia = salarioBase / 30; // Valor do dia
+    const descontoFaltas = valorDia * dados.faltas.dias;
+    eventos.push({ 
+      codigo: '101', 
+      descricao: 'Faltas', 
+      tipo: 'desconto', 
+      valor: Math.round(descontoFaltas),
+      referencia: `${dados.faltas.dias} dia(s)`
+    });
+  }
+  
+  // Vales
+  if (dados.vales && dados.vales.length > 0) {
+    dados.vales.forEach((vale, index) => {
+      eventos.push({ 
+        codigo: `10${2 + index}`, 
+        descricao: vale.descricao, 
+        tipo: 'desconto', 
+        valor: vale.valor 
+      });
+    });
+  }
+  
+  // Adiantamento
+  if (dados.adiantamento && dados.adiantamento > 0) {
+    eventos.push({ 
+      codigo: '105', 
+      descricao: 'Adiantamento Salarial', 
+      tipo: 'desconto', 
+      valor: dados.adiantamento 
+    });
+  }
+  
+  // Empréstimos
+  if (dados.emprestimos && dados.emprestimos.length > 0) {
+    dados.emprestimos.forEach((emp, index) => {
+      eventos.push({ 
+        codigo: `11${index}`, 
+        descricao: emp.descricao, 
+        tipo: 'desconto', 
+        valor: emp.valor 
+      });
+    });
+  }
+  
+  const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
+  const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
+  
+  return {
+    empresaNome: 'EMPRESA MODELO LTDA',
+    empresaCNPJ: '12.345.678/0001-90',
+    empresaEndereco: 'Av. Paulista, 1000 - São Paulo/SP',
+    nome,
+    matricula,
+    cpf: '',
+    cargo: '',
+    departamento: 'Operações',
+    dataAdmissao: '',
+    loja,
+    competencia,
+    salarioBase,
+    eventos,
+    totalProventos,
+    totalDescontos,
+    liquido: totalProventos - totalDescontos,
+  };
+};
+
+// Mock para demonstração (simplificado, sem descontos legais)
 export const gerarHoleriteMock = (
   nome: string,
   matricula: string,
@@ -361,36 +436,37 @@ export const gerarHoleriteMock = (
   competencia: string
 ): DadosHolerite => {
   const eventos: EventoFolha[] = [
-    { codigo: '001', descricao: 'Salário Base', tipo: 'provento', valor: salarioBase },
+    { codigo: '001', descricao: 'Salário Combinado', tipo: 'provento', valor: salarioBase },
   ];
   
-  // Adicionar eventos aleatórios
-  if (Math.random() > 0.6) {
-    eventos.push({ codigo: '002', descricao: 'Horas Extras 50%', tipo: 'provento', valor: Math.round(salarioBase * 0.05), referencia: '5h' });
-  }
+  // Descontos - APENAS empréstimos, vales e faltas (sem INSS, IRRF, VT 6%)
+  
+  // Simular algumas faltas ocasionalmente (apenas dias, sem DSR)
   if (Math.random() > 0.8) {
-    eventos.push({ codigo: '004', descricao: 'Adicional Noturno', tipo: 'provento', valor: Math.round(salarioBase * 0.03) });
-  }
-  if (Math.random() > 0.9) {
-    eventos.push({ codigo: '007', descricao: 'DSR s/ H.E.', tipo: 'provento', valor: Math.round(salarioBase * 0.01) });
-  }
-  
-  // Descontos
-  const inss = Math.round(salarioBase * 0.08);
-  eventos.push({ codigo: '101', descricao: 'INSS', tipo: 'desconto', valor: inss });
-  
-  if (salarioBase > 2500) {
-    eventos.push({ codigo: '102', descricao: 'IRRF', tipo: 'desconto', valor: Math.round(salarioBase * 0.03) });
+    const diasFalta = Math.floor(Math.random() * 3) + 1;
+    const valorDia = salarioBase / 30;
+    eventos.push({ 
+      codigo: '101', 
+      descricao: 'Faltas', 
+      tipo: 'desconto', 
+      valor: Math.round(valorDia * diasFalta),
+      referencia: `${diasFalta} dia(s)`
+    });
   }
   
-  eventos.push({ codigo: '103', descricao: 'Vale Transporte (6%)', tipo: 'desconto', valor: Math.round(salarioBase * 0.06) });
-  
+  // Adiantamento (40%)
   if (Math.random() > 0.5) {
-    eventos.push({ codigo: '106', descricao: 'Adiantamento Salarial', tipo: 'desconto', valor: Math.round(salarioBase * 0.4) });
+    eventos.push({ codigo: '102', descricao: 'Adiantamento Salarial', tipo: 'desconto', valor: Math.round(salarioBase * 0.4) });
   }
   
+  // Vale ocasional
+  if (Math.random() > 0.7) {
+    eventos.push({ codigo: '103', descricao: 'Vale', tipo: 'desconto', valor: Math.floor(Math.random() * 200) + 50 });
+  }
+  
+  // Empréstimo ocasional
   if (Math.random() > 0.85) {
-    eventos.push({ codigo: '107', descricao: 'Empréstimo Consignado', tipo: 'desconto', valor: Math.floor(Math.random() * 300) + 100 });
+    eventos.push({ codigo: '104', descricao: 'Empréstimo', tipo: 'desconto', valor: Math.floor(Math.random() * 300) + 100 });
   }
   
   const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
@@ -413,12 +489,5 @@ export const gerarHoleriteMock = (
     totalProventos,
     totalDescontos,
     liquido: totalProventos - totalDescontos,
-    banco: 'Banco do Brasil',
-    agencia: '1234-5',
-    conta: '12345-6',
-    baseINSS: salarioBase,
-    baseFGTS: salarioBase,
-    fgtsDeposito: Math.round(salarioBase * 0.08),
-    baseIRRF: salarioBase > 2500 ? salarioBase : 0,
   };
 };

@@ -1490,15 +1490,39 @@ export const CadastroProfissionais: React.FC = () => {
 
                   {/* SALÁRIOS */}
                   <TabsContent value="salarios" className="space-y-4">
+                    <Alert className="border-info bg-info/5">
+                      <AlertTriangle className="h-4 w-4 text-info" />
+                      <AlertDescription className="text-sm">
+                        <strong>Salário CTPS:</strong> Valor registrado em carteira (para cálculos legais/rescisão).<br />
+                        <strong>Salário Combinado:</strong> Valor real a receber (base para todos os cálculos de folha e holerite).
+                      </AlertDescription>
+                    </Alert>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="primeiro_salario">Primeiro Salário</Label>
+                        <Label htmlFor="primeiro_salario" className="flex items-center gap-2">
+                          Salário CTPS
+                          <Badge variant="outline" className="text-xs font-normal">Carteira</Badge>
+                        </Label>
                         <Input
                           id="primeiro_salario"
                           value={formData.primeiro_salario}
                           onChange={(e) => setFormData({ ...formData, primeiro_salario: formatCurrency(e.target.value) })}
                           placeholder="R$ 0,00"
                         />
+                        <p className="text-xs text-muted-foreground">Valor de registro em carteira</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="salario_nominal" className="flex items-center gap-2">
+                          Salário Combinado
+                          <Badge variant="default" className="text-xs font-normal">Base Cálculos</Badge>
+                        </Label>
+                        <Input
+                          id="salario_nominal"
+                          value={formData.salario_nominal}
+                          onChange={(e) => setFormData({ ...formData, salario_nominal: formatCurrency(e.target.value) })}
+                          placeholder="R$ 0,00"
+                        />
+                        <p className="text-xs text-muted-foreground">Valor real a receber (base para holerite)</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="ultimo_salario">Último Salário</Label>
@@ -1508,15 +1532,7 @@ export const CadastroProfissionais: React.FC = () => {
                           onChange={(e) => setFormData({ ...formData, ultimo_salario: formatCurrency(e.target.value) })}
                           placeholder="R$ 0,00"
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="salario_nominal">Salário Nominal</Label>
-                        <Input
-                          id="salario_nominal"
-                          value={formData.salario_nominal}
-                          onChange={(e) => setFormData({ ...formData, salario_nominal: formatCurrency(e.target.value) })}
-                          placeholder="R$ 0,00"
-                        />
+                        <p className="text-xs text-muted-foreground">Histórico do último salário</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="segundo_sabado">2º Sábado (Intervalo)</Label>
