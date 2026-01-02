@@ -12,8 +12,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { gerarHoleritePDF, gerarHoleriteMock } from '@/components/folha/HoleritePDF';
+import { gerarHoleritePDF, gerarHoleriteReal, DadosHoleriteReal } from '@/components/folha/HoleritePDF';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { buscarDescontosProfissional } from '@/hooks/useHoleriteData';
 import { Link } from 'react-router-dom';
 
 interface HoleriteItem {
@@ -139,13 +140,29 @@ export default function Holerites() {
     }
   };
   
-  const gerarPDFIndividual = (holerite: HoleriteItem) => {
-    const dados = gerarHoleriteMock(
+  const gerarPDFIndividual = async (holerite: HoleriteItem) => {
+    // Buscar descontos reais do banco
+    const descontos = await buscarDescontosProfissional(
+      holerite.id,
+      competencia,
+      holerite.salario
+    );
+
+    const dadosReais: DadosHoleriteReal = {
+      salarioBase: holerite.salario,
+      faltas: descontos.faltas,
+      vales: descontos.vales,
+      emprestimos: descontos.emprestimos,
+      adiantamento: descontos.adiantamento,
+    };
+
+    const dados = gerarHoleriteReal(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
       holerite.salario,
-      competencia
+      competencia,
+      dadosReais
     );
     
     const doc = gerarHoleritePDF(dados);
@@ -157,13 +174,28 @@ export default function Holerites() {
     });
   };
   
-  const visualizarPDF = (holerite: HoleriteItem) => {
-    const dados = gerarHoleriteMock(
+  const visualizarPDF = async (holerite: HoleriteItem) => {
+    const descontos = await buscarDescontosProfissional(
+      holerite.id,
+      competencia,
+      holerite.salario
+    );
+
+    const dadosReais: DadosHoleriteReal = {
+      salarioBase: holerite.salario,
+      faltas: descontos.faltas,
+      vales: descontos.vales,
+      emprestimos: descontos.emprestimos,
+      adiantamento: descontos.adiantamento,
+    };
+
+    const dados = gerarHoleriteReal(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
       holerite.salario,
-      competencia
+      competencia,
+      dadosReais
     );
     
     const doc = gerarHoleritePDF(dados);
@@ -188,12 +220,28 @@ export default function Holerites() {
       const selecionadosArray = holeritesFiltrados.filter(h => selecionados.has(h.id));
       
       for (const holerite of selecionadosArray) {
-        const dados = gerarHoleriteMock(
+        // Buscar descontos reais do banco
+        const descontos = await buscarDescontosProfissional(
+          holerite.id,
+          competencia,
+          holerite.salario
+        );
+
+        const dadosReais: DadosHoleriteReal = {
+          salarioBase: holerite.salario,
+          faltas: descontos.faltas,
+          vales: descontos.vales,
+          emprestimos: descontos.emprestimos,
+          adiantamento: descontos.adiantamento,
+        };
+
+        const dados = gerarHoleriteReal(
           holerite.nome,
           holerite.matricula,
           holerite.loja,
           holerite.salario,
-          competencia
+          competencia,
+          dadosReais
         );
         
         const doc = gerarHoleritePDF(dados);
@@ -220,13 +268,28 @@ export default function Holerites() {
     }
   };
   
-  const imprimirHolerite = (holerite: HoleriteItem) => {
-    const dados = gerarHoleriteMock(
+  const imprimirHolerite = async (holerite: HoleriteItem) => {
+    const descontos = await buscarDescontosProfissional(
+      holerite.id,
+      competencia,
+      holerite.salario
+    );
+
+    const dadosReais: DadosHoleriteReal = {
+      salarioBase: holerite.salario,
+      faltas: descontos.faltas,
+      vales: descontos.vales,
+      emprestimos: descontos.emprestimos,
+      adiantamento: descontos.adiantamento,
+    };
+
+    const dados = gerarHoleriteReal(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
       holerite.salario,
-      competencia
+      competencia,
+      dadosReais
     );
     
     const doc = gerarHoleritePDF(dados);
