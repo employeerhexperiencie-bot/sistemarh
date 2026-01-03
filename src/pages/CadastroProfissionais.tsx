@@ -13,7 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, Bus, Utensils, ShoppingBasket } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentUploader } from '@/components/DocumentUploader';
@@ -259,6 +260,11 @@ export const CadastroProfissionais: React.FC = () => {
   const [usingImportedData, setUsingImportedData] = useState(false);
   const { toast } = useToast();
   const { addLog } = useAuditLog();
+  
+  // 🔍 FILTROS RÁPIDOS
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterLoja, setFilterLoja] = useState<string>('todas');
+  const [filterStatus, setFilterStatus] = useState<string>('todos');
   
   // Verificar se veio matrícula via URL
   const searchParams = new URLSearchParams(window.location.search);
@@ -542,6 +548,33 @@ export const CadastroProfissionais: React.FC = () => {
   const activeProfessionals = professionals.filter(p => p.status === 'ativo');
   const dismissedProfessionals = professionals.filter(p => p.status === 'demitido');
   const uniqueStores = new Set(professionals.map(p => p.loja?.nome).filter(Boolean)).size;
+
+  // 🔍 PROFISSIONAIS FILTRADOS
+  const filteredProfessionals = useMemo(() => {
+    return professionals.filter(p => {
+      // Filtro por busca (nome ou matrícula)
+      const matchesSearch = searchTerm === '' || 
+        p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.matricula.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Filtro por loja
+      const matchesLoja = filterLoja === 'todas' || p.loja_id === filterLoja;
+      
+      // Filtro por status
+      const matchesStatus = filterStatus === 'todos' || p.status === filterStatus;
+      
+      return matchesSearch && matchesLoja && matchesStatus;
+    });
+  }, [professionals, searchTerm, filterLoja, filterStatus]);
+
+  // Função para capitalizar nomes (Primeira Letra Maiúscula)
+  const capitalizeWords = (str: string) => {
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
   // View de pasta do profissional
   if (selectedProfessionalId) {
@@ -1883,8 +1916,90 @@ export const CadastroProfissionais: React.FC = () => {
 
       {/* Tabela de Profissionais */}
       <Card>
-        <CardHeader>
-          <CardTitle>Profissionais Cadastrados</CardTitle>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle>Profissionais Cadastrados</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              {filteredProfessionals.length} de {professionals.length} profissionais
+            </div>
+          </div>
+          
+          {/* 🔍 FILTROS RÁPIDOS */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            {/* Busca por nome/matrícula */}
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou matrícula..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            {/* Filtro por Loja */}
+            <Select value={filterLoja} onValueChange={setFilterLoja}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Todas as lojas" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="todas">Todas as lojas</SelectItem>
+                {lojas.map(loja => (
+                  <SelectItem key={loja.id} value={loja.id}>{loja.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Filtro por Status */}
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Todos" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="ativo">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-3 w-3 text-success" />
+                    Ativos
+                  </div>
+                </SelectItem>
+                <SelectItem value="demitido">
+                  <div className="flex items-center gap-2">
+                    <UserX className="h-3 w-3 text-destructive" />
+                    Demitidos
+                  </div>
+                </SelectItem>
+                <SelectItem value="afastado">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-3 w-3 text-warning" />
+                    Afastados
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Limpar filtros */}
+            {(searchTerm || filterLoja !== 'todas' || filterStatus !== 'todos') && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterLoja('todas');
+                  setFilterStatus('todos');
+                }}
+                className="text-muted-foreground"
+              >
+                Limpar
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
@@ -1897,55 +2012,57 @@ export const CadastroProfissionais: React.FC = () => {
                 <TableHead className="hidden lg:table-cell">Cargo</TableHead>
                 <TableHead className="hidden lg:table-cell">Salário</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {professionals.map((professional) => (
+              {filteredProfessionals.map((professional) => (
                 <TableRow key={professional.id}>
-                  <TableCell className="font-mono">{professional.matricula}</TableCell>
-                  <TableCell className="font-medium">{professional.nome}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{professional.cpf || '-'}</TableCell>
+                  <TableCell className="font-mono text-xs">{professional.matricula}</TableCell>
+                  <TableCell className="font-medium">{capitalizeWords(professional.nome)}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground">{professional.cpf || '-'}</TableCell>
                   <TableCell className="hidden md:table-cell">{professional.loja?.nome || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell">{professional.cargo || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell">
                     {formatCurrencyFromNumber(professional.salario_nominal)}
                   </TableCell>
                   <TableCell>{getStatusBadge(professional.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setSelectedProfessionalId(professional.id)}
-                        title="Ver pasta"
-                      >
-                        <Folder className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEdit(professional)}
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(professional.id)}
-                        title="Excluir"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+                  <TableCell className="text-right">
+                    {/* Menu de ações (3 pontos) para melhor usabilidade */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
+                        <DropdownMenuItem onClick={() => setSelectedProfessionalId(professional.id)}>
+                          <Folder className="h-4 w-4 mr-2" />
+                          Ver pasta
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(professional)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDelete(professional.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
-              {professionals.length === 0 && (
+              {filteredProfessionals.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                    Nenhum profissional cadastrado
+                    {professionals.length === 0 
+                      ? 'Nenhum profissional cadastrado'
+                      : 'Nenhum profissional encontrado com os filtros aplicados'
+                    }
                   </TableCell>
                 </TableRow>
               )}

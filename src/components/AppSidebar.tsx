@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   LayoutDashboard, 
   CreditCard, 
@@ -20,6 +21,7 @@ import {
   BookOpen,
   Calculator,
   ChevronRight,
+  ChevronDown,
   Bell,
   History,
   FileBox,
@@ -37,12 +39,15 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 // Navigation structure organized by sections
 const navSections = [
   {
     label: 'Dashboard',
+    icon: LayoutDashboard,
+    defaultOpen: true,
     items: [
       { title: 'Visão Geral', url: '/', icon: LayoutDashboard },
       { title: 'Alertas', url: '/alertas', icon: Bell },
@@ -51,6 +56,8 @@ const navSections = [
   },
   {
     label: 'Cadastros',
+    icon: Users,
+    defaultOpen: true,
     items: [
       { title: 'Lojas', url: '/cadastro-lojas', icon: Store },
       { title: 'Profissionais', url: '/cadastro-profissionais', icon: Users },
@@ -59,6 +66,8 @@ const navSections = [
   },
   {
     label: 'Gestão',
+    icon: Heart,
+    defaultOpen: false,
     items: [
       { title: 'Férias', url: '/gestao-ferias', icon: Plane },
       { title: 'Afastamentos', url: '/gestao-afastamentos', icon: UserMinus },
@@ -69,6 +78,8 @@ const navSections = [
   },
   {
     label: 'Folha',
+    icon: CreditCard,
+    defaultOpen: false,
     items: [
       { title: 'Lançamentos', url: '/lancamentos', icon: CreditCard },
       { title: 'Faltas', url: '/faltas', icon: UserX },
@@ -78,6 +89,8 @@ const navSections = [
   },
   {
     label: 'Painéis',
+    icon: Building2,
+    defaultOpen: false,
     items: [
       { title: 'Por Loja', url: '/painel-loja', icon: Building2 },
       { title: 'Por Profissional', url: '/painel-profissional', icon: User },
@@ -85,6 +98,8 @@ const navSections = [
   },
   {
     label: 'Relatórios',
+    icon: LineChart,
+    defaultOpen: false,
     items: [
       { title: 'Dashboard Analítico', url: '/dashboard-analitico', icon: BarChart3 },
       { title: 'Relatórios', url: '/relatorios', icon: LineChart },
@@ -92,6 +107,8 @@ const navSections = [
   },
   {
     label: 'Sistema',
+    icon: Settings,
+    defaultOpen: false,
     items: [
       { title: 'Importar Excel', url: '/importar-dados-excel', icon: FileSpreadsheet },
       { title: 'Análise Ativos', url: '/analisar-ativos', icon: FileBox },
@@ -112,6 +129,28 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
 
   const isActive = (path: string) => currentPath === path;
+  
+  // Check if any item in section is active
+  const isSectionActive = (items: { url: string }[]) => 
+    items.some(item => isActive(item.url));
+
+  // Initialize open state based on active routes
+  const getInitialOpenState = () => {
+    const state: Record<string, boolean> = {};
+    navSections.forEach(section => {
+      state[section.label] = section.defaultOpen || isSectionActive(section.items);
+    });
+    return state;
+  };
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(getInitialOpenState);
+
+  const toggleSection = (label: string) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [label]: !prev[label]
+    }));
+  };
 
   return (
     <Sidebar
@@ -136,62 +175,86 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <SidebarContent className="px-2 py-4 scrollbar-thin">
-        {navSections.map((section) => (
-          <SidebarGroup key={section.label} className="mb-2">
-            <SidebarGroupLabel className={cn(
-              "px-3 mb-1 text-2xs font-semibold uppercase tracking-wider text-muted-foreground/70",
-              "transition-opacity duration-300",
-              collapsed && "opacity-0"
-            )}>
-              {section.label}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {section.items.map((item) => {
-                  const active = isActive(item.url);
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink
-                          to={item.url}
-                          className={cn(
-                            "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
-                            "transition-all duration-200 group",
-                            active
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                          )}
-                        >
-                          {/* Active indicator */}
-                          {active && (
-                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />
-                          )}
-                          
-                          <item.icon className={cn(
-                            "h-4 w-4 flex-shrink-0 transition-colors duration-200",
-                            active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                          )} />
-                          
-                          <span className={cn(
-                            "transition-all duration-300 overflow-hidden whitespace-nowrap",
-                            collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                          )}>
-                            {item.title}
-                          </span>
-                          
-                          {/* Hover chevron */}
-                          {!collapsed && !active && (
-                            <ChevronRight className="ml-auto h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
-                          )}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {navSections.map((section) => {
+          const SectionIcon = section.icon;
+          const isOpen = openSections[section.label];
+          const hasActiveItem = isSectionActive(section.items);
+
+          return (
+            <SidebarGroup key={section.label} className="mb-1">
+              <Collapsible open={isOpen} onOpenChange={() => toggleSection(section.label)}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider",
+                      "transition-all duration-200 hover:bg-muted/50",
+                      hasActiveItem ? "text-primary" : "text-muted-foreground/70",
+                      collapsed && "justify-center"
+                    )}
+                  >
+                    <SectionIcon className={cn(
+                      "h-4 w-4 flex-shrink-0",
+                      hasActiveItem ? "text-primary" : "text-muted-foreground"
+                    )} />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1 text-left">{section.label}</span>
+                        {isOpen ? (
+                          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </>
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent className={cn(
+                  "transition-all duration-200",
+                  collapsed && "hidden"
+                )}>
+                  <SidebarGroupContent className="mt-1">
+                    <SidebarMenu>
+                      {section.items.map((item) => {
+                        const active = isActive(item.url);
+                        return (
+                          <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton asChild>
+                              <NavLink
+                                to={item.url}
+                                className={cn(
+                                  "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ml-2",
+                                  "transition-all duration-200 group",
+                                  active
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                                )}
+                              >
+                                {/* Active indicator */}
+                                {active && (
+                                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />
+                                )}
+                                
+                                <item.icon className={cn(
+                                  "h-4 w-4 flex-shrink-0 transition-colors duration-200",
+                                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                                )} />
+                                
+                                <span className="whitespace-nowrap">
+                                  {item.title}
+                                </span>
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
     </Sidebar>
   );

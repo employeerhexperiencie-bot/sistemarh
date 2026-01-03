@@ -235,6 +235,9 @@ export function Dashboard() {
         </p>
       </div>
 
+      {/* 🔴 ALERTAS URGENTES - Movidos para o topo para visibilidade imediata */}
+      <AlertasResumo />
+
       {/* Primary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
         <KPICard
@@ -454,14 +457,8 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* Alerts and Activities */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Alertas Automáticos */}
-        <AlertasResumo />
-
-        {/* Ranking de Lojas */}
-        <LojaComparison />
-      </div>
+      {/* Ranking de Lojas */}
+      <LojaComparison />
 
       {/* Recent Activities */}
       <Card>
