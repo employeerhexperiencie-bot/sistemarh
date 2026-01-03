@@ -8,12 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileUploader } from '@/components/FileUploader';
-import { Heart, AlertTriangle, Calendar, Upload, FileText, Plus, Eye, Search, Filter, Clock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Heart, AlertTriangle, Calendar, FileText, Plus, Search, Clock, CalendarPlus, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuditLog } from '@/contexts/AuditLogContext';
-
 interface ASOExam {
   id: string;
   matricula: string;
@@ -42,6 +42,7 @@ export default function GestaoASO() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('todos');
+  const [filterTipoExame, setFilterTipoExame] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     profissional_id: '',
@@ -147,12 +148,37 @@ export default function GestaoASO() {
   // Filtrar exames
   const filteredExams = exams.filter(exam => {
     const matchesStatus = filterStatus === 'todos' || exam.status === filterStatus;
+    const matchesTipo = filterTipoExame === 'todos' || exam.tipoExame === filterTipoExame;
     const matchesSearch = searchTerm === '' || 
       exam.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.loja.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesTipo && matchesSearch;
   });
+
+  // Função para obter a cor de risco baseada nos dias de atraso
+  const getRiskGradient = (diasRestantes: number | null, status: ASOExam['status']) => {
+    if (status !== 'VENCIDO' || diasRestantes === null) return '';
+    const diasAtraso = Math.abs(diasRestantes);
+    if (diasAtraso > 90) return 'bg-red-900/20 border-l-4 border-l-red-700';
+    if (diasAtraso > 30) return 'bg-red-700/15 border-l-4 border-l-red-500';
+    return 'bg-red-500/10 border-l-4 border-l-red-400';
+  };
+
+  // Ação rápida para agendar novo exame
+  const handleAgendarExame = (exam: ASOExam) => {
+    const prof = profissionais.find(p => p.matricula === exam.matricula);
+    if (prof) {
+      setFormData({
+        profissional_id: prof.id,
+        tipo_exame: exam.tipoExame,
+        data_ultimo_exame: new Date().toISOString().split('T')[0],
+        data_proximo_exame: '',
+        periodicidade: exam.periodicidade || '1 ano',
+      });
+      setIsDialogOpen(true);
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.profissional_id || !formData.data_ultimo_exame) {
@@ -228,21 +254,54 @@ export default function GestaoASO() {
   const getStatusBadge = (status: ASOExam['status'], diasRestantes?: number | null) => {
     switch (status) {
       case 'VALIDO':
-        return <Badge className="bg-success/10 text-success border-success/20">Válido</Badge>;
+        return (
+          <Badge className="bg-success/10 text-success border-success/20">
+            <Heart className="h-3 w-3 mr-1" />
+            Válido
+          </Badge>
+        );
       case 'VENCE_30_DIAS':
         return (
-          <Badge className="bg-warning/10 text-warning border-warning/20">
-            {diasRestantes !== null ? `Vence em ${diasRestantes} dias` : 'Vence em breve'}
+          <Badge className="bg-warning/10 text-warning border-warning/20 animate-pulse">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            {diasRestantes !== null ? `Vence em ${diasRestantes}d` : 'Vence em breve'}
           </Badge>
         );
-      case 'VENCIDO':
+      case 'VENCIDO': {
+        const diasAtraso = diasRestantes !== null ? Math.abs(diasRestantes) : 0;
+        // Gradação de cor por gravidade
+        const badgeClass = diasAtraso > 90 
+          ? 'bg-red-900 text-white border-red-900' 
+          : diasAtraso > 30 
+            ? 'bg-red-700 text-white border-red-700'
+            : 'bg-destructive text-destructive-foreground';
         return (
-          <Badge variant="destructive">
-            {diasRestantes !== null ? `Vencido há ${Math.abs(diasRestantes)} dias` : 'Vencido'}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className={badgeClass}>
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  {diasRestantes !== null ? `Vencido há ${Math.abs(diasRestantes)}d` : 'Vencido'}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="font-medium">
+                  {diasAtraso > 90 ? '🔴 Risco Crítico - Mais de 90 dias de atraso' : 
+                   diasAtraso > 30 ? '🟠 Risco Alto - Mais de 30 dias de atraso' : 
+                   '🟡 Atraso Recente'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+      case 'PENDENTE':
+        return (
+          <Badge variant="secondary">
+            <Clock className="h-3 w-3 mr-1" />
+            Pendente
           </Badge>
         );
-      case 'PENDENTE':
-        return <Badge variant="secondary">Pendente</Badge>;
     }
   };
 
@@ -378,14 +437,17 @@ export default function GestaoASO() {
         </Dialog>
       </div>
 
+      {/* Cards Interativos com Destaque Visual para Críticos */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md ${filterStatus === 'VALIDO' ? 'ring-2 ring-success' : 'bg-success/5 border-success/20'}`}
+          className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${filterStatus === 'VALIDO' ? 'ring-2 ring-success shadow-lg' : 'bg-success/5 border-success/20 hover:bg-success/10'}`}
           onClick={() => setFilterStatus(filterStatus === 'VALIDO' ? 'todos' : 'VALIDO')}
         >
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Heart className="h-6 w-6 text-success" />
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-success/10">
+                <Heart className="h-5 w-5 text-success" />
+              </div>
               <div>
                 <p className="text-2xl font-bold text-success">{validos}</p>
                 <p className="text-xs text-muted-foreground">Válidos</p>
@@ -395,12 +457,14 @@ export default function GestaoASO() {
         </Card>
 
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md ${filterStatus === 'VENCE_30_DIAS' ? 'ring-2 ring-warning' : 'bg-warning/5 border-warning/20'}`}
+          className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${filterStatus === 'VENCE_30_DIAS' ? 'ring-2 ring-warning shadow-lg' : 'bg-warning/5 border-warning/20 hover:bg-warning/10'} ${vencendoEm30Dias > 0 ? 'shadow-warning/20 shadow-md' : ''}`}
           onClick={() => setFilterStatus(filterStatus === 'VENCE_30_DIAS' ? 'todos' : 'VENCE_30_DIAS')}
         >
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6 text-warning" />
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full bg-warning/10 ${vencendoEm30Dias > 0 ? 'animate-pulse' : ''}`}>
+                <AlertTriangle className="h-5 w-5 text-warning" />
+              </div>
               <div>
                 <p className="text-2xl font-bold text-warning">{vencendoEm30Dias}</p>
                 <p className="text-xs text-muted-foreground">Vencem em 30d</p>
@@ -409,40 +473,52 @@ export default function GestaoASO() {
           </CardContent>
         </Card>
 
+        {/* Card Vencidos - Destaque Visual Forte */}
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md ${filterStatus === 'VENCIDO' ? 'ring-2 ring-destructive' : 'bg-destructive/5 border-destructive/20'}`}
+          className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${filterStatus === 'VENCIDO' ? 'ring-2 ring-destructive shadow-lg' : ''} ${vencidos > 0 ? 'bg-destructive/10 border-destructive shadow-destructive/30 shadow-lg border-2' : 'bg-destructive/5 border-destructive/20'}`}
           onClick={() => setFilterStatus(filterStatus === 'VENCIDO' ? 'todos' : 'VENCIDO')}
         >
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-6 w-6 text-destructive" />
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${vencidos > 0 ? 'bg-destructive/20 animate-pulse' : 'bg-destructive/10'}`}>
+                <Calendar className="h-5 w-5 text-destructive" />
+              </div>
               <div>
                 <p className="text-2xl font-bold text-destructive">{vencidos}</p>
-                <p className="text-xs text-muted-foreground">Vencidos</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  {vencidos > 0 ? '⚠️ Vencidos' : 'Vencidos'}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Card Pendentes - Destaque Visual */}
         <Card 
-          className={`cursor-pointer transition-all hover:shadow-md ${filterStatus === 'PENDENTE' ? 'ring-2 ring-secondary' : 'bg-secondary/5 border-secondary/20'}`}
+          className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${filterStatus === 'PENDENTE' ? 'ring-2 ring-orange-500 shadow-lg' : ''} ${pendentes > 0 ? 'bg-orange-500/10 border-orange-500/50 shadow-orange-500/20 shadow-md border-2' : 'bg-secondary/5 border-secondary/20'}`}
           onClick={() => setFilterStatus(filterStatus === 'PENDENTE' ? 'todos' : 'PENDENTE')}
         >
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <Clock className="h-6 w-6 text-muted-foreground" />
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${pendentes > 0 ? 'bg-orange-500/20' : 'bg-secondary/10'}`}>
+                <Clock className={`h-5 w-5 ${pendentes > 0 ? 'text-orange-500' : 'text-muted-foreground'}`} />
+              </div>
               <div>
-                <p className="text-2xl font-bold text-muted-foreground">{pendentes}</p>
-                <p className="text-xs text-muted-foreground">Pendentes</p>
+                <p className={`text-2xl font-bold ${pendentes > 0 ? 'text-orange-500' : 'text-muted-foreground'}`}>{pendentes}</p>
+                <p className="text-xs text-muted-foreground">
+                  {pendentes > 0 ? '📋 Pendentes' : 'Pendentes'}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-accent/5 border-accent/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <FileText className="h-6 w-6 text-accent" />
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-accent/10">
+                <FileText className="h-5 w-5 text-accent" />
+              </div>
               <div>
                 <p className="text-2xl font-bold text-accent">{exams.length}</p>
                 <p className="text-xs text-muted-foreground">Total</p>
@@ -461,7 +537,7 @@ export default function GestaoASO() {
             </div>
           </div>
           
-          {/* Filtro de Busca */}
+          {/* Filtros Avançados */}
           <div className="flex flex-col sm:flex-row gap-3 mt-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -472,17 +548,34 @@ export default function GestaoASO() {
                 className="pl-9"
               />
             </div>
+
+            {/* Filtro por Tipo de Exame */}
+            <Select value={filterTipoExame} onValueChange={setFilterTipoExame}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Tipo de Exame" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os tipos</SelectItem>
+                <SelectItem value="Admissional">Admissional</SelectItem>
+                <SelectItem value="Periódico">Periódico</SelectItem>
+                <SelectItem value="Demissional">Demissional</SelectItem>
+                <SelectItem value="Mudança de Função">Mudança de Função</SelectItem>
+                <SelectItem value="Retorno ao Trabalho">Retorno ao Trabalho</SelectItem>
+              </SelectContent>
+            </Select>
             
-            {(filterStatus !== 'todos' || searchTerm) && (
+            {(filterStatus !== 'todos' || filterTipoExame !== 'todos' || searchTerm) && (
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => {
                   setSearchTerm('');
                   setFilterStatus('todos');
+                  setFilterTipoExame('todos');
                 }}
                 className="text-muted-foreground"
               >
+                <RefreshCw className="h-4 w-4 mr-1" />
                 Limpar filtros
               </Button>
             )}
@@ -499,39 +592,73 @@ export default function GestaoASO() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Matrícula</TableHead>
+                  <TableHead className="w-[100px]">Matrícula</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="hidden md:table-cell">Loja</TableHead>
-                  <TableHead className="hidden lg:table-cell">Cargo</TableHead>
                   <TableHead className="hidden sm:table-cell">Tipo</TableHead>
-                  <TableHead className="hidden lg:table-cell">Último Exame</TableHead>
-                  <TableHead>Próximo Exame</TableHead>
+                  <TableHead>Vencimento</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-[50px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExams.map((exam) => (
-                  <TableRow key={exam.id} className={exam.status === 'VENCIDO' ? 'bg-destructive/5' : exam.status === 'VENCE_30_DIAS' ? 'bg-warning/5' : ''}>
+                  <TableRow 
+                    key={exam.id} 
+                    className={`transition-colors ${getRiskGradient(exam.diasRestantes, exam.status)} ${
+                      exam.status === 'VENCE_30_DIAS' ? 'bg-warning/5 border-l-4 border-l-warning' : ''
+                    }`}
+                  >
                     <TableCell className="font-mono text-xs">{exam.matricula}</TableCell>
                     <TableCell className="font-medium">{capitalizeWords(exam.nome)}</TableCell>
-                    <TableCell className="hidden md:table-cell">{exam.loja}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{exam.cargo || '-'}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">{exam.loja}</TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      <Badge variant="outline">{exam.tipoExame}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {exam.dataUltimoExame 
-                        ? new Date(exam.dataUltimoExame).toLocaleDateString('pt-BR')
-                        : '-'
-                      }
+                      <Badge variant="outline" className="text-xs">{exam.tipoExame}</Badge>
                     </TableCell>
                     <TableCell>
-                      {exam.dataProximoExame 
-                        ? new Date(exam.dataProximoExame).toLocaleDateString('pt-BR')
-                        : <span className="text-muted-foreground">Não agendado</span>
-                      }
+                      <div className="flex flex-col">
+                        <span className={exam.status === 'VENCIDO' ? 'font-medium text-destructive' : ''}>
+                          {exam.dataProximoExame 
+                            ? new Date(exam.dataProximoExame).toLocaleDateString('pt-BR')
+                            : <span className="text-muted-foreground italic">Não agendado</span>
+                          }
+                        </span>
+                        {exam.dataUltimoExame && (
+                          <span className="text-[10px] text-muted-foreground">
+                            Último: {new Date(exam.dataUltimoExame).toLocaleDateString('pt-BR')}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(exam.status, exam.diasRestantes)}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleAgendarExame(exam)}>
+                            <CalendarPlus className="h-4 w-4 mr-2" />
+                            Agendar Novo Exame
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setFormData({
+                              profissional_id: profissionais.find(p => p.matricula === exam.matricula)?.id || '',
+                              tipo_exame: exam.tipoExame,
+                              data_ultimo_exame: new Date().toISOString().split('T')[0],
+                              data_proximo_exame: '',
+                              periodicidade: exam.periodicidade || '1 ano',
+                            });
+                            setIsDialogOpen(true);
+                          }}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Registrar Renovação
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
