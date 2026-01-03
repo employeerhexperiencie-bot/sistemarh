@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileUploader } from '@/components/FileUploader';
-import { Heart, AlertTriangle, Calendar, Upload, FileText, Plus, Eye } from 'lucide-react';
+import { Heart, AlertTriangle, Calendar, Upload, FileText, Plus, Eye, Search, Filter, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuditLog } from '@/contexts/AuditLogContext';
@@ -23,8 +23,9 @@ interface ASOExam {
   dataUltimoExame: string | null;
   dataProximoExame: string | null;
   tipoExame: string;
-  status: 'VALIDO' | 'VENCIDO' | 'VENCE_30_DIAS';
+  status: 'VALIDO' | 'VENCIDO' | 'VENCE_30_DIAS' | 'PENDENTE';
   periodicidade: string | null;
+  diasRestantes: number | null;
 }
 
 interface Profissional {
@@ -40,6 +41,8 @@ export default function GestaoASO() {
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>('todos');
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     profissional_id: '',
     tipo_exame: 'Periódico',
@@ -78,7 +81,7 @@ export default function GestaoASO() {
 
       // Formatar dados dos exames
       const examesFormatados: ASOExam[] = (examesData || []).map((e: any) => {
-        const status = calculateStatus(e.data_proximo_exame);
+        const { status, diasRestantes } = calculateStatus(e.data_proximo_exame);
         return {
           id: e.id,
           matricula: e.profissionais?.matricula || '-',
@@ -90,6 +93,7 @@ export default function GestaoASO() {
           tipoExame: e.tipo_exame || 'Periódico',
           status,
           periodicidade: e.periodicidade,
+          diasRestantes,
         };
       });
 
@@ -110,18 +114,45 @@ export default function GestaoASO() {
     loadData();
   }, []);
 
-  const calculateStatus = (dataProximoExame: string | null): ASOExam['status'] => {
-    if (!dataProximoExame) return 'VENCIDO';
+  const calculateStatus = (dataProximoExame: string | null): { status: ASOExam['status']; diasRestantes: number | null } => {
+    // Se não tem data de próximo exame, é PENDENTE (precisa agendar)
+    if (!dataProximoExame) {
+      return { status: 'PENDENTE', diasRestantes: null };
+    }
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Zerar horas para comparação precisa
+    
     const proximoExame = new Date(dataProximoExame);
+    proximoExame.setHours(0, 0, 0, 0);
+    
     const diffTime = proximoExame.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) return 'VENCIDO';
-    if (diffDays <= 30) return 'VENCE_30_DIAS';
-    return 'VALIDO';
+    if (diffDays < 0) return { status: 'VENCIDO', diasRestantes: diffDays };
+    if (diffDays <= 30) return { status: 'VENCE_30_DIAS', diasRestantes: diffDays };
+    return { status: 'VALIDO', diasRestantes: diffDays };
   };
+
+  // Capitalizar nomes
+  const capitalizeWords = (str: string) => {
+    if (!str || str === '-') return str;
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Filtrar exames
+  const filteredExams = exams.filter(exam => {
+    const matchesStatus = filterStatus === 'todos' || exam.status === filterStatus;
+    const matchesSearch = searchTerm === '' || 
+      exam.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      exam.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      exam.loja.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   const handleSave = async () => {
     if (!formData.profissional_id || !formData.data_ultimo_exame) {
@@ -139,13 +170,14 @@ export default function GestaoASO() {
       const profSelecionado = profissionais.find(p => p.id === formData.profissional_id);
       const nomeProfissional = profSelecionado?.nome || 'Profissional';
 
+      const { status } = calculateStatus(formData.data_proximo_exame);
       const { data: insertedData, error } = await supabase.from('exames_aso').insert({
         profissional_id: formData.profissional_id,
         tipo_exame: formData.tipo_exame,
         data_ultimo_exame: formData.data_ultimo_exame,
         data_proximo_exame: formData.data_proximo_exame || null,
         periodicidade: formData.periodicidade,
-        status: calculateStatus(formData.data_proximo_exame),
+        status: status.toLowerCase(),
       }).select().single();
 
       if (error) throw error;
@@ -193,20 +225,31 @@ export default function GestaoASO() {
     });
   };
 
-  const getStatusBadge = (status: ASOExam['status']) => {
+  const getStatusBadge = (status: ASOExam['status'], diasRestantes?: number | null) => {
     switch (status) {
       case 'VALIDO':
         return <Badge className="bg-success/10 text-success border-success/20">Válido</Badge>;
       case 'VENCE_30_DIAS':
-        return <Badge className="bg-warning/10 text-warning border-warning/20">Vence em 30 dias</Badge>;
+        return (
+          <Badge className="bg-warning/10 text-warning border-warning/20">
+            {diasRestantes !== null ? `Vence em ${diasRestantes} dias` : 'Vence em breve'}
+          </Badge>
+        );
       case 'VENCIDO':
-        return <Badge variant="destructive">Vencido</Badge>;
+        return (
+          <Badge variant="destructive">
+            {diasRestantes !== null ? `Vencido há ${Math.abs(diasRestantes)} dias` : 'Vencido'}
+          </Badge>
+        );
+      case 'PENDENTE':
+        return <Badge variant="secondary">Pendente</Badge>;
     }
   };
 
   const vencendoEm30Dias = exams.filter(e => e.status === 'VENCE_30_DIAS').length;
   const vencidos = exams.filter(e => e.status === 'VENCIDO').length;
   const validos = exams.filter(e => e.status === 'VALIDO').length;
+  const pendentes = exams.filter(e => e.status === 'PENDENTE').length;
 
   if (isLoading) {
     return (
@@ -335,38 +378,62 @@ export default function GestaoASO() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-success/5 border-success/20">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${filterStatus === 'VALIDO' ? 'ring-2 ring-success' : 'bg-success/5 border-success/20'}`}
+          onClick={() => setFilterStatus(filterStatus === 'VALIDO' ? 'todos' : 'VALIDO')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Heart className="h-8 w-8 text-success" />
+              <Heart className="h-6 w-6 text-success" />
               <div>
                 <p className="text-2xl font-bold text-success">{validos}</p>
-                <p className="text-sm text-muted-foreground">Válidos</p>
+                <p className="text-xs text-muted-foreground">Válidos</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-warning/5 border-warning/20">
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${filterStatus === 'VENCE_30_DIAS' ? 'ring-2 ring-warning' : 'bg-warning/5 border-warning/20'}`}
+          onClick={() => setFilterStatus(filterStatus === 'VENCE_30_DIAS' ? 'todos' : 'VENCE_30_DIAS')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-8 w-8 text-warning" />
+              <AlertTriangle className="h-6 w-6 text-warning" />
               <div>
                 <p className="text-2xl font-bold text-warning">{vencendoEm30Dias}</p>
-                <p className="text-sm text-muted-foreground">Vencem em 30 dias</p>
+                <p className="text-xs text-muted-foreground">Vencem em 30d</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-destructive/5 border-destructive/20">
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${filterStatus === 'VENCIDO' ? 'ring-2 ring-destructive' : 'bg-destructive/5 border-destructive/20'}`}
+          onClick={() => setFilterStatus(filterStatus === 'VENCIDO' ? 'todos' : 'VENCIDO')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Calendar className="h-8 w-8 text-destructive" />
+              <Calendar className="h-6 w-6 text-destructive" />
               <div>
                 <p className="text-2xl font-bold text-destructive">{vencidos}</p>
-                <p className="text-sm text-muted-foreground">Vencidos</p>
+                <p className="text-xs text-muted-foreground">Vencidos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${filterStatus === 'PENDENTE' ? 'ring-2 ring-secondary' : 'bg-secondary/5 border-secondary/20'}`}
+          onClick={() => setFilterStatus(filterStatus === 'PENDENTE' ? 'todos' : 'PENDENTE')}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <Clock className="h-6 w-6 text-muted-foreground" />
+              <div>
+                <p className="text-2xl font-bold text-muted-foreground">{pendentes}</p>
+                <p className="text-xs text-muted-foreground">Pendentes</p>
               </div>
             </div>
           </CardContent>
@@ -375,10 +442,10 @@ export default function GestaoASO() {
         <Card className="bg-accent/5 border-accent/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <FileText className="h-8 w-8 text-accent" />
+              <FileText className="h-6 w-6 text-accent" />
               <div>
                 <p className="text-2xl font-bold text-accent">{exams.length}</p>
-                <p className="text-sm text-muted-foreground">Total de exames</p>
+                <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
@@ -386,15 +453,47 @@ export default function GestaoASO() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Controle de Exames ASO</CardTitle>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle>Controle de Exames ASO</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              {filteredExams.length} de {exams.length} exames
+            </div>
+          </div>
+          
+          {/* Filtro de Busca */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, matrícula ou loja..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            {(filterStatus !== 'todos' || searchTerm) && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterStatus('todos');
+                }}
+                className="text-muted-foreground"
+              >
+                Limpar filtros
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          {exams.length === 0 ? (
+          {filteredExams.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhum exame cadastrado</p>
-              <p className="text-sm">Clique em "Cadastrar ASO" para adicionar</p>
+              <p>{exams.length === 0 ? 'Nenhum exame cadastrado' : 'Nenhum exame encontrado com os filtros aplicados'}</p>
+              <p className="text-sm">{exams.length === 0 ? 'Clique em "Cadastrar ASO" para adicionar' : 'Tente ajustar os filtros'}</p>
             </div>
           ) : (
             <Table>
@@ -402,25 +501,25 @@ export default function GestaoASO() {
                 <TableRow>
                   <TableHead>Matrícula</TableHead>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Loja</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Último Exame</TableHead>
+                  <TableHead className="hidden md:table-cell">Loja</TableHead>
+                  <TableHead className="hidden lg:table-cell">Cargo</TableHead>
+                  <TableHead className="hidden sm:table-cell">Tipo</TableHead>
+                  <TableHead className="hidden lg:table-cell">Último Exame</TableHead>
                   <TableHead>Próximo Exame</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {exams.map((exam) => (
-                  <TableRow key={exam.id}>
-                    <TableCell className="font-mono">{exam.matricula}</TableCell>
-                    <TableCell className="font-medium">{exam.nome}</TableCell>
-                    <TableCell>{exam.loja}</TableCell>
-                    <TableCell>{exam.cargo}</TableCell>
-                    <TableCell>
+                {filteredExams.map((exam) => (
+                  <TableRow key={exam.id} className={exam.status === 'VENCIDO' ? 'bg-destructive/5' : exam.status === 'VENCE_30_DIAS' ? 'bg-warning/5' : ''}>
+                    <TableCell className="font-mono text-xs">{exam.matricula}</TableCell>
+                    <TableCell className="font-medium">{capitalizeWords(exam.nome)}</TableCell>
+                    <TableCell className="hidden md:table-cell">{exam.loja}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{exam.cargo || '-'}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant="outline">{exam.tipoExame}</Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       {exam.dataUltimoExame 
                         ? new Date(exam.dataUltimoExame).toLocaleDateString('pt-BR')
                         : '-'
@@ -429,10 +528,10 @@ export default function GestaoASO() {
                     <TableCell>
                       {exam.dataProximoExame 
                         ? new Date(exam.dataProximoExame).toLocaleDateString('pt-BR')
-                        : '-'
+                        : <span className="text-muted-foreground">Não agendado</span>
                       }
                     </TableCell>
-                    <TableCell>{getStatusBadge(exam.status)}</TableCell>
+                    <TableCell>{getStatusBadge(exam.status, exam.diasRestantes)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
