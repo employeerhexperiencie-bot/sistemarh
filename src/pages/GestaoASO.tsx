@@ -12,6 +12,7 @@ import { FileUploader } from '@/components/FileUploader';
 import { Heart, AlertTriangle, Calendar, Upload, FileText, Plus, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuditLog } from '@/contexts/AuditLogContext';
 
 interface ASOExam {
   id: string;
@@ -48,6 +49,7 @@ export default function GestaoASO() {
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { addLog } = useAuditLog();
 
   const loadData = async () => {
     setIsLoading(true);
@@ -133,16 +135,33 @@ export default function GestaoASO() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('exames_aso').insert({
+      // Encontrar nome do profissional selecionado
+      const profSelecionado = profissionais.find(p => p.id === formData.profissional_id);
+      const nomeProfissional = profSelecionado?.nome || 'Profissional';
+
+      const { data: insertedData, error } = await supabase.from('exames_aso').insert({
         profissional_id: formData.profissional_id,
         tipo_exame: formData.tipo_exame,
         data_ultimo_exame: formData.data_ultimo_exame,
         data_proximo_exame: formData.data_proximo_exame || null,
         periodicidade: formData.periodicidade,
         status: calculateStatus(formData.data_proximo_exame),
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Registrar atividade
+      addLog({
+        usuario: 'Sistema',
+        acao: 'CRIAR',
+        modulo: 'ASO',
+        entidade: nomeProfissional,
+        detalhes: `Exame ASO "${formData.tipo_exame}" cadastrado para ${nomeProfissional}`,
+        metadata: { 
+          id: insertedData?.id,
+          dados_novos: formData
+        }
+      });
 
       toast({
         title: "Sucesso",

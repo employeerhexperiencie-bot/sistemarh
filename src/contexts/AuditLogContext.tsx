@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AuditLogEntry {
   id: string;
   timestamp: string;
   usuario: string;
   acao: 'CRIAR' | 'EDITAR' | 'EXCLUIR' | 'VISUALIZAR' | 'EXPORTAR';
-  modulo: 'PROFISSIONAIS' | 'LOJAS' | 'VALES' | 'ADVERTENCIAS' | 'DOCUMENTOS' | 'FERIAS' | 'FALTAS' | 'ASO' | 'FOLHA' | 'AFASTAMENTOS' | 'EPI';
+  modulo: 'PROFISSIONAIS' | 'LOJAS' | 'VALES' | 'ADVERTENCIAS' | 'DOCUMENTOS' | 'FERIAS' | 'FALTAS' | 'ASO' | 'FOLHA' | 'AFASTAMENTOS' | 'EPI' | 'BENEFICIOS' | 'EMPRESTIMOS';
   entidade: string; // Nome ou identificador da entidade afetada
   detalhes: string;
   metadata?: Record<string, any>;
@@ -46,18 +47,52 @@ export const AuditLogProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [logs]);
 
-  const addLog = (log: Omit<AuditLogEntry, 'id' | 'timestamp'>) => {
+  // Função auxiliar para mapear ação para o formato do banco
+  const mapAcaoToBanco = (acao: AuditLogEntry['acao']): string => {
+    switch (acao) {
+      case 'CRIAR': return 'criacao';
+      case 'EDITAR': return 'atualizacao';
+      case 'EXCLUIR': return 'exclusao';
+      case 'VISUALIZAR': return 'visualizacao';
+      case 'EXPORTAR': return 'exportacao';
+      default: return 'outro';
+    }
+  };
+
+  // Função auxiliar para mapear módulo para o formato do banco
+  const mapModuloToBanco = (modulo: AuditLogEntry['modulo']): string => {
+    return modulo.toLowerCase();
+  };
+
+  const addLog = async (log: Omit<AuditLogEntry, 'id' | 'timestamp'>) => {
     const newLog: AuditLogEntry = {
       id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
       ...log,
     };
 
+    // Atualizar estado local
     setLogs(prevLogs => {
       const updatedLogs = [newLog, ...prevLogs];
-      // Manter apenas os últimos MAX_LOGS registros
       return updatedLogs.slice(0, MAX_LOGS);
     });
+
+    // Persistir no Supabase (assíncrono, não bloqueia UI)
+    try {
+      await supabase.from('historico_acoes').insert({
+        acao: mapAcaoToBanco(log.acao),
+        modulo: mapModuloToBanco(log.modulo),
+        entidade_tipo: log.modulo,
+        entidade_id: log.metadata?.id || newLog.id,
+        entidade_nome: log.entidade,
+        descricao: log.detalhes,
+        usuario: log.usuario,
+        dados_anteriores: log.metadata?.dados_anteriores || null,
+        dados_novos: log.metadata?.dados_novos || null
+      });
+    } catch (error) {
+      console.error('Erro ao salvar log no Supabase:', error);
+    }
   };
 
   const clearLogs = () => {

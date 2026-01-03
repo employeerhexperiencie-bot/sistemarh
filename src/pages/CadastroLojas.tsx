@@ -11,6 +11,7 @@ import { Plus, Building2, Edit, Trash2, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentUploader } from '@/components/DocumentUploader';
+import { useAuditLog } from '@/contexts/AuditLogContext';
 
 interface Loja {
   id: string;
@@ -39,6 +40,7 @@ export const CadastroLojas: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { addLog } = useAuditLog();
 
   const loadLojas = async () => {
     try {
@@ -73,12 +75,27 @@ export const CadastroLojas: React.FC = () => {
     try {
       if (editingLoja) {
         // Update existing loja
+        const dadosAnteriores = { ...editingLoja };
         const { error } = await supabase
           .from('lojas')
           .update(formData)
           .eq('id', editingLoja.id);
 
         if (error) throw error;
+        
+        // Registrar atividade de atualização
+        addLog({
+          usuario: 'Sistema',
+          acao: 'EDITAR',
+          modulo: 'LOJAS',
+          entidade: formData.nome,
+          detalhes: `Loja "${formData.nome}" atualizada`,
+          metadata: { 
+            id: editingLoja.id,
+            dados_anteriores: dadosAnteriores,
+            dados_novos: formData
+          }
+        });
         
         toast({
           title: "Sucesso",
@@ -96,6 +113,19 @@ export const CadastroLojas: React.FC = () => {
           .single();
 
         if (error) throw error;
+
+        // Registrar atividade de criação
+        addLog({
+          usuario: 'Sistema',
+          acao: 'CRIAR',
+          modulo: 'LOJAS',
+          entidade: formData.nome,
+          detalhes: `Loja "${formData.nome}" cadastrada`,
+          metadata: { 
+            id: data.id,
+            dados_novos: formData
+          }
+        });
 
         toast({
           title: "Sucesso",

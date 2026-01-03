@@ -12,6 +12,7 @@ import { FileUploader } from '@/components/FileUploader';
 import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuditLog } from '@/contexts/AuditLogContext';
 
 interface Afastamento {
   id: string;
@@ -43,6 +44,7 @@ export default function GestaoAfastamentos() {
   const [editingAfastamento, setEditingAfastamento] = useState<Afastamento | null>(null);
   const [formData, setFormData] = useState<Partial<Afastamento>>({ status: 'ATIVO' });
   const [saving, setSaving] = useState(false);
+  const { addLog } = useAuditLog();
 
   useEffect(() => {
     loadData();
@@ -123,13 +125,37 @@ export default function GestaoAfastamentos() {
           .eq('id', editingAfastamento.id);
         
         if (error) throw error;
+        
+        // Registrar atividade de atualização
+        addLog({
+          usuario: 'Sistema',
+          acao: 'EDITAR',
+          modulo: 'AFASTAMENTOS',
+          entidade: formData.nome || 'Profissional',
+          detalhes: `Afastamento de "${formData.nome}" atualizado`,
+          metadata: { id: editingAfastamento.id, dados_novos: afastamentoData }
+        });
+        
         toast.success('Afastamento atualizado com sucesso!');
       } else {
-        const { error } = await supabase
+        const { data: insertedData, error } = await supabase
           .from('afastamentos')
-          .insert(afastamentoData);
+          .insert(afastamentoData)
+          .select()
+          .single();
         
         if (error) throw error;
+        
+        // Registrar atividade de criação
+        addLog({
+          usuario: 'Sistema',
+          acao: 'CRIAR',
+          modulo: 'AFASTAMENTOS',
+          entidade: formData.nome || 'Profissional',
+          detalhes: `Afastamento registrado para "${formData.nome}" - ${formData.motivo}`,
+          metadata: { id: insertedData?.id, dados_novos: afastamentoData }
+        });
+        
         toast.success('Afastamento registrado com sucesso!');
       }
 
