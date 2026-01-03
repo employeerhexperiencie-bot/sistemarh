@@ -1,29 +1,50 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   CreditCard, TrendingUp, Users, FileText, AlertTriangle, 
   DollarSign, Building2, Calendar, Package, Clock, UserX,
-  ArrowUpRight, ArrowDownRight, ChevronRight, Bus, Utensils, ShoppingBasket
+  ChevronRight, Bus, Utensils, ShoppingBasket
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AlertasResumo } from '@/components/alertas/AlertasAutomaticos';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { LojaComparison } from '@/components/LojaComparison';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+// Interface para atividades recentes
+interface AtividadeRecente {
+  id: string;
+  acao: string;
+  modulo: string;
+  descricao: string;
+  entidade_nome: string | null;
+  created_at: string;
+}
+
+// Interface para EPIs
+interface EpisStats {
+  total: number;
+  emUso: number;
+  vencidos: number;
+  percentualOk: number;
+}
 
 // KPI Card Component
 interface KPICardProps {
   title: string;
   value: string;
   subtitle?: string;
-  trend?: { value: string; positive: boolean };
   icon: React.ElementType;
   iconColor: string;
   onClick?: () => void;
 }
 
-function KPICard({ title, value, subtitle, trend, icon: Icon, iconColor, onClick }: KPICardProps) {
+function KPICard({ title, value, subtitle, icon: Icon, iconColor, onClick }: KPICardProps) {
   return (
     <Card 
       className="card-interactive cursor-pointer group" 
@@ -36,18 +57,6 @@ function KPICard({ title, value, subtitle, trend, icon: Icon, iconColor, onClick
             <p className="text-2xl font-bold tracking-tight">{value}</p>
             {subtitle && (
               <p className="text-xs text-muted-foreground">{subtitle}</p>
-            )}
-            {trend && (
-              <div className={`inline-flex items-center gap-1 text-xs font-medium ${
-                trend.positive ? 'text-success' : 'text-destructive'
-              }`}>
-                {trend.positive ? (
-                  <ArrowUpRight className="h-3 w-3" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3" />
-                )}
-                {trend.value}
-              </div>
             )}
           </div>
           <div className={`p-3 rounded-xl ${iconColor} transition-transform group-hover:scale-110`}>
@@ -92,6 +101,51 @@ function StatCard({ title, value, icon: Icon, gradient, onClick }: StatCardProps
 export function Dashboard() {
   const navigate = useNavigate();
   const data = useSupabaseData();
+  const [atividades, setAtividades] = useState<AtividadeRecente[]>([]);
+  const [episStats, setEpisStats] = useState<EpisStats>({ total: 0, emUso: 0, vencidos: 0, percentualOk: 0 });
+  const [loadingExtras, setLoadingExtras] = useState(true);
+
+  // Buscar dados extras (atividades e EPIs)
+  useEffect(() => {
+    const fetchExtras = async () => {
+      try {
+        // Buscar atividades recentes
+        const { data: atividadesData } = await supabase
+          .from('historico_acoes')
+          .select('id, acao, modulo, descricao, entidade_nome, created_at')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (atividadesData) {
+          setAtividades(atividadesData);
+        }
+
+        // Buscar estatísticas de EPIs
+        const { data: episData } = await supabase
+          .from('epis')
+          .select('id, status, data_validade');
+
+        if (episData) {
+          const total = episData.length;
+          const hoje = new Date();
+          const vencidos = episData.filter(e => 
+            e.status === 'vencido' || 
+            (e.data_validade && new Date(e.data_validade) < hoje)
+          ).length;
+          const emUso = episData.filter(e => e.status === 'em_uso').length;
+          const percentualOk = total > 0 ? Math.round(((total - vencidos) / total) * 100) : 100;
+          
+          setEpisStats({ total, emUso, vencidos, percentualOk });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados extras:', error);
+      } finally {
+        setLoadingExtras(false);
+      }
+    };
+
+    fetchExtras();
+  }, []);
   
   // Loading state
   if (data.isLoading) {
@@ -147,23 +201,20 @@ export function Dashboard() {
   const kpis = {
     vales: { 
       value: `R$ ${(valesEstimados / 1000).toFixed(1)}k`, 
-      count: Math.floor(data.totalProfissionais * 0.7), 
-      trend: '+12%' 
+      count: beneficios.length
     },
     adiantamentos: { 
       value: `R$ ${(adiantamento20 / 1000).toFixed(1)}k`, 
-      count: Math.floor(data.totalProfissionais * 0.5), 
-      trend: '+8%' 
+      count: data.totalProfissionais
     },
     totalReceber: { 
       value: `R$ ${(totalSalarios / 1000).toFixed(1)}k`, 
-      count: data.totalProfissionais, 
-      trend: '+7%' 
+      count: data.totalProfissionais
     },
     holerites: { 
       gerados: data.totalProfissionais, 
-      enviados: Math.floor(data.totalProfissionais * 0.9), 
-      assinados: Math.floor(data.totalProfissionais * 0.8) 
+      enviados: 0, 
+      assinados: 0 
     },
     faltas: { 
       total: totalFaltas, 
@@ -190,7 +241,6 @@ export function Dashboard() {
           title="Vales"
           value={kpis.vales.value}
           subtitle={`${kpis.vales.count} lançamentos`}
-          trend={{ value: kpis.vales.trend, positive: true }}
           icon={CreditCard}
           iconColor="bg-primary/10 text-primary"
           onClick={() => navigate('/painel-loja?tipo=vales')}
@@ -200,7 +250,6 @@ export function Dashboard() {
           title="Adiantamentos"
           value={kpis.adiantamentos.value}
           subtitle={`${kpis.adiantamentos.count} lançamentos`}
-          trend={{ value: kpis.adiantamentos.trend, positive: true }}
           icon={TrendingUp}
           iconColor="bg-accent/10 text-accent"
           onClick={() => navigate('/painel-loja?tipo=adiantamentos')}
@@ -210,7 +259,6 @@ export function Dashboard() {
           title="Total a Receber"
           value={kpis.totalReceber.value}
           subtitle={`${kpis.totalReceber.count} funcionários`}
-          trend={{ value: kpis.totalReceber.trend, positive: true }}
           icon={DollarSign}
           iconColor="bg-success/10 text-success"
           onClick={() => navigate('/painel-loja')}
@@ -302,9 +350,12 @@ export function Dashboard() {
 
         <StatCard
           title="EPIs OK"
-          value="95%"
+          value={episStats.total > 0 ? `${episStats.percentualOk}%` : '-'}
           icon={Package}
-          gradient="bg-gradient-to-br from-success/20 to-success/5 text-success"
+          gradient={episStats.vencidos > 0 
+            ? "bg-gradient-to-br from-warning/20 to-warning/5 text-warning"
+            : "bg-gradient-to-br from-success/20 to-success/5 text-success"
+          }
           onClick={() => navigate('/gestao-epi')}
         />
       </div>
@@ -423,30 +474,54 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ActivityItem
-              color="bg-primary"
-              title="Vale lançado - BROOKLIN"
-              time="Há 5 minutos"
-              badge={{ text: 'R$ 450', variant: 'primary' }}
-            />
-            <ActivityItem
-              color="bg-info"
-              title="Holerite enviado - CENTRO"
-              time="Há 12 minutos"
-              badge={{ text: 'Dezembro/2024', variant: 'secondary' }}
-            />
-            <ActivityItem
-              color="bg-success"
-              title="Férias agendadas - MORUMBI"
-              time="Há 18 minutos"
-              badge={{ text: '15 dias', variant: 'success' }}
-            />
-            <ActivityItem
-              color="bg-warning"
-              title="Falta registrada - TATUAPÉ"
-              time="Há 35 minutos"
-              badge={{ text: 'INJUST', variant: 'warning' }}
-            />
+            {loadingExtras ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : atividades.length > 0 ? (
+              atividades.map((atividade) => {
+                const getColor = () => {
+                  switch (atividade.modulo) {
+                    case 'profissionais': return 'bg-primary';
+                    case 'lojas': return 'bg-info';
+                    case 'beneficios': return 'bg-success';
+                    case 'faltas': return 'bg-warning';
+                    case 'ferias': return 'bg-accent';
+                    default: return 'bg-muted-foreground';
+                  }
+                };
+                const getVariant = (): 'primary' | 'secondary' | 'success' | 'warning' => {
+                  switch (atividade.acao) {
+                    case 'criacao': return 'success';
+                    case 'atualizacao': return 'primary';
+                    case 'exclusao': return 'warning';
+                    default: return 'secondary';
+                  }
+                };
+                return (
+                  <ActivityItem
+                    key={atividade.id}
+                    color={getColor()}
+                    title={atividade.descricao}
+                    time={formatDistanceToNow(new Date(atividade.created_at), { 
+                      addSuffix: true, 
+                      locale: ptBR 
+                    })}
+                    badge={{ 
+                      text: atividade.acao.toUpperCase(), 
+                      variant: getVariant()
+                    }}
+                  />
+                );
+              })
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhuma atividade registrada</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
