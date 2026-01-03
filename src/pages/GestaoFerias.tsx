@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuditLog } from '@/contexts/AuditLogContext';
 
 interface Vacation {
   id: string;
@@ -38,6 +39,7 @@ export default function GestaoFerias() {
     status: 'PENDENTE'
   });
   const [saving, setSaving] = useState(false);
+  const { addLog } = useAuditLog();
 
   useEffect(() => {
     loadData();
@@ -144,13 +146,37 @@ export default function GestaoFerias() {
           .eq('id', editingVacation.id);
         
         if (error) throw error;
+        
+        // Registrar atividade de atualização
+        addLog({
+          usuario: 'Sistema',
+          acao: 'EDITAR',
+          modulo: 'FERIAS',
+          entidade: formData.nome || 'Profissional',
+          detalhes: `Férias de "${formData.nome}" atualizadas`,
+          metadata: { id: editingVacation.id, dados_novos: feriasData }
+        });
+        
         toast.success('Férias atualizadas com sucesso!');
       } else {
-        const { error } = await supabase
+        const { data: insertedData, error } = await supabase
           .from('ferias')
-          .insert(feriasData);
+          .insert(feriasData)
+          .select()
+          .single();
         
         if (error) throw error;
+        
+        // Registrar atividade de criação
+        addLog({
+          usuario: 'Sistema',
+          acao: 'CRIAR',
+          modulo: 'FERIAS',
+          entidade: formData.nome || 'Profissional',
+          detalhes: `Férias cadastradas para "${formData.nome}"`,
+          metadata: { id: insertedData?.id, dados_novos: feriasData }
+        });
+        
         toast.success('Férias cadastradas com sucesso!');
       }
 
