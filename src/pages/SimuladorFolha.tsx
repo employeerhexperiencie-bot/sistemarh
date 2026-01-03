@@ -14,8 +14,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { 
   Calculator, DollarSign, Calendar, Bus, Utensils, ShoppingBasket,
   TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet,
-  FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info, ChevronRight
+  FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info, ChevronRight,
+  MoreHorizontal, FileDown, Sparkles
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { RelatorioFolha } from '@/components/folha/RelatorioFolha';
 import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
 import { GestaoEmprestimos } from '@/components/folha/GestaoEmprestimos';
@@ -212,18 +219,45 @@ const calcularProfissional = (
 
 type CardType = 'dia20' | 'dia5' | 'vt' | 'vr' | 'cesta' | 'total' | 'funcionarios' | null;
 
-// Summary Card Component
-function SummaryCard({ icon: Icon, label, value, color, onClick, clickable = true }: {
+// Summary Card Component - Padrão
+function SummaryCard({ icon: Icon, label, value, color, onClick, clickable = true, variant = 'default' }: {
   icon: React.ElementType;
   label: string;
   value: string;
   color: string;
   onClick?: () => void;
   clickable?: boolean;
+  variant?: 'default' | 'primary' | 'secondary';
 }) {
+  const baseClasses = "overflow-hidden transition-all";
+  const clickableClasses = clickable ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : '';
+  
+  // Card destacado para Total Geral
+  if (variant === 'primary') {
+    return (
+      <Card 
+        className={`${baseClasses} ${clickableClasses} col-span-2 sm:col-span-2 lg:col-span-1 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg`}
+        onClick={onClick}
+      >
+        <CardContent className="p-5">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/20 text-primary shadow-inner">
+              <Icon className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-primary/80">{label}</p>
+              <p className="text-2xl font-bold tracking-tight text-primary">{value}</p>
+            </div>
+            {clickable && <ChevronRight className="h-5 w-5 text-primary/60" />}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
     <Card 
-      className={`overflow-hidden transition-all ${clickable ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : ''}`}
+      className={`${baseClasses} ${clickableClasses}`}
       onClick={onClick}
     >
       <CardContent className="p-4">
@@ -239,6 +273,39 @@ function SummaryCard({ icon: Icon, label, value, color, onClick, clickable = tru
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// Status Checklist Compacto
+function DataStatusBadge({ 
+  isComplete, 
+  profissionais, 
+  lojas 
+}: { 
+  isComplete: boolean; 
+  profissionais: number; 
+  lojas: number;
+}) {
+  if (isComplete) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20">
+        <CheckCircle2 className="h-4 w-4 text-success" />
+        <span className="text-sm font-medium text-success">
+          Dados validados • {profissionais} profissionais • {lojas} lojas
+        </span>
+      </div>
+    );
+  }
+  
+  return (
+    <Link to="/carregar-dados-adicionais">
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 transition-colors cursor-pointer">
+        <AlertTriangle className="h-4 w-4 text-destructive" />
+        <span className="text-sm font-medium text-destructive">
+          Dados incompletos - Clique para resolver
+        </span>
+      </div>
+    </Link>
   );
 }
 
@@ -446,159 +513,80 @@ export default function SimuladorFolha() {
 
   return (
     <div className="space-y-6 max-w-[1800px] mx-auto">
-      {/* Status de Validação de Dados */}
-      {dadosCompletos ? (
-        <Alert className="border-success bg-success/5">
-          <CheckCircle2 className="h-5 w-5 text-success" />
-          <AlertTitle className="text-success font-semibold">Dados Validados e Completos</AlertTitle>
-          <AlertDescription>
-            <div className="mt-2 space-y-1 text-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Profissionais: {supabaseData.totalProfissionais} • Lojas: {supabaseData.totalLojas}</span>
-                {validacaoDados.timestampAtivos && (
-                  <span className="text-xs text-muted-foreground">
-                    (Sistema atualizado)
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>BASE_ASO.xlsx carregado</span>
-                {validacaoDados.timestampASO && (
-                  <span className="text-xs text-muted-foreground">
-                    (Carregado: {new Date(validacaoDados.timestampASO).toLocaleString('pt-BR')})
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>BASE_Beneficios.xlsx carregado</span>
-                {validacaoDados.timestampBeneficios && (
-                  <span className="text-xs text-muted-foreground">
-                    (Carregado: {new Date(validacaoDados.timestampBeneficios).toLocaleString('pt-BR')})
-                  </span>
-                )}
-              </div>
-            </div>
-            <p className="mt-3 text-sm font-medium text-success">
-              ✓ Sistema pronto para gerar folha de pagamento e holerites confiáveis
-            </p>
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <Alert className="border-destructive bg-destructive/5">
-          <AlertTriangle className="h-5 w-5 text-destructive" />
-          <AlertTitle className="text-destructive font-semibold">Dados Incompletos - Ação Necessária</AlertTitle>
-          <AlertDescription>
-            <div className="mt-2 space-y-1 text-sm">
-              <div className="flex items-center gap-2">
-                {validacaoDados.ativosCarregados ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-destructive" />
-                )}
-                <span className={validacaoDados.ativosCarregados ? 'text-success' : 'text-destructive'}>
-                  ATIVOS.xlsx {validacaoDados.ativosCarregados ? '(carregado)' : '(não carregado)'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {validacaoDados.asoCarregados ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-destructive" />
-                )}
-                <span className={validacaoDados.asoCarregados ? 'text-success' : 'text-destructive'}>
-                  BASE_ASO.xlsx {validacaoDados.asoCarregados ? '(carregado)' : '(não carregado)'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {validacaoDados.beneficiosCarregados ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-destructive" />
-                )}
-                <span className={validacaoDados.beneficiosCarregados ? 'text-success' : 'text-destructive'}>
-                  BASE_Beneficios.xlsx {validacaoDados.beneficiosCarregados ? '(carregado)' : '(não carregado)'}
-                </span>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-3">
-              <Link to="/carregar-dados-adicionais">
-                <Button size="sm" variant="destructive">
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Carregar Dados Faltantes
-                </Button>
-              </Link>
-              <Link to="/validacao-dados">
-                <Button size="sm" variant="outline">
-                  <Info className="h-4 w-4 mr-2" />
-                  Ver Relatório de Validação
-                </Button>
-              </Link>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {/* Header */}
+      {/* Header com Status Compacto */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Simulador de Folha</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {lojas.length} lojas • {profissionais.length} funcionários
-          </p>
+          <DataStatusBadge 
+            isComplete={dadosCompletos} 
+            profissionais={supabaseData.totalProfissionais} 
+            lojas={supabaseData.totalLojas} 
+          />
         </div>
-        <Button onClick={exportarCSV} className="gap-2">
-          <Download className="h-4 w-4" />
-          Exportar CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={exportarCSV} className="gap-2">
+            <FileDown className="h-4 w-4" />
+            Exportar Detalhamento da Folha - CSV
+          </Button>
+          <Button variant="default" className="gap-2 bg-primary">
+            <Sparkles className="h-4 w-4" />
+            Finalizar e Gerar Holerites
+          </Button>
+        </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 stagger-children">
+      {/* Summary Cards - Total Geral em destaque */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 stagger-children">
+        {/* Card Primário - Total Geral */}
+        <SummaryCard
+          icon={TrendingUp}
+          label="Total Geral da Folha"
+          value={formatCurrency(totaisGerais.totalGeral)}
+          color="bg-primary/10 text-primary"
+          onClick={() => setSelectedCardType('total')}
+          variant="primary"
+        />
+        
+        {/* Adiantamentos - Azul */}
         <SummaryCard
           icon={Calendar}
-          label="Dia 20"
+          label="Dia 20 (Adiant.)"
           value={formatCurrency(totaisGerais.totalDia20)}
-          color="bg-success/10 text-success"
+          color="bg-blue-500/10 text-blue-600"
           onClick={() => setSelectedCardType('dia20')}
         />
         <SummaryCard
           icon={DollarSign}
-          label="Dia 5"
+          label="Dia 5 (Salário)"
           value={formatCurrency(totaisGerais.totalDia5)}
-          color="bg-primary/10 text-primary"
+          color="bg-blue-600/10 text-blue-700"
           onClick={() => setSelectedCardType('dia5')}
         />
+        
+        {/* Benefícios - Verde */}
         <SummaryCard
           icon={Bus}
-          label="Total VT"
+          label="Vale Transporte"
           value={formatCurrency(totaisGerais.totalVT)}
-          color="bg-info/10 text-info"
+          color="bg-emerald-500/10 text-emerald-600"
           onClick={() => setSelectedCardType('vt')}
         />
         <SummaryCard
           icon={Utensils}
-          label="Total VR"
+          label="Vale Refeição"
           value={formatCurrency(totaisGerais.totalVR)}
-          color="bg-warning/10 text-warning"
+          color="bg-emerald-600/10 text-emerald-700"
           onClick={() => setSelectedCardType('vr')}
         />
         <SummaryCard
           icon={ShoppingBasket}
           label="Cesta Básica"
           value={formatCurrency(totaisGerais.totalCesta)}
-          color="bg-orange-500/10 text-orange-600"
+          color="bg-emerald-700/10 text-emerald-800"
           onClick={() => setSelectedCardType('cesta')}
         />
-        <SummaryCard
-          icon={TrendingUp}
-          label="Total Geral"
-          value={formatCurrency(totaisGerais.totalGeral)}
-          color="bg-accent/10 text-accent"
-          onClick={() => setSelectedCardType('total')}
-        />
+        
+        {/* Funcionários */}
         <SummaryCard
           icon={Users}
           label="Funcionários"
@@ -608,38 +596,104 @@ export default function SimuladorFolha() {
         />
       </div>
 
-      {/* Tabs */}
+      {/* Barra de Filtros Fixa */}
+      <Card className="sticky top-0 z-10 shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[180px] max-w-[250px]">
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Competência</Label>
+              <Input
+                type="month"
+                value={competencia}
+                onChange={(e) => setCompetencia(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="flex-1 min-w-[180px] max-w-[250px]">
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Loja</Label>
+              <Select value={lojaSelecionada} onValueChange={setLojaSelecionada}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Todas as lojas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as lojas</SelectItem>
+                  {lojas.map(l => (
+                    <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 min-w-[180px] max-w-[250px]">
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Status</Label>
+              <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os status</SelectItem>
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="ferias">Em Férias</SelectItem>
+                  <SelectItem value="afastado_acidente">Afastados (Acidente)</SelectItem>
+                  <SelectItem value="afastado_doenca">Afastados (Doença)</SelectItem>
+                  <SelectItem value="licenca_maternidade">Licença Maternidade</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs - Reorganizadas */}
       <Tabs defaultValue="lojas" className="space-y-4">
-        <TabsList className="bg-muted/50 p-1 flex-wrap h-auto gap-1">
-          <TabsTrigger value="lojas" className="gap-2 data-[state=active]:bg-background">
-            <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Por Loja</span>
-          </TabsTrigger>
-          <TabsTrigger value="funcionarios" className="gap-2 data-[state=active]:bg-background">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Por Funcionário</span>
-          </TabsTrigger>
-          <TabsTrigger value="adiantamento" className="gap-2 data-[state=active]:bg-background">
-            <TrendingUp className="h-4 w-4" />
-            <span className="hidden sm:inline">Adiantamento</span>
-          </TabsTrigger>
-          <TabsTrigger value="relatorio" className="gap-2 data-[state=active]:bg-background">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Relatório Geral</span>
-          </TabsTrigger>
-          <TabsTrigger value="decimo" className="gap-2 data-[state=active]:bg-background">
-            <Gift className="h-4 w-4" />
-            <span className="hidden sm:inline">13º Salário</span>
-          </TabsTrigger>
-          <TabsTrigger value="emprestimos" className="gap-2 data-[state=active]:bg-background">
-            <Banknote className="h-4 w-4" />
-            <span className="hidden sm:inline">Empréstimos</span>
-          </TabsTrigger>
-          <TabsTrigger value="config" className="gap-2 data-[state=active]:bg-background">
+        <div className="flex items-center justify-between">
+          <TabsList className="bg-muted/50 p-1 h-auto gap-1">
+            <TabsTrigger value="lojas" className="gap-2 data-[state=active]:bg-background">
+              <Building2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Por Loja</span>
+            </TabsTrigger>
+            <TabsTrigger value="funcionarios" className="gap-2 data-[state=active]:bg-background">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Por Funcionário</span>
+            </TabsTrigger>
+            <TabsTrigger value="adiantamento" className="gap-2 data-[state=active]:bg-background">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">Adiantamento</span>
+            </TabsTrigger>
+            <TabsTrigger value="relatorio" className="gap-2 data-[state=active]:bg-background">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Relatório Geral</span>
+            </TabsTrigger>
+            
+            {/* Menu Lançamentos Especiais */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 h-9 px-3">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Lançamentos Especiais</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover">
+                <DropdownMenuItem asChild>
+                  <TabsTrigger value="decimo" className="w-full justify-start gap-2 cursor-pointer">
+                    <Gift className="h-4 w-4" />
+                    13º Salário
+                  </TabsTrigger>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <TabsTrigger value="emprestimos" className="w-full justify-start gap-2 cursor-pointer">
+                    <Banknote className="h-4 w-4" />
+                    Empréstimos
+                  </TabsTrigger>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TabsList>
+          
+          {/* Ícone de Configurações */}
+          <TabsTrigger value="config" className="gap-2 data-[state=active]:bg-background rounded-lg border border-transparent hover:border-border">
             <Settings2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Config</span>
           </TabsTrigger>
-        </TabsList>
+        </div>
 
         {/* By Store Tab */}
         <TabsContent value="lojas" className="space-y-4 animate-fade-in">
@@ -717,45 +771,7 @@ export default function SimuladorFolha() {
 
         {/* By Employee Tab */}
         <TabsContent value="funcionarios" className="space-y-4 animate-fade-in">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-wrap gap-4">
-                <div className="flex-1 min-w-[200px]">
-                  <Label className="text-xs text-muted-foreground mb-1.5 block">Loja</Label>
-                  <Select value={lojaSelecionada} onValueChange={setLojaSelecionada}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Todas as lojas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todas">Todas as lojas</SelectItem>
-                      {lojas.map(l => (
-                        <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <Label className="text-xs text-muted-foreground mb-1.5 block">Status</Label>
-                  <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Todos os status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos os status</SelectItem>
-                      <SelectItem value="ativo">Ativos</SelectItem>
-                      <SelectItem value="ferias">Em Férias</SelectItem>
-                      <SelectItem value="afastado_acidente">Afastados (Acidente)</SelectItem>
-                      <SelectItem value="afastado_doenca">Afastados (Doença)</SelectItem>
-                      <SelectItem value="licenca_maternidade">Licença Maternidade</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Table */}
+          {/* Table - Filtros movidos para barra fixa */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
