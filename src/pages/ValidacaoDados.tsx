@@ -4,8 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, CheckCircle, Download, RefreshCw, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Download, RefreshCw, Info, Database } from 'lucide-react';
 import { toast } from 'sonner';
+import { useDataValidation, DataInconsistency } from '@/hooks/useDataValidation';
 
 interface Inconsistencia {
   tipo: string;
@@ -27,6 +28,14 @@ export default function ValidacaoDados() {
     timestampASO: null as string | null,
     timestampBeneficios: null as string | null,
   });
+  
+  // Hook de validação do banco de dados
+  const { 
+    isLoading: isLoadingDB, 
+    validationResult, 
+    validarDados: validarBanco,
+    inconsistencias: inconsistenciasDB 
+  } = useDataValidation();
 
   useEffect(() => {
     // Verificar status dos dados carregados
@@ -405,10 +414,14 @@ export default function ValidacaoDados() {
       </Card>
 
       {/* Tabs com diferentes visualizações */}
-      <Tabs defaultValue="todas" className="w-full">
+      <Tabs defaultValue="banco" className="w-full">
         <TabsList>
+          <TabsTrigger value="banco" className="flex items-center gap-1">
+            <Database className="h-3 w-3" />
+            Banco de Dados ({inconsistenciasDB.length})
+          </TabsTrigger>
           <TabsTrigger value="todas">
-            Todas ({inconsistencias.length})
+            Planilhas ({inconsistencias.length})
           </TabsTrigger>
           <TabsTrigger value="aso">
             ASO ({getInconsistenciasPorTipo('ASO').length})
@@ -420,6 +433,74 @@ export default function ValidacaoDados() {
             Divergências ({getInconsistenciasPorTipo('Divergente').length})
           </TabsTrigger>
         </TabsList>
+
+        {/* Tab de validação do banco de dados */}
+        <TabsContent value="banco">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-primary" />
+                  Validação do Banco de Dados
+                </CardTitle>
+                <Button onClick={() => validarBanco()} disabled={isLoadingDB} variant="outline" size="sm">
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingDB ? 'animate-spin' : ''}`} />
+                  Revalidar
+                </Button>
+              </div>
+              {validationResult.ultimaValidacao && (
+                <p className="text-xs text-muted-foreground">
+                  Última validação: {validationResult.ultimaValidacao.toLocaleString('pt-BR')} • 
+                  {validationResult.profissionaisComProblemas} de {validationResult.totalProfissionais} profissionais com problemas
+                </p>
+              )}
+            </CardHeader>
+            <CardContent>
+              {inconsistenciasDB.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Banco de Dados Consistente!</h3>
+                  <p className="text-muted-foreground">
+                    Todos os {validationResult.totalProfissionais} profissionais ativos estão com dados válidos.
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Matrícula</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Campo</TableHead>
+                      <TableHead>Problema</TableHead>
+                      <TableHead>Severidade</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inconsistenciasDB.map((inc: DataInconsistency) => (
+                      <TableRow key={inc.id}>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {inc.tipo.replace(/_/g, ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{inc.matricula}</TableCell>
+                        <TableCell className="font-medium">{inc.nome}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{inc.campo}</TableCell>
+                        <TableCell className="max-w-md text-sm">{inc.mensagem}</TableCell>
+                        <TableCell>
+                          <Badge variant={getBadgeColor(inc.severidade)}>
+                            {inc.severidade.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="todas">
           <Card>

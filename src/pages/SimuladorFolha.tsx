@@ -34,6 +34,7 @@ import { ChecklistDados } from '@/components/folha/ChecklistDados';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DataValidationAlert, ProfissionalValidationBadge } from '@/components/DataValidationAlert';
 
 // Função de arredondamento conforme regra do sistema
 const arredondarValor = (valor: number): number => {
@@ -1492,6 +1493,7 @@ export default function SimuladorFolha() {
                   <DialogTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
                     {p.nome}
+                    <ProfissionalValidationBadge matricula={p.matricula} showDetails />
                   </DialogTitle>
                   <DialogDescription>
                     Matrícula: {p.matricula} • {calculo.loja?.nome} • Competência: {competencia}
