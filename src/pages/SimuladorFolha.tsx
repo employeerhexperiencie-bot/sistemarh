@@ -29,6 +29,8 @@ import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
 import { GestaoEmprestimos } from '@/components/folha/GestaoEmprestimos';
 import { AdiantamentoSalario } from '@/components/folha/AdiantamentoSalario';
 import { EditarLancamentosModal } from '@/components/folha/EditarLancamentosModal';
+import { GraficoTendenciaFolha } from '@/components/folha/GraficoTendenciaFolha';
+import { ChecklistDados } from '@/components/folha/ChecklistDados';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -279,38 +281,7 @@ function SummaryCard({ icon: Icon, label, value, color, onClick, clickable = tru
   );
 }
 
-// Status Checklist Compacto
-function DataStatusBadge({ 
-  isComplete, 
-  profissionais, 
-  lojas 
-}: { 
-  isComplete: boolean; 
-  profissionais: number; 
-  lojas: number;
-}) {
-  if (isComplete) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20">
-        <CheckCircle2 className="h-4 w-4 text-success" />
-        <span className="text-sm font-medium text-success">
-          Dados validados • {profissionais} profissionais • {lojas} lojas
-        </span>
-      </div>
-    );
-  }
-  
-  return (
-    <Link to="/carregar-dados-adicionais">
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 transition-colors cursor-pointer">
-        <AlertTriangle className="h-4 w-4 text-destructive" />
-        <span className="text-sm font-medium text-destructive">
-          Dados incompletos - Clique para resolver
-        </span>
-      </div>
-    </Link>
-  );
-}
+// Status Checklist removido - agora usando ChecklistDados
 
 export default function SimuladorFolha() {
   const supabaseData = useSupabaseData();
@@ -689,27 +660,34 @@ export default function SimuladorFolha() {
 
   return (
     <div className="space-y-6 max-w-[1800px] mx-auto">
-      {/* Header com Status Compacto */}
+      {/* Header com Botões de Ação */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-2">
+        <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Simulador de Folha</h1>
-          <DataStatusBadge 
-            isComplete={dadosCompletos} 
-            profissionais={supabaseData.totalProfissionais} 
-            lojas={supabaseData.totalLojas} 
-          />
+          <p className="text-sm text-muted-foreground">
+            Competência: {competencia}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={exportarCSV} className="gap-2">
+          <Button variant="outline" onClick={exportarCSV} className="gap-2">
             <FileDown className="h-4 w-4" />
-            Exportar Detalhamento da Folha - CSV
+            <span className="hidden sm:inline">Exportar CSV</span>
           </Button>
-          <Button variant="default" className="gap-2 bg-primary">
+          <Button variant="default" className="gap-2 shadow-lg">
             <Sparkles className="h-4 w-4" />
             Finalizar e Gerar Holerites
           </Button>
         </div>
       </div>
+
+      {/* Checklist de Dados - Pré-Simulação */}
+      <ChecklistDados
+        profissionais={supabaseData.totalProfissionais}
+        lojas={supabaseData.totalLojas}
+        ativosCarregados={validacaoDados.ativosCarregados}
+        asoCarregados={validacaoDados.asoCarregados}
+        beneficiosCarregados={validacaoDados.beneficiosCarregados}
+      />
 
       {/* Summary Cards - Total Geral em destaque */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 stagger-children">
@@ -771,6 +749,13 @@ export default function SimuladorFolha() {
           onClick={() => setSelectedCardType('funcionarios')}
         />
       </div>
+
+      {/* Gráfico de Tendência */}
+      <GraficoTendenciaFolha
+        competenciaAtual={competencia}
+        totalDia20={totaisGerais.totalDia20}
+        totalDia5={totaisGerais.totalDia5}
+      />
 
       {/* Barra de Filtros Fixa */}
       <Card className="sticky top-0 z-10 shadow-sm">
