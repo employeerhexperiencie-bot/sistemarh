@@ -308,12 +308,51 @@ export default function SimuladorFolha() {
     profissional: { id: string; nome: string; matricula: string } | null;
   }>({ open: false, profissional: null });
 
+  // Modal de detalhamento individual do profissional
+  const [profissionalDetalhado, setProfissionalDetalhado] = useState<string | null>(null);
+
   const abrirModalEdicao = (profissional: { id: string; nome: string; matricula: string }) => {
     setModalEdicao({ open: true, profissional });
   };
 
   const fecharModalEdicao = () => {
     setModalEdicao({ open: false, profissional: null });
+  };
+
+  // Função para exportar CSV da loja
+  const exportarCSVLoja = (lojaResumo: typeof resumoPorLoja[0], funcionarios: typeof calculosLote) => {
+    const headers = ['Nome', 'Status', 'Dia 20', 'Dia 5', 'VT', 'VR', 'Cesta', 'Total'];
+    const rows = funcionarios.map(c => [
+      c.profissional.nome,
+      c.profissional.status,
+      c.valorDia20.toFixed(2),
+      c.salarioLiquido.toFixed(2),
+      c.valorVT.toFixed(2),
+      c.valorVR.toFixed(2),
+      c.valorCesta.toFixed(2),
+      c.totalMes.toFixed(2),
+    ]);
+    
+    const csvContent = [
+      `Loja: ${lojaResumo.loja.nome}`,
+      `Competência: ${competencia}`,
+      '',
+      headers.join(';'),
+      ...rows.map(r => r.join(';')),
+      '',
+      `Total Dia 20: ${lojaResumo.totalDia20.toFixed(2)}`,
+      `Total Dia 5: ${lojaResumo.totalDia5.toFixed(2)}`,
+      `Total VT: ${lojaResumo.totalVT.toFixed(2)}`,
+      `Total VR: ${lojaResumo.totalVR.toFixed(2)}`,
+      `Total Cesta: ${lojaResumo.totalCesta.toFixed(2)}`,
+      `Total Geral: ${lojaResumo.totalGeral.toFixed(2)}`,
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `folha_${lojaResumo.loja.nome.replace(/\s+/g, '_')}_${competencia}.csv`;
+    link.click();
   };
 
   // Dados reais da competência
@@ -981,13 +1020,26 @@ export default function SimuladorFolha() {
                 return (
                   <>
                     <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-primary" />
-                        {lojaResumo.loja.nome} - Detalhes da Folha
-                      </DialogTitle>
-                      <DialogDescription>
-                        Competência: {competencia}
-                      </DialogDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <DialogTitle className="flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-primary" />
+                            {lojaResumo.loja.nome} - Detalhes da Folha
+                          </DialogTitle>
+                          <DialogDescription>
+                            Competência: {competencia}
+                          </DialogDescription>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => exportarCSVLoja(lojaResumo, funcionariosLoja)}
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Exportar
+                        </Button>
+                      </div>
                     </DialogHeader>
                     
                     {/* Resumo da Loja */}
@@ -1027,7 +1079,14 @@ export default function SimuladorFolha() {
                         </TableHeader>
                         <TableBody>
                           {funcionariosLoja.map((c) => (
-                            <TableRow key={c.profissional.id}>
+                            <TableRow 
+                              key={c.profissional.id}
+                              className="cursor-pointer hover:bg-muted/80 transition-colors"
+                              onClick={() => {
+                                setLojaDetalhada(null);
+                                setProfissionalDetalhado(c.profissional.id);
+                              }}
+                            >
                               <TableCell className="font-medium">{c.profissional.nome}</TableCell>
                               <TableCell>{getStatusBadge(c.profissional.status)}</TableCell>
                               <TableCell className="text-right text-success">{formatCurrency(c.valorDia20)}</TableCell>
@@ -1113,8 +1172,12 @@ export default function SimuladorFolha() {
                         </TableCell>
                       </TableRow>
                     ) : calculosLote.map((c) => (
-                      <TableRow key={c.profissional.id} className="transition-colors group">
-                        <TableCell>
+                      <TableRow 
+                        key={c.profissional.id} 
+                        className="transition-colors group cursor-pointer hover:bg-muted/80"
+                        onClick={() => setProfissionalDetalhado(c.profissional.id)}
+                      >
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1122,11 +1185,14 @@ export default function SimuladorFolha() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 opacity-50 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => abrirModalEdicao({
-                                    id: c.profissional.id,
-                                    nome: c.profissional.nome,
-                                    matricula: c.profissional.matricula,
-                                  })}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    abrirModalEdicao({
+                                      id: c.profissional.id,
+                                      nome: c.profissional.nome,
+                                      matricula: c.profissional.matricula,
+                                    });
+                                  }}
                                 >
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
@@ -1404,6 +1470,205 @@ export default function SimuladorFolha() {
         competencia={competencia}
         onDataUpdated={carregarDadosCompetencia}
       />
+
+      {/* Modal de Detalhamento Individual do Profissional */}
+      <Dialog open={profissionalDetalhado !== null} onOpenChange={(open) => { if (!open) setProfissionalDetalhado(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          {(() => {
+            if (!profissionalDetalhado) return null;
+            const calculo = calculosLote.find(c => c.profissional.id === profissionalDetalhado);
+            if (!calculo) return <p className="text-muted-foreground">Profissional não encontrado</p>;
+            
+            const p = calculo.profissional;
+            const VALOR_CESTA_BASICA = 180;
+            
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    {p.nome}
+                  </DialogTitle>
+                  <DialogDescription>
+                    Matrícula: {p.matricula} • {calculo.loja?.nome} • Competência: {competencia}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                {/* Informações Básicas */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
+                  <Card className="p-3">
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <div className="mt-1">{getStatusBadge(p.status)}</div>
+                  </Card>
+                  <Card className="p-3">
+                    <p className="text-xs text-muted-foreground">Cargo</p>
+                    <p className="font-medium text-sm truncate">{(p as any).cargo || 'N/D'}</p>
+                  </Card>
+                  <Card className="p-3">
+                    <p className="text-xs text-muted-foreground">Salário Base</p>
+                    <p className="text-lg font-bold">{formatCurrency(p.salario)}</p>
+                  </Card>
+                  <Card className="p-3">
+                    <p className="text-xs text-muted-foreground">Dias Trabalhados</p>
+                    <p className="text-lg font-bold">{calculo.diasTrabalhados}</p>
+                  </Card>
+                </div>
+
+                <Separator />
+
+                {/* Proventos */}
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-success mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Proventos
+                  </h4>
+                  <div className="space-y-2 bg-success/5 rounded-lg p-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Salário Base</span>
+                      <span className="font-mono font-medium">{formatCurrency(p.salario)}</span>
+                    </div>
+                    {calculo.valorVT > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm flex items-center gap-2">
+                          <Bus className="h-3.5 w-3.5 text-emerald-600" />
+                          Vale Transporte ({calculo.diasTrabalhados} dias × {formatCurrency(p.valorPassagem)})
+                        </span>
+                        <span className="font-mono font-medium">{formatCurrency(calculo.valorVT)}</span>
+                      </div>
+                    )}
+                    {calculo.valorVR > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm flex items-center gap-2">
+                          <Utensils className="h-3.5 w-3.5 text-emerald-700" />
+                          Vale Refeição
+                        </span>
+                        <span className="font-mono font-medium">{formatCurrency(calculo.valorVR)}</span>
+                      </div>
+                    )}
+                    {calculo.valorCesta > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm flex items-center gap-2">
+                          <ShoppingBasket className="h-3.5 w-3.5 text-emerald-800" />
+                          Cesta Básica
+                        </span>
+                        <span className="font-mono font-medium">{formatCurrency(calculo.valorCesta)}</span>
+                      </div>
+                    )}
+                    <Separator className="my-2" />
+                    <div className="flex justify-between items-center font-semibold">
+                      <span>Total Proventos</span>
+                      <span className="font-mono text-success">
+                        {formatCurrency(p.salario + calculo.valorVT + calculo.valorVR + calculo.valorCesta)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Descontos */}
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-destructive mb-3 flex items-center gap-2">
+                    <X className="h-4 w-4" />
+                    Descontos
+                  </h4>
+                  <div className="space-y-2 bg-destructive/5 rounded-lg p-3">
+                    {calculo.valorDia20 > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                          Adiantamento Dia 20 ({calculo.motivoDia20})
+                        </span>
+                        <span className="font-mono font-medium text-destructive">-{formatCurrency(calculo.valorDia20)}</span>
+                      </div>
+                    )}
+                    {calculo.descontoFaltas > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Desconto Faltas ({p.faltas} dias)</span>
+                        <span className="font-mono font-medium text-destructive">-{formatCurrency(calculo.descontoFaltas)}</span>
+                      </div>
+                    )}
+                    {p.vales > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Vales</span>
+                        <span className="font-mono font-medium text-destructive">-{formatCurrency(p.vales)}</span>
+                      </div>
+                    )}
+                    {p.emprestimos > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Empréstimos</span>
+                        <span className="font-mono font-medium text-destructive">-{formatCurrency(p.emprestimos)}</span>
+                      </div>
+                    )}
+                    {p.pensao > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Pensão Alimentícia</span>
+                        <span className="font-mono font-medium text-destructive">-{formatCurrency(p.pensao)}</span>
+                      </div>
+                    )}
+                    <Separator className="my-2" />
+                    <div className="flex justify-between items-center font-semibold">
+                      <span>Total Descontos</span>
+                      <span className="font-mono text-destructive">
+                        -{formatCurrency(calculo.valorDia20 + calculo.totalDescontos)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
+                {/* Resumo de Pagamento */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Card className="p-4 bg-success/10 border-success/30">
+                    <p className="text-xs text-muted-foreground">Dia 20 (Adiantamento)</p>
+                    <p className="text-2xl font-bold text-success">{formatCurrency(calculo.valorDia20)}</p>
+                  </Card>
+                  <Card className="p-4 bg-primary/10 border-primary/30">
+                    <p className="text-xs text-muted-foreground">Dia 5 (Salário)</p>
+                    <p className="text-2xl font-bold text-primary">{formatCurrency(calculo.salarioLiquido)}</p>
+                  </Card>
+                </div>
+
+                <Card className="p-4 mt-3 bg-gradient-to-r from-primary/10 to-primary/20 border-primary/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total do Mês (incluindo benefícios)</p>
+                      <p className="text-3xl font-bold text-primary">{formatCurrency(calculo.totalMes)}</p>
+                    </div>
+                    <Calculator className="h-8 w-8 text-primary/50" />
+                  </div>
+                </Card>
+
+                {/* Ações */}
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setProfissionalDetalhado(null);
+                      abrirModalEdicao({
+                        id: p.id,
+                        nome: p.nome,
+                        matricula: p.matricula,
+                      });
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar Lançamentos
+                  </Button>
+                  <Button
+                    variant="outline"
+                    asChild
+                  >
+                    <Link to={`/painel-profissional/${p.id}`}>
+                      Ver Cadastro Completo
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
