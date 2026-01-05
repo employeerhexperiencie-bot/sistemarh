@@ -967,12 +967,13 @@ export default function SimuladorFolha() {
           </Card>
 
           {/* Modal de Detalhes da Loja */}
-          <Dialog open={!!lojaDetalhada} onOpenChange={(open) => !open && setLojaDetalhada(null)}>
+          <Dialog open={lojaDetalhada !== null} onOpenChange={(open) => { if (!open) setLojaDetalhada(null); }}>
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               {(() => {
+                if (!lojaDetalhada) return null;
                 const lojaResumo = resumoPorLoja.find(r => r.loja.id === lojaDetalhada);
-                const funcionariosLoja = calculosLote.filter(c => c.loja?.id === lojaDetalhada);
-                if (!lojaResumo) return null;
+                const funcionariosLoja = calculosLote.filter(c => c.profissional.lojaId === lojaDetalhada);
+                if (!lojaResumo) return <p className="text-muted-foreground">Loja não encontrada</p>;
                 
                 return (
                   <>
