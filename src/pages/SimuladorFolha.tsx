@@ -326,6 +326,7 @@ export default function SimuladorFolha() {
   const [lojaSelecionada, setLojaSelecionada] = useState<string>('todas');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [selectedCardType, setSelectedCardType] = useState<CardType>(null);
+  const [activeTab, setActiveTab] = useState<string>('lojas');
   
   // Modal de edição de lançamentos
   const [modalEdicao, setModalEdicao] = useState<{
@@ -819,55 +820,43 @@ export default function SimuladorFolha() {
       </Card>
 
       {/* Tabs - Reorganizadas */}
-      <Tabs defaultValue="lojas" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex items-center justify-between">
-          <TabsList className="bg-muted/50 p-1 h-auto gap-1">
-            <TabsTrigger value="lojas" className="gap-2 data-[state=active]:bg-background">
-              <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Por Loja</span>
-            </TabsTrigger>
-            <TabsTrigger value="funcionarios" className="gap-2 data-[state=active]:bg-background">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Por Funcionário</span>
-            </TabsTrigger>
-            <TabsTrigger value="adiantamento" className="gap-2 data-[state=active]:bg-background">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Adiantamento</span>
-            </TabsTrigger>
-            <TabsTrigger value="relatorio" className="gap-2 data-[state=active]:bg-background">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Relatório Geral</span>
-            </TabsTrigger>
-            
-            {/* Menu Lançamentos Especiais */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2 h-9 px-3">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="hidden sm:inline">Lançamentos Especiais</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-popover">
-                <DropdownMenuItem asChild>
-                  <TabsTrigger value="decimo" className="w-full justify-start gap-2 cursor-pointer">
-                    <Gift className="h-4 w-4" />
-                    13º Salário
-                  </TabsTrigger>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <TabsTrigger value="emprestimos" className="w-full justify-start gap-2 cursor-pointer">
-                    <Banknote className="h-4 w-4" />
-                    Empréstimos
-                  </TabsTrigger>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </TabsList>
+          <div className="flex items-center gap-1">
+            <TabsList className="bg-muted/50 p-1 h-auto gap-1">
+              <TabsTrigger value="lojas" className="gap-2 data-[state=active]:bg-background">
+                <Building2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Por Loja</span>
+              </TabsTrigger>
+              <TabsTrigger value="funcionarios" className="gap-2 data-[state=active]:bg-background">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Por Funcionário</span>
+              </TabsTrigger>
+              <TabsTrigger value="adiantamento" className="gap-2 data-[state=active]:bg-background">
+                <TrendingUp className="h-4 w-4" />
+                <span className="hidden sm:inline">Adiantamento</span>
+              </TabsTrigger>
+              <TabsTrigger value="relatorio" className="gap-2 data-[state=active]:bg-background">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Relatório Geral</span>
+              </TabsTrigger>
+              <TabsTrigger value="decimo" className="gap-2 data-[state=active]:bg-background">
+                <Gift className="h-4 w-4" />
+                <span className="hidden sm:inline">13º Salário</span>
+              </TabsTrigger>
+              <TabsTrigger value="emprestimos" className="gap-2 data-[state=active]:bg-background">
+                <Banknote className="h-4 w-4" />
+                <span className="hidden sm:inline">Empréstimos</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           {/* Ícone de Configurações */}
-          <TabsTrigger value="config" className="gap-2 data-[state=active]:bg-background rounded-lg border border-transparent hover:border-border">
-            <Settings2 className="h-4 w-4" />
-          </TabsTrigger>
+          <TabsList className="bg-transparent">
+            <TabsTrigger value="config" className="gap-2 data-[state=active]:bg-background rounded-lg border border-transparent hover:border-border">
+              <Settings2 className="h-4 w-4" />
+            </TabsTrigger>
+          </TabsList>
         </div>
 
         {/* By Store Tab */}
