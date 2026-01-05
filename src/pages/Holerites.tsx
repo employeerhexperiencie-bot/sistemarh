@@ -335,63 +335,17 @@ export default function Holerites() {
             </p>
           </AlertDescription>
         </Alert>
-      ) : (
-        <Alert className="border-destructive bg-destructive/5">
-          <AlertTriangle className="h-5 w-5 text-destructive" />
-          <AlertTitle className="text-destructive font-semibold">Atenção: Dados Incompletos</AlertTitle>
+      ) : supabaseData.totalProfissionais === 0 ? (
+        <Alert className="border-warning bg-warning/5">
+          <AlertTriangle className="h-5 w-5 text-warning" />
+          <AlertTitle className="text-warning font-semibold">Carregando Dados...</AlertTitle>
           <AlertDescription>
-            <div className="mt-2 space-y-1 text-sm">
-              <div className="flex items-center gap-2">
-                {validacaoDados.ativosCarregados ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-destructive" />
-                )}
-                <span className={validacaoDados.ativosCarregados ? 'text-success' : 'text-destructive'}>
-                  ATIVOS.xlsx {validacaoDados.ativosCarregados ? '(carregado)' : '(não carregado)'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {validacaoDados.asoCarregados ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-destructive" />
-                )}
-                <span className={validacaoDados.asoCarregados ? 'text-success' : 'text-destructive'}>
-                  BASE_ASO.xlsx {validacaoDados.asoCarregados ? '(carregado)' : '(não carregado)'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {validacaoDados.beneficiosCarregados ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-destructive" />
-                )}
-                <span className={validacaoDados.beneficiosCarregados ? 'text-success' : 'text-destructive'}>
-                  BASE_Beneficios.xlsx {validacaoDados.beneficiosCarregados ? '(carregado)' : '(não carregado)'}
-                </span>
-              </div>
-            </div>
-            <p className="mt-3 text-sm font-medium text-destructive">
-              ⚠️ Holerites gerados com dados simulados. Carregue todas as planilhas para gerar holerites reais.
+            <p className="mt-2 text-sm">
+              Aguardando carregamento dos dados do banco de dados.
             </p>
-            <div className="mt-3 flex items-center gap-3">
-              <Link to="/carregar-dados-adicionais">
-                <Button size="sm" variant="destructive">
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Carregar Dados Faltantes
-                </Button>
-              </Link>
-              <Link to="/validacao-dados">
-                <Button size="sm" variant="outline">
-                  <Info className="h-4 w-4 mr-2" />
-                  Ver Relatório de Validação
-                </Button>
-              </Link>
-            </div>
           </AlertDescription>
         </Alert>
-      )}
+      ) : null}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
