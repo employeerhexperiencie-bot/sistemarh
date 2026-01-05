@@ -16,7 +16,7 @@ import {
   Calculator, DollarSign, Calendar, Bus, Utensils, ShoppingBasket,
   TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet,
   FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info, ChevronRight,
-  MoreHorizontal, FileDown, Sparkles
+  MoreHorizontal, FileDown, Sparkles, Pencil
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -28,8 +28,10 @@ import { RelatorioFolha } from '@/components/folha/RelatorioFolha';
 import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
 import { GestaoEmprestimos } from '@/components/folha/GestaoEmprestimos';
 import { AdiantamentoSalario } from '@/components/folha/AdiantamentoSalario';
+import { EditarLancamentosModal } from '@/components/folha/EditarLancamentosModal';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Função de arredondamento conforme regra do sistema
 const arredondarValor = (valor: number): number => {
@@ -324,6 +326,20 @@ export default function SimuladorFolha() {
   const [lojaSelecionada, setLojaSelecionada] = useState<string>('todas');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [selectedCardType, setSelectedCardType] = useState<CardType>(null);
+  
+  // Modal de edição de lançamentos
+  const [modalEdicao, setModalEdicao] = useState<{
+    open: boolean;
+    profissional: { id: string; nome: string; matricula: string } | null;
+  }>({ open: false, profissional: null });
+
+  const abrirModalEdicao = (profissional: { id: string; nome: string; matricula: string }) => {
+    setModalEdicao({ open: true, profissional });
+  };
+
+  const fecharModalEdicao = () => {
+    setModalEdicao({ open: false, profissional: null });
+  };
 
   // Dados reais da competência
   const [dadosCompetencia, setDadosCompetencia] = useState<{
@@ -944,6 +960,7 @@ export default function SimuladorFolha() {
                 <Table className="table-zebra">
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="font-semibold w-[50px]"></TableHead>
                       <TableHead className="font-semibold">Mat.</TableHead>
                       <TableHead className="font-semibold">Nome</TableHead>
                       <TableHead className="font-semibold">Loja</TableHead>
@@ -962,12 +979,35 @@ export default function SimuladorFolha() {
                   <TableBody>
                     {dadosCompetencia.isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
                           Carregando dados da competência...
                         </TableCell>
                       </TableRow>
                     ) : calculosLote.map((c) => (
-                      <TableRow key={c.profissional.id} className="transition-colors">
+                      <TableRow key={c.profissional.id} className="transition-colors group">
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 opacity-50 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => abrirModalEdicao({
+                                    id: c.profissional.id,
+                                    nome: c.profissional.nome,
+                                    matricula: c.profissional.matricula,
+                                  })}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Editar faltas e vales</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
                         <TableCell className="font-mono text-xs">{c.profissional.matricula}</TableCell>
                         <TableCell className="font-medium max-w-[180px] truncate">{c.profissional.nome}</TableCell>
                         <TableCell className="text-muted-foreground">{c.loja?.nome}</TableCell>
@@ -1226,6 +1266,15 @@ export default function SimuladorFolha() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Edição de Lançamentos */}
+      <EditarLancamentosModal
+        open={modalEdicao.open}
+        onClose={fecharModalEdicao}
+        profissional={modalEdicao.profissional}
+        competencia={competencia}
+        onDataUpdated={carregarDadosCompetencia}
+      />
     </div>
   );
 }
