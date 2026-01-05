@@ -58,6 +58,7 @@ interface Profissional {
   id: string;
   nome: string;
   matricula: string;
+  cargo: string | null;
   lojaId: string;
   salario: number;
   escala: '6x1' | '5x2';
@@ -86,6 +87,7 @@ const mockLojas: Loja[] = Array.from({ length: 20 }, (_, i) => ({
 const gerarProfissionais = (): Profissional[] => {
   const nomes = ['João', 'Maria', 'Ana', 'Pedro', 'Carlos', 'Julia', 'Lucas', 'Fernanda', 'Ricardo', 'Mariana', 'Bruno', 'Camila', 'Gabriel'];
   const sobrenomes = ['Silva', 'Santos', 'Costa', 'Lima', 'Oliveira', 'Souza', 'Ferreira', 'Alves', 'Rodrigues', 'Pereira', 'Carvalho', 'Gomes', 'Martins'];
+  const cargos = ['Açougueiro', 'Operador de Caixa', 'Repositor', 'Balconista', 'Faxineiro', 'Ajudante', 'Gerente', 'Subgerente'];
   const statusOptions: Profissional['status'][] = ['ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ferias', 'afastado_doenca', 'licenca_maternidade', 'ativo', 'ativo'];
   
   const profissionais: Profissional[] = [];
@@ -102,6 +104,7 @@ const gerarProfissionais = (): Profissional[] => {
         id: `prof-${matriculaCounter}`,
         nome: `${nome} ${sobrenome}`,
         matricula: String(matriculaCounter).padStart(4, '0'),
+        cargo: cargos[Math.floor(Math.random() * cargos.length)],
         lojaId: loja.id,
         salario,
         escala: Math.random() > 0.3 ? '6x1' : '5x2',
@@ -552,8 +555,9 @@ export default function SimuladorFolha() {
           id: p.id,
           nome: p.nome,
           matricula: p.matricula,
+          cargo: p.cargo || null,
           lojaId: p.loja_id || 'sem-loja',
-          salario,
+          salario: salario,
           escala: '6x1' as '6x1' | '5x2',
           // VT: só tem valor se o campo vale_transporte for true E tiver valor_diario_rota definido
           valorPassagem: p.vale_transporte === true && p.valor_diario_rota ? Number(p.valor_diario_rota) : 0,
@@ -1502,7 +1506,7 @@ export default function SimuladorFolha() {
                   </Card>
                   <Card className="p-3">
                     <p className="text-xs text-muted-foreground">Cargo</p>
-                    <p className="font-medium text-sm truncate">{(p as any).cargo || 'N/D'}</p>
+                    <p className="font-medium text-sm truncate">{p.cargo || 'N/D'}</p>
                   </Card>
                   <Card className="p-3">
                     <p className="text-xs text-muted-foreground">Salário Base</p>
