@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, FileText, Filter, CreditCard, DollarSign, FolderOpen, History, Loader2 } from 'lucide-react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Users, TrendingUp, FileText, Filter, CreditCard, DollarSign, FolderOpen, History, Loader2, ArrowLeft, Calendar, Bus, Utensils, ShoppingBasket } from 'lucide-react';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProfissionalData {
@@ -23,7 +24,27 @@ interface ProfissionalData {
   qtdFaltas: number;
 }
 
+interface ProfissionalDetalhado {
+  id: string;
+  nome: string;
+  matricula: string;
+  cargo: string | null;
+  salario_nominal: number | null;
+  status: string | null;
+  data_admissao: string | null;
+  cpf: string | null;
+  telefone: string | null;
+  celular: string | null;
+  endereco: string | null;
+  vale_transporte: boolean | null;
+  vale_refeicao: boolean | null;
+  cesta_basica: boolean | null;
+  valor_diario_rota: number | null;
+  loja: { nome: string } | null;
+}
+
 export default function PainelProfissional() {
+  const { id: profissionalId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -32,14 +53,59 @@ export default function PainelProfissional() {
   const [profissionalFiltro, setProfissionalFiltro] = useState('');
   const [profissionaisData, setProfissionaisData] = useState<ProfissionalData[]>([]);
   const [lojas, setLojas] = useState<{ id: string; nome: string }[]>([]);
+  const [profissionalDetalhado, setProfissionalDetalhado] = useState<ProfissionalDetalhado | null>(null);
 
   useEffect(() => {
     const lojaParam = searchParams.get('loja');
     if (lojaParam && lojaParam !== 'TODAS') {
       setLojaFiltro(lojaParam);
     }
-    loadData();
-  }, [searchParams]);
+    
+    if (profissionalId) {
+      loadProfissionalDetalhado(profissionalId);
+    } else {
+      loadData();
+    }
+  }, [searchParams, profissionalId]);
+
+  const loadProfissionalDetalhado = async (id: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profissionais')
+        .select(`
+          id,
+          nome,
+          matricula,
+          cargo,
+          salario_nominal,
+          status,
+          data_admissao,
+          cpf,
+          telefone,
+          celular,
+          endereco,
+          vale_transporte,
+          vale_refeicao,
+          cesta_basica,
+          valor_diario_rota,
+          lojas:loja_id (nome)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      
+      setProfissionalDetalhado({
+        ...data,
+        loja: data.lojas as any
+      } as ProfissionalDetalhado);
+    } catch (error) {
+      console.error('Erro ao carregar profissional:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -163,6 +229,145 @@ export default function PainelProfissional() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Se temos um ID de profissional específico, mostramos o detalhamento
+  if (profissionalId && profissionalDetalhado) {
+    const p = profissionalDetalhado;
+    const salario = p.salario_nominal || 0;
+    const DIAS_UTEIS = 26;
+    const VALOR_CESTA = 180;
+    const valorVT = p.vale_transporte && p.valor_diario_rota ? p.valor_diario_rota * DIAS_UTEIS : 0;
+    const valorCesta = p.cesta_basica ? VALOR_CESTA : 0;
+    
+    const formatCurrencyValue = (value: number) => {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{p.nome}</h1>
+            <p className="text-muted-foreground">
+              Matrícula: {p.matricula} • {p.loja?.nome || 'Sem Loja'}
+            </p>
+          </div>
+        </div>
+
+        {/* Cards de Resumo */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Cargo</p>
+            <p className="font-semibold truncate">{p.cargo || 'N/D'}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Status</p>
+            <Badge variant={p.status === 'ativo' ? 'default' : 'secondary'} className="mt-1">
+              {p.status || 'N/D'}
+            </Badge>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Salário Base</p>
+            <p className="text-xl font-bold text-primary">{formatCurrencyValue(salario)}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Data Admissão</p>
+            <p className="font-semibold">
+              {p.data_admissao ? new Date(p.data_admissao).toLocaleDateString('pt-BR') : 'N/D'}
+            </p>
+          </Card>
+        </div>
+
+        {/* Benefícios */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Benefícios</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Bus className="h-5 w-5 text-emerald-600" />
+                <div>
+                  <p className="text-sm font-medium">Vale Transporte</p>
+                  {p.vale_transporte ? (
+                    <>
+                      <p className="text-lg font-bold text-emerald-600">{formatCurrencyValue(valorVT)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatCurrencyValue(p.valor_diario_rota || 0)}/dia × {DIAS_UTEIS} dias
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">Não recebe</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Utensils className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-sm font-medium">Vale Refeição</p>
+                  {p.vale_refeicao ? (
+                    <Badge variant="outline" className="bg-success/10 text-success">Sim</Badge>
+                  ) : (
+                    <p className="text-muted-foreground">Não recebe</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <ShoppingBasket className="h-5 w-5 text-amber-600" />
+                <div>
+                  <p className="text-sm font-medium">Cesta Básica</p>
+                  {p.cesta_basica ? (
+                    <p className="text-lg font-bold text-amber-600">{formatCurrencyValue(valorCesta)}</p>
+                  ) : (
+                    <p className="text-muted-foreground">Não recebe</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Informações de Contato */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Informações de Contato</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">CPF</p>
+                <p className="font-medium">{p.cpf || 'N/D'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Telefone</p>
+                <p className="font-medium">{p.telefone || p.celular || 'N/D'}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Endereço</p>
+                <p className="font-medium">{p.endereco || 'N/D'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Ações */}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(`/historico-profissional?matricula=${p.matricula}&profissional=${p.nome}`)}>
+            <History className="h-4 w-4 mr-2" />
+            Ver Histórico
+          </Button>
+          <Button onClick={() => navigate(`/cadastro-profissionais?matricula=${p.matricula}`)}>
+            <FolderOpen className="h-4 w-4 mr-2" />
+            Abrir Pasta Completa
+          </Button>
+        </div>
       </div>
     );
   }

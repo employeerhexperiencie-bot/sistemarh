@@ -93,6 +93,11 @@ const App = () => (
               <PainelProfissional />
             </Layout>
           } />
+          <Route path="/painel-profissional/:id" element={
+            <Layout>
+              <PainelProfissional />
+            </Layout>
+          } />
           <Route path="/historico-profissional" element={
             <Layout>
               <HistoricoProfissional />
