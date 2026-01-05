@@ -356,94 +356,94 @@ export function RelatorioFolha() {
       </Card>
       
       {/* Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        <Card className="min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-muted shrink-0">
                 <Users className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Funcionários</p>
-                <p className="text-lg font-bold">{folhaFiltrada.length}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground truncate">Funcionários</p>
+                <p className="text-base font-bold tabular-nums">{folhaFiltrada.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
+        <Card className="min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-success/10 shrink-0">
                 <TrendingDown className="h-4 w-4 text-success rotate-180" />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Proventos</p>
-                <p className="text-lg font-bold text-success">{formatCurrency(totais.proventos)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground truncate">Proventos</p>
+                <p className="text-base font-bold text-success tabular-nums truncate">{formatCurrency(totais.proventos)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10">
+        <Card className="min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-destructive/10 shrink-0">
                 <TrendingDown className="h-4 w-4 text-destructive" />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Descontos</p>
-                <p className="text-lg font-bold text-destructive">{formatCurrency(totais.descontos)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground truncate">Descontos</p>
+                <p className="text-base font-bold text-destructive tabular-nums truncate">{formatCurrency(totais.descontos)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-info/10">
+        <Card className="min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-info/10 shrink-0">
                 <Bus className="h-4 w-4 text-info" />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total VT</p>
-                <p className="text-lg font-bold text-info">{formatCurrency(totais.vt)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground truncate">Total VT</p>
+                <p className="text-base font-bold text-info tabular-nums truncate">{formatCurrency(totais.vt)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
+        <Card className="min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-warning/10 shrink-0">
                 <Utensils className="h-4 w-4 text-warning" />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total VR</p>
-                <p className="text-lg font-bold text-warning">{formatCurrency(totais.vr)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground truncate">Total VR</p>
+                <p className="text-base font-bold text-warning tabular-nums truncate">{formatCurrency(totais.vr)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-orange-500/10">
+        <Card className="min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-orange-500/10 shrink-0">
                 <ShoppingBasket className="h-4 w-4 text-orange-500" />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Cesta Básica</p>
-                <p className="text-lg font-bold text-orange-500">{formatCurrency(totais.cesta)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground truncate">Cesta Básica</p>
+                <p className="text-base font-bold text-orange-500 tabular-nums truncate">{formatCurrency(totais.cesta)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+        <Card className="min-w-0 bg-primary/5 border-primary/20">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10 shrink-0">
                 <DollarSign className="h-4 w-4 text-primary" />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Líquido Total</p>
-                <p className="text-lg font-bold text-primary">{formatCurrency(totais.liquido)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground truncate">Líquido Total</p>
+                <p className="text-base font-bold text-primary tabular-nums truncate">{formatCurrency(totais.liquido)}</p>
               </div>
             </div>
           </CardContent>
@@ -457,58 +457,60 @@ export function RelatorioFolha() {
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="w-full max-h-[600px]">
-            <Table className="table-zebra">
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="w-20 font-semibold">Mat.</TableHead>
-                  <TableHead className="font-semibold">Nome</TableHead>
-                  <TableHead className="font-semibold">Cargo</TableHead>
-                  <TableHead className="font-semibold">Loja</TableHead>
-                  <TableHead className="text-right font-semibold">Salário</TableHead>
-                  <TableHead className="text-right font-semibold">VT</TableHead>
-                  <TableHead className="text-right font-semibold">VR</TableHead>
-                  <TableHead className="text-right font-semibold">Cesta</TableHead>
-                  <TableHead className="text-right font-semibold text-success">Proventos</TableHead>
-                  <TableHead className="text-right font-semibold text-destructive">Descontos</TableHead>
-                  <TableHead className="text-right font-semibold text-primary">Líquido</TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {folhaFiltrada.map((f) => (
-                  <TableRow key={f.id}>
-                    <TableCell className="font-mono text-xs">{f.matricula}</TableCell>
-                    <TableCell className="font-medium max-w-[180px] truncate">{f.nome}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{f.cargo}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">{f.loja}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(f.salarioBase)}</TableCell>
-                    <TableCell className="text-right text-info">{formatCurrency(f.valorVT)}</TableCell>
-                    <TableCell className="text-right text-warning">{formatCurrency(f.valorVR)}</TableCell>
-                    <TableCell className="text-right text-orange-500">{formatCurrency(f.valorCesta)}</TableCell>
-                    <TableCell className="text-right text-success font-medium">{formatCurrency(f.totalProventos)}</TableCell>
-                    <TableCell className="text-right text-destructive font-medium">{formatCurrency(f.totalDescontos)}</TableCell>
-                    <TableCell className="text-right text-primary font-bold">{formatCurrency(f.liquido)}</TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
-                          <DialogHeader>
-                            <DialogTitle>Demonstrativo de Pagamento</DialogTitle>
-                          </DialogHeader>
-                          <DetalheHolerite folha={f} competencia={competencia} />
-                        </DialogContent>
-                      </Dialog>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table className="table-zebra w-full min-w-[900px]">
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="w-20 font-semibold whitespace-nowrap">Mat.</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap min-w-[150px]">Nome</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Cargo</TableHead>
+                    <TableHead className="font-semibold whitespace-nowrap">Loja</TableHead>
+                    <TableHead className="text-right font-semibold whitespace-nowrap">Salário</TableHead>
+                    <TableHead className="text-right font-semibold whitespace-nowrap">VT</TableHead>
+                    <TableHead className="text-right font-semibold whitespace-nowrap">VR</TableHead>
+                    <TableHead className="text-right font-semibold whitespace-nowrap">Cesta</TableHead>
+                    <TableHead className="text-right font-semibold text-success whitespace-nowrap">Proventos</TableHead>
+                    <TableHead className="text-right font-semibold text-destructive whitespace-nowrap">Descontos</TableHead>
+                    <TableHead className="text-right font-semibold text-primary whitespace-nowrap">Líquido</TableHead>
+                    <TableHead className="w-12"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {folhaFiltrada.map((f) => (
+                    <TableRow key={f.id}>
+                      <TableCell className="font-mono text-xs whitespace-nowrap">{f.matricula}</TableCell>
+                      <TableCell className="font-medium max-w-[180px] truncate">{f.nome}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{f.cargo}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs whitespace-nowrap">{f.loja}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">{formatCurrency(f.salarioBase)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-info whitespace-nowrap">{formatCurrency(f.valorVT)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-warning whitespace-nowrap">{formatCurrency(f.valorVR)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-orange-500 whitespace-nowrap">{formatCurrency(f.valorCesta)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-success font-medium whitespace-nowrap">{formatCurrency(f.totalProventos)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-destructive font-medium whitespace-nowrap">{formatCurrency(f.totalDescontos)}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-primary font-bold whitespace-nowrap">{formatCurrency(f.liquido)}</TableCell>
+                      <TableCell>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
+                            <DialogHeader>
+                              <DialogTitle>Demonstrativo de Pagamento</DialogTitle>
+                            </DialogHeader>
+                            <DetalheHolerite folha={f} competencia={competencia} />
+                          </DialogContent>
+                        </Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </ScrollArea>
         </CardContent>
       </Card>

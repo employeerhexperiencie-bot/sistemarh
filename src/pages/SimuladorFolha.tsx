@@ -947,68 +947,70 @@ export default function SimuladorFolha() {
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="w-full">
-                <Table className="table-zebra">
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="font-semibold">Loja</TableHead>
-                      <TableHead className="text-center font-semibold">Func.</TableHead>
-                      <TableHead className="text-center font-semibold">Ativos</TableHead>
-                      <TableHead className="text-center font-semibold">Férias</TableHead>
-                      <TableHead className="text-center font-semibold">Afast.</TableHead>
-                      <TableHead className="text-right font-semibold">Dia 20</TableHead>
-                      <TableHead className="text-right font-semibold">Dia 5</TableHead>
-                      <TableHead className="text-right font-semibold">VT</TableHead>
-                      <TableHead className="text-right font-semibold">VR</TableHead>
-                      <TableHead className="text-right font-semibold">Cesta</TableHead>
-                      <TableHead className="text-right font-semibold text-primary">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {resumoPorLoja.map((r) => (
-                      <TableRow 
-                        key={r.loja.id} 
-                        className="transition-colors cursor-pointer hover:bg-muted/50"
-                        onClick={() => setLojaDetalhada(r.loja.id)}
-                      >
-                        <TableCell className="font-medium">{r.loja.nome}</TableCell>
-                        <TableCell className="text-center">{r.qtdFuncionarios}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                            {r.funcionariosAtivos}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="outline" className="bg-info/10 text-info border-info/20">
-                            {r.funcionariosFerias}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                            {r.funcionariosAfastados}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-success font-medium">
-                          {formatCurrency(r.totalDia20)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(r.totalDia5)}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {formatCurrency(r.totalVT)}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {formatCurrency(r.totalVR)}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {formatCurrency(r.totalCesta)}
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-primary">
-                          {formatCurrency(r.totalGeral)}
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table className="table-zebra w-full min-w-[950px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/50 hover:bg-muted/50">
+                        <TableHead className="font-semibold whitespace-nowrap min-w-[120px]">Loja</TableHead>
+                        <TableHead className="text-center font-semibold whitespace-nowrap w-16">Func.</TableHead>
+                        <TableHead className="text-center font-semibold whitespace-nowrap w-16">Ativos</TableHead>
+                        <TableHead className="text-center font-semibold whitespace-nowrap w-16">Férias</TableHead>
+                        <TableHead className="text-center font-semibold whitespace-nowrap w-16">Afast.</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">Dia 20</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">Dia 5</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">VT</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">VR</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">Cesta</TableHead>
+                        <TableHead className="text-right font-semibold text-primary whitespace-nowrap">Total</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {resumoPorLoja.map((r) => (
+                        <TableRow 
+                          key={r.loja.id} 
+                          className="transition-colors cursor-pointer hover:bg-muted/50"
+                          onClick={() => setLojaDetalhada(r.loja.id)}
+                        >
+                          <TableCell className="font-medium whitespace-nowrap">{r.loja.nome}</TableCell>
+                          <TableCell className="text-center tabular-nums">{r.qtdFuncionarios}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                              {r.funcionariosAtivos}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                              {r.funcionariosFerias}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
+                              {r.funcionariosAfastados}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-success whitespace-nowrap">
+                            {formatCurrency(r.totalDia20)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
+                            {formatCurrency(r.totalDia5)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
+                            {formatCurrency(r.totalVT)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
+                            {formatCurrency(r.totalVR)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
+                            {formatCurrency(r.totalCesta)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums font-bold text-primary whitespace-nowrap">
+                            {formatCurrency(r.totalGeral)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
@@ -1150,118 +1152,120 @@ export default function SimuladorFolha() {
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="w-full max-h-[600px]">
-                <Table className="table-zebra">
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="font-semibold w-[50px]"></TableHead>
-                      <TableHead className="font-semibold">Mat.</TableHead>
-                      <TableHead className="font-semibold">Nome</TableHead>
-                      <TableHead className="font-semibold">Loja</TableHead>
-                      <TableHead className="font-semibold">Status</TableHead>
-                      <TableHead className="text-center font-semibold">Faltas</TableHead>
-                      <TableHead className="text-right font-semibold">Salário</TableHead>
-                      <TableHead className="text-right font-semibold">Dia 20</TableHead>
-                      <TableHead className="text-right font-semibold">Dia 5</TableHead>
-                      <TableHead className="text-right font-semibold">Descontos</TableHead>
-                      <TableHead className="text-right font-semibold">VT</TableHead>
-                      <TableHead className="text-right font-semibold">VR</TableHead>
-                      <TableHead className="text-right font-semibold">Cesta</TableHead>
-                      <TableHead className="text-right font-semibold text-primary">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dadosCompetencia.isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
-                          Carregando dados da competência...
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table className="table-zebra w-full min-w-[1100px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/50 hover:bg-muted/50">
+                        <TableHead className="font-semibold w-[50px]"></TableHead>
+                        <TableHead className="font-semibold whitespace-nowrap w-20">Mat.</TableHead>
+                        <TableHead className="font-semibold whitespace-nowrap min-w-[150px]">Nome</TableHead>
+                        <TableHead className="font-semibold whitespace-nowrap">Loja</TableHead>
+                        <TableHead className="font-semibold whitespace-nowrap w-24">Status</TableHead>
+                        <TableHead className="text-center font-semibold whitespace-nowrap w-20">Faltas</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">Salário</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">Dia 20</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">Dia 5</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">Descontos</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">VT</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">VR</TableHead>
+                        <TableHead className="text-right font-semibold whitespace-nowrap">Cesta</TableHead>
+                        <TableHead className="text-right font-semibold text-primary whitespace-nowrap">Total</TableHead>
                       </TableRow>
-                    ) : calculosLote.map((c) => (
-                      <TableRow 
-                        key={c.profissional.id} 
-                        className="transition-colors group cursor-pointer hover:bg-muted/80"
-                        onClick={() => setProfissionalDetalhado(c.profissional.id)}
-                      >
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 opacity-50 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    abrirModalEdicao({
-                                      id: c.profissional.id,
-                                      nome: c.profissional.nome,
-                                      matricula: c.profissional.matricula,
-                                    });
-                                  }}
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Editar faltas e vales</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{c.profissional.matricula}</TableCell>
-                        <TableCell className="font-medium max-w-[180px] truncate">{c.profissional.nome}</TableCell>
-                        <TableCell className="text-muted-foreground">{c.loja?.nome}</TableCell>
-                        <TableCell>{getStatusBadge(c.profissional.status)}</TableCell>
-                        <TableCell className="text-center">
-                          {(c.profissional.faltas > 0 || c.profissional.atestados > 0) ? (
-                            <div className="flex items-center justify-center gap-1">
-                              {c.profissional.faltas > 0 && (
-                                <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
-                                  {c.profissional.faltas}F
-                                </Badge>
-                              )}
-                              {c.profissional.atestados > 0 && (
-                                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-xs">
-                                  {c.profissional.atestados}A
-                                </Badge>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatCurrency(c.profissional.salario)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-success">
-                          {formatCurrency(c.valorDia20)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatCurrency(c.salarioLiquido)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {c.totalDescontos > 0 ? (
-                            <span className="text-destructive">-{formatCurrency(c.totalDescontos)}</span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-muted-foreground">
-                          {formatCurrency(c.valorVT)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-muted-foreground">
-                          {formatCurrency(c.valorVR)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-muted-foreground">
-                          {formatCurrency(c.valorCesta)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-primary">
-                          {formatCurrency(c.totalMes)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {dadosCompetencia.isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={14} className="text-center py-8 text-muted-foreground">
+                            Carregando dados da competência...
+                          </TableCell>
+                        </TableRow>
+                      ) : calculosLote.map((c) => (
+                        <TableRow 
+                          key={c.profissional.id} 
+                          className="transition-colors group cursor-pointer hover:bg-muted/80"
+                          onClick={() => setProfissionalDetalhado(c.profissional.id)}
+                        >
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 opacity-50 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      abrirModalEdicao({
+                                        id: c.profissional.id,
+                                        nome: c.profissional.nome,
+                                        matricula: c.profissional.matricula,
+                                      });
+                                    }}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Editar faltas e vales</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs whitespace-nowrap">{c.profissional.matricula}</TableCell>
+                          <TableCell className="font-medium max-w-[180px] truncate">{c.profissional.nome}</TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap">{c.loja?.nome}</TableCell>
+                          <TableCell>{getStatusBadge(c.profissional.status)}</TableCell>
+                          <TableCell className="text-center">
+                            {(c.profissional.faltas > 0 || c.profissional.atestados > 0) ? (
+                              <div className="flex items-center justify-center gap-1">
+                                {c.profissional.faltas > 0 && (
+                                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
+                                    {c.profissional.faltas}F
+                                  </Badge>
+                                )}
+                                {c.profissional.atestados > 0 && (
+                                  <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-xs">
+                                    {c.profissional.atestados}A
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
+                            {formatCurrency(c.profissional.salario)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-success whitespace-nowrap">
+                            {formatCurrency(c.valorDia20)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
+                            {formatCurrency(c.salarioLiquido)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
+                            {c.totalDescontos > 0 ? (
+                              <span className="text-destructive">-{formatCurrency(c.totalDescontos)}</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
+                            {formatCurrency(c.valorVT)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
+                            {formatCurrency(c.valorVR)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
+                            {formatCurrency(c.valorCesta)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums font-bold text-primary whitespace-nowrap">
+                            {formatCurrency(c.totalMes)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
