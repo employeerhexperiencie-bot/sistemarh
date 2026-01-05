@@ -61,11 +61,16 @@ export default function PainelProfissional() {
       setLojaFiltro(lojaParam);
     }
     
-    if (profissionalId) {
-      loadProfissionalDetalhado(profissionalId);
-    } else {
-      loadData();
-    }
+    // Garantir que loading seja iniciado e finalizado corretamente
+    const loadPageData = async () => {
+      if (profissionalId) {
+        await loadProfissionalDetalhado(profissionalId);
+      } else {
+        await loadData();
+      }
+    };
+    
+    loadPageData();
   }, [searchParams, profissionalId]);
 
   const loadProfissionalDetalhado = async (id: string) => {
@@ -108,36 +113,32 @@ export default function PainelProfissional() {
   };
 
   const loadData = async () => {
-    setLoading(true);
     try {
-      // Carregar lojas
-      const { data: lojasData } = await supabase
-        .from('lojas')
-        .select('id, nome')
-        .order('nome');
-
-      setLojas(lojasData || []);
-
-      // Carregar profissionais com lojas
-      const { data: profissionais } = await supabase
-        .from('profissionais')
-        .select(`
+      setLoading(true);
+      
+      // Carregar lojas e profissionais em paralelo
+      const [lojasResult, profissionaisResult] = await Promise.all([
+        supabase.from('lojas').select('id, nome').order('nome'),
+        supabase.from('profissionais').select(`
           id,
           matricula,
           nome,
           salario_nominal,
           loja_id,
           lojas:loja_id (nome)
-        `)
-        .eq('status', 'ativo');
+        `).eq('status', 'ativo')
+      ]);
 
-      // Carregar faltas
+      setLojas(lojasResult.data || []);
+
+      // Carregar faltas após ter os profissionais
       const { data: faltas } = await supabase
         .from('faltas')
         .select('profissional_id, tipo');
 
       // Processar dados
-      const profData: ProfissionalData[] = (profissionais || []).map((p: any) => {
+      const profissionais = profissionaisResult.data || [];
+      const profData: ProfissionalData[] = profissionais.map((p: any) => {
         const salario = p.salario_nominal || 0;
         const faltasProf = (faltas || []).filter((f: any) => f.profissional_id === p.id);
         const qtdFaltas = faltasProf.length;
@@ -168,6 +169,8 @@ export default function PainelProfissional() {
       setProfissionaisData(profData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
+      // Garantir que mesmo com erro, os dados vazios sejam setados
+      setProfissionaisData([]);
     } finally {
       setLoading(false);
     }
