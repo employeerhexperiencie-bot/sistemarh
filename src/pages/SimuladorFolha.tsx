@@ -16,7 +16,7 @@ import {
   Calculator, DollarSign, Calendar, Bus, Utensils, ShoppingBasket,
   TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet,
   FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info, ChevronRight,
-  MoreHorizontal, FileDown, Sparkles, Pencil
+  MoreHorizontal, FileDown, Sparkles, Pencil, ChevronDown, ChevronUp, X
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -298,6 +298,8 @@ export default function SimuladorFolha() {
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [selectedCardType, setSelectedCardType] = useState<CardType>(null);
   const [activeTab, setActiveTab] = useState<string>('lojas');
+  const [showTendencia, setShowTendencia] = useState(false);
+  const [lojaDetalhada, setLojaDetalhada] = useState<string | null>(null);
   
   // Modal de edição de lançamentos
   const [modalEdicao, setModalEdicao] = useState<{
@@ -689,73 +691,116 @@ export default function SimuladorFolha() {
         beneficiosCarregados={validacaoDados.beneficiosCarregados}
       />
 
-      {/* Summary Cards - Total Geral em destaque */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 stagger-children">
-        {/* Card Primário - Total Geral */}
-        <SummaryCard
-          icon={TrendingUp}
-          label="Total Geral da Folha"
-          value={formatCurrency(totaisGerais.totalGeral)}
-          color="bg-primary/10 text-primary"
-          onClick={() => setSelectedCardType('total')}
-          variant="primary"
-        />
-        
-        {/* Adiantamentos - Azul */}
-        <SummaryCard
-          icon={Calendar}
-          label="Dia 20 (Adiant.)"
-          value={formatCurrency(totaisGerais.totalDia20)}
-          color="bg-blue-500/10 text-blue-600"
-          onClick={() => setSelectedCardType('dia20')}
-        />
-        <SummaryCard
-          icon={DollarSign}
-          label="Dia 5 (Salário)"
-          value={formatCurrency(totaisGerais.totalDia5)}
-          color="bg-blue-600/10 text-blue-700"
-          onClick={() => setSelectedCardType('dia5')}
-        />
-        
-        {/* Benefícios - Verde */}
-        <SummaryCard
-          icon={Bus}
-          label="Vale Transporte"
-          value={formatCurrency(totaisGerais.totalVT)}
-          color="bg-emerald-500/10 text-emerald-600"
-          onClick={() => setSelectedCardType('vt')}
-        />
-        <SummaryCard
-          icon={Utensils}
-          label="Vale Refeição"
-          value={formatCurrency(totaisGerais.totalVR)}
-          color="bg-emerald-600/10 text-emerald-700"
-          onClick={() => setSelectedCardType('vr')}
-        />
-        <SummaryCard
-          icon={ShoppingBasket}
-          label="Cesta Básica"
-          value={formatCurrency(totaisGerais.totalCesta)}
-          color="bg-emerald-700/10 text-emerald-800"
-          onClick={() => setSelectedCardType('cesta')}
-        />
-        
-        {/* Funcionários */}
-        <SummaryCard
-          icon={Users}
-          label="Funcionários"
-          value={totaisGerais.funcionarios.toString()}
-          color="bg-muted text-muted-foreground"
-          onClick={() => setSelectedCardType('funcionarios')}
-        />
+      {/* Summary Cards - Reorganizado */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Bloco Principal - Total Geral */}
+        <Card className="lg:col-span-4 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg cursor-pointer hover:shadow-xl transition-all" onClick={() => setSelectedCardType('total')}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-primary/80">Total Geral da Folha</p>
+                <p className="text-3xl font-bold tracking-tight text-primary mt-1">{formatCurrency(totaisGerais.totalGeral)}</p>
+                <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    {totaisGerais.funcionarios} funcionários
+                  </span>
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-primary/20 text-primary shadow-inner">
+                <Calculator className="h-8 w-8" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bloco Pagamentos */}
+        <Card className="lg:col-span-4">
+          <CardContent className="p-5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Pagamentos</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors" onClick={() => setSelectedCardType('dia20')}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-medium">Dia 20 (Adiantamento)</span>
+                </div>
+                <span className="text-lg font-bold">{formatCurrency(totaisGerais.totalDia20)}</span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors" onClick={() => setSelectedCardType('dia5')}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-600/10">
+                    <DollarSign className="h-4 w-4 text-blue-700" />
+                  </div>
+                  <span className="text-sm font-medium">Dia 5 (Salário)</span>
+                </div>
+                <span className="text-lg font-bold">{formatCurrency(totaisGerais.totalDia5)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bloco Benefícios */}
+        <Card className="lg:col-span-4">
+          <CardContent className="p-5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Benefícios</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors" onClick={() => setSelectedCardType('vt')}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                    <Bus className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <span className="text-sm">Vale Transporte</span>
+                </div>
+                <span className="font-semibold">{formatCurrency(totaisGerais.totalVT)}</span>
+              </div>
+              <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors" onClick={() => setSelectedCardType('vr')}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-600/10">
+                    <Utensils className="h-4 w-4 text-emerald-700" />
+                  </div>
+                  <span className="text-sm">Vale Refeição</span>
+                </div>
+                <span className="font-semibold">{formatCurrency(totaisGerais.totalVR)}</span>
+              </div>
+              <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors" onClick={() => setSelectedCardType('cesta')}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-700/10">
+                    <ShoppingBasket className="h-4 w-4 text-emerald-800" />
+                  </div>
+                  <span className="text-sm">Cesta Básica</span>
+                </div>
+                <span className="font-semibold">{formatCurrency(totaisGerais.totalCesta)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Gráfico de Tendência */}
-      <GraficoTendenciaFolha
-        competenciaAtual={competencia}
-        totalDia20={totaisGerais.totalDia20}
-        totalDia5={totaisGerais.totalDia5}
-      />
+      {/* Botão Tendência + Gráfico Expansível */}
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          className="w-full justify-between"
+          onClick={() => setShowTendencia(!showTendencia)}
+        >
+          <span className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Ver Tendência da Folha (últimos 6 meses)
+          </span>
+          {showTendencia ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+        
+        {showTendencia && (
+          <GraficoTendenciaFolha
+            competenciaAtual={competencia}
+            totalDia20={totaisGerais.totalDia20}
+            totalDia5={totaisGerais.totalDia5}
+          />
+        )}
+      </div>
 
       {/* Barra de Filtros Fixa */}
       <Card className="sticky top-0 z-10 shadow-sm">
@@ -873,7 +918,11 @@ export default function SimuladorFolha() {
                   </TableHeader>
                   <TableBody>
                     {resumoPorLoja.map((r) => (
-                      <TableRow key={r.loja.id} className="transition-colors">
+                      <TableRow 
+                        key={r.loja.id} 
+                        className="transition-colors cursor-pointer hover:bg-muted/50"
+                        onClick={() => setLojaDetalhada(r.loja.id)}
+                      >
                         <TableCell className="font-medium">{r.loja.nome}</TableCell>
                         <TableCell className="text-center">{r.qtdFuncionarios}</TableCell>
                         <TableCell className="text-center">
@@ -916,6 +965,108 @@ export default function SimuladorFolha() {
               </ScrollArea>
             </CardContent>
           </Card>
+
+          {/* Modal de Detalhes da Loja */}
+          <Dialog open={!!lojaDetalhada} onOpenChange={(open) => !open && setLojaDetalhada(null)}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              {(() => {
+                const lojaResumo = resumoPorLoja.find(r => r.loja.id === lojaDetalhada);
+                const funcionariosLoja = calculosLote.filter(c => c.loja?.id === lojaDetalhada);
+                if (!lojaResumo) return null;
+                
+                return (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        {lojaResumo.loja.nome} - Detalhes da Folha
+                      </DialogTitle>
+                      <DialogDescription>
+                        Competência: {competencia}
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    {/* Resumo da Loja */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">Funcionários</p>
+                        <p className="text-xl font-bold">{lojaResumo.qtdFuncionarios}</p>
+                      </Card>
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">Dia 20</p>
+                        <p className="text-xl font-bold text-success">{formatCurrency(lojaResumo.totalDia20)}</p>
+                      </Card>
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">Dia 5</p>
+                        <p className="text-xl font-bold">{formatCurrency(lojaResumo.totalDia5)}</p>
+                      </Card>
+                      <Card className="p-3 border-primary/30">
+                        <p className="text-xs text-muted-foreground">Total</p>
+                        <p className="text-xl font-bold text-primary">{formatCurrency(lojaResumo.totalGeral)}</p>
+                      </Card>
+                    </div>
+
+                    {/* Tabela de Funcionários da Loja */}
+                    <ScrollArea className="max-h-[400px]">
+                      <Table className="table-zebra">
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Dia 20</TableHead>
+                            <TableHead className="text-right">Dia 5</TableHead>
+                            <TableHead className="text-right">VT</TableHead>
+                            <TableHead className="text-right">VR</TableHead>
+                            <TableHead className="text-right">Cesta</TableHead>
+                            <TableHead className="text-right font-bold">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {funcionariosLoja.map((c) => (
+                            <TableRow key={c.profissional.id}>
+                              <TableCell className="font-medium">{c.profissional.nome}</TableCell>
+                              <TableCell>{getStatusBadge(c.profissional.status)}</TableCell>
+                              <TableCell className="text-right text-success">{formatCurrency(c.valorDia20)}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(c.salarioLiquido)}</TableCell>
+                              <TableCell className="text-right text-muted-foreground">{formatCurrency(c.valorVT)}</TableCell>
+                              <TableCell className="text-right text-muted-foreground">{formatCurrency(c.valorVR)}</TableCell>
+                              <TableCell className="text-right text-muted-foreground">{formatCurrency(c.valorCesta)}</TableCell>
+                              <TableCell className="text-right font-bold text-primary">{formatCurrency(c.totalMes)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+
+                    {/* Resumo de Benefícios */}
+                    <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t">
+                      <div className="flex items-center gap-2">
+                        <Bus className="h-4 w-4 text-emerald-600" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">VT Total</p>
+                          <p className="font-semibold">{formatCurrency(lojaResumo.totalVT)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Utensils className="h-4 w-4 text-emerald-700" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">VR Total</p>
+                          <p className="font-semibold">{formatCurrency(lojaResumo.totalVR)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ShoppingBasket className="h-4 w-4 text-emerald-800" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Cesta Total</p>
+                          <p className="font-semibold">{formatCurrency(lojaResumo.totalCesta)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* By Employee Tab */}
