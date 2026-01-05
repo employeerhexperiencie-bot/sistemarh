@@ -250,22 +250,29 @@ export function DecimoTerceiro() {
           const salarioBase = Number(p.salario_nominal) || 0;
           const dataAdmissao = p.data_admissao ? new Date(p.data_admissao) : null;
           
-          // Calcular avos
+          // Calcular avos trabalhados no ano
           let avosCompletos = 12;
           if (dataAdmissao) {
             const anoAdm = dataAdmissao.getFullYear();
-            const mesAdm = dataAdmissao.getMonth() + 1;
+            const mesAdm = dataAdmissao.getMonth() + 1; // 1-12
             const diaAdm = dataAdmissao.getDate();
             
-            if (anoAdm === ano) {
-              avosCompletos = 12 - mesAdm + 1;
-              if (diaAdm > 15) avosCompletos--;
-            } else if (anoAdm > ano) {
+            if (anoAdm > ano) {
+              // Admitido em ano futuro - não tem direito
               avosCompletos = 0;
+            } else if (anoAdm === ano) {
+              // Admitido no mesmo ano - calcular meses trabalhados
+              // Meses completos = 12 - mês de admissão + 1 (inclui o mês atual se entrou até dia 15)
+              avosCompletos = 12 - mesAdm + 1;
+              // Se entrou após dia 15, não conta o mês de admissão
+              if (diaAdm > 15) {
+                avosCompletos = Math.max(0, avosCompletos - 1);
+              }
             }
+            // Se anoAdm < ano, mantém 12 avos (ano completo)
           }
           
-          // Afastamentos descontam avos
+          // Afastamentos descontam avos (apenas afastamentos longos > 15 dias no mês)
           const numAfastamentos = afastamentosPorProf[p.matricula] || 0;
           const avosDescontados = Math.min(numAfastamentos, avosCompletos);
           const avosFinais = Math.max(0, avosCompletos - avosDescontados);
