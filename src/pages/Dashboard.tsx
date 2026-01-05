@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DataValidationAlert } from '@/components/DataValidationAlert';
 
 // Interface para atividades recentes
 interface AtividadeRecente {
@@ -234,6 +235,9 @@ export function Dashboard() {
           Visão geral da gestão de pessoas e operações
         </p>
       </div>
+
+      {/* 🔴 VALIDAÇÃO DE DADOS - Alerta automático de inconsistências */}
+      <DataValidationAlert showOnlyIfProblems={true} maxItems={3} />
 
       {/* 🔴 ALERTAS URGENTES - Movidos para o topo para visibilidade imediata */}
       <AlertasResumo />
