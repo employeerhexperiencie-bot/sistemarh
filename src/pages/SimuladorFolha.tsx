@@ -194,8 +194,9 @@ const calcularProfissional = (
   const VALOR_CESTA_BASICA = 180;
   
   let recebeCesta = p.recebeCesta;
+  // Cesta só é perdida por faltas INJUSTIFICADAS (não atestados)
   if (p.faltas > 0) recebeCesta = false;
-  // Verificar data de admissão apenas se existir
+  // Verificar data de admissão apenas se existir (admitido após dia 15 não recebe cesta)
   if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() > 15) recebeCesta = false;
   
   const valorCesta = recebeCesta ? VALOR_CESTA_BASICA : 0;
@@ -515,11 +516,13 @@ export default function SimuladorFolha() {
           lojaId: p.loja_id || 'sem-loja',
           salario,
           escala: '6x1' as '6x1' | '5x2',
-          valorPassagem: p.valor_diario_rota || 4.40,
+          // VT: só tem valor se o campo vale_transporte for true E tiver valor_diario_rota definido
+          valorPassagem: p.vale_transporte === true && p.valor_diario_rota ? Number(p.valor_diario_rota) : 0,
           dataAdmissao: p.data_admissao || null,
           status,
           recebeCesta: p.cesta_basica === true,
-          recebeVT: p.vale_transporte === true,
+          // VT: precisa ter vale_transporte = true E valor_diario_rota > 0
+          recebeVT: p.vale_transporte === true && p.valor_diario_rota && Number(p.valor_diario_rota) > 0,
           recebeVR: p.vale_refeicao === true,
           faltas: faltasProf.injustificadas,
           atestados: faltasProf.justificadas,
