@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -324,6 +325,23 @@ export default function SimuladorFolha() {
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [selectedCardType, setSelectedCardType] = useState<CardType>(null);
 
+  // Dados reais da competência
+  const [dadosCompetencia, setDadosCompetencia] = useState<{
+    faltas: Record<string, { injustificadas: number; justificadas: number }>;
+    ferias: Record<string, number>;
+    vales: Record<string, number>;
+    emprestimos: Record<string, number>;
+    afastamentos: Record<string, string>;
+    isLoading: boolean;
+  }>({
+    faltas: {},
+    ferias: {},
+    vales: {},
+    emprestimos: {},
+    afastamentos: {},
+    isLoading: true,
+  });
+
   // Estado de validação de dados
   const [validacaoDados, setValidacaoDados] = useState<{
     ativosCarregados: boolean;
@@ -341,13 +359,132 @@ export default function SimuladorFolha() {
     timestampBeneficios: null,
   });
 
+  // Buscar dados reais da competência selecionada
+  const carregarDadosCompetencia = useCallback(async () => {
+    setDadosCompetencia(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const [ano, mes] = competencia.split('-').map(Number);
+      const inicioMes = `${ano}-${String(mes).padStart(2, '0')}-01`;
+      const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
+
+      // Buscar todos os dados em paralelo
+      const [faltasRes, feriasRes, valesRes, emprestimosRes, afastamentosRes] = await Promise.all([
+        // Faltas do mês
+        supabase
+          .from('faltas')
+          .select('profissional_id, tipo')
+          .gte('data_falta', inicioMes)
+          .lte('data_falta', fimMes),
+        
+        // Férias ativas no mês
+        supabase
+          .from('ferias')
+          .select('profissional_id, periodo_gozo_inicio, periodo_gozo_fim, dias_gozados')
+          .or(`and(periodo_gozo_inicio.lte.${fimMes},periodo_gozo_fim.gte.${inicioMes})`),
+        
+        // Vales pendentes do mês
+        supabase
+          .from('professional_vales')
+          .select('profissional_id, valor')
+          .gte('data_lancamento', inicioMes)
+          .lte('data_lancamento', fimMes)
+          .eq('status', 'pendente'),
+        
+        // Empréstimos ativos
+        supabase
+          .from('emprestimos')
+          .select('profissional_id, valor_parcela')
+          .eq('status', 'ativo'),
+        
+        // Afastamentos ativos no mês
+        supabase
+          .from('afastamentos')
+          .select('profissional_id, tipo')
+          .eq('status', 'ativo')
+          .lte('data_inicio', fimMes)
+          .or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`)
+      ]);
+
+      // Processar faltas
+      const faltasMap: Record<string, { injustificadas: number; justificadas: number }> = {};
+      faltasRes.data?.forEach(f => {
+        if (!f.profissional_id) return;
+        if (!faltasMap[f.profissional_id]) {
+          faltasMap[f.profissional_id] = { injustificadas: 0, justificadas: 0 };
+        }
+        if (f.tipo === 'justificada' || f.tipo === 'atestado') {
+          faltasMap[f.profissional_id].justificadas++;
+        } else {
+          faltasMap[f.profissional_id].injustificadas++;
+        }
+      });
+
+      // Processar férias (dias no mês atual)
+      const feriasMap: Record<string, number> = {};
+      feriasRes.data?.forEach(f => {
+        if (!f.profissional_id || !f.periodo_gozo_inicio || !f.periodo_gozo_fim) return;
+        
+        const inicioGozo = new Date(f.periodo_gozo_inicio);
+        const fimGozo = new Date(f.periodo_gozo_fim);
+        const inicioCompetencia = new Date(inicioMes);
+        const fimCompetencia = new Date(fimMes);
+        
+        // Calcular dias de férias dentro do mês
+        const inicioEfetivo = inicioGozo > inicioCompetencia ? inicioGozo : inicioCompetencia;
+        const fimEfetivo = fimGozo < fimCompetencia ? fimGozo : fimCompetencia;
+        const dias = Math.max(0, Math.ceil((fimEfetivo.getTime() - inicioEfetivo.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        
+        feriasMap[f.profissional_id] = (feriasMap[f.profissional_id] || 0) + dias;
+      });
+
+      // Processar vales
+      const valesMap: Record<string, number> = {};
+      valesRes.data?.forEach(v => {
+        if (!v.profissional_id) return;
+        valesMap[v.profissional_id] = (valesMap[v.profissional_id] || 0) + Number(v.valor);
+      });
+
+      // Processar empréstimos
+      const emprestimosMap: Record<string, number> = {};
+      emprestimosRes.data?.forEach(e => {
+        if (!e.profissional_id) return;
+        emprestimosMap[e.profissional_id] = (emprestimosMap[e.profissional_id] || 0) + Number(e.valor_parcela);
+      });
+
+      // Processar afastamentos
+      const afastamentosMap: Record<string, string> = {};
+      afastamentosRes.data?.forEach(a => {
+        if (!a.profissional_id) return;
+        afastamentosMap[a.profissional_id] = a.tipo;
+      });
+
+      setDadosCompetencia({
+        faltas: faltasMap,
+        ferias: feriasMap,
+        vales: valesMap,
+        emprestimos: emprestimosMap,
+        afastamentos: afastamentosMap,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('Erro ao carregar dados da competência:', error);
+      setDadosCompetencia(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [competencia]);
+
+  // Carregar dados quando a competência mudar
+  useEffect(() => {
+    carregarDadosCompetencia();
+  }, [carregarDadosCompetencia]);
+
   // Verificar dados carregados do Supabase
   useEffect(() => {
     if (!supabaseData.isLoading) {
       setValidacaoDados({
         ativosCarregados: supabaseData.totalProfissionais > 0,
-        asoCarregados: true, // Dados no Supabase
-        beneficiosCarregados: true, // Dados no Supabase
+        asoCarregados: true,
+        beneficiosCarregados: true,
         timestampAtivos: new Date().toISOString(),
         timestampASO: new Date().toISOString(),
         timestampBeneficios: new Date().toISOString(),
@@ -359,12 +496,27 @@ export default function SimuladorFolha() {
                          validacaoDados.asoCarregados && 
                          validacaoDados.beneficiosCarregados;
 
-  // Usar dados do Supabase
+  // Usar dados do Supabase com dados reais da competência
   const profissionais = supabaseData.totalProfissionais > 0
     ? supabaseData.profissionais.map((p: any) => {
         const salario = p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0;
-        // Determinar status baseado em afastamentos (se houver implementação futura)
-        const status = p.status === 'inativo' ? 'afastado_doenca' : 'ativo';
+        
+        // Verificar afastamento ativo
+        const tipoAfastamento = dadosCompetencia.afastamentos[p.id];
+        let status: 'ativo' | 'ferias' | 'afastado_acidente' | 'afastado_doenca' | 'licenca_maternidade' = 'ativo';
+        
+        if (tipoAfastamento) {
+          if (tipoAfastamento.includes('acidente')) status = 'afastado_acidente';
+          else if (tipoAfastamento.includes('maternidade')) status = 'licenca_maternidade';
+          else status = 'afastado_doenca';
+        } else if (dadosCompetencia.ferias[p.id] && dadosCompetencia.ferias[p.id] >= 15) {
+          status = 'ferias';
+        } else if (p.status === 'inativo') {
+          status = 'afastado_doenca';
+        }
+        
+        // Dados reais da competência
+        const faltasProf = dadosCompetencia.faltas[p.id] || { injustificadas: 0, justificadas: 0 };
         
         return {
           id: p.id,
@@ -374,16 +526,16 @@ export default function SimuladorFolha() {
           salario,
           escala: '6x1' as '6x1' | '5x2',
           valorPassagem: p.valor_diario_rota || 4.40,
-          dataAdmissao: p.data_admissao || null, // Mantém null para tratamento correto
-          status: status as 'ativo' | 'ferias' | 'afastado_acidente' | 'afastado_doenca' | 'licenca_maternidade',
+          dataAdmissao: p.data_admissao || null,
+          status,
           recebeCesta: p.cesta_basica === true,
           recebeVT: p.vale_transporte === true,
           recebeVR: p.vale_refeicao === true,
-          faltas: 0,
-          atestados: 0,
-          diasFerias: 0,
-          vales: 0,
-          emprestimos: 0,
+          faltas: faltasProf.injustificadas,
+          atestados: faltasProf.justificadas,
+          diasFerias: dadosCompetencia.ferias[p.id] || 0,
+          vales: dadosCompetencia.vales[p.id] || 0,
+          emprestimos: dadosCompetencia.emprestimos[p.id] || 0,
           pensao: p.pensao_alimenticia || 0,
         };
       })
@@ -489,17 +641,24 @@ export default function SimuladorFolha() {
   };
 
   const exportarCSV = () => {
-    const headers = ['Loja', 'Matrícula', 'Nome', 'Status', 'Salário', 'Dia 20', 'Dia 5', 'VT', 'VR', 'Total'];
+    const headers = ['Loja', 'Matrícula', 'Nome', 'Status', 'Faltas', 'Atestados', 'Férias', 'Salário', 'Dia 20', 'Dia 5', 'Vales', 'Empréstimos', 'Descontos', 'VT', 'VR', 'Cesta', 'Total'];
     const rows = calculosLote.map(c => [
       c.loja?.nome || '',
       c.profissional.matricula,
       c.profissional.nome,
       c.profissional.status,
+      c.profissional.faltas,
+      c.profissional.atestados,
+      c.profissional.diasFerias,
       c.profissional.salario,
       c.valorDia20,
       c.salarioLiquido,
+      c.profissional.vales,
+      c.profissional.emprestimos,
+      c.totalDescontos,
       c.valorVT,
       c.valorVR,
+      c.valorCesta,
       c.totalMes,
     ]);
     
@@ -789,9 +948,11 @@ export default function SimuladorFolha() {
                       <TableHead className="font-semibold">Nome</TableHead>
                       <TableHead className="font-semibold">Loja</TableHead>
                       <TableHead className="font-semibold">Status</TableHead>
+                      <TableHead className="text-center font-semibold">Faltas</TableHead>
                       <TableHead className="text-right font-semibold">Salário</TableHead>
                       <TableHead className="text-right font-semibold">Dia 20</TableHead>
                       <TableHead className="text-right font-semibold">Dia 5</TableHead>
+                      <TableHead className="text-right font-semibold">Descontos</TableHead>
                       <TableHead className="text-right font-semibold">VT</TableHead>
                       <TableHead className="text-right font-semibold">VR</TableHead>
                       <TableHead className="text-right font-semibold">Cesta</TableHead>
@@ -799,12 +960,36 @@ export default function SimuladorFolha() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {calculosLote.map((c) => (
+                    {dadosCompetencia.isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                          Carregando dados da competência...
+                        </TableCell>
+                      </TableRow>
+                    ) : calculosLote.map((c) => (
                       <TableRow key={c.profissional.id} className="transition-colors">
                         <TableCell className="font-mono text-xs">{c.profissional.matricula}</TableCell>
                         <TableCell className="font-medium max-w-[180px] truncate">{c.profissional.nome}</TableCell>
                         <TableCell className="text-muted-foreground">{c.loja?.nome}</TableCell>
                         <TableCell>{getStatusBadge(c.profissional.status)}</TableCell>
+                        <TableCell className="text-center">
+                          {(c.profissional.faltas > 0 || c.profissional.atestados > 0) ? (
+                            <div className="flex items-center justify-center gap-1">
+                              {c.profissional.faltas > 0 && (
+                                <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
+                                  {c.profissional.faltas}F
+                                </Badge>
+                              )}
+                              {c.profissional.atestados > 0 && (
+                                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-xs">
+                                  {c.profissional.atestados}A
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right font-mono">
                           {formatCurrency(c.profissional.salario)}
                         </TableCell>
@@ -813,6 +998,13 @@ export default function SimuladorFolha() {
                         </TableCell>
                         <TableCell className="text-right font-mono">
                           {formatCurrency(c.salarioLiquido)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {c.totalDescontos > 0 ? (
+                            <span className="text-destructive">-{formatCurrency(c.totalDescontos)}</span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right font-mono text-muted-foreground">
                           {formatCurrency(c.valorVT)}
