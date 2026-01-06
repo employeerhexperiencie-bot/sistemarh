@@ -95,7 +95,7 @@ export default function PainelProfissional() {
           vale_refeicao,
           cesta_basica,
           valor_diario_rota,
-          lojas:loja_id (nome)
+          lojas:lojas!profissionais_loja_id_fkey (nome)
         `)
         .eq('id', id)
         .single();
@@ -126,7 +126,7 @@ export default function PainelProfissional() {
           nome,
           salario_nominal,
           loja_id,
-          lojas:loja_id (nome)
+          lojas:lojas!profissionais_loja_id_fkey (nome)
         `).eq('status', 'ativo')
       ]);
 
