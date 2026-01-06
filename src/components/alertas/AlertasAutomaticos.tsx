@@ -10,10 +10,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Bell, AlertTriangle, Calendar, FileText, Stethoscope, 
   Clock, CheckCircle, XCircle, Building2, User, ChevronRight,
-  Filter, Download, RefreshCw, Eye, CheckCircle2, Info, Loader2
+  Filter, Download, RefreshCw, Eye, CheckCircle2, Info, Loader2, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -271,6 +272,7 @@ export function CentralAlertas() {
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [alertasSistema, setAlertasSistema] = useState<any[]>([]);
   const [lojas, setLojas] = useState<string[]>([]);
+  const [listaAberta, setListaAberta] = useState(true);
 
   useEffect(() => {
     loadData();
@@ -690,9 +692,15 @@ export function CentralAlertas() {
         </div>
       </div>
 
-      {/* Cards de contadores */}
+      {/* Cards de contadores - clicáveis */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-destructive/5 border-destructive/20">
+        <Card 
+          className={`bg-destructive/5 border-destructive/20 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${nivelFiltro === 'critico' ? 'ring-2 ring-destructive' : ''}`}
+          onClick={() => {
+            setNivelFiltro(nivelFiltro === 'critico' ? 'todos' : 'critico');
+            setListaAberta(true);
+          }}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-8 w-8 text-destructive" />
@@ -704,7 +712,13 @@ export function CentralAlertas() {
           </CardContent>
         </Card>
         
-        <Card className="bg-warning/5 border-warning/20">
+        <Card 
+          className={`bg-warning/5 border-warning/20 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${nivelFiltro === 'urgente' ? 'ring-2 ring-warning' : ''}`}
+          onClick={() => {
+            setNivelFiltro(nivelFiltro === 'urgente' ? 'todos' : 'urgente');
+            setListaAberta(true);
+          }}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <Clock className="h-8 w-8 text-warning" />
@@ -716,7 +730,13 @@ export function CentralAlertas() {
           </CardContent>
         </Card>
         
-        <Card className="bg-info/5 border-info/20">
+        <Card 
+          className={`bg-info/5 border-info/20 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${nivelFiltro === 'atencao' ? 'ring-2 ring-info' : ''}`}
+          onClick={() => {
+            setNivelFiltro(nivelFiltro === 'atencao' ? 'todos' : 'atencao');
+            setListaAberta(true);
+          }}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <Info className="h-8 w-8 text-info" />
@@ -728,7 +748,13 @@ export function CentralAlertas() {
           </CardContent>
         </Card>
         
-        <Card className="bg-primary/5 border-primary/20">
+        <Card 
+          className={`bg-primary/5 border-primary/20 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] ${nivelFiltro === 'todos' ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => {
+            setNivelFiltro('todos');
+            setListaAberta(true);
+          }}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <Bell className="h-8 w-8 text-primary" />
@@ -816,47 +842,67 @@ export function CentralAlertas() {
         </CardContent>
       </Card>
 
-      {/* Tabela de alertas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Alertas ({alertasFiltrados.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Nível</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Loja</TableHead>
-                <TableHead>Profissional</TableHead>
-                <TableHead className="text-center">Prazo</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {alertasFiltrados.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Nenhum alerta encontrado
-                  </TableCell>
-                </TableRow>
-              ) : (
-                alertasFiltrados.map((alerta) => (
-                  <AlertaItem 
-                    key={alerta.id} 
-                    alerta={alerta} 
-                    onMarcarLido={handleMarcarLido}
-                    onResolver={handleResolver}
-                    onAcaoRapida={handleAcaoRapida}
-                    resolvendo={resolvendo}
-                  />
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Tabela de alertas - colapsável */}
+      <Collapsible open={listaAberta} onOpenChange={setListaAberta}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  Alertas ({alertasFiltrados.length})
+                  {nivelFiltro !== 'todos' && (
+                    <Badge variant="secondary" className="ml-2">
+                      Filtro: {nivelFiltro}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <Button variant="ghost" size="sm">
+                  {listaAberta ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              <ScrollArea className="h-[500px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Nível</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Loja</TableHead>
+                      <TableHead>Profissional</TableHead>
+                      <TableHead className="text-center">Prazo</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {alertasFiltrados.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          Nenhum alerta encontrado
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      alertasFiltrados.map((alerta) => (
+                        <AlertaItem 
+                          key={alerta.id} 
+                          alerta={alerta} 
+                          onMarcarLido={handleMarcarLido}
+                          onResolver={handleResolver}
+                          onAcaoRapida={handleAcaoRapida}
+                          resolvendo={resolvendo}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </div>
   );
 }

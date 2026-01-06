@@ -876,6 +876,60 @@ export type Database = {
         }
         Relationships: []
       }
+      historico_emprestimos: {
+        Row: {
+          acao: string
+          campo_alterado: string | null
+          created_at: string
+          emprestimo_id: string
+          id: string
+          observacao: string | null
+          profissional_id: string | null
+          usuario: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          acao: string
+          campo_alterado?: string | null
+          created_at?: string
+          emprestimo_id: string
+          id?: string
+          observacao?: string | null
+          profissional_id?: string | null
+          usuario?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          acao?: string
+          campo_alterado?: string | null
+          created_at?: string
+          emprestimo_id?: string
+          id?: string
+          observacao?: string | null
+          profissional_id?: string | null
+          usuario?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_emprestimos_emprestimo_id_fkey"
+            columns: ["emprestimo_id"]
+            isOneToOne: false
+            referencedRelation: "emprestimos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_emprestimos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historico_salarios: {
         Row: {
           created_at: string | null

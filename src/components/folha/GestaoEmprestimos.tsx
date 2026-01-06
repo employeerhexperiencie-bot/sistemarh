@@ -12,12 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Banknote, Download, Plus, Calendar, Users, 
   DollarSign, CheckCircle, Clock, Building2, Loader2, Pause, Play, AlertCircle, 
-  CreditCard, FileText, TrendingDown, CalendarClock, Pencil, Save, X
+  CreditCard, FileText, TrendingDown, CalendarClock, Pencil, Save, X, History
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { HistoricoEmprestimos, registrarHistoricoEmprestimo } from './HistoricoEmprestimos';
+import { NovoEmprestimoForm } from './NovoEmprestimoForm';
 
 const formatCurrency = (value: number): string => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -629,6 +631,45 @@ export function GestaoEmprestimos() {
     if (error) {
       toast.error('Erro ao salvar alterações');
     } else {
+      // Registrar alterações no histórico
+      const alteracoes: string[] = [];
+      
+      if (editForm.parcelasPagas !== editandoEmprestimo.parcelasPagas) {
+        await registrarHistoricoEmprestimo({
+          emprestimoId: editandoEmprestimo.id,
+          acao: 'edicao',
+          campoAlterado: 'parcelas_pagas',
+          valorAnterior: editandoEmprestimo.parcelasPagas,
+          valorNovo: editForm.parcelasPagas
+        });
+        alteracoes.push('parcelas');
+      }
+      
+      if (editForm.saldoDevedor !== editandoEmprestimo.saldoDevedor) {
+        await registrarHistoricoEmprestimo({
+          emprestimoId: editandoEmprestimo.id,
+          acao: 'edicao',
+          campoAlterado: 'saldo_devedor',
+          valorAnterior: editandoEmprestimo.saldoDevedor,
+          valorNovo: editForm.saldoDevedor
+        });
+        alteracoes.push('saldo');
+      }
+      
+      if (editForm.status !== editandoEmprestimo.status) {
+        const acaoTipo = editForm.status === 'quitado' ? 'quitar' 
+          : editForm.status === 'pausado' ? 'pausar' 
+          : 'reativar';
+        await registrarHistoricoEmprestimo({
+          emprestimoId: editandoEmprestimo.id,
+          acao: acaoTipo,
+          campoAlterado: 'status',
+          valorAnterior: editandoEmprestimo.status,
+          valorNovo: editForm.status
+        });
+        alteracoes.push('status');
+      }
+      
       toast.success('Empréstimo atualizado com sucesso');
       setEditandoEmprestimo(null);
       fetchData();
@@ -750,6 +791,27 @@ export function GestaoEmprestimos() {
     if (error) {
       toast.error('Erro ao registrar pagamento');
     } else {
+      // Registrar no histórico
+      await registrarHistoricoEmprestimo({
+        emprestimoId: id,
+        acao: 'pagamento',
+        campoAlterado: 'parcela',
+        valorAnterior: emprestimo.parcelasPagas,
+        valorNovo: novasParcelasPagas,
+        observacao: `Parcela ${novasParcelasPagas} de ${emprestimo.parcelasTotal} - R$ ${emprestimo.valorParcela.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+      });
+      
+      if (novoStatus === 'quitado') {
+        await registrarHistoricoEmprestimo({
+          emprestimoId: id,
+          acao: 'quitar',
+          campoAlterado: 'status',
+          valorAnterior: 'ativo',
+          valorNovo: 'quitado',
+          observacao: 'Empréstimo quitado automaticamente após última parcela'
+        });
+      }
+      
       toast.success(`Parcela ${novasParcelasPagas} registrada com sucesso!`);
       if (novoStatus === 'quitado') {
         toast.success('🎉 Empréstimo quitado!');
@@ -1214,6 +1276,11 @@ export function GestaoEmprestimos() {
                                   ) : (
                                     <DetalheEmprestimoCLT emprestimo={e} onStatusChange={fetchData} />
                                   )}
+                                  
+                                  {/* Histórico de alterações */}
+                                  <div className="mt-4 pt-4 border-t">
+                                    <HistoricoEmprestimos emprestimoId={e.id} limit={20} />
+                                  </div>
                                 </DialogContent>
                               </Dialog>
                               <Button 
@@ -1239,18 +1306,20 @@ export function GestaoEmprestimos() {
       
       {/* Dialog Novo Empréstimo */}
       <Dialog open={novoEmprestimoOpen} onOpenChange={setNovoEmprestimoOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Novo Empréstimo</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Novo Empréstimo
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Para cadastrar um novo empréstimo, acesse o cadastro do profissional e adicione os dados do empréstimo na aba correspondente.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNovoEmprestimoOpen(false)}>Fechar</Button>
-          </DialogFooter>
+          <NovoEmprestimoForm 
+            onSuccess={() => {
+              setNovoEmprestimoOpen(false);
+              fetchData();
+            }}
+            onCancel={() => setNovoEmprestimoOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
