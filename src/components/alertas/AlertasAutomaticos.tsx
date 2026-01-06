@@ -83,19 +83,21 @@ interface AlertaItemProps {
   alerta: Alerta;
   onMarcarLido?: (id: string) => void;
   onResolver?: (id: string) => void;
+  resolvendo?: string | null;
   compact?: boolean;
 }
 
-export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }: AlertaItemProps) {
+export function AlertaItem({ alerta, onMarcarLido, onResolver, resolvendo, compact = false }: AlertaItemProps) {
   const navigate = useNavigate();
   const nivelConfig = getNivelConfig(alerta.nivel);
   const tipoConfig = getTipoConfig(alerta.tipo);
   const TipoIcon = tipoConfig.icon;
+  const isResolvendo = resolvendo === alerta.id;
   
   if (compact) {
     return (
       <div 
-        className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${nivelConfig.bgColor} ${alerta.lido ? 'opacity-70' : ''}`}
+        className={`flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${nivelConfig.bgColor} ${alerta.lido ? 'opacity-70' : ''} ${alerta.resolvido ? 'opacity-50 line-through' : ''}`}
         onClick={() => alerta.acaoUrl && navigate(alerta.acaoUrl)}
       >
         <div className={`p-1.5 rounded-lg ${alerta.nivel === 'critico' ? 'bg-destructive/20' : 'bg-background/50'}`}>
@@ -104,7 +106,8 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <p className="text-sm font-medium truncate">{alerta.titulo}</p>
-            {!alerta.lido && <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
+            {!alerta.lido && !alerta.resolvido && <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
+            {alerta.resolvido && <CheckCircle2 className="h-3 w-3 text-success" />}
           </div>
           <p className="text-xs text-muted-foreground truncate">{alerta.descricao}</p>
           <div className="flex items-center gap-2 mt-1">
@@ -114,17 +117,31 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }
             )}
           </div>
         </div>
-        <div className="text-right">
+        <div className="flex flex-col items-end gap-1">
           <Badge className={`text-[10px] ${nivelConfig.className}`}>
             {alerta.diasRestantes <= 0 ? 'Vencido' : `${alerta.diasRestantes}d`}
           </Badge>
+          {onResolver && !alerta.resolvido && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 px-2 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                onResolver(alerta.id);
+              }}
+              disabled={isResolvendo}
+            >
+              {isResolvendo ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+            </Button>
+          )}
         </div>
       </div>
     );
   }
   
   return (
-    <TableRow className={`${alerta.lido ? 'opacity-70' : ''} hover:bg-muted/50`}>
+    <TableRow className={`${alerta.lido ? 'opacity-70' : ''} ${alerta.resolvido ? 'opacity-50 bg-success/5' : ''} hover:bg-muted/50`}>
       <TableCell>
         <div className="flex items-center gap-2">
           <TipoIcon className={`h-4 w-4 ${tipoConfig.color}`} />
@@ -135,7 +152,7 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }
         <Badge className={`text-xs ${nivelConfig.className}`}>{nivelConfig.label}</Badge>
       </TableCell>
       <TableCell>
-        <div>
+        <div className={alerta.resolvido ? 'line-through' : ''}>
           <p className="font-medium text-sm">{alerta.titulo}</p>
           <p className="text-xs text-muted-foreground">{alerta.descricao}</p>
         </div>
@@ -154,9 +171,16 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }
         )}
       </TableCell>
       <TableCell className="text-center">
-        <Badge variant={alerta.diasRestantes <= 0 ? 'destructive' : 'secondary'}>
-          {alerta.diasRestantes <= 0 ? `${Math.abs(alerta.diasRestantes)}d atrás` : `${alerta.diasRestantes}d`}
-        </Badge>
+        {alerta.resolvido ? (
+          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Resolvido
+          </Badge>
+        ) : (
+          <Badge variant={alerta.diasRestantes <= 0 ? 'destructive' : 'secondary'}>
+            {alerta.diasRestantes <= 0 ? `${Math.abs(alerta.diasRestantes)}d atrás` : `${alerta.diasRestantes}d`}
+          </Badge>
+        )}
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
@@ -165,9 +189,24 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }
               <Eye className="h-4 w-4" />
             </Button>
           )}
-          {onMarcarLido && !alerta.lido && (
+          {onMarcarLido && !alerta.lido && !alerta.resolvido && (
             <Button variant="ghost" size="sm" onClick={() => onMarcarLido(alerta.id)}>
               <CheckCircle className="h-4 w-4" />
+            </Button>
+          )}
+          {onResolver && !alerta.resolvido && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onResolver(alerta.id)}
+              disabled={isResolvendo}
+              className="text-success hover:text-success hover:bg-success/10"
+            >
+              {isResolvendo ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
             </Button>
           )}
         </div>
@@ -179,12 +218,14 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, compact = false }
 export function CentralAlertas() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [resolvendo, setResolvendo] = useState<string | null>(null);
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
   const [nivelFiltro, setNivelFiltro] = useState<string>('todos');
   const [lojaFiltro, setLojaFiltro] = useState<string>('todas');
   const [mostrarResolvidos, setMostrarResolvidos] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [alertas, setAlertas] = useState<Alerta[]>([]);
+  const [alertasSistema, setAlertasSistema] = useState<any[]>([]);
   const [lojas, setLojas] = useState<string[]>([]);
 
   useEffect(() => {
@@ -201,6 +242,53 @@ export function CentralAlertas() {
       // Carregar lojas
       const { data: lojasData } = await supabase.from('lojas').select('nome');
       setLojas((lojasData || []).map((l: any) => l.nome));
+
+      // Carregar alertas do sistema (banco de dados)
+      const { data: alertasBD } = await supabase
+        .from('alertas_sistema')
+        .select(`
+          *,
+          profissionais:profissional_id (nome, matricula),
+          lojas:loja_id (nome)
+        `)
+        .order('created_at', { ascending: false });
+
+      setAlertasSistema(alertasBD || []);
+
+      // Converter alertas do BD para o formato do componente
+      (alertasBD || []).forEach((a: any) => {
+        const prioridadeToNivel: Record<string, NivelAlerta> = {
+          'critica': 'critico',
+          'alta': 'urgente',
+          'media': 'atencao',
+          'baixa': 'info'
+        };
+        
+        const tipoMapping: Record<string, TipoAlerta> = {
+          'cadastro_incompleto': 'documento',
+          'aso_pendente': 'aso',
+          'aso_vencido': 'aso',
+          'ferias_vencendo': 'ferias',
+          'afastamento': 'afastamento',
+          'epi': 'epi'
+        };
+
+        alertasGerados.push({
+          id: `db-${a.id}`,
+          tipo: tipoMapping[a.tipo] || 'documento',
+          nivel: prioridadeToNivel[a.prioridade] || 'info',
+          titulo: a.titulo,
+          descricao: a.mensagem,
+          dataVencimento: a.data_vencimento || a.created_at,
+          diasRestantes: a.dias_ate_vencimento || 0,
+          loja: a.lojas?.nome || 'Sistema',
+          profissional: a.profissionais?.nome,
+          matricula: a.profissionais?.matricula,
+          acaoUrl: a.acao_url,
+          lido: a.lido || false,
+          resolvido: false, // Alertas do BD são sempre pendentes se existem
+        });
+      });
 
       // Carregar exames ASO vencendo
       const { data: exames } = await supabase
@@ -331,11 +419,38 @@ export function CentralAlertas() {
         });
       });
 
-      setAlertas(alertasGerados.sort((a, b) => a.diasRestantes - b.diasRestantes));
+      setAlertas(alertasGerados.sort((a, b) => {
+        // Prioridade: críticos primeiro, depois por dias restantes
+        const nivelOrder = { critico: 0, urgente: 1, atencao: 2, info: 3 };
+        if (nivelOrder[a.nivel] !== nivelOrder[b.nivel]) {
+          return nivelOrder[a.nivel] - nivelOrder[b.nivel];
+        }
+        return a.diasRestantes - b.diasRestantes;
+      }));
     } catch (error) {
       console.error('Erro ao carregar alertas:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResolver = async (alertaId: string) => {
+    setResolvendo(alertaId);
+    try {
+      // Se é um alerta do banco de dados (começa com "db-")
+      if (alertaId.startsWith('db-')) {
+        const dbId = alertaId.replace('db-', '');
+        await supabase.from('alertas_sistema').delete().eq('id', dbId);
+        // Recarregar dados
+        await loadData();
+      } else {
+        // Para alertas gerados dinamicamente, apenas marcar como resolvido no estado local
+        setAlertas(prev => prev.map(a => a.id === alertaId ? { ...a, resolvido: true } : a));
+      }
+    } catch (error) {
+      console.error('Erro ao resolver alerta:', error);
+    } finally {
+      setResolvendo(null);
     }
   };
 
@@ -551,6 +666,8 @@ export function CentralAlertas() {
                     key={alerta.id} 
                     alerta={alerta} 
                     onMarcarLido={handleMarcarLido}
+                    onResolver={handleResolver}
+                    resolvendo={resolvendo}
                   />
                 ))
               )}
