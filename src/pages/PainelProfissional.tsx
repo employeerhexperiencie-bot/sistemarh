@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, FileText, Filter, CreditCard, DollarSign, FolderOpen, History, Loader2, ArrowLeft, Calendar, Bus, Utensils, ShoppingBasket } from 'lucide-react';
+import { Users, TrendingUp, FileText, Filter, CreditCard, DollarSign, FolderOpen, History, Loader2, ArrowLeft, Calendar, Bus, Utensils, ShoppingBasket, Banknote } from 'lucide-react';
+import { EmprestimosTimeline } from '@/components/EmprestimosTimeline';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -336,6 +337,9 @@ export default function PainelProfissional() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Empréstimos - Timeline */}
+        <EmprestimosTimeline profissionalId={p.id} profissionalNome={p.nome} />
 
         {/* Informações de Contato */}
         <Card>
