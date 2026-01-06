@@ -17,7 +17,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   RefreshCw,
-  Database
+  Database,
+  Banknote
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +29,7 @@ interface ProcessedData {
   lojas: string[];
   examesASO: any[];
   beneficios: any[];
+  emprestimos: any[];
 }
 
 interface ImportResult {
@@ -35,6 +37,7 @@ interface ImportResult {
   profissionais: { inserted: number; errors: string[]; warnings: string[] };
   examesASO: { inserted: number; errors: string[] };
   beneficios: { inserted: number; errors: string[] };
+  emprestimos: { inserted: number; errors: string[] };
 }
 
 const ImportarDadosExcel = () => {
@@ -279,7 +282,119 @@ const ImportarDadosExcel = () => {
         });
       }
       
-      setProgress(80);
+      setProgress(70);
+      setStep('Carregando arquivos de empréstimos...');
+      
+      // Processar Empréstimos (CTPS e Folha)
+      const emprestimos: any[] = [];
+      
+      // Tentar carregar EMPRESTIMO_CTPS.xlsx
+      try {
+        const ctpsResponse = await fetch('/data/EMPRESTIMO_CTPS.xlsx');
+        if (ctpsResponse.ok) {
+          const ctpsBuffer = await ctpsResponse.arrayBuffer();
+          const ctpsWorkbook = XLSX.read(ctpsBuffer, { type: 'array' });
+          const ctpsSheet = ctpsWorkbook.Sheets[ctpsWorkbook.SheetNames[0]];
+          const ctpsData = XLSX.utils.sheet_to_json(ctpsSheet, { header: 1 }) as any[][];
+          
+          // Processar dados - linha 8 tem os headers (índice 7)
+          for (let i = 8; i < ctpsData.length; i++) {
+            const row = ctpsData[i] as any[];
+            if (!row || !row[0] || String(row[0]).trim() === '') continue;
+            
+            const matricula = String(row[0]).trim();
+            const nome = String(row[1] || '').trim();
+            const cargo = String(row[2] || '').trim();
+            const loja = String(row[3] || '').trim();
+            const salario = parseSalario(row[4]);
+            const dataAdmissao = row[5];
+            const inicioDesconto = String(row[6] || '').trim();
+            const valorParcela = parseSalario(row[7]);
+            
+            if (!nome || !valorParcela) continue;
+            
+            emprestimos.push({
+              matricula,
+              nome,
+              cargo,
+              loja,
+              salario,
+              dataAdmissao,
+              inicioDesconto,
+              valorParcela,
+              tipo: 'clt', // Empréstimo CLT consignado
+              valorTotal: valorParcela, // No CLT normalmente é o valor da parcela mensal fixa
+              numeroParcelas: 1,
+              status: 'ativo',
+              observacoes: 'Empréstimo CLT - cod 157',
+            });
+          }
+          console.log(`${emprestimos.length} empréstimos CLT carregados`);
+        }
+      } catch (e) {
+        console.log('Arquivo EMPRESTIMO_CTPS.xlsx não encontrado ou erro ao processar');
+      }
+      
+      // Tentar carregar EMPRESTIMO_DESCONTO_EM_FOLHA.xlsx
+      try {
+        const folhaResponse = await fetch('/data/EMPRESTIMO_DESCONTO_EM_FOLHA.xlsx');
+        if (folhaResponse.ok) {
+          const folhaBuffer = await folhaResponse.arrayBuffer();
+          const folhaWorkbook = XLSX.read(folhaBuffer, { type: 'array' });
+          
+          // Processar todas as páginas
+          for (const sheetName of folhaWorkbook.SheetNames) {
+            const folhaSheet = folhaWorkbook.Sheets[sheetName];
+            const folhaData = XLSX.utils.sheet_to_json(folhaSheet, { header: 1 }) as any[][];
+            
+            // Linha 10 tem os headers (índice 9)
+            for (let i = 10; i < folhaData.length; i++) {
+              const row = folhaData[i] as any[];
+              if (!row || !row[0] || String(row[0]).trim() === '') continue;
+              
+              const nome = String(row[0]).trim();
+              const loja = String(row[1] || '').trim();
+              const salario = parseSalario(row[2]);
+              const dataLiberacao = row[3];
+              const valorTotal = parseSalario(row[4]);
+              const numeroParcelas = parseInt(String(row[5] || '0')) || 0;
+              const valorParcela = parseSalario(row[6]);
+              const inicioDesconto = String(row[7] || '').trim();
+              const fimDesconto = String(row[8] || '').trim();
+              const observacao = String(row[9] || '').trim();
+              
+              if (!nome || !valorTotal) continue;
+              
+              // Verificar status
+              let status = 'ativo';
+              if (observacao.toUpperCase().includes('ENCERRADO') || 
+                  observacao.toUpperCase().includes('QUITADO')) {
+                status = 'quitado';
+              }
+              
+              emprestimos.push({
+                nome,
+                loja,
+                salario,
+                dataLiberacao,
+                valorTotal,
+                numeroParcelas: numeroParcelas || 1,
+                valorParcela: valorParcela || 0,
+                inicioDesconto,
+                fimDesconto,
+                tipo: 'empresa', // Empréstimo da empresa
+                status,
+                observacoes: observacao || 'Empréstimo com desconto em folha',
+              });
+            }
+          }
+          console.log(`Total de empréstimos: ${emprestimos.length}`);
+        }
+      } catch (e) {
+        console.log('Arquivo EMPRESTIMO_DESCONTO_EM_FOLHA.xlsx não encontrado ou erro ao processar');
+      }
+      
+      setProgress(90);
       setStep('Dados processados!');
       
       setProcessedData({
@@ -287,12 +402,13 @@ const ImportarDadosExcel = () => {
         lojas: Array.from(lojasSet),
         examesASO,
         beneficios,
+        emprestimos,
       });
       
       setPreviewData(profissionais.slice(0, 10));
       setProgress(100);
       
-      toast.success(`${profissionais.length} profissionais, ${examesASO.length} exames ASO e ${beneficios.length} benefícios carregados`);
+      toast.success(`${profissionais.length} profissionais, ${examesASO.length} exames ASO, ${beneficios.length} benefícios e ${emprestimos.length} empréstimos carregados`);
       
     } catch (error) {
       console.error('Erro ao carregar arquivos:', error);
@@ -340,6 +456,7 @@ const ImportarDadosExcel = () => {
           lojas: processedData.lojas.map(nome => ({ nome })),
           examesASO: processedData.examesASO,
           beneficios: processedData.beneficios,
+          emprestimos: processedData.emprestimos,
         }
       });
       
@@ -372,7 +489,7 @@ const ImportarDadosExcel = () => {
       </div>
 
       {/* Cards de Status */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -432,6 +549,21 @@ const ImportarDadosExcel = () => {
             <p className="text-xs text-muted-foreground">registros de benefícios</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Banknote className="h-4 w-4 text-primary" />
+              Empréstimos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {processedData?.emprestimos.length || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">registros de empréstimos</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Ações */}
@@ -442,7 +574,7 @@ const ImportarDadosExcel = () => {
             Processar Arquivos
           </CardTitle>
           <CardDescription>
-            Os arquivos devem estar em public/data/ (ATIVOS.xlsx, BASE_ASO.xlsx, BASE_Beneficios.xlsx)
+            Os arquivos devem estar em public/data/ (ATIVOS.xlsx, BASE_ASO.xlsx, BASE_Beneficios.xlsx, EMPRESTIMO_CTPS.xlsx, EMPRESTIMO_DESCONTO_EM_FOLHA.xlsx)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -493,7 +625,7 @@ const ImportarDadosExcel = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-5">
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Lojas</span>
@@ -546,6 +678,18 @@ const ImportarDadosExcel = () => {
                   </p>
                 )}
               </div>
+              
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Empréstimos</span>
+                  <Badge variant="secondary">{importResult.emprestimos?.inserted || 0}</Badge>
+                </div>
+                {importResult.emprestimos?.errors?.length > 0 && (
+                  <p className="text-xs text-destructive mt-1">
+                    {importResult.emprestimos.errors.length} erros
+                  </p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -560,11 +704,12 @@ const ImportarDadosExcel = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="profissionais">
-              <TabsList>
+              <TabsList className="flex-wrap">
                 <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
                 <TabsTrigger value="lojas">Lojas</TabsTrigger>
                 <TabsTrigger value="aso">ASO</TabsTrigger>
                 <TabsTrigger value="beneficios">Benefícios</TabsTrigger>
+                <TabsTrigger value="emprestimos">Empréstimos</TabsTrigger>
               </TabsList>
               
               <TabsContent value="profissionais">
@@ -672,6 +817,49 @@ const ImportarDadosExcel = () => {
                           <TableCell>{ben.valorDiario}</TableCell>
                           <TableCell>{ben.vr || '-'}</TableCell>
                           <TableCell>{ben.cestaBasica}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </TabsContent>
+              
+              <TabsContent value="emprestimos">
+                <ScrollArea className="h-[400px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Loja</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Valor Total</TableHead>
+                        <TableHead>Parcelas</TableHead>
+                        <TableHead>Valor Parcela</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {processedData.emprestimos.slice(0, 20).map((emp, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{emp.nome}</TableCell>
+                          <TableCell>{emp.loja}</TableCell>
+                          <TableCell>
+                            <Badge variant={emp.tipo === 'empresa' ? 'default' : 'secondary'}>
+                              {emp.tipo === 'empresa' ? 'Empresa' : 'CLT'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {emp.valorTotal?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || '-'}
+                          </TableCell>
+                          <TableCell>{emp.numeroParcelas || '-'}</TableCell>
+                          <TableCell>
+                            {emp.valorParcela?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={emp.status === 'quitado' ? 'outline' : 'default'}>
+                              {emp.status}
+                            </Badge>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
