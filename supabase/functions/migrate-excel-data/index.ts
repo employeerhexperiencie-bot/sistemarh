@@ -88,10 +88,10 @@ Deno.serve(async (req) => {
     );
 
     // Receber dados do body
-    const { profissionais, lojas, examesASO, beneficios, ferias, faltas, afastamentos } = await req.json();
+    const { profissionais, lojas, examesASO, beneficios, ferias, faltas, afastamentos, emprestimos } = await req.json();
 
     console.log(`Iniciando migração: ${lojas?.length || 0} lojas fornecidas, ${profissionais?.length || 0} profissionais`);
-    console.log(`Dados adicionais: ${beneficios?.length || 0} benefícios, ${ferias?.length || 0} férias, ${faltas?.length || 0} faltas, ${afastamentos?.length || 0} afastamentos`);
+    console.log(`Dados adicionais: ${beneficios?.length || 0} benefícios, ${ferias?.length || 0} férias, ${faltas?.length || 0} faltas, ${afastamentos?.length || 0} afastamentos, ${emprestimos?.length || 0} empréstimos`);
 
     const results = {
       lojas: { inserted: 0, errors: [] as string[] },
@@ -101,6 +101,7 @@ Deno.serve(async (req) => {
       ferias: { inserted: 0, errors: [] as string[] },
       faltas: { inserted: 0, errors: [] as string[] },
       afastamentos: { inserted: 0, errors: [] as string[] },
+      emprestimos: { inserted: 0, errors: [] as string[] },
     };
 
     // Contador para gerar matrículas automáticas
@@ -644,7 +645,74 @@ Deno.serve(async (req) => {
       console.log(`Afastamentos inseridos: ${results.afastamentos.inserted}`);
     }
 
-    // 8. Inserir configurações padrão do sistema
+    // 8. Inserir Empréstimos (se houver)
+    if (emprestimos && emprestimos.length > 0) {
+      console.log(`Processando ${emprestimos.length} registros de empréstimos...`);
+      
+      for (const emp of emprestimos) {
+        // Buscar profissional por matrícula ou nome
+        let profId = null;
+        
+        if (emp.matricula) {
+          const { data } = await supabase
+            .from('profissionais')
+            .select('id')
+            .eq('matricula', String(emp.matricula).trim())
+            .maybeSingle();
+          if (data) profId = data.id;
+        }
+        
+        if (!profId && emp.nome) {
+          const { data } = await supabase
+            .from('profissionais')
+            .select('id')
+            .ilike('nome', `%${emp.nome.trim()}%`)
+            .maybeSingle();
+          if (data) profId = data.id;
+        }
+
+        if (profId) {
+          // Calcular data de previsão de término
+          let dataPrevisaoTermino = null;
+          if (emp.fimDesconto) {
+            dataPrevisaoTermino = parseExcelDate(emp.fimDesconto);
+          } else if (emp.inicioDesconto && emp.numeroParcelas) {
+            const inicio = parseExcelDate(emp.inicioDesconto);
+            if (inicio) {
+              const dataFim = new Date(inicio);
+              dataFim.setMonth(dataFim.getMonth() + (emp.numeroParcelas || 1));
+              dataPrevisaoTermino = dataFim.toISOString().split('T')[0];
+            }
+          }
+
+          const { error } = await supabase.from('emprestimos').insert({
+            profissional_id: profId,
+            tipo: emp.tipo || 'empresa',
+            valor_total: emp.valorTotal || emp.valorParcela || 0,
+            numero_parcelas: emp.numeroParcelas || 1,
+            valor_parcela: emp.valorParcela || 0,
+            parcelas_pagas: 0,
+            saldo_devedor: emp.valorTotal || emp.valorParcela || 0,
+            data_inicio: parseExcelDate(emp.inicioDesconto) || parseExcelDate(emp.dataLiberacao) || new Date().toISOString().split('T')[0],
+            data_previsao_termino: dataPrevisaoTermino,
+            status: emp.status || 'ativo',
+            observacoes: emp.observacoes || null,
+          });
+
+          if (error) {
+            results.emprestimos.errors.push(`${emp.nome || emp.matricula}: ${error.message}`);
+          } else {
+            results.emprestimos.inserted++;
+          }
+        } else {
+          console.log(`Empréstimo: profissional não encontrado - matrícula: ${emp.matricula}, nome: ${emp.nome}`);
+          results.emprestimos.errors.push(`${emp.nome || emp.matricula}: profissional não encontrado`);
+        }
+      }
+      console.log(`Empréstimos inseridos: ${results.emprestimos.inserted}`);
+    }
+
+    // 9. Inserir configurações padrão do sistema
     const configuracoesDefault = [
       { chave: 'valor_diario_vr', valor: '25.00', tipo: 'numero', categoria: 'beneficios', descricao: 'Valor diário do Vale Refeição' },
       { chave: 'percentual_desconto_vt', valor: '6', tipo: 'numero', categoria: 'beneficios', descricao: 'Percentual de desconto VT em folha' },
@@ -657,7 +725,7 @@ Deno.serve(async (req) => {
       await supabase.from('configuracoes_sistema').upsert(config, { onConflict: 'chave' });
     }
 
-    // 9. Criar histórico de salários inicial para cada profissional inserido
+    // 10. Criar histórico de salários inicial para cada profissional inserido
     if (results.profissionais.inserted > 0) {
       const { data: profissionaisInseridos } = await supabase
         .from('profissionais')
@@ -683,7 +751,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       results,
-      message: `Migração concluída: ${results.lojas.inserted} lojas, ${results.profissionais.inserted} profissionais, ${results.examesASO.inserted} exames, ${results.beneficios.inserted} benefícios, ${results.ferias.inserted} férias, ${results.faltas.inserted} faltas, ${results.afastamentos.inserted} afastamentos`
+      message: `Migração concluída: ${results.lojas.inserted} lojas, ${results.profissionais.inserted} profissionais, ${results.examesASO.inserted} exames, ${results.beneficios.inserted} benefícios, ${results.ferias.inserted} férias, ${results.faltas.inserted} faltas, ${results.afastamentos.inserted} afastamentos, ${results.emprestimos.inserted} empréstimos`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
