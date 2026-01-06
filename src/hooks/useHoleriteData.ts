@@ -115,11 +115,17 @@ export function useHoleriteData(profissionalId: string | null, competencia: stri
       valor: Number(v.valor),
     }));
 
-    // Empréstimos - valor da parcela mensal
-    const emprestimosFormatados = emprestimos.map(e => ({
-      descricao: `${e.tipo} (${e.parcelas_pagas + 1}/${e.numero_parcelas})`,
-      valor: Number(e.valor_parcela),
-    }));
+    // Empréstimos - valor da parcela mensal (CLT ou Empresa)
+    const emprestimosFormatados = emprestimos.map(e => {
+      const tipoLabel = e.tipo === 'clt' ? 'Empréstimo CLT' : 'Empréstimo Empresa';
+      const parcelaInfo = e.numero_parcelas 
+        ? ` (${(e.parcelas_pagas || 0) + 1}/${e.numero_parcelas})`
+        : '';
+      return {
+        descricao: `${tipoLabel}${parcelaInfo}`,
+        valor: Number(e.valor_parcela),
+      };
+    });
 
     // Faltas - apenas dias que faltou (sem DSR)
     const diasFalta = faltas.filter(f => f.tipo === 'injustificada').length;
@@ -203,11 +209,17 @@ export async function buscarDescontosProfissional(
     valor: Number(v.valor),
   }));
 
-  // Empréstimos
-  const emprestimosFormatados = emprestimos.map((e: any) => ({
-    descricao: `${e.tipo} (${(e.parcelas_pagas || 0) + 1}/${e.numero_parcelas})`,
-    valor: Number(e.valor_parcela),
-  }));
+  // Empréstimos (CLT ou Empresa)
+  const emprestimosFormatados = emprestimos.map((e: any) => {
+    const tipoLabel = e.tipo === 'clt' ? 'Empréstimo CLT' : 'Empréstimo Empresa';
+    const parcelaInfo = e.numero_parcelas 
+      ? ` (${(e.parcelas_pagas || 0) + 1}/${e.numero_parcelas})`
+      : '';
+    return {
+      descricao: `${tipoLabel}${parcelaInfo}`,
+      valor: Number(e.valor_parcela),
+    };
+  });
 
   // Faltas (apenas injustificadas)
   const diasFalta = faltas.filter((f: any) => f.tipo === 'injustificada').length;
