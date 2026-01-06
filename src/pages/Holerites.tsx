@@ -63,7 +63,9 @@ export default function Holerites() {
   const [statusFiltro, setStatusFiltro] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [selecionadosVT, setSelecionadosVT] = useState<Set<string>>(new Set());
   const [gerando, setGerando] = useState(false);
+  const [gerandoVT, setGerandoVT] = useState(false);
 
   // Estado de validação de dados
   const [validacaoDados, setValidacaoDados] = useState<{
@@ -434,6 +436,95 @@ export default function Holerites() {
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
   };
+
+  // Funções de seleção VT
+  const toggleSelecionadoVT = (id: string) => {
+    setSelecionadosVT(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selecionarTodosVT = () => {
+    const vtFiltrados = holeritesVT
+      .filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro)
+      .filter(h => !searchTerm || h.nome.toLowerCase().includes(searchTerm.toLowerCase()) || h.matricula.includes(searchTerm));
+    
+    if (selecionadosVT.size === vtFiltrados.length) {
+      setSelecionadosVT(new Set());
+    } else {
+      setSelecionadosVT(new Set(vtFiltrados.map(h => h.id)));
+    }
+  };
+
+  // Geração em lote de VT
+  const gerarPDFsVTEmLote = async () => {
+    if (selecionadosVT.size === 0) {
+      toast({
+        title: 'Nenhum selecionado',
+        description: 'Selecione pelo menos um funcionário para gerar os holerites VT.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setGerandoVT(true);
+    
+    try {
+      const selecionadosArray = holeritesVT.filter(h => selecionadosVT.has(h.id));
+      const diasUteis = calcularDiasUteis();
+      
+      for (const holerite of selecionadosArray) {
+        if (!holerite.valorDiarioVT) continue;
+        
+        const dadosVT = await buscarDadosVT(holerite.id);
+        const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+
+        const dadosHoleriteVT: DadosHoleriteVT = {
+          valorDiario: holerite.valorDiarioVT,
+          diasUteisMes: diasUteis,
+          diasTrabalhados,
+          diasFalta: dadosVT.diasFalta,
+          diasAtestado: dadosVT.diasAtestado,
+          diasFerias: dadosVT.diasFerias,
+        };
+
+        const dados = gerarHoleriteVT(
+          holerite.nome,
+          holerite.matricula,
+          holerite.loja,
+          competencia,
+          dadosHoleriteVT
+        );
+        
+        const doc = gerarHoleritePDF(dados);
+        doc.save(`holerite_vt_${holerite.matricula}_${competencia}.pdf`);
+        
+        // Pequeno delay para não sobrecarregar
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      toast({
+        title: 'PDFs VT Gerados',
+        description: `${selecionadosVT.size} holerites VT gerados com sucesso!`,
+      });
+      
+      setSelecionadosVT(new Set());
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Erro ao gerar os PDFs VT. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setGerandoVT(false);
+    }
+  };
   
   const getStatusBadge = (status: HoleriteItem['status']) => {
     const config = {
@@ -786,6 +877,18 @@ export default function Holerites() {
             </Card>
           </div>
 
+          {/* Botão de ação em lote VT */}
+          <div className="flex justify-end">
+            <Button 
+              variant="outline" 
+              onClick={gerarPDFsVTEmLote}
+              disabled={selecionadosVT.size === 0 || gerandoVT}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {gerandoVT ? 'Gerando...' : `Gerar PDFs VT (${selecionadosVT.size})`}
+            </Button>
+          </div>
+
           {/* Filtros VT */}
           <Card>
             <CardContent className="p-4">
@@ -831,6 +934,12 @@ export default function Holerites() {
                 <Table className="table-zebra">
                   <TableHeader>
                     <TableRow className="bg-muted/50">
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selecionadosVT.size === holeritesVT.filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro).filter(h => !searchTerm || h.nome.toLowerCase().includes(searchTerm.toLowerCase()) || h.matricula.includes(searchTerm)).length && holeritesVT.length > 0}
+                          onCheckedChange={selecionarTodosVT}
+                        />
+                      </TableHead>
                       <TableHead className="w-20">Mat.</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead>Loja</TableHead>
@@ -845,6 +954,12 @@ export default function Holerites() {
                       .filter(h => !searchTerm || h.nome.toLowerCase().includes(searchTerm.toLowerCase()) || h.matricula.includes(searchTerm))
                       .map((h) => (
                         <TableRow key={h.id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selecionadosVT.has(h.id)}
+                              onCheckedChange={() => toggleSelecionadoVT(h.id)}
+                            />
+                          </TableCell>
                           <TableCell className="font-mono text-sm">{h.matricula}</TableCell>
                           <TableCell className="font-medium">{h.nome}</TableCell>
                           <TableCell>
@@ -880,7 +995,7 @@ export default function Holerites() {
                       ))}
                     {holeritesVT.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           Nenhum profissional com Vale Transporte cadastrado
                         </TableCell>
                       </TableRow>
