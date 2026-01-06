@@ -18,6 +18,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento' | 'emprestimo';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
@@ -36,6 +37,8 @@ export interface Alerta {
   acaoUrl?: string;
   lido: boolean;
   resolvido: boolean;
+  // ID do registro para ações rápidas
+  entidadeId?: string;
 }
 
 const getNivelConfig = (nivel: NivelAlerta) => {
@@ -84,16 +87,35 @@ interface AlertaItemProps {
   alerta: Alerta;
   onMarcarLido?: (id: string) => void;
   onResolver?: (id: string) => void;
+  onAcaoRapida?: (alerta: Alerta, acao: string) => void;
   resolvendo?: string | null;
   compact?: boolean;
 }
 
-export function AlertaItem({ alerta, onMarcarLido, onResolver, resolvendo, compact = false }: AlertaItemProps) {
+export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, resolvendo, compact = false }: AlertaItemProps) {
   const navigate = useNavigate();
   const nivelConfig = getNivelConfig(alerta.nivel);
   const tipoConfig = getTipoConfig(alerta.tipo);
   const TipoIcon = tipoConfig.icon;
   const isResolvendo = resolvendo === alerta.id;
+
+  // Ações rápidas baseadas no tipo de alerta
+  const getAcoesRapidas = () => {
+    if (alerta.tipo === 'emprestimo') {
+      if (alerta.titulo.includes('Quitar') || alerta.titulo.includes('Última')) {
+        return [{ label: 'Marcar Quitado', acao: 'quitar_emprestimo', variant: 'success' as const }];
+      }
+      if (alerta.titulo.includes('Verificar')) {
+        return [
+          { label: 'Pausar', acao: 'pausar_emprestimo', variant: 'warning' as const },
+          { label: 'Quitar', acao: 'quitar_emprestimo', variant: 'success' as const }
+        ];
+      }
+    }
+    return [];
+  };
+
+  const acoesRapidas = getAcoesRapidas();
   
   if (compact) {
     return (
@@ -184,7 +206,28 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, resolvendo, compa
         )}
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
+          {/* Ações rápidas */}
+          {acoesRapidas.length > 0 && onAcaoRapida && !alerta.resolvido && (
+            acoesRapidas.map((ar, idx) => (
+              <Button
+                key={idx}
+                variant="outline"
+                size="sm"
+                className={`h-7 text-xs ${
+                  ar.variant === 'success' 
+                    ? 'border-success/50 text-success hover:bg-success/10' 
+                    : ar.variant === 'warning'
+                    ? 'border-warning/50 text-warning hover:bg-warning/10'
+                    : ''
+                }`}
+                onClick={() => onAcaoRapida(alerta, ar.acao)}
+                disabled={isResolvendo}
+              >
+                {ar.label}
+              </Button>
+            ))
+          )}
           {alerta.acaoUrl && (
             <Button variant="ghost" size="sm" onClick={() => navigate(alerta.acaoUrl!)}>
               <Eye className="h-4 w-4" />
@@ -461,6 +504,7 @@ export function CentralAlertas() {
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,
+            entidadeId: e.id,
           });
         }
 
@@ -480,6 +524,7 @@ export function CentralAlertas() {
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,
+            entidadeId: e.id,
           });
         }
       });
@@ -520,6 +565,7 @@ export function CentralAlertas() {
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,
+            entidadeId: e.id,
           });
         }
       });
@@ -585,6 +631,35 @@ export function CentralAlertas() {
 
   const handleMarcarLido = (id: string) => {
     setAlertas(prev => prev.map(a => a.id === id ? { ...a, lido: true } : a));
+  };
+
+  const handleAcaoRapida = async (alerta: Alerta, acao: string) => {
+    if (!alerta.entidadeId) {
+      toast.error('ID do empréstimo não encontrado');
+      return;
+    }
+    
+    setResolvendo(alerta.id);
+    try {
+      let novoStatus = 'ativo';
+      if (acao === 'quitar_emprestimo') novoStatus = 'quitado';
+      else if (acao === 'pausar_emprestimo') novoStatus = 'pausado';
+
+      const { error } = await supabase
+        .from('emprestimos')
+        .update({ status: novoStatus })
+        .eq('id', alerta.entidadeId);
+
+      if (error) throw error;
+
+      toast.success(`Empréstimo ${novoStatus === 'quitado' ? 'quitado' : 'pausado'} com sucesso!`);
+      setAlertas(prev => prev.map(a => a.id === alerta.id ? { ...a, resolvido: true } : a));
+    } catch (error) {
+      console.error('Erro na ação rápida:', error);
+      toast.error('Erro ao executar ação');
+    } finally {
+      setResolvendo(null);
+    }
   };
 
   if (loading) {
@@ -773,6 +848,7 @@ export function CentralAlertas() {
                     alerta={alerta} 
                     onMarcarLido={handleMarcarLido}
                     onResolver={handleResolver}
+                    onAcaoRapida={handleAcaoRapida}
                     resolvendo={resolvendo}
                   />
                 ))
