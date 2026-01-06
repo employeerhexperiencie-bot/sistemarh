@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppearanceProvider } from "@/contexts/AppearanceContext";
 import { AuditLogProvider } from "@/contexts/AuditLogContext";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { Lancamentos } from "@/pages/Lancamentos";
@@ -37,17 +38,20 @@ import DashboardAnalitico from "@/pages/DashboardAnalitico";
 import MigrarDados from "@/pages/MigrarDados";
 import ImportarDadosExcel from "@/pages/ImportarDadosExcel";
 import NotFound from "./pages/NotFound";
+import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <AppearanceProvider>
     <AuditLogProvider>
-      <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <OnboardingProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <OnboardingWrapper />
         <Routes>
           <Route path="/" element={
             <Layout>
@@ -213,9 +217,10 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-     </TooltipProvider>
-   </QueryClientProvider>
-   </AuditLogProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </OnboardingProvider>
+    </AuditLogProvider>
   </AppearanceProvider>
 );
 
