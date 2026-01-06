@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,62 +7,129 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileUploader } from '@/components/FileUploader';
-import { Bus, Download, Eye, Plus, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Bus, Download, Eye, Plus, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ValeTransporte {
   id: string;
-  data: string;
-  valorDiario: number;
-  diasTrabalhados: number;
-  valorTotal: number;
-  reciboAssinado: boolean;
-  documentoId?: string;
-  observacao?: string;
+  mes_referencia: string;
+  dias_trabalhados: number;
+  valor_diario: number;
+  valor_total_bruto: number;
+  dias_falta: number;
+  dias_atestado: number;
+  dias_ferias: number;
+  valor_liquido: number;
+  observacoes: string | null;
 }
 
 interface ValeTransporteManagerProps {
-  profissionalId: string;
+  profissionalId: string | null;
   valorRotaDiaria: number;
 }
 
 export function ValeTransporteManager({ profissionalId, valorRotaDiaria }: ValeTransporteManagerProps) {
-  const [vales, setVales] = useState<ValeTransporte[]>([
-    {
-      id: '1',
-      data: '2025-08',
-      valorDiario: valorRotaDiaria,
-      diasTrabalhados: 22,
-      valorTotal: valorRotaDiaria * 22,
-      reciboAssinado: true,
-      documentoId: 'doc123'
-    }
-  ]);
-
+  const [vales, setVales] = useState<ValeTransporte[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
-    data: '',
-    diasTrabalhados: '',
-    observacao: '',
-    documentoId: null as string | null
+    mes_referencia: '',
+    diasTrabalhados: '22',
+    diasFalta: '0',
+    diasAtestado: '0',
+    diasFerias: '0',
+    observacao: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (profissionalId) {
+      loadVales();
+    } else {
+      setVales([]);
+      setLoading(false);
+    }
+  }, [profissionalId]);
+
+  const loadVales = async () => {
+    if (!profissionalId) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('vale_transporte_detalhado')
+        .select('*')
+        .eq('profissional_id', profissionalId)
+        .order('mes_referencia', { ascending: false });
+
+      if (error) throw error;
+
+      setVales(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar VT:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const novoVale: ValeTransporte = {
-      id: Date.now().toString(),
-      data: formData.data,
-      valorDiario: valorRotaDiaria,
-      diasTrabalhados: parseInt(formData.diasTrabalhados),
-      valorTotal: valorRotaDiaria * parseInt(formData.diasTrabalhados),
-      reciboAssinado: !!formData.documentoId,
-      documentoId: formData.documentoId || undefined,
-      observacao: formData.observacao || undefined
-    };
+    if (!profissionalId) return;
 
-    setVales([novoVale, ...vales]);
-    setIsDialogOpen(false);
-    setFormData({ data: '', diasTrabalhados: '', observacao: '', documentoId: null });
+    const diasTrabalhados = parseInt(formData.diasTrabalhados) || 0;
+    const diasFalta = parseInt(formData.diasFalta) || 0;
+    const diasAtestado = parseInt(formData.diasAtestado) || 0;
+    const diasFerias = parseInt(formData.diasFerias) || 0;
+    const totalDiasDesconto = diasFalta + diasAtestado + diasFerias;
+    const valorTotalBruto = valorRotaDiaria * diasTrabalhados;
+    const valorDesconto = valorRotaDiaria * totalDiasDesconto;
+    const valorLiquido = valorTotalBruto - valorDesconto;
+
+    try {
+      const { error } = await supabase
+        .from('vale_transporte_detalhado')
+        .insert({
+          profissional_id: profissionalId,
+          mes_referencia: `${formData.mes_referencia}-01`,
+          dias_trabalhados: diasTrabalhados,
+          valor_diario: valorRotaDiaria,
+          valor_total_bruto: valorTotalBruto,
+          dias_falta: diasFalta,
+          dias_atestado: diasAtestado,
+          dias_ferias: diasFerias,
+          total_dias_desconto: totalDiasDesconto,
+          valor_desconto: valorDesconto,
+          valor_liquido: valorLiquido,
+          observacoes: formData.observacao || null
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Vale Transporte registrado',
+        description: `VT de ${formData.mes_referencia} registrado com sucesso`
+      });
+
+      setIsDialogOpen(false);
+      setFormData({
+        mes_referencia: '',
+        diasTrabalhados: '22',
+        diasFalta: '0',
+        diasAtestado: '0',
+        diasFerias: '0',
+        observacao: ''
+      });
+      loadVales();
+    } catch (error) {
+      console.error('Erro ao registrar VT:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao registrar vale transporte',
+        variant: 'destructive'
+      });
+    }
   };
 
   const formatCurrency = (valor: number) => {
@@ -72,7 +139,22 @@ export function ValeTransporteManager({ profissionalId, valorRotaDiaria }: ValeT
     }).format(valor);
   };
 
-  const totalValorRecebido = vales.reduce((acc, vale) => acc + vale.valorTotal, 0);
+  const formatMonth = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit' }).split('/').reverse().join('-');
+  };
+
+  const totalValorRecebido = vales.reduce((acc, vale) => acc + vale.valor_liquido, 0);
+
+  if (loading) {
+    return (
+      <Card className="bg-card/50 border-border/50">
+        <CardContent className="py-8 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-card/50 border-border/50">
@@ -107,56 +189,37 @@ export function ValeTransporteManager({ profissionalId, valorRotaDiaria }: ValeT
               <TableRow>
                 <TableHead>Competência</TableHead>
                 <TableHead className="text-right">Valor Diário</TableHead>
-                <TableHead className="text-center">Dias</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-center">Recibo</TableHead>
-                <TableHead className="text-center">Ações</TableHead>
+                <TableHead className="text-center">Dias Trab.</TableHead>
+                <TableHead className="text-center">Descontos</TableHead>
+                <TableHead className="text-right">Total Líquido</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {vales.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     Nenhum vale-transporte registrado ainda
                   </TableCell>
                 </TableRow>
               ) : (
                 vales.map((vale) => (
                   <TableRow key={vale.id}>
-                    <TableCell className="font-medium">{vale.data}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(vale.valorDiario)}</TableCell>
+                    <TableCell className="font-medium">{formatMonth(vale.mes_referencia)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(vale.valor_diario)}</TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline">{vale.diasTrabalhados}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-primary">
-                      {formatCurrency(vale.valorTotal)}
+                      <Badge variant="outline">{vale.dias_trabalhados}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      {vale.reciboAssinado ? (
-                        <Badge className="bg-success/10 text-success border-success/20">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Assinado
+                      {(vale.dias_falta + vale.dias_atestado + vale.dias_ferias) > 0 ? (
+                        <Badge variant="destructive" className="text-xs">
+                          -{vale.dias_falta + vale.dias_atestado + vale.dias_ferias} dias
                         </Badge>
                       ) : (
-                        <Badge variant="destructive">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Pendente
-                        </Badge>
+                        <Badge variant="outline" className="text-xs">-</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex gap-1 justify-center">
-                        {vale.documentoId && (
-                          <>
-                            <Button size="sm" variant="ghost">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                    <TableCell className="text-right font-semibold text-primary">
+                      {formatCurrency(vale.valor_liquido)}
                     </TableCell>
                   </TableRow>
                 ))
@@ -178,12 +241,12 @@ export function ValeTransporteManager({ profissionalId, valorRotaDiaria }: ValeT
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="data">Competência (Mês/Ano)</Label>
+                <Label htmlFor="mes_referencia">Competência (Mês/Ano)</Label>
                 <Input
-                  id="data"
+                  id="mes_referencia"
                   type="month"
-                  value={formData.data}
-                  onChange={(e) => setFormData(prev => ({ ...prev, data: e.target.value }))}
+                  value={formData.mes_referencia}
+                  onChange={(e) => setFormData(prev => ({ ...prev, mes_referencia: e.target.value }))}
                   required
                 />
               </div>
@@ -200,12 +263,42 @@ export function ValeTransporteManager({ profissionalId, valorRotaDiaria }: ValeT
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="diasFalta">Dias Falta</Label>
+                <Input
+                  id="diasFalta"
+                  type="number"
+                  value={formData.diasFalta}
+                  onChange={(e) => setFormData(prev => ({ ...prev, diasFalta: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="diasAtestado">Dias Atestado</Label>
+                <Input
+                  id="diasAtestado"
+                  type="number"
+                  value={formData.diasAtestado}
+                  onChange={(e) => setFormData(prev => ({ ...prev, diasAtestado: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="diasFerias">Dias Férias</Label>
+                <Input
+                  id="diasFerias"
+                  type="number"
+                  value={formData.diasFerias}
+                  onChange={(e) => setFormData(prev => ({ ...prev, diasFerias: e.target.value }))}
+                />
+              </div>
+            </div>
+
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total a receber:</span>
                 <span className="text-lg font-bold text-primary">
                   {formData.diasTrabalhados ? 
-                    formatCurrency(valorRotaDiaria * parseInt(formData.diasTrabalhados)) : 
+                    formatCurrency(valorRotaDiaria * (parseInt(formData.diasTrabalhados) - parseInt(formData.diasFalta || '0') - parseInt(formData.diasAtestado || '0') - parseInt(formData.diasFerias || '0'))) : 
                     'R$ 0,00'}
                 </span>
               </div>
@@ -219,16 +312,6 @@ export function ValeTransporteManager({ profissionalId, valorRotaDiaria }: ValeT
                 value={formData.observacao}
                 onChange={(e) => setFormData(prev => ({ ...prev, observacao: e.target.value }))}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Recibo Assinado</Label>
-              <FileUploader
-                onFileUploaded={(fileId) => setFormData(prev => ({ ...prev, documentoId: fileId }))}
-              />
-              <p className="text-xs text-muted-foreground">
-                Faça upload do recibo de vale-transporte assinado pelo profissional
-              </p>
             </div>
 
             <div className="flex gap-2 justify-end">

@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -22,6 +22,7 @@ import { ValesManager } from '@/components/ValesManager';
 import { ValeTransporteManager } from '@/components/ValeTransporteManager';
 import { AdvertenciasManager } from '@/components/AdvertenciasManager';
 import { HistoricoCompleto } from '@/components/HistoricoCompleto';
+import { EmprestimosTimeline } from '@/components/EmprestimosTimeline';
 import { formatCurrency, formatCurrencyFromNumber, parseCurrencyToCentavos } from '@/lib/utils';
 import { useAuditLog } from '@/contexts/AuditLogContext';
 
@@ -749,7 +750,7 @@ export const CadastroProfissionais: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 h-auto">
             <TabsTrigger value="dados" className="text-xs sm:text-sm py-2">Dados</TabsTrigger>
             <TabsTrigger value="aso" className="text-xs sm:text-sm py-2 gap-1">
               <Stethoscope className="h-3 w-3" />
@@ -758,6 +759,10 @@ export const CadastroProfissionais: React.FC = () => {
             <TabsTrigger value="beneficios" className="text-xs sm:text-sm py-2 gap-1">
               <Gift className="h-3 w-3" />
               <span>Benefícios</span>
+            </TabsTrigger>
+            <TabsTrigger value="emprestimos" className="text-xs sm:text-sm py-2 gap-1">
+              <Banknote className="h-3 w-3" />
+              <span>Empréstimos</span>
             </TabsTrigger>
             <TabsTrigger value="historico" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
             <TabsTrigger value="documentos" className="text-xs sm:text-sm py-2">Documentos</TabsTrigger>
@@ -828,6 +833,13 @@ export const CadastroProfissionais: React.FC = () => {
 
           <TabsContent value="aso" className="space-y-4">
             <ASOTabContent professionalId={selectedProfessionalId} professionalMatricula={selectedProfessional?.matricula} />
+          </TabsContent>
+
+          <TabsContent value="emprestimos" className="space-y-4">
+            <EmprestimosTimeline 
+              profissionalId={selectedProfessionalId || ''} 
+              profissionalNome={selectedProfessional?.nome || ''}
+            />
           </TabsContent>
 
           <TabsContent value="beneficios" className="space-y-4">
@@ -1006,7 +1018,7 @@ export const CadastroProfissionais: React.FC = () => {
           <TabsContent value="transporte">
             <ValeTransporteManager
               profissionalId={selectedProfessionalId}
-              valorRotaDiaria={1250}
+              valorRotaDiaria={(selectedProfessional as any)?.valor_diario_rota || 0}
             />
           </TabsContent>
 
