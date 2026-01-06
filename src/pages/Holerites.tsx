@@ -148,12 +148,16 @@ export default function Holerites() {
       holerite.salario
     );
 
+    // Calcular adiantamento do dia 20 (40% do salário combinado)
+    const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+
     const dadosReais: DadosHoleriteReal = {
       salarioBase: holerite.salario,
       faltas: descontos.faltas,
       vales: descontos.vales,
       emprestimos: descontos.emprestimos,
       adiantamento: descontos.adiantamento,
+      adiantamentoDia20, // 40% pago no dia 20
     };
 
     const dados = gerarHoleriteReal(
@@ -181,12 +185,15 @@ export default function Holerites() {
       holerite.salario
     );
 
+    const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+
     const dadosReais: DadosHoleriteReal = {
       salarioBase: holerite.salario,
       faltas: descontos.faltas,
       vales: descontos.vales,
       emprestimos: descontos.emprestimos,
       adiantamento: descontos.adiantamento,
+      adiantamentoDia20,
     };
 
     const dados = gerarHoleriteReal(
@@ -227,12 +234,15 @@ export default function Holerites() {
           holerite.salario
         );
 
+        const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+
         const dadosReais: DadosHoleriteReal = {
           salarioBase: holerite.salario,
           faltas: descontos.faltas,
           vales: descontos.vales,
           emprestimos: descontos.emprestimos,
           adiantamento: descontos.adiantamento,
+          adiantamentoDia20,
         };
 
         const dados = gerarHoleriteReal(
@@ -275,12 +285,15 @@ export default function Holerites() {
       holerite.salario
     );
 
+    const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+
     const dadosReais: DadosHoleriteReal = {
       salarioBase: holerite.salario,
       faltas: descontos.faltas,
       vales: descontos.vales,
       emprestimos: descontos.emprestimos,
       adiantamento: descontos.adiantamento,
+      adiantamentoDia20,
     };
 
     const dados = gerarHoleriteReal(

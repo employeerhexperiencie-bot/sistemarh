@@ -340,9 +340,11 @@ export interface DadosHoleriteReal {
   vales?: { descricao: string; valor: number }[];
   emprestimos?: { descricao: string; valor: number }[];
   adiantamento?: number;
+  adiantamentoDia20?: number; // 40% do salário combinado pago no dia 20
 }
 
 // Gerar holerite com dados reais (sem descontos legais, apenas empréstimos/vales/faltas)
+// Considera pagamento do dia 20 (40% do salário) e dia 5 (60% restante)
 export const gerarHoleriteReal = (
   nome: string,
   matricula: string,
@@ -351,11 +353,25 @@ export const gerarHoleriteReal = (
   competencia: string,
   dados: DadosHoleriteReal
 ): DadosHolerite => {
+  // Calcula o adiantamento do dia 20 (40% do salário combinado)
+  const adiantamentoDia20 = dados.adiantamentoDia20 ?? Math.round(salarioBase * 0.4);
+  
   const eventos: EventoFolha[] = [
     { codigo: '001', descricao: 'Salário Combinado', tipo: 'provento', valor: salarioBase },
   ];
   
-  // Descontos - APENAS empréstimos, vales e faltas (sem DSR, apenas dias faltados)
+  // Descontos - APENAS empréstimos, vales, faltas e adiantamento dia 20
+  
+  // Adiantamento do dia 20 (40% do salário)
+  if (adiantamentoDia20 > 0) {
+    eventos.push({ 
+      codigo: '100', 
+      descricao: 'Adiantamento Dia 20 (40%)', 
+      tipo: 'desconto', 
+      valor: adiantamentoDia20,
+      referencia: '40% do salário'
+    });
+  }
   
   // Faltas - desconta apenas os dias que faltou (sem DSR)
   if (dados.faltas && dados.faltas.dias > 0) {
@@ -382,11 +398,11 @@ export const gerarHoleriteReal = (
     });
   }
   
-  // Adiantamento
+  // Adiantamento extra (além do dia 20)
   if (dados.adiantamento && dados.adiantamento > 0) {
     eventos.push({ 
       codigo: '105', 
-      descricao: 'Adiantamento Salarial', 
+      descricao: 'Adiantamento Extra', 
       tipo: 'desconto', 
       valor: dados.adiantamento 
     });
@@ -407,6 +423,9 @@ export const gerarHoleriteReal = (
   const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
   const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
   
+  // Valor líquido é o que será pago no dia 5 (após descontar o adiantamento do dia 20)
+  const liquidoDia5 = totalProventos - totalDescontos;
+  
   return {
     empresaNome: 'EMPRESA MODELO LTDA',
     empresaCNPJ: '12.345.678/0001-90',
@@ -423,7 +442,7 @@ export const gerarHoleriteReal = (
     eventos,
     totalProventos,
     totalDescontos,
-    liquido: totalProventos - totalDescontos,
+    liquido: liquidoDia5,
   };
 };
 
