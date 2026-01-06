@@ -12,8 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Banknote, Download, Plus, Calendar, Users, 
   DollarSign, CheckCircle, Clock, Building2, Loader2, Pause, Play, AlertCircle, 
-  CreditCard, FileText, TrendingDown, CalendarClock
+  CreditCard, FileText, TrendingDown, CalendarClock, Pencil, Save, X
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -590,6 +591,50 @@ export function GestaoEmprestimos() {
   const [registrando, setRegistrando] = useState(false);
   const [emprestimos, setEmprestimos] = useState<Emprestimo[]>([]);
   const [lojas, setLojas] = useState<string[]>([]);
+  
+  // Estado para edição
+  const [editandoEmprestimo, setEditandoEmprestimo] = useState<Emprestimo | null>(null);
+  const [editForm, setEditForm] = useState({
+    parcelasPagas: 0,
+    saldoDevedor: 0,
+    status: 'ativo' as 'ativo' | 'quitado' | 'pausado',
+    observacoes: ''
+  });
+  const [salvando, setSalvando] = useState(false);
+
+  const abrirEdicao = (emp: Emprestimo) => {
+    setEditandoEmprestimo(emp);
+    setEditForm({
+      parcelasPagas: emp.parcelasPagas,
+      saldoDevedor: emp.saldoDevedor,
+      status: emp.status,
+      observacoes: emp.observacao || ''
+    });
+  };
+
+  const salvarEdicao = async () => {
+    if (!editandoEmprestimo) return;
+    setSalvando(true);
+
+    const { error } = await supabase
+      .from('emprestimos')
+      .update({
+        parcelas_pagas: editForm.parcelasPagas,
+        saldo_devedor: editForm.saldoDevedor,
+        status: editForm.status,
+        observacoes: editForm.observacoes || null
+      })
+      .eq('id', editandoEmprestimo.id);
+
+    if (error) {
+      toast.error('Erro ao salvar alterações');
+    } else {
+      toast.success('Empréstimo atualizado com sucesso');
+      setEditandoEmprestimo(null);
+      fetchData();
+    }
+    setSalvando(false);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -621,33 +666,20 @@ export function GestaoEmprestimos() {
         const prof = profissionaisMap[e.profissional_id || ''];
         const tipo = e.tipo === 'empresa' ? 'empresa' : 'clt';
         
-        // Calcular parcelas baseado no tempo desde o início
+        // Calcular parcelas baseado no tempo desde o início (apenas para exibição CLT)
         const parcelasCalculadas = calcularMesesDesdeInicio(e.data_inicio);
         
-        // Para CLT, usamos o cálculo automático
-        // Para empresa, usamos o valor salvo OU o cálculo (o maior)
-        let parcelasPagas = e.parcelas_pagas || 0;
-        if (tipo === 'empresa' && parcelasPagas === 0) {
-          // Se não tem parcelas registradas, calcula baseado no tempo
-          parcelasPagas = Math.min(parcelasCalculadas, e.numero_parcelas || parcelasCalculadas);
-        }
-        
-        // Calcular saldo devedor atualizado para empresa
-        let saldoDevedor = Number(e.saldo_devedor) || 0;
-        if (tipo === 'empresa' && e.valor_total && parcelasPagas > 0) {
-          saldoDevedor = Math.max(0, Number(e.valor_total) - (parcelasPagas * Number(e.valor_parcela)));
-        }
+        // Usar valores do banco diretamente - sem cálculo automático
+        const parcelasPagas = e.parcelas_pagas || 0;
+        const saldoDevedor = Number(e.saldo_devedor) || 0;
 
-        // Total descontado (calculado)
+        // Total descontado (calculado para exibição)
         const totalDescontado = tipo === 'clt' 
           ? parcelasCalculadas * Number(e.valor_parcela)
           : parcelasPagas * Number(e.valor_parcela);
 
-        // Auto detectar quitado para empresa
-        let status = e.status as 'ativo' | 'quitado' | 'pausado';
-        if (tipo === 'empresa' && e.numero_parcelas && parcelasPagas >= e.numero_parcelas) {
-          status = 'quitado';
-        }
+        // Status direto do banco
+        const status = e.status as 'ativo' | 'quitado' | 'pausado';
         
         return {
           id: e.id,
@@ -1162,27 +1194,37 @@ export function GestaoEmprestimos() {
                           </TableCell>
                           <TableCell className="text-center">{getStatusBadge(e.status, e.tipo)}</TableCell>
                           <TableCell>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <DollarSign className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                                <DialogHeader>
-                                  <DialogTitle>Detalhes do Empréstimo - {e.nome}</DialogTitle>
-                                </DialogHeader>
-                                {e.tipo === 'empresa' ? (
-                                  <DetalheEmprestimoEmpresa 
-                                    emprestimo={e} 
-                                    onRegistrarParcela={handleRegistrarParcela}
-                                    registrando={registrando}
-                                  />
-                                ) : (
-                                  <DetalheEmprestimoCLT emprestimo={e} onStatusChange={fetchData} />
-                                )}
-                              </DialogContent>
-                            </Dialog>
+                            <div className="flex items-center gap-1">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" title="Ver detalhes">
+                                    <DollarSign className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Detalhes do Empréstimo - {e.nome}</DialogTitle>
+                                  </DialogHeader>
+                                  {e.tipo === 'empresa' ? (
+                                    <DetalheEmprestimoEmpresa 
+                                      emprestimo={e} 
+                                      onRegistrarParcela={handleRegistrarParcela}
+                                      registrando={registrando}
+                                    />
+                                  ) : (
+                                    <DetalheEmprestimoCLT emprestimo={e} onStatusChange={fetchData} />
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                title="Editar"
+                                onClick={() => abrirEdicao(e)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -1222,6 +1264,112 @@ export function GestaoEmprestimos() {
             </DialogTitle>
           </DialogHeader>
           <RelatorioLoja emprestimos={emprestimos} lojas={lojas} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Editar Empréstimo */}
+      <Dialog open={!!editandoEmprestimo} onOpenChange={(open) => !open && setEditandoEmprestimo(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Editar Empréstimo
+            </DialogTitle>
+          </DialogHeader>
+          {editandoEmprestimo && (
+            <div className="space-y-4 py-2">
+              <Card className="bg-muted/30">
+                <CardContent className="p-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold">{editandoEmprestimo.nome}</p>
+                      <p className="text-sm text-muted-foreground">Mat: {editandoEmprestimo.matricula}</p>
+                    </div>
+                    <Badge variant={editandoEmprestimo.tipo === 'empresa' ? 'default' : 'secondary'}>
+                      {editandoEmprestimo.tipo === 'empresa' ? 'Empresa' : 'CLT'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {editandoEmprestimo.tipo === 'empresa' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Parcelas Pagas</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={editandoEmprestimo.parcelasTotal || 999}
+                        value={editForm.parcelasPagas}
+                        onChange={(e) => setEditForm(prev => ({
+                          ...prev,
+                          parcelasPagas: parseInt(e.target.value) || 0
+                        }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        de {editandoEmprestimo.parcelasTotal} parcelas
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Saldo Devedor (R$)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={editForm.saldoDevedor}
+                        onChange={(e) => setEditForm(prev => ({
+                          ...prev,
+                          saldoDevedor: parseFloat(e.target.value) || 0
+                        }))}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select 
+                  value={editForm.status} 
+                  onValueChange={(v) => setEditForm(prev => ({ ...prev, status: v as any }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">🟢 Ativo</SelectItem>
+                    <SelectItem value="pausado">🟡 Pausado</SelectItem>
+                    <SelectItem value="quitado">⚪ Quitado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Observações</Label>
+                <Textarea
+                  placeholder="Adicione observações sobre este empréstimo..."
+                  value={editForm.observacoes}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, observacoes: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditandoEmprestimo(null)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button onClick={salvarEdicao} disabled={salvando}>
+              {salvando ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Salvar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
