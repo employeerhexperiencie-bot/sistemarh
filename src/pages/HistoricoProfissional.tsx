@@ -51,7 +51,7 @@ export default function HistoricoProfissional() {
           id,
           nome,
           salario_nominal,
-          lojas:loja_id (nome)
+          lojas:lojas!profissionais_loja_id_fkey(nome)
         `)
         .eq('matricula', matricula)
         .maybeSingle();

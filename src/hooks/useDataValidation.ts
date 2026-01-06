@@ -57,7 +57,7 @@ export const useDataValidation = () => {
       // Buscar todos os profissionais ativos do banco
       const { data: profissionais, error } = await supabase
         .from('profissionais')
-        .select('*, lojas(nome)')
+        .select('*, lojas:lojas!profissionais_loja_id_fkey(nome)')
         .eq('status', 'ativo');
 
       if (error) throw error;
@@ -218,7 +218,7 @@ export const useDataValidation = () => {
     try {
       const { data, error } = await supabase
         .from('profissionais')
-        .select('*, lojas(nome)')
+        .select('*, lojas:lojas!profissionais_loja_id_fkey(nome)')
         .eq('matricula', matricula);
 
       if (error) throw error;

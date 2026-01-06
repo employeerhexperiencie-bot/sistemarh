@@ -72,7 +72,7 @@ export default function GestaoASO() {
       // Carregar profissionais para o formulário
       const { data: profsData, error: profsError } = await supabase
         .from('profissionais')
-        .select('id, matricula, nome, cargo, lojas(nome)')
+        .select('id, matricula, nome, cargo, lojas:lojas!profissionais_loja_id_fkey(nome)')
         .eq('status', 'ativo')
         .order('nome');
 

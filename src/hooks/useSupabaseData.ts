@@ -89,7 +89,7 @@ export const useSupabaseData = () => {
           feriasResult
         ] = await Promise.all([
           supabase.from('profissionais')
-            .select('*, lojas(nome)')
+            .select('*, lojas:lojas!profissionais_loja_id_fkey(nome)')
             .eq('status', 'ativo'),
           supabase.from('lojas').select('*'),
           supabase.from('afastamentos')
