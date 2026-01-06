@@ -77,60 +77,6 @@ interface Profissional {
   pensao: number;
 }
 
-// Mock de 20 lojas
-const mockLojas: Loja[] = Array.from({ length: 20 }, (_, i) => ({
-  id: `loja-${i + 1}`,
-  nome: `Loja ${String(i + 1).padStart(2, '0')}`,
-  codigo: String(i + 1).padStart(3, '0'),
-}));
-
-// Mock de profissionais (13 por loja = 260 total)
-const gerarProfissionais = (): Profissional[] => {
-  const nomes = ['João', 'Maria', 'Ana', 'Pedro', 'Carlos', 'Julia', 'Lucas', 'Fernanda', 'Ricardo', 'Mariana', 'Bruno', 'Camila', 'Gabriel'];
-  const sobrenomes = ['Silva', 'Santos', 'Costa', 'Lima', 'Oliveira', 'Souza', 'Ferreira', 'Alves', 'Rodrigues', 'Pereira', 'Carvalho', 'Gomes', 'Martins'];
-  const cargos = ['Açougueiro', 'Operador de Caixa', 'Repositor', 'Balconista', 'Faxineiro', 'Ajudante', 'Gerente', 'Subgerente'];
-  const statusOptions: Profissional['status'][] = ['ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ativo', 'ferias', 'afastado_doenca', 'licenca_maternidade', 'ativo', 'ativo'];
-  
-  const profissionais: Profissional[] = [];
-  let matriculaCounter = 1;
-  
-  mockLojas.forEach((loja) => {
-    for (let i = 0; i < 13; i++) {
-      const nome = nomes[i];
-      const sobrenome = sobrenomes[Math.floor(Math.random() * sobrenomes.length)];
-      const salario = 1800 + Math.floor(Math.random() * 700);
-      const status = statusOptions[i];
-      
-      profissionais.push({
-        id: `prof-${matriculaCounter}`,
-        nome: `${nome} ${sobrenome}`,
-        matricula: String(matriculaCounter).padStart(4, '0'),
-        cargo: cargos[Math.floor(Math.random() * cargos.length)],
-        lojaId: loja.id,
-        salario,
-        escala: Math.random() > 0.3 ? '6x1' : '5x2',
-        valorPassagem: 4.40,
-        dataAdmissao: `202${Math.floor(Math.random() * 4)}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
-        status,
-        recebeCesta: true,
-        recebeVT: status === 'ativo',
-        recebeVR: status === 'ativo',
-        faltas: Math.floor(Math.random() * 3),
-        atestados: Math.floor(Math.random() * 2),
-        diasFerias: status === 'ferias' ? 30 : 0,
-        vales: Math.random() > 0.7 ? Math.floor(Math.random() * 200) : 0,
-        emprestimos: Math.random() > 0.8 ? Math.floor(Math.random() * 300) : 0,
-        pensao: Math.random() > 0.95 ? Math.floor(Math.random() * 400) : 0,
-      });
-      matriculaCounter++;
-    }
-  });
-  
-  return profissionais;
-};
-
-const mockProfissionais = gerarProfissionais();
-
 // Função para calcular valores de um profissional
 const calcularProfissional = (
   p: Profissional,
@@ -576,7 +522,7 @@ export default function SimuladorFolha() {
           pensao: p.pensao_alimenticia || 0,
         };
       })
-    : mockProfissionais;
+    : [];
 
   const lojas = supabaseData.totalLojas > 0
     ? supabaseData.lojas.map((l: any) => ({
@@ -584,7 +530,7 @@ export default function SimuladorFolha() {
         nome: l.nome,
         codigo: l.id.substring(0, 3),
       }))
-    : mockLojas;
+    : [];
 
   const profissionaisFiltrados = useMemo(() => {
     return profissionais.filter(p => {
