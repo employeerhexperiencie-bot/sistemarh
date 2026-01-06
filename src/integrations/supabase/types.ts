@@ -433,7 +433,7 @@ export type Database = {
           data_inicio: string
           data_previsao_termino: string | null
           id: string
-          numero_parcelas: number
+          numero_parcelas: number | null
           observacoes: string | null
           parcelas_pagas: number | null
           profissional_id: string | null
@@ -443,14 +443,14 @@ export type Database = {
           tipo: string
           updated_at: string | null
           valor_parcela: number
-          valor_total: number
+          valor_total: number | null
         }
         Insert: {
           created_at?: string | null
           data_inicio: string
           data_previsao_termino?: string | null
           id?: string
-          numero_parcelas: number
+          numero_parcelas?: number | null
           observacoes?: string | null
           parcelas_pagas?: number | null
           profissional_id?: string | null
@@ -460,14 +460,14 @@ export type Database = {
           tipo: string
           updated_at?: string | null
           valor_parcela: number
-          valor_total: number
+          valor_total?: number | null
         }
         Update: {
           created_at?: string | null
           data_inicio?: string
           data_previsao_termino?: string | null
           id?: string
-          numero_parcelas?: number
+          numero_parcelas?: number | null
           observacoes?: string | null
           parcelas_pagas?: number | null
           profissional_id?: string | null
@@ -477,7 +477,7 @@ export type Database = {
           tipo?: string
           updated_at?: string | null
           valor_parcela?: number
-          valor_total?: number
+          valor_total?: number | null
         }
         Relationships: [
           {
