@@ -33,7 +33,9 @@ interface Professional {
   cpf?: string;
   rg?: string;
   loja_id?: string;
+  loja_registro_id?: string;
   loja?: { nome: string };
+  loja_registro?: { nome: string };
   cargo?: string;
   salario_nominal?: number;
   primeiro_salario?: number;
@@ -88,6 +90,7 @@ interface FormDataCompleto {
   
   // Dados Profissionais
   loja_id: string;
+  loja_registro_id: string;
   departamento: string;
   setor: string;
   cargo: string;
@@ -192,6 +195,7 @@ const initialFormData: FormDataCompleto = {
   cnh_validade: '',
   cnh_primeira_habilitacao: '',
   loja_id: '',
+  loja_registro_id: '',
   departamento: '',
   setor: '',
   cargo: '',
@@ -456,7 +460,8 @@ export const CadastroProfissionais: React.FC = () => {
         .from('profissionais')
         .select(`
           *,
-          loja:lojas(nome)
+          loja:lojas!profissionais_loja_id_fkey(nome),
+          loja_registro:lojas!profissionais_loja_registro_id_fkey(nome)
         `)
         .order('nome', { ascending: true });
 
@@ -529,8 +534,9 @@ export const CadastroProfissionais: React.FC = () => {
         cpf: formData.cpf || null,
         rg: formData.rg || null,
         loja_id: formData.loja_id || null,
+        loja_registro_id: formData.loja_registro_id || null,
         cargo: formData.cargo || null,
-        salario: parseCurrencyToCentavos(formData.salario_nominal || formData.primeiro_salario),
+        salario_nominal: parseCurrencyToCentavos(formData.salario_nominal || formData.primeiro_salario),
         status: formData.status,
         data_admissao: formData.data_admissao || null,
         data_demissao: formData.data_demissao || null,
@@ -611,6 +617,7 @@ export const CadastroProfissionais: React.FC = () => {
       cpf: professional.cpf || '',
       rg: professional.rg || '',
       loja_id: professional.loja_id || '',
+      loja_registro_id: professional.loja_registro_id || '',
       cargo: professional.cargo || '',
       salario_nominal: formatCurrency((professional.salario_nominal || 0).toString()),
       status: professional.status as 'ativo' | 'demitido' | 'afastado',
@@ -795,7 +802,17 @@ export const CadastroProfissionais: React.FC = () => {
                   <p className="font-medium">{selectedProfessional?.rg || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Loja</Label>
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />
+                    Loja de Registro
+                  </Label>
+                  <p className="font-medium">{selectedProfessional?.loja_registro?.nome || selectedProfessional?.loja?.nome || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Briefcase className="h-3 w-3" />
+                    Loja de Atuação
+                  </Label>
                   <p className="font-medium">{selectedProfessional?.loja?.nome || '-'}</p>
                 </div>
                 <div>
@@ -1371,10 +1388,31 @@ export const CadastroProfissionais: React.FC = () => {
                   <TabsContent value="profissionais" className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="loja">Loja</Label>
+                        <Label htmlFor="loja_registro" className="flex items-center gap-1">
+                          <Building2 className="h-3 w-3" />
+                          Loja de Registro (Jurídica)
+                        </Label>
+                        <Select value={formData.loja_registro_id} onValueChange={(value) => setFormData({ ...formData, loja_registro_id: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Onde está registrado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {lojas.map((loja) => (
+                              <SelectItem key={loja.id} value={loja.id}>
+                                {loja.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="loja_atuacao" className="flex items-center gap-1">
+                          <Briefcase className="h-3 w-3" />
+                          Loja de Atuação (Operacional)
+                        </Label>
                         <Select value={formData.loja_id} onValueChange={(value) => setFormData({ ...formData, loja_id: value })}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a loja" />
+                            <SelectValue placeholder="Onde trabalha" />
                           </SelectTrigger>
                           <SelectContent>
                             {lojas.map((loja) => (
@@ -2008,7 +2046,7 @@ export const CadastroProfissionais: React.FC = () => {
                 <TableHead>Matrícula</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead className="hidden sm:table-cell">CPF</TableHead>
-                <TableHead className="hidden md:table-cell">Loja</TableHead>
+                <TableHead className="hidden md:table-cell">Loja Atuação</TableHead>
                 <TableHead className="hidden lg:table-cell">Cargo</TableHead>
                 <TableHead className="hidden lg:table-cell">Salário</TableHead>
                 <TableHead>Status</TableHead>
@@ -2021,7 +2059,14 @@ export const CadastroProfissionais: React.FC = () => {
                   <TableCell className="font-mono text-xs">{professional.matricula}</TableCell>
                   <TableCell className="font-medium">{capitalizeWords(professional.nome)}</TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">{professional.cpf || '-'}</TableCell>
-                  <TableCell className="hidden md:table-cell">{professional.loja?.nome || '-'}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <div className="flex flex-col">
+                      <span>{professional.loja?.nome || '-'}</span>
+                      {professional.loja_registro?.nome && professional.loja_registro.nome !== professional.loja?.nome && (
+                        <span className="text-xs text-muted-foreground">Reg: {professional.loja_registro.nome}</span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden lg:table-cell">{professional.cargo || '-'}</TableCell>
                   <TableCell className="hidden lg:table-cell">
                     {formatCurrencyFromNumber(professional.salario_nominal)}

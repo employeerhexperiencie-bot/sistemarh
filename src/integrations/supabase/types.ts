@@ -1349,6 +1349,7 @@ export type Database = {
           id: string
           local_homologacao: string | null
           loja_id: string | null
+          loja_registro_id: string | null
           matricula: string
           motivo_demissao: string | null
           nome: string
@@ -1397,6 +1398,7 @@ export type Database = {
           id?: string
           local_homologacao?: string | null
           loja_id?: string | null
+          loja_registro_id?: string | null
           matricula: string
           motivo_demissao?: string | null
           nome: string
@@ -1445,6 +1447,7 @@ export type Database = {
           id?: string
           local_homologacao?: string | null
           loja_id?: string | null
+          loja_registro_id?: string | null
           matricula?: string
           motivo_demissao?: string | null
           nome?: string
@@ -1469,6 +1472,13 @@ export type Database = {
           {
             foreignKeyName: "profissionais_loja_id_fkey"
             columns: ["loja_id"]
+            isOneToOne: false
+            referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profissionais_loja_registro_id_fkey"
+            columns: ["loja_registro_id"]
             isOneToOne: false
             referencedRelation: "lojas"
             referencedColumns: ["id"]
