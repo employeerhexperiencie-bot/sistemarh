@@ -186,14 +186,16 @@ export function RelatorioFolha() {
     }
 
     return supabaseData.profissionais.map((p: any) => {
+      // Usar salário combinado (salario_nominal) como base de cálculo
       const salarioBase = p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0;
       const loja = supabaseData.lojas.find((l: any) => l.id === p.loja_id);
+      
       const eventos: EventoFolha[] = [
-        { codigo: '001', descricao: 'Salário Base', tipo: 'provento', valor: salarioBase },
+        { codigo: '001', descricao: 'Salário Combinado', tipo: 'provento', valor: salarioBase },
       ];
       
-      // Vale Transporte (provento - crédito ao funcionário)
-      const valorVT = p.vale_transporte ? arredondarValor((p.valor_diario_rota || 4.40) * DIAS_UTEIS) : 0;
+      // Vale Transporte (provento - crédito ao funcionário) - baseado em valor_diario_rota
+      const valorVT = p.vale_transporte && p.valor_diario_rota ? arredondarValor((p.valor_diario_rota) * DIAS_UTEIS) : 0;
       if (valorVT > 0) {
         eventos.push({ codigo: '020', descricao: 'Vale Transporte', tipo: 'provento', valor: valorVT });
       }
@@ -210,19 +212,12 @@ export function RelatorioFolha() {
         eventos.push({ codigo: '022', descricao: 'Cesta Básica', tipo: 'provento', valor: valorCesta });
       }
       
-      // INSS (desconto)
-      const inss = arredondarValor(salarioBase * 0.08);
-      eventos.push({ codigo: '101', descricao: 'INSS', tipo: 'desconto', valor: inss });
+      // DESCONTOS - APENAS: Empréstimos, Vales, Faltas (sem DSR), Adiantamento, Pensão
+      // NÃO incluir: INSS, IRRF, VT 6%
       
-      // Vale Transporte (desconto 6%)
-      if (p.vale_transporte) {
-        const descontoVT = arredondarValor(salarioBase * 0.06);
-        eventos.push({ codigo: '103', descricao: 'Desconto VT (6%)', tipo: 'desconto', valor: descontoVT });
-      }
-      
-      // Pensão Alimentícia
+      // Pensão Alimentícia (único desconto legal mantido, pois é obrigatório)
       if (p.pensao_alimenticia && p.pensao_alimenticia > 0) {
-        eventos.push({ codigo: '109', descricao: 'Pensão Alimentícia', tipo: 'desconto', valor: p.pensao_alimenticia });
+        eventos.push({ codigo: '101', descricao: 'Pensão Alimentícia', tipo: 'desconto', valor: p.pensao_alimenticia });
       }
       
       const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);

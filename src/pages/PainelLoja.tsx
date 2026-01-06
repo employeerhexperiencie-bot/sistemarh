@@ -16,7 +16,6 @@ interface LojaStats {
   vales: number;
   adiantamentos: number;
   descFaltas: number;
-  descDSR: number;
   totalReceber: number;
   holeritesG: number;
   holeritesE: number;
@@ -84,7 +83,6 @@ export default function PainelLoja() {
             vales: 0,
             adiantamentos: 0,
             descFaltas: 0,
-            descDSR: 0,
             totalReceber: 0,
             holeritesG: 0,
             holeritesE: 0,
@@ -104,13 +102,16 @@ export default function PainelLoja() {
         stats.holeritesE += Math.random() > 0.2 ? 1 : 0;
         stats.holeritesA += Math.random() > 0.3 ? 1 : 0;
 
-        // Contabilizar faltas
-        const faltasProf = (faltas || []).filter((f: any) => f.profissional_id === p.id);
+        // Contabilizar faltas - APENAS os dias faltados (sem DSR)
+        const faltasProf = (faltas || []).filter((f: any) => 
+          f.profissional_id === p.id && f.tipo === 'injustificada'
+        );
         if (faltasProf.length > 0) {
           stats.profissionaisComFaltas += 1;
           stats.faltasComputadas += faltasProf.length;
-          stats.descFaltas += Math.floor(salario * 0.035 * faltasProf.length * 100);
-          stats.descDSR += Math.floor(salario * 0.015 * faltasProf.length * 100);
+          // Desconto: valor do dia * dias faltados (salário / 30 * dias)
+          const valorDia = salario / 30;
+          stats.descFaltas += Math.floor(valorDia * faltasProf.length * 100);
         }
       });
 
@@ -130,13 +131,12 @@ export default function PainelLoja() {
   };
 
   const exportCSV = () => {
-    const headers = ['Loja', 'Vales', 'Adiantamentos', 'Desc. Faltas', 'Desc. DSR', 'Total a Receber', 'Total Profissionais'];
+    const headers = ['Loja', 'Vales', 'Adiantamentos', 'Desc. Faltas', 'Total a Receber', 'Total Profissionais'];
     const rows = dadosFiltrados.map(item => [
       item.loja,
       formatCurrency(item.vales),
       formatCurrency(item.adiantamentos),
       formatCurrency(item.descFaltas),
-      formatCurrency(item.descDSR),
       formatCurrency(item.totalReceber),
       item.totalProfissionais,
     ]);
@@ -228,7 +228,7 @@ export default function PainelLoja() {
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-warning">
-              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.descFaltas, 0))}
             </div>
             <p className="text-xs text-muted-foreground">
               {dadosFiltrados.length} lojas
@@ -307,7 +307,6 @@ export default function PainelLoja() {
                   <TableHead className="text-right">Vales</TableHead>
                   <TableHead className="text-right">Adiantamentos</TableHead>
                   <TableHead className="text-right">Desc. Faltas</TableHead>
-                  <TableHead className="text-right">Desc. DSR</TableHead>
                   <TableHead className="text-center">Faltas</TableHead>
                   <TableHead className="text-center">Prof. c/ Faltas</TableHead>
                   <TableHead className="text-center">Total Prof.</TableHead>
@@ -318,7 +317,7 @@ export default function PainelLoja() {
               <TableBody>
                 {dadosFiltrados.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nenhuma loja encontrada
                     </TableCell>
                   </TableRow>
@@ -335,9 +334,6 @@ export default function PainelLoja() {
                       </TableCell>
                       <TableCell className="text-right text-destructive">
                         -{formatCurrency(item.descFaltas)}
-                      </TableCell>
-                      <TableCell className="text-right text-destructive">
-                        -{formatCurrency(item.descDSR)}
                       </TableCell>
                       <TableCell className="text-center">
                         {item.faltasComputadas > 0 ? (

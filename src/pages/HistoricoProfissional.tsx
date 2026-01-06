@@ -197,7 +197,7 @@ export default function HistoricoProfissional() {
   };
 
   const getStatusBadge = (status: string, tipo: string) => {
-    if (tipo === 'FALTA' || tipo === 'DSR') {
+    if (tipo === 'FALTA') {
       return <Badge variant="destructive">Desconto</Badge>;
     }
     
@@ -221,8 +221,8 @@ export default function HistoricoProfissional() {
         return <Badge className="bg-accent/10 text-accent border-accent/20">Adiantamento</Badge>;
       case 'FALTA':
         return <Badge variant="destructive">Falta</Badge>;
-      case 'DSR':
-        return <Badge variant="destructive">DSR</Badge>;
+      case 'EMPRESTIMO':
+        return <Badge className="bg-warning/10 text-warning border-warning/20">Empréstimo</Badge>;
       default:
         return <Badge variant="outline">{tipo}</Badge>;
     }

@@ -19,7 +19,6 @@ interface ProfissionalData {
   vales: number;
   adiantamentos: number;
   descFaltas: number;
-  descDSR: number;
   totalReceber: number;
   statusHolerite: string;
   qtdFaltas: number;
@@ -141,13 +140,17 @@ export default function PainelProfissional() {
       const profissionais = profissionaisResult.data || [];
       const profData: ProfissionalData[] = profissionais.map((p: any) => {
         const salario = p.salario_nominal || 0;
-        const faltasProf = (faltas || []).filter((f: any) => f.profissional_id === p.id);
+        // Apenas faltas injustificadas contam para desconto
+        const faltasProf = (faltas || []).filter((f: any) => 
+          f.profissional_id === p.id && f.tipo === 'injustificada'
+        );
         const qtdFaltas = faltasProf.length;
 
         const vales = Math.floor(salario * 0.08 * 100);
         const adiantamentos = Math.floor(salario * 0.4 * 100);
-        const descFaltas = qtdFaltas > 0 ? Math.floor(salario * 0.035 * qtdFaltas * 100) : 0;
-        const descDSR = qtdFaltas > 1 ? Math.floor(salario * 0.015 * qtdFaltas * 100) : 0;
+        // Desconto de faltas: apenas os dias faltados (salário / 30 * dias) - SEM DSR
+        const valorDia = salario / 30;
+        const descFaltas = qtdFaltas > 0 ? Math.floor(valorDia * qtdFaltas * 100) : 0;
         const totalReceber = Math.floor(salario * 100);
 
         const statusOptions = ['GERADO', 'ENVIADO', 'ASSINADO'];
@@ -160,7 +163,6 @@ export default function PainelProfissional() {
           vales,
           adiantamentos,
           descFaltas,
-          descDSR,
           totalReceber,
           statusHolerite,
           qtdFaltas,
@@ -185,7 +187,7 @@ export default function PainelProfissional() {
   };
 
   const exportCSV = () => {
-    const headers = ['Loja', 'Matrícula', 'Nome', 'Nº Faltas', 'Vales', 'Adiantamentos', 'Desc. Faltas', 'Desc. DSR', 'Total a Receber', 'Status Holerite'];
+    const headers = ['Loja', 'Matrícula', 'Nome', 'Nº Faltas', 'Vales', 'Adiantamentos', 'Desc. Faltas', 'Total a Receber', 'Status Holerite'];
     const rows = dadosFiltrados.map(item => [
       item.loja,
       item.matricula,
@@ -194,7 +196,6 @@ export default function PainelProfissional() {
       formatCurrency(item.vales),
       formatCurrency(item.adiantamentos),
       formatCurrency(item.descFaltas),
-      formatCurrency(item.descDSR),
       formatCurrency(item.totalReceber),
       item.statusHolerite,
     ]);
@@ -437,7 +438,7 @@ export default function PainelProfissional() {
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-warning">
-              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.descFaltas + item.descDSR, 0))}
+              {formatCurrency(dadosFiltrados.reduce((acc, item) => acc + item.descFaltas, 0))}
             </div>
             <p className="text-xs text-muted-foreground">
               {dadosFiltrados.length} profissionais
@@ -528,7 +529,6 @@ export default function PainelProfissional() {
                   <TableHead className="text-right">Vales</TableHead>
                   <TableHead className="text-right">Adiantamentos</TableHead>
                   <TableHead className="text-right">Desc. Faltas</TableHead>
-                  <TableHead className="text-right">Desc. DSR</TableHead>
                   <TableHead className="text-right">Total a Receber</TableHead>
                   <TableHead className="text-center">Status Holerite</TableHead>
                   <TableHead className="text-center">Ações</TableHead>
@@ -537,7 +537,7 @@ export default function PainelProfissional() {
               <TableBody>
                 {dadosFiltrados.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       Nenhum profissional encontrado com os filtros aplicados
                     </TableCell>
                   </TableRow>
@@ -562,9 +562,6 @@ export default function PainelProfissional() {
                       </TableCell>
                       <TableCell className="text-right text-destructive">
                         {item.descFaltas > 0 ? `-${formatCurrency(item.descFaltas)}` : '-'}
-                      </TableCell>
-                      <TableCell className="text-right text-destructive">
-                        {item.descDSR > 0 ? `-${formatCurrency(item.descDSR)}` : '-'}
                       </TableCell>
                       <TableCell className="text-right font-bold text-success">
                         {formatCurrency(item.totalReceber)}
