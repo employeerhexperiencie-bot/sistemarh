@@ -343,29 +343,32 @@ export function GestaoEmprestimos() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Buscar empréstimos
-      const { data: emprestimosData, error: empError } = await supabase
-        .from('emprestimos')
-        .select('*');
+      // Buscar empréstimos, profissionais e lojas em paralelo
+      const [empResult, profResult, lojasResult] = await Promise.all([
+        supabase.from('emprestimos').select('*'),
+        supabase.from('profissionais').select('id, nome, matricula, loja_id'),
+        supabase.from('lojas').select('id, nome')
+      ]);
 
-      if (empError) throw empError;
+      if (empResult.error) throw empResult.error;
 
-      // Buscar todos os profissionais com lojas
-      const { data: profData } = await supabase
-        .from('profissionais')
-        .select('id, nome, matricula, loja_id, lojas!profissionais_loja_id_fkey(nome)');
-        
+      // Criar mapa de lojas
+      const lojasMap: Record<string, string> = {};
+      (lojasResult.data || []).forEach((l: any) => {
+        lojasMap[l.id] = l.nome;
+      });
+
+      // Criar mapa de profissionais
       const profissionaisMap: Record<string, { nome: string; matricula: string; loja: string }> = {};
-      (profData || []).forEach((p: any) => {
-        const lojaObj = p.lojas as any;
+      (profResult.data || []).forEach((p: any) => {
         profissionaisMap[p.id] = {
           nome: p.nome,
           matricula: p.matricula,
-          loja: lojaObj?.nome || 'Sem Loja'
+          loja: p.loja_id ? (lojasMap[p.loja_id] || 'Sem Loja') : 'Sem Loja'
         };
       });
 
-      const emprestimosFormatados: Emprestimo[] = (emprestimosData || []).map(e => {
+      const emprestimosFormatados: Emprestimo[] = (empResult.data || []).map(e => {
         const prof = profissionaisMap[e.profissional_id || ''];
         const tipo = e.tipo === 'empresa' ? 'empresa' : 'clt';
         
