@@ -19,7 +19,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 
-export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento';
+export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento' | 'emprestimo';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
 
 export interface Alerta {
@@ -75,6 +75,7 @@ const getTipoConfig = (tipo: TipoAlerta) => {
     documento: { label: 'Documento', icon: FileText, color: 'text-warning' },
     epi: { label: 'EPI', icon: FileText, color: 'text-accent' },
     afastamento: { label: 'Afastamento', icon: Clock, color: 'text-destructive' },
+    emprestimo: { label: 'Empréstimo', icon: Building2, color: 'text-primary' },
   };
   return config[tipo];
 };
@@ -270,7 +271,9 @@ export function CentralAlertas() {
           'aso_vencido': 'aso',
           'ferias_vencendo': 'ferias',
           'afastamento': 'afastamento',
-          'epi': 'epi'
+          'epi': 'epi',
+          'emprestimo_quitando': 'emprestimo',
+          'emprestimo': 'emprestimo'
         };
 
         alertasGerados.push({
@@ -419,6 +422,108 @@ export function CentralAlertas() {
         });
       });
 
+      // Carregar empréstimos próximos de quitação ou com situações especiais
+      const { data: emprestimos } = await supabase
+        .from('emprestimos')
+        .select(`
+          *,
+          profissionais:profissional_id (
+            matricula,
+            nome,
+            lojas:lojas!profissionais_loja_id_fkey (nome)
+          )
+        `)
+        .eq('status', 'ativo')
+        .eq('tipo', 'empresa');
+
+      (emprestimos || []).forEach((e: any) => {
+        if (!e.numero_parcelas || !e.parcelas_pagas) return;
+        
+        const parcelasRestantes = (e.numero_parcelas || 0) - (e.parcelas_pagas || 0);
+        
+        // Alerta para empréstimos próximos de quitação (últimas 3 parcelas)
+        if (parcelasRestantes > 0 && parcelasRestantes <= 3) {
+          let nivel: NivelAlerta = 'info';
+          if (parcelasRestantes === 1) nivel = 'urgente';
+          else if (parcelasRestantes === 2) nivel = 'atencao';
+
+          alertasGerados.push({
+            id: `emprestimo-quitando-${id++}`,
+            tipo: 'emprestimo',
+            nivel,
+            titulo: parcelasRestantes === 1 ? 'Última Parcela!' : 'Empréstimo Quitando',
+            descricao: `${parcelasRestantes} ${parcelasRestantes === 1 ? 'parcela restante' : 'parcelas restantes'} - ${e.profissionais?.nome}`,
+            dataVencimento: e.data_previsao_termino || '',
+            diasRestantes: parcelasRestantes,
+            loja: e.profissionais?.lojas?.nome || 'N/A',
+            profissional: e.profissionais?.nome,
+            matricula: e.profissionais?.matricula,
+            acaoUrl: '/gestao-emprestimos',
+            lido: false,
+            resolvido: false,
+          });
+        }
+
+        // Alerta para empréstimos que deveriam ter sido quitados (parcelas pagas > total)
+        if (e.parcelas_pagas >= e.numero_parcelas && e.status === 'ativo') {
+          alertasGerados.push({
+            id: `emprestimo-quitado-${id++}`,
+            tipo: 'emprestimo',
+            nivel: 'urgente',
+            titulo: 'Empréstimo a Quitar',
+            descricao: `Todas as parcelas pagas, marcar como quitado - ${e.profissionais?.nome}`,
+            dataVencimento: '',
+            diasRestantes: 0,
+            loja: e.profissionais?.lojas?.nome || 'N/A',
+            profissional: e.profissionais?.nome,
+            matricula: e.profissionais?.matricula,
+            acaoUrl: '/gestao-emprestimos',
+            lido: false,
+            resolvido: false,
+          });
+        }
+      });
+
+      // Alertas para empréstimos CLT ativos há muito tempo (mais de 12 meses)
+      const { data: emprestimosCLT } = await supabase
+        .from('emprestimos')
+        .select(`
+          *,
+          profissionais:profissional_id (
+            matricula,
+            nome,
+            lojas:lojas!profissionais_loja_id_fkey (nome)
+          )
+        `)
+        .eq('status', 'ativo')
+        .eq('tipo', 'clt');
+
+      (emprestimosCLT || []).forEach((e: any) => {
+        if (!e.data_inicio) return;
+        
+        const dataInicio = new Date(e.data_inicio);
+        const mesesAtivo = Math.floor((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24 * 30));
+        
+        // Alerta para CLT com mais de 24 meses (verificar se ainda está ativo)
+        if (mesesAtivo >= 24) {
+          alertasGerados.push({
+            id: `emprestimo-clt-longo-${id++}`,
+            tipo: 'emprestimo',
+            nivel: 'atencao',
+            titulo: 'Verificar Empréstimo CLT',
+            descricao: `Consignado ativo há ${mesesAtivo} meses - verificar continuidade`,
+            dataVencimento: '',
+            diasRestantes: 0,
+            loja: e.profissionais?.lojas?.nome || 'N/A',
+            profissional: e.profissionais?.nome,
+            matricula: e.profissionais?.matricula,
+            acaoUrl: '/gestao-emprestimos',
+            lido: false,
+            resolvido: false,
+          });
+        }
+      });
+
       setAlertas(alertasGerados.sort((a, b) => {
         // Prioridade: críticos primeiro, depois por dias restantes
         const nivelOrder = { critico: 0, urgente: 1, atencao: 2, info: 3 };
@@ -475,6 +580,7 @@ export function CentralAlertas() {
     aso: alertas.filter(a => a.tipo === 'aso' && !a.resolvido).length,
     ferias: alertas.filter(a => a.tipo === 'ferias' && !a.resolvido).length,
     documento: alertas.filter(a => a.tipo === 'documento' && !a.resolvido).length,
+    emprestimo: alertas.filter(a => a.tipo === 'emprestimo' && !a.resolvido).length,
   }), [alertas]);
 
   const handleMarcarLido = (id: string) => {
