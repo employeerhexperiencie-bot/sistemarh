@@ -340,42 +340,93 @@ export interface DadosHoleriteReal {
   vales?: { descricao: string; valor: number }[];
   emprestimos?: { descricao: string; valor: number }[];
   adiantamento?: number;
-  adiantamentoDia20?: number; // 40% do salário combinado pago no dia 20
 }
 
-// Gerar holerite com dados reais (sem descontos legais, apenas empréstimos/vales/faltas)
-// Considera pagamento do dia 20 (40% do salário) e dia 5 (60% restante)
-export const gerarHoleriteReal = (
+// Interface para dados do holerite dia 20 (adiantamento)
+export interface DadosHoleriteDia20 {
+  salarioBase: number;
+  percentualAdiantamento?: number; // Default 40%
+}
+
+// Interface para dados do holerite dia 5 (saldo final)
+export interface DadosHoleriteDia5 {
+  salarioBase: number;
+  adiantamentoDia20: number; // Valor do adiantamento pago no dia 20
+  faltas?: { dias: number; valor: number };
+  vales?: { descricao: string; valor: number }[];
+  emprestimos?: { descricao: string; valor: number }[];
+  adiantamentoExtra?: number;
+}
+
+// Gerar holerite do DIA 20 - Adiantamento (40% do salário combinado)
+export const gerarHoleriteDia20 = (
   nome: string,
   matricula: string,
   loja: string,
   salarioBase: number,
   competencia: string,
-  dados: DadosHoleriteReal
+  dados: DadosHoleriteDia20
 ): DadosHolerite => {
-  // Calcula o adiantamento do dia 20 (40% do salário combinado)
-  const adiantamentoDia20 = dados.adiantamentoDia20 ?? Math.round(salarioBase * 0.4);
+  const percentual = dados.percentualAdiantamento ?? 40;
+  const valorAdiantamento = Math.round(salarioBase * (percentual / 100));
   
+  const eventos: EventoFolha[] = [
+    { 
+      codigo: '001', 
+      descricao: 'Adiantamento Salarial', 
+      tipo: 'provento', 
+      valor: valorAdiantamento,
+      referencia: `${percentual}% do salário`
+    },
+  ];
+  
+  return {
+    empresaNome: 'EMPRESA MODELO LTDA',
+    empresaCNPJ: '12.345.678/0001-90',
+    empresaEndereco: 'Av. Paulista, 1000 - São Paulo/SP',
+    nome,
+    matricula,
+    cpf: '',
+    cargo: '',
+    departamento: 'Adiantamento Dia 20',
+    dataAdmissao: '',
+    loja,
+    competencia: `${competencia} - DIA 20`,
+    salarioBase: valorAdiantamento,
+    eventos,
+    totalProventos: valorAdiantamento,
+    totalDescontos: 0,
+    liquido: valorAdiantamento,
+  };
+};
+
+// Gerar holerite do DIA 5 - Saldo final com todos os descontos
+export const gerarHoleriteDia5 = (
+  nome: string,
+  matricula: string,
+  loja: string,
+  salarioBase: number,
+  competencia: string,
+  dados: DadosHoleriteDia5
+): DadosHolerite => {
   const eventos: EventoFolha[] = [
     { codigo: '001', descricao: 'Salário Combinado', tipo: 'provento', valor: salarioBase },
   ];
   
-  // Descontos - APENAS empréstimos, vales, faltas e adiantamento dia 20
-  
-  // Adiantamento do dia 20 (40% do salário)
-  if (adiantamentoDia20 > 0) {
+  // Desconto do adiantamento pago no dia 20
+  if (dados.adiantamentoDia20 > 0) {
     eventos.push({ 
       codigo: '100', 
-      descricao: 'Adiantamento Dia 20 (40%)', 
+      descricao: 'Adiantamento Dia 20', 
       tipo: 'desconto', 
-      valor: adiantamentoDia20,
-      referencia: '40% do salário'
+      valor: dados.adiantamentoDia20,
+      referencia: 'Pago em 20/' + competencia.split('-')[1]
     });
   }
   
   // Faltas - desconta apenas os dias que faltou (sem DSR)
   if (dados.faltas && dados.faltas.dias > 0) {
-    const valorDia = salarioBase / 30; // Valor do dia
+    const valorDia = salarioBase / 30;
     const descontoFaltas = valorDia * dados.faltas.dias;
     eventos.push({ 
       codigo: '101', 
@@ -399,12 +450,12 @@ export const gerarHoleriteReal = (
   }
   
   // Adiantamento extra (além do dia 20)
-  if (dados.adiantamento && dados.adiantamento > 0) {
+  if (dados.adiantamentoExtra && dados.adiantamentoExtra > 0) {
     eventos.push({ 
       codigo: '105', 
       descricao: 'Adiantamento Extra', 
       tipo: 'desconto', 
-      valor: dados.adiantamento 
+      valor: dados.adiantamentoExtra 
     });
   }
   
@@ -422,8 +473,98 @@ export const gerarHoleriteReal = (
   
   const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
   const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
+  const liquidoDia5 = totalProventos - totalDescontos;
   
-  // Valor líquido é o que será pago no dia 5 (após descontar o adiantamento do dia 20)
+  return {
+    empresaNome: 'EMPRESA MODELO LTDA',
+    empresaCNPJ: '12.345.678/0001-90',
+    empresaEndereco: 'Av. Paulista, 1000 - São Paulo/SP',
+    nome,
+    matricula,
+    cpf: '',
+    cargo: '',
+    departamento: 'Saldo Dia 5',
+    dataAdmissao: '',
+    loja,
+    competencia: `${competencia} - DIA 5`,
+    salarioBase,
+    eventos,
+    totalProventos,
+    totalDescontos,
+    liquido: liquidoDia5,
+  };
+};
+
+// Função legada mantida por compatibilidade
+export const gerarHoleriteReal = (
+  nome: string,
+  matricula: string,
+  loja: string,
+  salarioBase: number,
+  competencia: string,
+  dados: DadosHoleriteReal
+): DadosHolerite => {
+  const adiantamentoDia20 = Math.round(salarioBase * 0.4);
+  
+  const eventos: EventoFolha[] = [
+    { codigo: '001', descricao: 'Salário Combinado', tipo: 'provento', valor: salarioBase },
+  ];
+  
+  if (adiantamentoDia20 > 0) {
+    eventos.push({ 
+      codigo: '100', 
+      descricao: 'Adiantamento Dia 20 (40%)', 
+      tipo: 'desconto', 
+      valor: adiantamentoDia20,
+      referencia: '40% do salário'
+    });
+  }
+  
+  if (dados.faltas && dados.faltas.dias > 0) {
+    const valorDia = salarioBase / 30;
+    const descontoFaltas = valorDia * dados.faltas.dias;
+    eventos.push({ 
+      codigo: '101', 
+      descricao: 'Faltas', 
+      tipo: 'desconto', 
+      valor: Math.round(descontoFaltas),
+      referencia: `${dados.faltas.dias} dia(s)`
+    });
+  }
+  
+  if (dados.vales && dados.vales.length > 0) {
+    dados.vales.forEach((vale, index) => {
+      eventos.push({ 
+        codigo: `10${2 + index}`, 
+        descricao: vale.descricao, 
+        tipo: 'desconto', 
+        valor: vale.valor 
+      });
+    });
+  }
+  
+  if (dados.adiantamento && dados.adiantamento > 0) {
+    eventos.push({ 
+      codigo: '105', 
+      descricao: 'Adiantamento Extra', 
+      tipo: 'desconto', 
+      valor: dados.adiantamento 
+    });
+  }
+  
+  if (dados.emprestimos && dados.emprestimos.length > 0) {
+    dados.emprestimos.forEach((emp, index) => {
+      eventos.push({ 
+        codigo: `11${index}`, 
+        descricao: emp.descricao, 
+        tipo: 'desconto', 
+        valor: emp.valor 
+      });
+    });
+  }
+  
+  const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
+  const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
   const liquidoDia5 = totalProventos - totalDescontos;
   
   return {
