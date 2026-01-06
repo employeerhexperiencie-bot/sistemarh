@@ -60,7 +60,7 @@ export default function GestaoBeneficios() {
             id, matricula, nome, 
             vale_transporte, vale_refeicao, cesta_basica,
             salario_nominal, valor_diario_rota,
-            lojas(nome)
+            lojas:lojas!profissionais_loja_id_fkey(nome)
           `)
           .eq('status', 'ativo')
           .order('nome');

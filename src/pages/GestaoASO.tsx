@@ -63,7 +63,7 @@ export default function GestaoASO() {
         .from('exames_aso')
         .select(`
           *,
-          profissionais(id, matricula, nome, cargo, lojas(nome))
+          profissionais(id, matricula, nome, cargo, lojas:lojas!profissionais_loja_id_fkey(nome))
         `)
         .order('data_proximo_exame', { ascending: true });
 
