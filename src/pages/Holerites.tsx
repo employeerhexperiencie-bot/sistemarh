@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FileText, Mail, CheckCircle, Download, Upload, Printer, Eye, Send, AlertTriangle, CheckCircle2, XCircle, Info, FileSpreadsheet } from 'lucide-react';
+import { FileText, Mail, CheckCircle, Download, Upload, Printer, Eye, Send, AlertTriangle, CheckCircle2, XCircle, Info, FileSpreadsheet, Bus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,10 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { gerarHoleritePDF, gerarHoleriteReal, DadosHoleriteReal } from '@/components/folha/HoleritePDF';
+import { gerarHoleritePDF, gerarHoleriteReal, gerarHoleriteVT, DadosHoleriteReal, DadosHoleriteVT } from '@/components/folha/HoleritePDF';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { buscarDescontosProfissional } from '@/hooks/useHoleriteData';
+import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 
 interface HoleriteItem {
@@ -25,6 +27,9 @@ interface HoleriteItem {
   cargo: string;
   salario: number;
   status: 'pendente' | 'gerado' | 'enviado' | 'assinado';
+  // Campos VT
+  recebeVT?: boolean;
+  valorDiarioVT?: number;
 }
 
 // Gerar dados mock
@@ -97,10 +102,17 @@ export default function Holerites() {
         cargo: p.cargo || '-',
         salario: p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0,
         status: 'pendente' as const,
+        recebeVT: p.vale_transporte || false,
+        valorDiarioVT: p.valor_diario_rota || 0,
       }));
     }
     return gerarHoleritesMock();
   }, [supabaseData.profissionais, supabaseData.totalProfissionais]);
+
+  // Filtrar apenas quem recebe VT
+  const holeritesVT = useMemo(() => {
+    return holerites.filter(h => h.recebeVT && h.valorDiarioVT && h.valorDiarioVT > 0);
+  }, [holerites]);
   
   const holeritesFiltrados = useMemo(() => {
     return holerites.filter(h => {
@@ -309,6 +321,119 @@ export default function Holerites() {
     doc.autoPrint();
     doc.output('dataurlnewwindow');
   };
+
+  // Função para buscar dados de VT de um profissional
+  const buscarDadosVT = async (profissionalId: string): Promise<{ diasFalta: number; diasAtestado: number; diasFerias: number }> => {
+    const [ano, mes] = competencia.split('-').map(Number);
+    const inicioMes = `${ano}-${String(mes).padStart(2, '0')}-01`;
+    const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
+
+    const [faltasResult, feriasResult] = await Promise.all([
+      supabase
+        .from('faltas')
+        .select('tipo')
+        .eq('profissional_id', profissionalId)
+        .gte('data_falta', inicioMes)
+        .lte('data_falta', fimMes),
+      supabase
+        .from('ferias')
+        .select('dias_gozados')
+        .eq('profissional_id', profissionalId)
+        .gte('periodo_gozo_inicio', inicioMes)
+        .lte('periodo_gozo_inicio', fimMes)
+    ]);
+
+    const faltas = faltasResult.data || [];
+    const diasFalta = faltas.filter((f: any) => f.tipo === 'injustificada').length;
+    const diasAtestado = faltas.filter((f: any) => f.tipo === 'justificada' || f.tipo === 'atestado').length;
+    const diasFerias = (feriasResult.data || []).reduce((sum: number, f: any) => sum + (f.dias_gozados || 0), 0);
+
+    return { diasFalta, diasAtestado, diasFerias };
+  };
+
+  // Calcular dias úteis do mês (escala 6x1)
+  const calcularDiasUteis = (): number => {
+    const [ano, mes] = competencia.split('-').map(Number);
+    const ultimoDia = new Date(ano, mes, 0).getDate();
+    let diasUteis = 0;
+    for (let dia = 1; dia <= ultimoDia; dia++) {
+      const data = new Date(ano, mes - 1, dia);
+      if (data.getDay() !== 0) diasUteis++; // Exclui domingos (escala 6x1)
+    }
+    return diasUteis;
+  };
+
+  // Gerar PDF de VT individual
+  const gerarPDFVTIndividual = async (holerite: HoleriteItem) => {
+    if (!holerite.valorDiarioVT) {
+      toast({
+        title: 'Erro',
+        description: 'Profissional não possui valor diário de VT cadastrado.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const dadosVT = await buscarDadosVT(holerite.id);
+    const diasUteis = calcularDiasUteis();
+    const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+
+    const dadosHoleriteVT: DadosHoleriteVT = {
+      valorDiario: holerite.valorDiarioVT,
+      diasUteisMes: diasUteis,
+      diasTrabalhados,
+      diasFalta: dadosVT.diasFalta,
+      diasAtestado: dadosVT.diasAtestado,
+      diasFerias: dadosVT.diasFerias,
+    };
+
+    const dados = gerarHoleriteVT(
+      holerite.nome,
+      holerite.matricula,
+      holerite.loja,
+      competencia,
+      dadosHoleriteVT
+    );
+    
+    const doc = gerarHoleritePDF(dados);
+    doc.save(`holerite_vt_${holerite.matricula}_${competencia}.pdf`);
+    
+    toast({
+      title: 'PDF VT Gerado',
+      description: `Holerite VT de ${holerite.nome} gerado com sucesso!`,
+    });
+  };
+
+  // Visualizar PDF VT
+  const visualizarPDFVT = async (holerite: HoleriteItem) => {
+    if (!holerite.valorDiarioVT) return;
+
+    const dadosVT = await buscarDadosVT(holerite.id);
+    const diasUteis = calcularDiasUteis();
+    const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+
+    const dadosHoleriteVT: DadosHoleriteVT = {
+      valorDiario: holerite.valorDiarioVT,
+      diasUteisMes: diasUteis,
+      diasTrabalhados,
+      diasFalta: dadosVT.diasFalta,
+      diasAtestado: dadosVT.diasAtestado,
+      diasFerias: dadosVT.diasFerias,
+    };
+
+    const dados = gerarHoleriteVT(
+      holerite.nome,
+      holerite.matricula,
+      holerite.loja,
+      competencia,
+      dadosHoleriteVT
+    );
+    
+    const doc = gerarHoleritePDF(dados);
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
   
   const getStatusBadge = (status: HoleriteItem['status']) => {
     const config = {
@@ -386,218 +511,404 @@ export default function Holerites() {
           </Button>
         </div>
       </div>
-      
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="bg-muted/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Pendentes</p>
-                <p className="text-2xl font-bold">{contadores.pendentes}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-info/5 border-info/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-info/10">
-                <FileText className="h-4 w-4 text-info" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Gerados</p>
-                <p className="text-2xl font-bold text-info">{contadores.gerados}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-warning/5 border-warning/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Mail className="h-4 w-4 text-warning" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Enviados</p>
-                <p className="text-2xl font-bold text-warning">{contadores.enviados}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-success/5 border-success/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <CheckCircle className="h-4 w-4 text-success" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Assinados</p>
-                <p className="text-2xl font-bold text-success">{contadores.assinados}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Filtros */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs">Competência</Label>
-              <Input
-                type="month"
-                value={competencia}
-                onChange={(e) => setCompetencia(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Loja</Label>
-              <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as Lojas</SelectItem>
-                  {lojas.map(l => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Status</Label>
-              <Select value={statusFiltro} onValueChange={setStatusFiltro}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                  <SelectItem value="gerado">Gerado</SelectItem>
-                  <SelectItem value="enviado">Enviado</SelectItem>
-                  <SelectItem value="assinado">Assinado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <Label className="text-xs">Buscar</Label>
-              <Input
-                placeholder="Nome ou matrícula..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+
+      {/* Tabs para Salário e VT */}
+      <Tabs defaultValue="salario" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="salario" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Holerite Salário
+          </TabsTrigger>
+          <TabsTrigger value="vt" className="flex items-center gap-2">
+            <Bus className="h-4 w-4" />
+            Holerite VT
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tab Salário */}
+        <TabsContent value="salario" className="space-y-4 mt-4">
+          {/* Cards de Resumo */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Card className="bg-muted/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pendentes</p>
+                    <p className="text-2xl font-bold">{contadores.pendentes}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-info/5 border-info/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-info/10">
+                    <FileText className="h-4 w-4 text-info" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Gerados</p>
+                    <p className="text-2xl font-bold text-info">{contadores.gerados}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-warning/5 border-warning/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-warning/10">
+                    <Mail className="h-4 w-4 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Enviados</p>
+                    <p className="text-2xl font-bold text-warning">{contadores.enviados}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-success/5 border-success/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-success/10">
+                    <CheckCircle className="h-4 w-4 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Assinados</p>
+                    <p className="text-2xl font-bold text-success">{contadores.assinados}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Tabela */}
-      <Card>
-        <CardContent className="p-0">
-          <ScrollArea className="w-full">
-            <Table className="table-zebra">
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selecionados.size === holeritesFiltrados.length && holeritesFiltrados.length > 0}
-                      onCheckedChange={selecionarTodos}
-                    />
-                  </TableHead>
-                  <TableHead className="w-20">Mat.</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Loja</TableHead>
-                  <TableHead className="text-right">Salário</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="w-32 text-center">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {holeritesFiltrados.map((h) => (
-                  <TableRow key={h.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selecionados.has(h.id)}
-                        onCheckedChange={() => toggleSelecionado(h.id)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{h.matricula}</TableCell>
-                    <TableCell className="font-medium">{h.nome}</TableCell>
-                    <TableCell className="text-muted-foreground">{h.cargo}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">{h.loja}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(h.salario)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {getStatusBadge(h.status)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => visualizarPDF(h)}
-                          title="Visualizar PDF"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => gerarPDFIndividual(h)}
-                          title="Download PDF"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => imprimirHolerite(h)}
-                          title="Imprimir"
-                        >
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {holeritesFiltrados.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Nenhum holerite encontrado com os filtros selecionados
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-      
-      {/* Info */}
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <FileText className="h-5 w-5 text-primary mt-0.5" />
-            <div>
-              <p className="font-medium text-sm">Geração de Holerites em PDF</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Os PDFs são gerados com layout profissional contendo: dados da empresa, 
-                dados do funcionário, proventos, descontos, líquido a receber, bases de 
-                cálculo (INSS, FGTS, IRRF) e campos para assinatura.
-              </p>
-            </div>
+          
+          {/* Filtros */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs">Competência</Label>
+                  <Input
+                    type="month"
+                    value={competencia}
+                    onChange={(e) => setCompetencia(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Loja</Label>
+                  <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas as Lojas</SelectItem>
+                      {lojas.map(l => (
+                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Status</Label>
+                  <Select value={statusFiltro} onValueChange={setStatusFiltro}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="gerado">Gerado</SelectItem>
+                      <SelectItem value="enviado">Enviado</SelectItem>
+                      <SelectItem value="assinado">Assinado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs">Buscar</Label>
+                  <Input
+                    placeholder="Nome ou matrícula..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Tabela Salário */}
+          <Card>
+            <CardContent className="p-0">
+              <ScrollArea className="w-full">
+                <Table className="table-zebra">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selecionados.size === holeritesFiltrados.length && holeritesFiltrados.length > 0}
+                          onCheckedChange={selecionarTodos}
+                        />
+                      </TableHead>
+                      <TableHead className="w-20">Mat.</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Cargo</TableHead>
+                      <TableHead>Loja</TableHead>
+                      <TableHead className="text-right">Salário</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="w-32 text-center">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {holeritesFiltrados.map((h) => (
+                      <TableRow key={h.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selecionados.has(h.id)}
+                            onCheckedChange={() => toggleSelecionado(h.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{h.matricula}</TableCell>
+                        <TableCell className="font-medium">{h.nome}</TableCell>
+                        <TableCell className="text-muted-foreground">{h.cargo}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{h.loja}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(h.salario)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {getStatusBadge(h.status)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => visualizarPDF(h)}
+                              title="Visualizar PDF"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => gerarPDFIndividual(h)}
+                              title="Download PDF"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => imprimirHolerite(h)}
+                              title="Imprimir"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {holeritesFiltrados.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          Nenhum holerite encontrado com os filtros selecionados
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+          
+          {/* Info Salário */}
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <FileText className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Holerite de Salário</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Inclui: Salário Combinado, Adiantamento Dia 20 (40%), Faltas, Vales e Empréstimos.
+                    O valor líquido representa o que será pago no dia 5.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab VT */}
+        <TabsContent value="vt" className="space-y-4 mt-4">
+          {/* Resumo VT */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Bus className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Recebem VT</p>
+                    <p className="text-2xl font-bold text-primary">{holeritesVT.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-muted/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Dias Úteis (6x1)</p>
+                    <p className="text-2xl font-bold">{calcularDiasUteis()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-success/5 border-success/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-success/10">
+                    <CheckCircle className="h-4 w-4 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total VT Estimado</p>
+                    <p className="text-xl font-bold text-success">
+                      {formatCurrency(holeritesVT.reduce((sum, h) => sum + ((h.valorDiarioVT || 0) * calcularDiasUteis()), 0))}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Filtros VT */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs">Competência</Label>
+                  <Input
+                    type="month"
+                    value={competencia}
+                    onChange={(e) => setCompetencia(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Loja</Label>
+                  <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas as Lojas</SelectItem>
+                      {lojas.map(l => (
+                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs">Buscar</Label>
+                  <Input
+                    placeholder="Nome ou matrícula..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Tabela VT */}
+          <Card>
+            <CardContent className="p-0">
+              <ScrollArea className="w-full">
+                <Table className="table-zebra">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-20">Mat.</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Loja</TableHead>
+                      <TableHead className="text-right">Valor Diário</TableHead>
+                      <TableHead className="text-right">VT Estimado</TableHead>
+                      <TableHead className="w-32 text-center">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {holeritesVT
+                      .filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro)
+                      .filter(h => !searchTerm || h.nome.toLowerCase().includes(searchTerm.toLowerCase()) || h.matricula.includes(searchTerm))
+                      .map((h) => (
+                        <TableRow key={h.id}>
+                          <TableCell className="font-mono text-sm">{h.matricula}</TableCell>
+                          <TableCell className="font-medium">{h.nome}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{h.loja}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(h.valorDiarioVT || 0)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-primary">
+                            {formatCurrency((h.valorDiarioVT || 0) * calcularDiasUteis())}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => visualizarPDFVT(h)}
+                                title="Visualizar PDF VT"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => gerarPDFVTIndividual(h)}
+                                title="Download PDF VT"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    {holeritesVT.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          Nenhum profissional com Vale Transporte cadastrado
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+          
+          {/* Info VT */}
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Bus className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Holerite de Vale Transporte</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Calculado com base nos dias úteis do mês (escala 6x1). 
+                    Descontos automáticos por faltas, atestados e férias.
+                    O documento deve ser assinado pelo funcionário.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

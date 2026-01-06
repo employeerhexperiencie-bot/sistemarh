@@ -510,3 +510,93 @@ export const gerarHoleriteMock = (
     liquido: totalProventos - totalDescontos,
   };
 };
+
+// Interface para dados do holerite de VT
+export interface DadosHoleriteVT {
+  valorDiario: number;
+  diasUteisMes: number;
+  diasTrabalhados: number;
+  diasFalta: number;
+  diasAtestado: number;
+  diasFerias: number;
+}
+
+// Gerar holerite de Vale Transporte
+export const gerarHoleriteVT = (
+  nome: string,
+  matricula: string,
+  loja: string,
+  competencia: string,
+  dados: DadosHoleriteVT
+): DadosHolerite => {
+  const valorBruto = dados.valorDiario * dados.diasUteisMes;
+  const descontoFaltas = dados.valorDiario * dados.diasFalta;
+  const descontoAtestados = dados.valorDiario * dados.diasAtestado;
+  const descontoFerias = dados.valorDiario * dados.diasFerias;
+  const valorLiquido = dados.valorDiario * dados.diasTrabalhados;
+  
+  const eventos: EventoFolha[] = [
+    { 
+      codigo: '001', 
+      descricao: 'Vale Transporte', 
+      tipo: 'provento', 
+      valor: Math.round(valorBruto),
+      referencia: `${dados.diasUteisMes} dias x ${dados.valorDiario.toFixed(2)}`
+    },
+  ];
+  
+  // Descontos por faltas
+  if (dados.diasFalta > 0) {
+    eventos.push({ 
+      codigo: '101', 
+      descricao: 'Desc. Faltas', 
+      tipo: 'desconto', 
+      valor: Math.round(descontoFaltas),
+      referencia: `${dados.diasFalta} dia(s)`
+    });
+  }
+  
+  // Descontos por atestados
+  if (dados.diasAtestado > 0) {
+    eventos.push({ 
+      codigo: '102', 
+      descricao: 'Desc. Atestados', 
+      tipo: 'desconto', 
+      valor: Math.round(descontoAtestados),
+      referencia: `${dados.diasAtestado} dia(s)`
+    });
+  }
+  
+  // Descontos por férias
+  if (dados.diasFerias > 0) {
+    eventos.push({ 
+      codigo: '103', 
+      descricao: 'Desc. Férias', 
+      tipo: 'desconto', 
+      valor: Math.round(descontoFerias),
+      referencia: `${dados.diasFerias} dia(s)`
+    });
+  }
+  
+  const totalProventos = eventos.filter(e => e.tipo === 'provento').reduce((s, e) => s + e.valor, 0);
+  const totalDescontos = eventos.filter(e => e.tipo === 'desconto').reduce((s, e) => s + e.valor, 0);
+  
+  return {
+    empresaNome: 'EMPRESA MODELO LTDA',
+    empresaCNPJ: '12.345.678/0001-90',
+    empresaEndereco: 'Av. Paulista, 1000 - São Paulo/SP',
+    nome,
+    matricula,
+    cpf: '',
+    cargo: '',
+    departamento: 'Vale Transporte',
+    dataAdmissao: '',
+    loja,
+    competencia,
+    salarioBase: valorBruto,
+    eventos,
+    totalProventos,
+    totalDescontos,
+    liquido: Math.round(valorLiquido),
+  };
+};
