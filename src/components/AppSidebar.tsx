@@ -25,7 +25,8 @@ import {
   Bell,
   History,
   FileBox,
-  Database
+  Database,
+  Banknote
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -83,6 +84,7 @@ const navSections = [
     items: [
       { title: 'Lançamentos', url: '/lancamentos', icon: CreditCard },
       { title: 'Faltas', url: '/faltas', icon: UserX },
+      { title: 'Empréstimos', url: '/gestao-emprestimos', icon: Banknote },
       { title: 'Holerites', url: '/holerites', icon: FileText },
       { title: 'Pendências', url: '/pendencias', icon: AlertTriangle },
     ],
