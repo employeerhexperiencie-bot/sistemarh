@@ -36,14 +36,25 @@ interface Profissional {
   lojas?: { nome: string } | null;
 }
 
+interface ProfissionalSemASO {
+  id: string;
+  matricula: string;
+  nome: string;
+  cargo: string | null;
+  loja: string;
+  dataAdmissao: string | null;
+}
+
 export default function GestaoASO() {
   const [exams, setExams] = useState<ASOExam[]>([]);
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
+  const [profissionaisSemASO, setProfissionaisSemASO] = useState<ProfissionalSemASO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [filterTipoExame, setFilterTipoExame] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showSemASO, setShowSemASO] = useState(false);
   const [formData, setFormData] = useState({
     profissional_id: '',
     tipo_exame: 'Periódico',
@@ -72,13 +83,28 @@ export default function GestaoASO() {
       // Carregar profissionais para o formulário
       const { data: profsData, error: profsError } = await supabase
         .from('profissionais')
-        .select('id, matricula, nome, cargo, lojas:lojas!profissionais_loja_id_fkey(nome)')
+        .select('id, matricula, nome, cargo, data_admissao, lojas:lojas!profissionais_loja_id_fkey(nome)')
         .eq('status', 'ativo')
         .order('nome');
 
       if (profsError) throw profsError;
 
       setProfissionais(profsData || []);
+
+      // Identificar profissionais SEM exame ASO cadastrado
+      const profissionaisComASO = new Set((examesData || []).map((e: any) => e.profissional_id));
+      const semASO: ProfissionalSemASO[] = (profsData || [])
+        .filter((p: any) => !profissionaisComASO.has(p.id))
+        .map((p: any) => ({
+          id: p.id,
+          matricula: p.matricula,
+          nome: p.nome,
+          cargo: p.cargo,
+          loja: p.lojas?.nome || 'Sem loja',
+          dataAdmissao: p.data_admissao
+        }));
+      
+      setProfissionaisSemASO(semASO);
 
       // Formatar dados dos exames
       const examesFormatados: ASOExam[] = (examesData || []).map((e: any) => {
@@ -666,6 +692,87 @@ export default function GestaoASO() {
           )}
         </CardContent>
       </Card>
+
+      {/* Seção: Profissionais SEM ASO cadastrado */}
+      {profissionaisSemASO.length > 0 && (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Profissionais sem ASO Cadastrado ({profissionaisSemASO.length})
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowSemASO(!showSemASO)}
+              >
+                {showSemASO ? 'Ocultar Lista' : 'Ver Lista Completa'}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              ⚠️ Não conformidade trabalhista - Estes profissionais precisam de exame ocupacional
+            </p>
+          </CardHeader>
+          
+          {showSemASO && (
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Matrícula</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Loja</TableHead>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead>Data Admissão</TableHead>
+                    <TableHead>Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {profissionaisSemASO.slice(0, 50).map((prof) => (
+                    <TableRow key={prof.id} className="bg-destructive/5">
+                      <TableCell className="font-mono text-xs">{prof.matricula}</TableCell>
+                      <TableCell className="font-medium">{prof.nome}</TableCell>
+                      <TableCell>{prof.loja}</TableCell>
+                      <TableCell>{prof.cargo || '-'}</TableCell>
+                      <TableCell>
+                        {prof.dataAdmissao 
+                          ? new Date(prof.dataAdmissao).toLocaleDateString('pt-BR')
+                          : <span className="text-muted-foreground">Não informada</span>
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setFormData({
+                              profissional_id: prof.id,
+                              tipo_exame: 'Admissional',
+                              data_ultimo_exame: new Date().toISOString().split('T')[0],
+                              data_proximo_exame: '',
+                              periodicidade: '1 ano',
+                            });
+                            setIsDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Cadastrar ASO
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {profissionaisSemASO.length > 50 && (
+                <p className="text-sm text-muted-foreground mt-4 text-center">
+                  Mostrando 50 de {profissionaisSemASO.length} profissionais
+                </p>
+              )}
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {(vencendoEm30Dias > 0 || vencidos > 0) && (
         <Card className="border-warning/50 bg-warning/5">
