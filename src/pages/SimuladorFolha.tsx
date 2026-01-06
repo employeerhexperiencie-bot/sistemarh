@@ -31,6 +31,7 @@ import { AdiantamentoSalario } from '@/components/folha/AdiantamentoSalario';
 import { EditarLancamentosModal } from '@/components/folha/EditarLancamentosModal';
 import { GraficoTendenciaFolha } from '@/components/folha/GraficoTendenciaFolha';
 import { ChecklistDados } from '@/components/folha/ChecklistDados';
+import { FecharFolhaModal } from '@/components/folha/FecharFolhaModal';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -260,6 +261,9 @@ export default function SimuladorFolha() {
 
   // Modal de detalhamento individual do profissional
   const [profissionalDetalhado, setProfissionalDetalhado] = useState<string | null>(null);
+
+  // Modal de fechamento de folha
+  const [modalFecharFolha, setModalFecharFolha] = useState(false);
 
   const abrirModalEdicao = (profissional: { id: string; nome: string; matricula: string }) => {
     setModalEdicao({ open: true, profissional });
@@ -668,7 +672,12 @@ export default function SimuladorFolha() {
             <FileDown className="h-4 w-4" />
             <span className="hidden sm:inline">Exportar CSV</span>
           </Button>
-          <Button variant="default" className="gap-2 shadow-lg">
+          <Button 
+            variant="default" 
+            className="gap-2 shadow-lg"
+            onClick={() => setModalFecharFolha(true)}
+            disabled={calculosLote.length === 0}
+          >
             <Sparkles className="h-4 w-4" />
             Finalizar e Gerar Holerites
           </Button>
@@ -1625,6 +1634,18 @@ export default function SimuladorFolha() {
           })()}
         </DialogContent>
       </Dialog>
+      {/* Modal Fechar Folha */}
+      <FecharFolhaModal
+        open={modalFecharFolha}
+        onOpenChange={setModalFecharFolha}
+        competencia={competencia}
+        calculosLote={calculosLote}
+        totaisGerais={totaisGerais}
+        onSuccess={() => {
+          // Recarregar dados após fechamento
+          carregarDadosCompetencia();
+        }}
+      />
     </div>
   );
 }
