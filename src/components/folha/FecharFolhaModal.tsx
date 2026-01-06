@@ -76,9 +76,50 @@ export function FecharFolhaModal({
 }: FecharFolhaModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [step, setStep] = useState<'confirm' | 'processing' | 'success' | 'error'>('confirm');
+  const [step, setStep] = useState<'aso_warning' | 'confirm' | 'processing' | 'success' | 'error'>('confirm');
   const [errorMessage, setErrorMessage] = useState('');
+  const [asoVencidos, setAsoVencidos] = useState<number>(0);
   const { toast } = useToast();
+
+  // Verificar ASO vencidos ao abrir o modal
+  const verificarASOVencidos = async () => {
+    try {
+      const profissionaisIds = calculosLote.map(c => c.profissional.id);
+      
+      // Buscar profissionais sem ASO ou com ASO vencido
+      const { data: exames } = await supabase
+        .from('exames_aso')
+        .select('profissional_id, data_proximo_exame')
+        .in('profissional_id', profissionaisIds);
+
+      const profissionaisComASO = new Set((exames || []).map(e => e.profissional_id));
+      const profissionaisSemASO = profissionaisIds.filter(id => !profissionaisComASO.has(id));
+      
+      const hoje = new Date();
+      const asoVencidosCount = (exames || []).filter(e => 
+        e.data_proximo_exame && new Date(e.data_proximo_exame) < hoje
+      ).length;
+
+      const totalProblemas = profissionaisSemASO.length + asoVencidosCount;
+      setAsoVencidos(totalProblemas);
+
+      if (totalProblemas > 0) {
+        setStep('aso_warning');
+      } else {
+        setStep('confirm');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar ASO:', error);
+      setStep('confirm');
+    }
+  };
+
+  // Verificar ao abrir
+  useState(() => {
+    if (open) {
+      verificarASOVencidos();
+    }
+  });
 
   const handleFecharFolha = async () => {
     setIsProcessing(true);
@@ -274,22 +315,62 @@ export function FecharFolhaModal({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
+            {step === 'aso_warning' && <AlertTriangle className="h-5 w-5 text-warning" />}
             {step === 'confirm' && <Lock className="h-5 w-5 text-primary" />}
             {step === 'processing' && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
             {step === 'success' && <CheckCircle2 className="h-5 w-5 text-success" />}
             {step === 'error' && <AlertTriangle className="h-5 w-5 text-destructive" />}
+            {step === 'aso_warning' && 'Atenção: ASO Pendente'}
             {step === 'confirm' && 'Fechar Folha de Pagamento'}
             {step === 'processing' && 'Processando...'}
             {step === 'success' && 'Folha Fechada!'}
             {step === 'error' && 'Erro ao Processar'}
           </DialogTitle>
           <DialogDescription>
+            {step === 'aso_warning' && 'Existem profissionais com pendências de exame ocupacional.'}
             {step === 'confirm' && 'Revise os valores antes de confirmar o fechamento da folha.'}
             {step === 'processing' && 'Aguarde enquanto os dados são gravados no sistema.'}
             {step === 'success' && 'Todos os registros foram gravados com sucesso.'}
             {step === 'error' && 'Ocorreu um erro durante o processamento.'}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Alerta de ASO Vencido/Pendente */}
+        {step === 'aso_warning' && (
+          <div className="space-y-4 py-4">
+            <Alert className="border-warning/50 bg-warning/10">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              <AlertTitle className="text-warning">Não conformidade trabalhista detectada</AlertTitle>
+              <AlertDescription className="mt-2">
+                <p className="font-medium">
+                  Existem <span className="text-destructive font-bold">{asoVencidos}</span> profissional(is) com ASO crítico vencido ou sem exame cadastrado.
+                </p>
+                <p className="text-sm mt-2 text-muted-foreground">
+                  Isso representa um risco trabalhista. Deseja continuar mesmo assim?
+                </p>
+              </AlertDescription>
+            </Alert>
+            
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  handleClose();
+                }}
+              >
+                Não, Voltar
+              </Button>
+              <Button 
+                variant="default"
+                className="flex-1 bg-warning hover:bg-warning/90 text-warning-foreground"
+                onClick={() => setStep('confirm')}
+              >
+                Sim, Continuar
+              </Button>
+            </div>
+          </div>
+        )}
 
         {step === 'confirm' && (
           <div className="space-y-4 py-4">
