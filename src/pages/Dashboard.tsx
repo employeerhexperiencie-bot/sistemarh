@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DataValidationAlert } from '@/components/DataValidationAlert';
+import { DadosFaltantesAlert } from '@/components/DadosFaltantesAlert';
 import { ContextualTooltip, systemTooltips } from '@/components/ui/contextual-tooltip';
 
 // Interface para atividades recentes
@@ -250,6 +251,9 @@ export function Dashboard() {
 
       {/* 🔴 VALIDAÇÃO DE DADOS - Alerta automático de inconsistências */}
       <DataValidationAlert showOnlyIfProblems={true} maxItems={3} />
+
+      {/* 🟡 DADOS FALTANTES - Sinaliza informações que precisam ser preenchidas */}
+      <DadosFaltantesAlert variant="compact" />
 
       {/* 🔴 ALERTAS URGENTES - Movidos para o topo para visibilidade imediata */}
       <AlertasResumo />
