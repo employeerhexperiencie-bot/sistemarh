@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
+import { getCompetenciaAtual } from '@/lib/competencia';
 
 interface LojaStats {
   loja: string;
@@ -29,7 +30,7 @@ export default function PainelLoja() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [competencia, setCompetencia] = useState('2025-08');
+  const [competencia, setCompetencia] = useState(getCompetenciaAtual);
   const [lojaFiltro, setLojaFiltro] = useState('');
   const [estatisticasLojas, setEstatisticasLojas] = useState<LojaStats[]>([]);
   const [lojas, setLojas] = useState<{ id: string; nome: string }[]>([]);

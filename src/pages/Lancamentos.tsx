@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUploader } from '@/components/FileUploader';
+import { ProfissionalAutocomplete } from '@/components/ProfissionalAutocomplete';
 import { CreditCard, TrendingUp, DollarSign } from 'lucide-react';
 import { useN8NAction } from '@/hooks/useN8NAction';
 
@@ -135,15 +135,12 @@ export function Lancamentos() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="vale-matricula">Matrícula</Label>
-                  <Input
-                    id="vale-matricula"
-                    placeholder="Digite a matrícula (1-10 dígitos)"
-                    value={valeForm.matricula}
-                    onChange={(e) => setValeForm(prev => ({ ...prev, matricula: e.target.value }))}
-                  />
-                </div>
+                <ProfissionalAutocomplete
+                  value={valeForm.matricula}
+                  onChange={(matricula) => setValeForm(prev => ({ ...prev, matricula }))}
+                  label="Funcionário"
+                  placeholder="Digite nome ou matrícula"
+                />
                 
                 <div className="space-y-2">
                   <Label htmlFor="vale-valor">Valor</Label>
@@ -204,15 +201,12 @@ export function Lancamentos() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="adt-matricula">Matrícula</Label>
-                  <Input
-                    id="adt-matricula"
-                    placeholder="Digite a matrícula"
-                    value={adiantamentoForm.matricula}
-                    onChange={(e) => setAdiantamentoForm(prev => ({ ...prev, matricula: e.target.value }))}
-                  />
-                </div>
+                <ProfissionalAutocomplete
+                  value={adiantamentoForm.matricula}
+                  onChange={(matricula) => setAdiantamentoForm(prev => ({ ...prev, matricula }))}
+                  label="Funcionário"
+                  placeholder="Digite nome ou matrícula"
+                />
                 
                 <div className="space-y-2">
                   <Label htmlFor="adt-valor">Valor</Label>
@@ -263,15 +257,12 @@ export function Lancamentos() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="pgt-matricula">Matrícula</Label>
-                  <Input
-                    id="pgt-matricula"
-                    placeholder="Digite a matrícula"
-                    value={pagamentoForm.matricula}
-                    onChange={(e) => setPagamentoForm(prev => ({ ...prev, matricula: e.target.value }))}
-                  />
-                </div>
+                <ProfissionalAutocomplete
+                  value={pagamentoForm.matricula}
+                  onChange={(matricula) => setPagamentoForm(prev => ({ ...prev, matricula }))}
+                  label="Funcionário"
+                  placeholder="Digite nome ou matrícula"
+                />
                 
                 <div className="space-y-2">
                   <Label htmlFor="pgt-competencia">Competência</Label>
