@@ -20,6 +20,7 @@ import GestaoASO from "@/pages/GestaoASO";
 import GestaoFerias from "@/pages/GestaoFerias";
 import GestaoEPI from "@/pages/GestaoEPI";
 import GestaoAfastamentos from "@/pages/GestaoAfastamentos";
+import GestaoEmprestimos from "@/pages/GestaoEmprestimos";
 import GestaoBeneficios from "@/pages/GestaoBeneficios";
 import GestaoBeneficiosDetalhado from "@/pages/GestaoBeneficiosDetalhado";
 import ReferenciaSistema from "@/pages/ReferenciaSistema";
@@ -128,6 +129,7 @@ const App = () => (
               <GestaoAfastamentos />
             </Layout>
           } />
+          <Route path="/gestao-emprestimos" element={<GestaoEmprestimos />} />
           <Route path="/gestao-beneficios" element={
             <Layout>
               <GestaoBeneficios />
