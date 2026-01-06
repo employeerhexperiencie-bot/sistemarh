@@ -129,7 +129,11 @@ const App = () => (
               <GestaoAfastamentos />
             </Layout>
           } />
-          <Route path="/gestao-emprestimos" element={<GestaoEmprestimos />} />
+          <Route path="/gestao-emprestimos" element={
+            <Layout>
+              <GestaoEmprestimos />
+            </Layout>
+          } />
           <Route path="/gestao-beneficios" element={
             <Layout>
               <GestaoBeneficios />
