@@ -210,7 +210,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
-            lojas:loja_id (nome)
+            lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
 
@@ -253,7 +253,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
-            lojas:loja_id (nome)
+            lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
 
@@ -295,7 +295,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
-            lojas:loja_id (nome)
+            lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
         .eq('status', 'aguardando_pericia');
@@ -585,7 +585,7 @@ export function AlertasResumo() {
           data_proximo_exame,
           profissionais:profissional_id (
             nome,
-            lojas:loja_id (nome)
+            lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
 

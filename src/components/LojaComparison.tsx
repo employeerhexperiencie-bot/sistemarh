@@ -43,7 +43,7 @@ export function LojaComparison() {
           tipo,
           status,
           profissionais:profissional_id (
-            lojas:loja_id (nome)
+            lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
         .eq('status', 'ativo');
@@ -81,7 +81,7 @@ export function LojaComparison() {
           vale_refeicao,
           cesta_basica,
           valor_diario_rota,
-          lojas:loja_id (nome)
+          lojas:lojas!profissionais_loja_id_fkey (nome)
         `)
         .eq('status', 'ativo');
 
