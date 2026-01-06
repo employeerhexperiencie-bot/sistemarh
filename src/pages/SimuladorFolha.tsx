@@ -16,7 +16,7 @@ import {
   Calculator, DollarSign, Calendar, Bus, Utensils, ShoppingBasket,
   TrendingUp, Users, Building2, Download, Settings2, FileSpreadsheet,
   FileText, Gift, Banknote, AlertTriangle, CheckCircle2, XCircle, Info, ChevronRight,
-  MoreHorizontal, FileDown, Sparkles, Pencil, ChevronDown, ChevronUp, X
+  MoreHorizontal, FileDown, Sparkles, Pencil, ChevronDown, ChevronUp, X, PiggyBank
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,6 +32,7 @@ import { EditarLancamentosModal } from '@/components/folha/EditarLancamentosModa
 import { GraficoTendenciaFolha } from '@/components/folha/GraficoTendenciaFolha';
 import { ChecklistDados } from '@/components/folha/ChecklistDados';
 import { FecharFolhaModal } from '@/components/folha/FecharFolhaModal';
+import { PrevisaoCustosConsolidado } from '@/components/folha/PrevisaoCustosConsolidado';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -859,7 +860,7 @@ export default function SimuladorFolha() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <TabsList className="bg-muted/50 p-1 h-auto gap-1">
+            <TabsList className="bg-muted/50 p-1 h-auto gap-1 flex-wrap">
               <TabsTrigger value="lojas" className="gap-2 data-[state=active]:bg-background">
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Por Loja</span>
@@ -867,6 +868,10 @@ export default function SimuladorFolha() {
               <TabsTrigger value="funcionarios" className="gap-2 data-[state=active]:bg-background">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Por Funcionário</span>
+              </TabsTrigger>
+              <TabsTrigger value="previsao" className="gap-2 data-[state=active]:bg-background">
+                <PiggyBank className="h-4 w-4" />
+                <span className="hidden sm:inline">Previsão Custos</span>
               </TabsTrigger>
               <TabsTrigger value="adiantamento" className="gap-2 data-[state=active]:bg-background">
                 <TrendingUp className="h-4 w-4" />
@@ -1293,6 +1298,15 @@ export default function SimuladorFolha() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Previsão de Custos Tab */}
+        <TabsContent value="previsao" className="animate-fade-in">
+          <PrevisaoCustosConsolidado 
+            competencia={competencia}
+            calculosLote={calculosLote}
+            percentualDia20={percentualDia20}
+          />
         </TabsContent>
 
         {/* Adiantamento Tab */}
