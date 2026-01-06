@@ -71,7 +71,7 @@ const GestaoBeneficiosDetalhado = () => {
           id, nome, matricula, cargo, loja_id,
           vale_refeicao, vale_transporte, cesta_basica,
           valor_diario_rota, salario_nominal,
-          loja:lojas(id, nome)
+          loja:lojas!profissionais_loja_id_fkey(id, nome)
         `)
         .eq('status', 'ativo')
         .order('nome');

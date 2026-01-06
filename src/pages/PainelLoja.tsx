@@ -60,7 +60,7 @@ export default function PainelLoja() {
           nome,
           salario_nominal,
           loja_id,
-          lojas:loja_id (id, nome)
+          lojas:lojas!profissionais_loja_id_fkey (id, nome)
         `)
         .eq('status', 'ativo');
 

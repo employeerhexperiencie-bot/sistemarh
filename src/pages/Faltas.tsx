@@ -62,7 +62,7 @@ export default function Faltas() {
           profissionais:profissional_id (
             matricula,
             nome,
-            lojas:loja_id (nome)
+            lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
         .order('data_falta', { ascending: false });
