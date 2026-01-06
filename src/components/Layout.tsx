@@ -1,12 +1,13 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { User, PanelLeftOpen, PanelLeftClose, Search } from 'lucide-react';
+import { User, PanelLeftOpen, PanelLeftClose, Search, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { DocumentNotifications } from '@/components/DocumentNotifications';
-// AlertasBadge removed - using DocumentNotifications instead
 import { Input } from '@/components/ui/input';
+import { IconTooltip } from '@/components/ui/contextual-tooltip';
+import { useNavigate } from 'react-router-dom';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -55,6 +56,7 @@ export function Layout({ children }: LayoutProps) {
 function HeaderComponent({ currentMonth }: { currentMonth: string }) {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
+  const navigate = useNavigate();
 
   return (
     <header className="h-16 border-b border-border/40 bg-card/80 backdrop-blur-md px-4 lg:px-6 flex items-center justify-between sticky top-0 z-50">
@@ -94,18 +96,31 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
       
       {/* Right side */}
       <div className="flex items-center gap-2">
+        <IconTooltip content="Central de Ajuda - FAQ, tutoriais e suporte">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 hover:bg-muted"
+            onClick={() => navigate('/ajuda')}
+          >
+            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </IconTooltip>
+        
         <DocumentNotifications />
         
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="gap-2 h-9 px-3 hover:bg-muted"
-        >
-          <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center">
-            <User className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="hidden sm:inline text-sm font-medium">Admin</span>
-        </Button>
+        <IconTooltip content="Perfil do usuário e configurações">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="gap-2 h-9 px-3 hover:bg-muted"
+          >
+            <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center">
+              <User className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="hidden sm:inline text-sm font-medium">Admin</span>
+          </Button>
+        </IconTooltip>
       </div>
     </header>
   );

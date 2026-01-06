@@ -26,7 +26,8 @@ import {
   History,
   FileBox,
   Database,
-  Banknote
+  Banknote,
+  HelpCircle
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -120,6 +121,7 @@ const navSections = [
       { title: 'Histórico Alterações', url: '/audit-log', icon: History },
       { title: 'Configurações', url: '/configuracoes', icon: Settings },
       { title: 'Referência', url: '/referencia-sistema', icon: BookOpen },
+      { title: 'Ajuda', url: '/ajuda', icon: HelpCircle },
     ],
   },
 ];

@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DataValidationAlert } from '@/components/DataValidationAlert';
+import { ContextualTooltip, systemTooltips } from '@/components/ui/contextual-tooltip';
 
 // Interface para atividades recentes
 interface AtividadeRecente {
@@ -43,10 +44,11 @@ interface KPICardProps {
   icon: React.ElementType;
   iconColor: string;
   onClick?: () => void;
+  tooltip?: string;
 }
 
-function KPICard({ title, value, subtitle, icon: Icon, iconColor, onClick }: KPICardProps) {
-  return (
+function KPICard({ title, value, subtitle, icon: Icon, iconColor, onClick, tooltip }: KPICardProps) {
+  const content = (
     <Card 
       className="card-interactive cursor-pointer group" 
       onClick={onClick}
@@ -67,6 +69,16 @@ function KPICard({ title, value, subtitle, icon: Icon, iconColor, onClick }: KPI
       </CardContent>
     </Card>
   );
+
+  if (tooltip) {
+    return (
+      <ContextualTooltip content={tooltip} showIcon>
+        {content}
+      </ContextualTooltip>
+    );
+  }
+
+  return content;
 }
 
 // Stat Card Component
@@ -251,6 +263,7 @@ export function Dashboard() {
           icon={CreditCard}
           iconColor="bg-primary/10 text-primary"
           onClick={() => navigate('/painel-loja?tipo=vales')}
+          tooltip={systemTooltips.vales}
         />
 
         <KPICard
@@ -260,6 +273,7 @@ export function Dashboard() {
           icon={TrendingUp}
           iconColor="bg-accent/10 text-accent"
           onClick={() => navigate('/painel-loja?tipo=adiantamentos')}
+          tooltip={systemTooltips.adiantamentos}
         />
 
         <KPICard
@@ -269,6 +283,7 @@ export function Dashboard() {
           icon={DollarSign}
           iconColor="bg-success/10 text-success"
           onClick={() => navigate('/painel-loja')}
+          tooltip={systemTooltips.totalReceber}
         />
 
         {/* Absences Card - Special layout */}
