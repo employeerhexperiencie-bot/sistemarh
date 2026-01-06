@@ -1,11 +1,12 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { User, PanelLeftOpen, PanelLeftClose, Search, HelpCircle } from 'lucide-react';
+import { User, PanelLeftOpen, PanelLeftClose, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { DocumentNotifications } from '@/components/DocumentNotifications';
-import { Input } from '@/components/ui/input';
+import { GlobalSearch } from '@/components/GlobalSearch';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { IconTooltip } from '@/components/ui/contextual-tooltip';
 import { useNavigate } from 'react-router-dom';
 
@@ -43,6 +44,7 @@ export function Layout({ children }: LayoutProps) {
             {/* Main Content */}
             <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
               <div className="animate-fade-in">
+                <Breadcrumbs />
                 {children}
               </div>
             </main>
@@ -83,15 +85,9 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
         </div>
       </div>
 
-      {/* Center - Search (hidden on mobile) */}
+      {/* Center - Global Search (hidden on mobile) */}
       <div className="hidden md:flex flex-1 max-w-md mx-8">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar funcionário, loja..." 
-            className="pl-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/30"
-          />
-        </div>
+        <GlobalSearch />
       </div>
       
       {/* Right side */}

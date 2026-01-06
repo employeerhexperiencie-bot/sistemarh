@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
+import { getCompetenciaAtual } from '@/lib/competencia';
 
 interface ProfissionalData {
   loja: string;
@@ -48,7 +49,7 @@ export default function PainelProfissional() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [competencia, setCompetencia] = useState('2025-08');
+  const [competencia, setCompetencia] = useState(getCompetenciaAtual);
   const [lojaFiltro, setLojaFiltro] = useState('');
   const [profissionalFiltro, setProfissionalFiltro] = useState('');
   const [profissionaisData, setProfissionaisData] = useState<ProfissionalData[]>([]);

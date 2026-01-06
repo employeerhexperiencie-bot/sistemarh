@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getCompetenciaAtual } from '@/lib/competencia';
 
 interface HistoricoItem {
   data: string;
@@ -24,7 +25,7 @@ export default function HistoricoProfissional() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [competencia, setCompetencia] = useState('2025-08');
+  const [competencia, setCompetencia] = useState(getCompetenciaAtual);
   const [novoItem, setNovoItem] = useState({ tipo: '', valor: '', descricao: '' });
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [profissionalInfo, setProfissionalInfo] = useState<{ nome: string; loja: string } | null>(null);
