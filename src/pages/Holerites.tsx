@@ -1,23 +1,29 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FileText, Mail, CheckCircle, Download, Upload, Printer, Eye, Send, AlertTriangle, CheckCircle2, XCircle, Info, FileSpreadsheet, Bus } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText, Mail, CheckCircle, Download, Printer, Eye, Send, AlertTriangle, CheckCircle2, Bus, Calendar, CalendarDays } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { gerarHoleritePDF, gerarHoleriteReal, gerarHoleriteVT, DadosHoleriteReal, DadosHoleriteVT } from '@/components/folha/HoleritePDF';
+import { 
+  gerarHoleritePDF, 
+  gerarHoleriteDia20, 
+  gerarHoleriteDia5, 
+  gerarHoleriteVT, 
+  DadosHoleriteDia20, 
+  DadosHoleriteDia5, 
+  DadosHoleriteVT 
+} from '@/components/folha/HoleritePDF';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { buscarDescontosProfissional } from '@/hooks/useHoleriteData';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
 
 interface HoleriteItem {
   id: string;
@@ -27,28 +33,25 @@ interface HoleriteItem {
   cargo: string;
   salario: number;
   status: 'pendente' | 'gerado' | 'enviado' | 'assinado';
-  // Campos VT
   recebeVT?: boolean;
   valorDiarioVT?: number;
 }
 
-// Gerar dados mock
 const gerarHoleritesMock = (): HoleriteItem[] => {
-  const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira', 
-    'Julia Souza', 'Lucas Ferreira', 'Fernanda Alves', 'Ricardo Rodrigues', 'Mariana Pereira',
-    'Bruno Carvalho', 'Camila Gomes', 'Gabriel Martins'];
-  const lojas = ['Loja 01', 'Loja 02', 'Loja 03', 'Loja 04', 'Loja 05'];
-  const cargos = ['Vendedor', 'Caixa', 'Repositor', 'Supervisor', 'Gerente'];
-  const statusOptions: HoleriteItem['status'][] = ['pendente', 'gerado', 'gerado', 'enviado', 'enviado', 'assinado'];
+  const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira'];
+  const lojas = ['Loja 01', 'Loja 02', 'Loja 03'];
+  const cargos = ['Vendedor', 'Caixa', 'Repositor', 'Supervisor'];
   
-  return Array.from({ length: 50 }, (_, i) => ({
+  return Array.from({ length: 20 }, (_, i) => ({
     id: `hol-${i + 1}`,
     loja: lojas[Math.floor(Math.random() * lojas.length)],
     matricula: String(i + 1).padStart(4, '0'),
     nome: nomes[i % nomes.length],
     cargo: cargos[Math.floor(Math.random() * cargos.length)],
     salario: 1800 + Math.floor(Math.random() * 1500),
-    status: statusOptions[Math.floor(Math.random() * statusOptions.length)],
+    status: 'pendente' as const,
+    recebeVT: Math.random() > 0.3,
+    valorDiarioVT: Math.random() > 0.3 ? 10 + Math.floor(Math.random() * 15) : 0,
   }));
 };
 
@@ -60,40 +63,27 @@ export default function Holerites() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [lojaFiltro, setLojaFiltro] = useState('todas');
-  const [statusFiltro, setStatusFiltro] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  
+  // Seleção separada para cada aba
+  const [selecionadosDia20, setSelecionadosDia20] = useState<Set<string>>(new Set());
+  const [selecionadosDia5, setSelecionadosDia5] = useState<Set<string>>(new Set());
   const [selecionadosVT, setSelecionadosVT] = useState<Set<string>>(new Set());
+  
   const [gerando, setGerando] = useState(false);
-  const [gerandoVT, setGerandoVT] = useState(false);
 
-  // Estado de validação de dados
-  const [validacaoDados, setValidacaoDados] = useState<{
-    ativosCarregados: boolean;
-    asoCarregados: boolean;
-    beneficiosCarregados: boolean;
-  }>({
+  const [validacaoDados, setValidacaoDados] = useState({
     ativosCarregados: false,
-    asoCarregados: false,
-    beneficiosCarregados: false,
   });
 
-  // Verificar dados do Supabase
   useEffect(() => {
     if (!supabaseData.isLoading) {
       setValidacaoDados({
         ativosCarregados: supabaseData.totalProfissionais > 0,
-        asoCarregados: true,
-        beneficiosCarregados: true,
       });
     }
   }, [supabaseData.isLoading, supabaseData.totalProfissionais]);
-
-  const dadosCompletos = validacaoDados.ativosCarregados && 
-                         validacaoDados.asoCarregados && 
-                         validacaoDados.beneficiosCarregados;
   
-  // Usar dados do Supabase ou mock
   const holerites = useMemo(() => {
     if (supabaseData.totalProfissionais > 0) {
       return supabaseData.profissionais.map((p: any) => ({
@@ -111,7 +101,6 @@ export default function Holerites() {
     return gerarHoleritesMock();
   }, [supabaseData.profissionais, supabaseData.totalProfissionais]);
 
-  // Filtrar apenas quem recebe VT
   const holeritesVT = useMemo(() => {
     return holerites.filter(h => h.recebeVT && h.valorDiarioVT && h.valorDiarioVT > 0);
   }, [holerites]);
@@ -119,104 +108,55 @@ export default function Holerites() {
   const holeritesFiltrados = useMemo(() => {
     return holerites.filter(h => {
       if (lojaFiltro !== 'todas' && h.loja !== lojaFiltro) return false;
-      if (statusFiltro !== 'todos' && h.status !== statusFiltro) return false;
       if (searchTerm && !h.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !h.matricula.includes(searchTerm)) return false;
       return true;
     });
-  }, [holerites, lojaFiltro, statusFiltro, searchTerm]);
-  
-  const contadores = useMemo(() => ({
-    pendentes: holerites.filter(h => h.status === 'pendente').length,
-    gerados: holerites.filter(h => h.status === 'gerado').length,
-    enviados: holerites.filter(h => h.status === 'enviado').length,
-    assinados: holerites.filter(h => h.status === 'assinado').length,
-  }), [holerites]);
+  }, [holerites, lojaFiltro, searchTerm]);
   
   const lojas = useMemo(() => [...new Set(holerites.map(h => h.loja))], [holerites]);
   
-  const toggleSelecionado = (id: string) => {
-    setSelecionados(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const formatCurrency = (value: number): string => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
-  
-  const selecionarTodos = () => {
-    if (selecionados.size === holeritesFiltrados.length) {
-      setSelecionados(new Set());
-    } else {
-      setSelecionados(new Set(holeritesFiltrados.map(h => h.id)));
-    }
-  };
-  
-  const gerarPDFIndividual = async (holerite: HoleriteItem) => {
-    // Buscar descontos reais do banco
-    const descontos = await buscarDescontosProfissional(
-      holerite.id,
-      competencia,
-      holerite.salario
-    );
 
-    // Calcular adiantamento do dia 20 (40% do salário combinado)
-    const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
-
-    const dadosReais: DadosHoleriteReal = {
+  // ========== FUNÇÕES DIA 20 (Adiantamento 40%) ==========
+  const gerarPDFDia20Individual = async (holerite: HoleriteItem) => {
+    const dadosDia20: DadosHoleriteDia20 = {
       salarioBase: holerite.salario,
-      faltas: descontos.faltas,
-      vales: descontos.vales,
-      emprestimos: descontos.emprestimos,
-      adiantamento: descontos.adiantamento,
-      adiantamentoDia20, // 40% pago no dia 20
+      percentualAdiantamento: 40,
     };
 
-    const dados = gerarHoleriteReal(
+    const dados = gerarHoleriteDia20(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
       holerite.salario,
       competencia,
-      dadosReais
+      dadosDia20
     );
     
     const doc = gerarHoleritePDF(dados);
-    doc.save(`holerite_${holerite.matricula}_${competencia}.pdf`);
+    doc.save(`holerite_dia20_${holerite.matricula}_${competencia}.pdf`);
     
     toast({
-      title: 'PDF Gerado',
-      description: `Holerite de ${holerite.nome} gerado com sucesso!`,
+      title: 'PDF Dia 20 Gerado',
+      description: `Adiantamento de ${holerite.nome} gerado com sucesso!`,
     });
   };
-  
-  const visualizarPDF = async (holerite: HoleriteItem) => {
-    const descontos = await buscarDescontosProfissional(
-      holerite.id,
-      competencia,
-      holerite.salario
-    );
 
-    const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
-
-    const dadosReais: DadosHoleriteReal = {
+  const visualizarPDFDia20 = async (holerite: HoleriteItem) => {
+    const dadosDia20: DadosHoleriteDia20 = {
       salarioBase: holerite.salario,
-      faltas: descontos.faltas,
-      vales: descontos.vales,
-      emprestimos: descontos.emprestimos,
-      adiantamento: descontos.adiantamento,
-      adiantamentoDia20,
+      percentualAdiantamento: 40,
     };
 
-    const dados = gerarHoleriteReal(
+    const dados = gerarHoleriteDia20(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
       holerite.salario,
       competencia,
-      dadosReais
+      dadosDia20
     );
     
     const doc = gerarHoleritePDF(dados);
@@ -224,12 +164,12 @@ export default function Holerites() {
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
   };
-  
-  const gerarPDFsEmLote = async () => {
-    if (selecionados.size === 0) {
+
+  const gerarPDFsDia20EmLote = async () => {
+    if (selecionadosDia20.size === 0) {
       toast({
         title: 'Nenhum selecionado',
-        description: 'Selecione pelo menos um funcionário para gerar os holerites.',
+        description: 'Selecione pelo menos um funcionário.',
         variant: 'destructive',
       });
       return;
@@ -238,61 +178,47 @@ export default function Holerites() {
     setGerando(true);
     
     try {
-      const selecionadosArray = holeritesFiltrados.filter(h => selecionados.has(h.id));
+      const selecionadosArray = holeritesFiltrados.filter(h => selecionadosDia20.has(h.id));
       
       for (const holerite of selecionadosArray) {
-        // Buscar descontos reais do banco
-        const descontos = await buscarDescontosProfissional(
-          holerite.id,
-          competencia,
-          holerite.salario
-        );
-
-        const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
-
-        const dadosReais: DadosHoleriteReal = {
+        const dadosDia20: DadosHoleriteDia20 = {
           salarioBase: holerite.salario,
-          faltas: descontos.faltas,
-          vales: descontos.vales,
-          emprestimos: descontos.emprestimos,
-          adiantamento: descontos.adiantamento,
-          adiantamentoDia20,
+          percentualAdiantamento: 40,
         };
 
-        const dados = gerarHoleriteReal(
+        const dados = gerarHoleriteDia20(
           holerite.nome,
           holerite.matricula,
           holerite.loja,
           holerite.salario,
           competencia,
-          dadosReais
+          dadosDia20
         );
         
         const doc = gerarHoleritePDF(dados);
-        doc.save(`holerite_${holerite.matricula}_${competencia}.pdf`);
-        
-        // Pequeno delay para não sobrecarregar
+        doc.save(`holerite_dia20_${holerite.matricula}_${competencia}.pdf`);
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       toast({
-        title: 'PDFs Gerados',
-        description: `${selecionados.size} holerites gerados com sucesso!`,
+        title: 'PDFs Dia 20 Gerados',
+        description: `${selecionadosDia20.size} holerites gerados com sucesso!`,
       });
       
-      setSelecionados(new Set());
+      setSelecionadosDia20(new Set());
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Erro ao gerar os PDFs. Tente novamente.',
+        description: 'Erro ao gerar os PDFs.',
         variant: 'destructive',
       });
     } finally {
       setGerando(false);
     }
   };
-  
-  const imprimirHolerite = async (holerite: HoleriteItem) => {
+
+  // ========== FUNÇÕES DIA 5 (Saldo com descontos) ==========
+  const gerarPDFDia5Individual = async (holerite: HoleriteItem) => {
     const descontos = await buscarDescontosProfissional(
       holerite.id,
       competencia,
@@ -301,30 +227,131 @@ export default function Holerites() {
 
     const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
 
-    const dadosReais: DadosHoleriteReal = {
+    const dadosDia5: DadosHoleriteDia5 = {
       salarioBase: holerite.salario,
+      adiantamentoDia20,
       faltas: descontos.faltas,
       vales: descontos.vales,
       emprestimos: descontos.emprestimos,
-      adiantamento: descontos.adiantamento,
-      adiantamentoDia20,
+      adiantamentoExtra: descontos.adiantamento,
     };
 
-    const dados = gerarHoleriteReal(
+    const dados = gerarHoleriteDia5(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
       holerite.salario,
       competencia,
-      dadosReais
+      dadosDia5
     );
     
     const doc = gerarHoleritePDF(dados);
-    doc.autoPrint();
-    doc.output('dataurlnewwindow');
+    doc.save(`holerite_dia5_${holerite.matricula}_${competencia}.pdf`);
+    
+    toast({
+      title: 'PDF Dia 5 Gerado',
+      description: `Saldo de ${holerite.nome} gerado com sucesso!`,
+    });
   };
 
-  // Função para buscar dados de VT de um profissional
+  const visualizarPDFDia5 = async (holerite: HoleriteItem) => {
+    const descontos = await buscarDescontosProfissional(
+      holerite.id,
+      competencia,
+      holerite.salario
+    );
+
+    const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+
+    const dadosDia5: DadosHoleriteDia5 = {
+      salarioBase: holerite.salario,
+      adiantamentoDia20,
+      faltas: descontos.faltas,
+      vales: descontos.vales,
+      emprestimos: descontos.emprestimos,
+      adiantamentoExtra: descontos.adiantamento,
+    };
+
+    const dados = gerarHoleriteDia5(
+      holerite.nome,
+      holerite.matricula,
+      holerite.loja,
+      holerite.salario,
+      competencia,
+      dadosDia5
+    );
+    
+    const doc = gerarHoleritePDF(dados);
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
+
+  const gerarPDFsDia5EmLote = async () => {
+    if (selecionadosDia5.size === 0) {
+      toast({
+        title: 'Nenhum selecionado',
+        description: 'Selecione pelo menos um funcionário.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setGerando(true);
+    
+    try {
+      const selecionadosArray = holeritesFiltrados.filter(h => selecionadosDia5.has(h.id));
+      
+      for (const holerite of selecionadosArray) {
+        const descontos = await buscarDescontosProfissional(
+          holerite.id,
+          competencia,
+          holerite.salario
+        );
+
+        const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+
+        const dadosDia5: DadosHoleriteDia5 = {
+          salarioBase: holerite.salario,
+          adiantamentoDia20,
+          faltas: descontos.faltas,
+          vales: descontos.vales,
+          emprestimos: descontos.emprestimos,
+          adiantamentoExtra: descontos.adiantamento,
+        };
+
+        const dados = gerarHoleriteDia5(
+          holerite.nome,
+          holerite.matricula,
+          holerite.loja,
+          holerite.salario,
+          competencia,
+          dadosDia5
+        );
+        
+        const doc = gerarHoleritePDF(dados);
+        doc.save(`holerite_dia5_${holerite.matricula}_${competencia}.pdf`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      toast({
+        title: 'PDFs Dia 5 Gerados',
+        description: `${selecionadosDia5.size} holerites gerados com sucesso!`,
+      });
+      
+      setSelecionadosDia5(new Set());
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Erro ao gerar os PDFs.',
+        variant: 'destructive',
+      });
+    } finally {
+      setGerando(false);
+    }
+  };
+
+  // ========== FUNÇÕES VT ==========
   const buscarDadosVT = async (profissionalId: string): Promise<{ diasFalta: number; diasAtestado: number; diasFerias: number }> => {
     const [ano, mes] = competencia.split('-').map(Number);
     const inicioMes = `${ano}-${String(mes).padStart(2, '0')}-01`;
@@ -353,19 +380,17 @@ export default function Holerites() {
     return { diasFalta, diasAtestado, diasFerias };
   };
 
-  // Calcular dias úteis do mês (escala 6x1)
   const calcularDiasUteis = (): number => {
     const [ano, mes] = competencia.split('-').map(Number);
     const ultimoDia = new Date(ano, mes, 0).getDate();
     let diasUteis = 0;
     for (let dia = 1; dia <= ultimoDia; dia++) {
       const data = new Date(ano, mes - 1, dia);
-      if (data.getDay() !== 0) diasUteis++; // Exclui domingos (escala 6x1)
+      if (data.getDay() !== 0) diasUteis++;
     }
     return diasUteis;
   };
 
-  // Gerar PDF de VT individual
   const gerarPDFVTIndividual = async (holerite: HoleriteItem) => {
     if (!holerite.valorDiarioVT) {
       toast({
@@ -406,7 +431,6 @@ export default function Holerites() {
     });
   };
 
-  // Visualizar PDF VT
   const visualizarPDFVT = async (holerite: HoleriteItem) => {
     if (!holerite.valorDiarioVT) return;
 
@@ -437,47 +461,21 @@ export default function Holerites() {
     window.open(url, '_blank');
   };
 
-  // Funções de seleção VT
-  const toggleSelecionadoVT = (id: string) => {
-    setSelecionadosVT(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const selecionarTodosVT = () => {
-    const vtFiltrados = holeritesVT
-      .filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro)
-      .filter(h => !searchTerm || h.nome.toLowerCase().includes(searchTerm.toLowerCase()) || h.matricula.includes(searchTerm));
-    
-    if (selecionadosVT.size === vtFiltrados.length) {
-      setSelecionadosVT(new Set());
-    } else {
-      setSelecionadosVT(new Set(vtFiltrados.map(h => h.id)));
-    }
-  };
-
-  // Geração em lote de VT
   const gerarPDFsVTEmLote = async () => {
     if (selecionadosVT.size === 0) {
       toast({
         title: 'Nenhum selecionado',
-        description: 'Selecione pelo menos um funcionário para gerar os holerites VT.',
+        description: 'Selecione pelo menos um funcionário.',
         variant: 'destructive',
       });
       return;
     }
     
-    setGerandoVT(true);
+    setGerando(true);
     
     try {
-      const selecionadosArray = holeritesVT.filter(h => selecionadosVT.has(h.id));
       const diasUteis = calcularDiasUteis();
+      const selecionadosArray = holeritesVT.filter(h => selecionadosVT.has(h.id));
       
       for (const holerite of selecionadosArray) {
         if (!holerite.valorDiarioVT) continue;
@@ -504,75 +502,102 @@ export default function Holerites() {
         
         const doc = gerarHoleritePDF(dados);
         doc.save(`holerite_vt_${holerite.matricula}_${competencia}.pdf`);
-        
-        // Pequeno delay para não sobrecarregar
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       toast({
         title: 'PDFs VT Gerados',
-        description: `${selecionadosVT.size} holerites VT gerados com sucesso!`,
+        description: `${selecionadosVT.size} holerites gerados com sucesso!`,
       });
       
       setSelecionadosVT(new Set());
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Erro ao gerar os PDFs VT. Tente novamente.',
+        description: 'Erro ao gerar os PDFs VT.',
         variant: 'destructive',
       });
     } finally {
-      setGerandoVT(false);
+      setGerando(false);
     }
   };
-  
-  const getStatusBadge = (status: HoleriteItem['status']) => {
-    const config = {
-      pendente: { label: 'Pendente', className: 'bg-muted text-muted-foreground' },
-      gerado: { label: 'Gerado', className: 'bg-info/10 text-info border-info/20' },
-      enviado: { label: 'Enviado', className: 'bg-warning/10 text-warning border-warning/20' },
-      assinado: { label: 'Assinado', className: 'bg-success/10 text-success border-success/20' },
-    };
-    const c = config[status];
-    return <Badge variant="outline" className={c.className}>{c.label}</Badge>;
+
+  // ========== HELPERS ==========
+  const toggleSelecionadoDia20 = (id: string) => {
+    setSelecionadosDia20(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
-  
-  const formatCurrency = (value: number): string => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const toggleSelecionadoDia5 = (id: string) => {
+    setSelecionadosDia5(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
+
+  const toggleSelecionadoVT = (id: string) => {
+    setSelecionadosVT(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selecionarTodosDia20 = () => {
+    if (selecionadosDia20.size === holeritesFiltrados.length) {
+      setSelecionadosDia20(new Set());
+    } else {
+      setSelecionadosDia20(new Set(holeritesFiltrados.map(h => h.id)));
+    }
+  };
+
+  const selecionarTodosDia5 = () => {
+    if (selecionadosDia5.size === holeritesFiltrados.length) {
+      setSelecionadosDia5(new Set());
+    } else {
+      setSelecionadosDia5(new Set(holeritesFiltrados.map(h => h.id)));
+    }
+  };
+
+  const selecionarTodosVT = () => {
+    const vtFiltrados = holeritesVT.filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro);
+    if (selecionadosVT.size === vtFiltrados.length) {
+      setSelecionadosVT(new Set());
+    } else {
+      setSelecionadosVT(new Set(vtFiltrados.map(h => h.id)));
+    }
+  };
+
+  // Resumo financeiro
+  const resumo = useMemo(() => {
+    const totalSalarios = holeritesFiltrados.reduce((sum, h) => sum + h.salario, 0);
+    const adiantamentoDia20 = Math.round(totalSalarios * 0.4);
+    const saldoDia5 = totalSalarios - adiantamentoDia20;
+    return { totalSalarios, adiantamentoDia20, saldoDia5 };
+  }, [holeritesFiltrados]);
   
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
-      {/* Status de Validação de Dados */}
-      {dadosCompletos ? (
+      {/* Status de Validação */}
+      {validacaoDados.ativosCarregados ? (
         <Alert className="border-success bg-success/5">
           <CheckCircle2 className="h-5 w-5 text-success" />
-          <AlertTitle className="text-success font-semibold">Dados Validados - Holerites Confiáveis</AlertTitle>
+          <AlertTitle className="text-success font-semibold">Dados Carregados</AlertTitle>
           <AlertDescription>
-            <div className="mt-2 space-y-1 text-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Todas as planilhas carregadas (ATIVOS, ASO, Benefícios)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>{supabaseData.totalProfissionais} profissionais • {supabaseData.totalLojas} lojas</span>
-              </div>
-            </div>
-            <p className="mt-3 text-sm font-medium text-success">
-              ✓ Holerites prontos para serem gerados com dados completos e validados
-            </p>
+            <span className="text-sm">{supabaseData.totalProfissionais} profissionais • {supabaseData.totalLojas} lojas</span>
           </AlertDescription>
         </Alert>
       ) : supabaseData.totalProfissionais === 0 ? (
         <Alert className="border-warning bg-warning/5">
           <AlertTriangle className="h-5 w-5 text-warning" />
           <AlertTitle className="text-warning font-semibold">Carregando Dados...</AlertTitle>
-          <AlertDescription>
-            <p className="mt-2 text-sm">
-              Aguardando carregamento dos dados do banco de dados.
-            </p>
-          </AlertDescription>
         </Alert>
       ) : null}
 
@@ -584,169 +609,142 @@ export default function Holerites() {
             Gestão de Holerites
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Geração, envio e controle de recibos de pagamento
+            Holerites separados: Dia 20 (Adiantamento) • Dia 5 (Saldo) • Vale Transporte
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={gerarPDFsEmLote}
-            disabled={selecionados.size === 0 || gerando}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {gerando ? 'Gerando...' : `Gerar PDFs (${selecionados.size})`}
-          </Button>
-          <Button disabled={selecionados.size === 0}>
-            <Send className="h-4 w-4 mr-2" />
-            Enviar por Email
-          </Button>
         </div>
       </div>
 
-      {/* Tabs para Salário e VT */}
-      <Tabs defaultValue="salario" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="salario" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Holerite Salário
+      {/* Filtros Globais */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <Label className="text-xs">Competência</Label>
+              <Input
+                type="month"
+                value={competencia}
+                onChange={(e) => setCompetencia(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Loja</Label>
+              <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as Lojas</SelectItem>
+                  {lojas.map(l => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-xs">Buscar</Label>
+              <Input
+                placeholder="Nome ou matrícula..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs para os 3 tipos de holerite */}
+      <Tabs defaultValue="dia20" className="w-full">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsTrigger value="dia20" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Dia 20
+          </TabsTrigger>
+          <TabsTrigger value="dia5" className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4" />
+            Dia 5
           </TabsTrigger>
           <TabsTrigger value="vt" className="flex items-center gap-2">
             <Bus className="h-4 w-4" />
-            Holerite VT
+            VT
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab Salário */}
-        <TabsContent value="salario" className="space-y-4 mt-4">
-          {/* Cards de Resumo */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Card className="bg-muted/30">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Pendentes</p>
-                    <p className="text-2xl font-bold">{contadores.pendentes}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-info/5 border-info/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-info/10">
-                    <FileText className="h-4 w-4 text-info" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Gerados</p>
-                    <p className="text-2xl font-bold text-info">{contadores.gerados}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* ========== TAB DIA 20 ========== */}
+        <TabsContent value="dia20" className="space-y-4 mt-4">
+          {/* Resumo Dia 20 */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <Card className="bg-warning/5 border-warning/20">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-warning/10">
-                    <Mail className="h-4 w-4 text-warning" />
+                    <Calendar className="h-4 w-4 text-warning" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Enviados</p>
-                    <p className="text-2xl font-bold text-warning">{contadores.enviados}</p>
+                    <p className="text-xs text-muted-foreground">Funcionários</p>
+                    <p className="text-2xl font-bold">{holeritesFiltrados.length}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-success/5 border-success/20">
+            <Card className="bg-primary/5 border-primary/20">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-success/10">
-                    <CheckCircle className="h-4 w-4 text-success" />
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FileText className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Assinados</p>
-                    <p className="text-2xl font-bold text-success">{contadores.assinados}</p>
+                    <p className="text-xs text-muted-foreground">Total Dia 20 (40%)</p>
+                    <p className="text-xl font-bold text-primary">{formatCurrency(resumo.adiantamentoDia20)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-muted/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Selecionados</p>
+                    <p className="text-2xl font-bold">{selecionadosDia20.size}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-          
-          {/* Filtros */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-xs">Competência</Label>
-                  <Input
-                    type="month"
-                    value={competencia}
-                    onChange={(e) => setCompetencia(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Loja</Label>
-                  <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todas">Todas as Lojas</SelectItem>
-                      {lojas.map(l => (
-                        <SelectItem key={l} value={l}>{l}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Status</Label>
-                  <Select value={statusFiltro} onValueChange={setStatusFiltro}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="pendente">Pendente</SelectItem>
-                      <SelectItem value="gerado">Gerado</SelectItem>
-                      <SelectItem value="enviado">Enviado</SelectItem>
-                      <SelectItem value="assinado">Assinado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1 sm:col-span-2">
-                  <Label className="text-xs">Buscar</Label>
-                  <Input
-                    placeholder="Nome ou matrícula..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Tabela Salário */}
+
+          {/* Ações Dia 20 */}
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={gerarPDFsDia20EmLote}
+              disabled={selecionadosDia20.size === 0 || gerando}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {gerando ? 'Gerando...' : `Gerar PDFs (${selecionadosDia20.size})`}
+            </Button>
+          </div>
+
+          {/* Tabela Dia 20 */}
           <Card>
             <CardContent className="p-0">
               <ScrollArea className="w-full">
-                <Table className="table-zebra">
+                <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="w-12">
                         <Checkbox
-                          checked={selecionados.size === holeritesFiltrados.length && holeritesFiltrados.length > 0}
-                          onCheckedChange={selecionarTodos}
+                          checked={selecionadosDia20.size === holeritesFiltrados.length && holeritesFiltrados.length > 0}
+                          onCheckedChange={selecionarTodosDia20}
                         />
                       </TableHead>
                       <TableHead className="w-20">Mat.</TableHead>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Cargo</TableHead>
                       <TableHead>Loja</TableHead>
-                      <TableHead className="text-right">Salário</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="w-32 text-center">Ações</TableHead>
+                      <TableHead className="text-right">Salário Base</TableHead>
+                      <TableHead className="text-right">Adiantamento (40%)</TableHead>
+                      <TableHead className="w-24 text-center">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -754,47 +752,26 @@ export default function Holerites() {
                       <TableRow key={h.id}>
                         <TableCell>
                           <Checkbox
-                            checked={selecionados.has(h.id)}
-                            onCheckedChange={() => toggleSelecionado(h.id)}
+                            checked={selecionadosDia20.has(h.id)}
+                            onCheckedChange={() => toggleSelecionadoDia20(h.id)}
                           />
                         </TableCell>
                         <TableCell className="font-mono text-sm">{h.matricula}</TableCell>
                         <TableCell className="font-medium">{h.nome}</TableCell>
-                        <TableCell className="text-muted-foreground">{h.cargo}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">{h.loja}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(h.salario)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {getStatusBadge(h.status)}
+                        <TableCell className="text-right">{formatCurrency(h.salario)}</TableCell>
+                        <TableCell className="text-right font-bold text-warning">
+                          {formatCurrency(Math.round(h.salario * 0.4))}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => visualizarPDF(h)}
-                              title="Visualizar PDF"
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => visualizarPDFDia20(h)} title="Visualizar">
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => gerarPDFIndividual(h)}
-                              title="Download PDF"
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => gerarPDFDia20Individual(h)} title="Download">
                               <Download className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => imprimirHolerite(h)}
-                              title="Imprimir"
-                            >
-                              <Printer className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -802,8 +779,8 @@ export default function Holerites() {
                     ))}
                     {holeritesFiltrados.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                          Nenhum holerite encontrado com os filtros selecionados
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          Nenhum funcionário encontrado
                         </TableCell>
                       </TableRow>
                     )}
@@ -812,17 +789,16 @@ export default function Holerites() {
               </ScrollArea>
             </CardContent>
           </Card>
-          
-          {/* Info Salário */}
-          <Card className="bg-primary/5 border-primary/20">
+
+          {/* Info Dia 20 */}
+          <Card className="bg-warning/5 border-warning/20">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <FileText className="h-5 w-5 text-primary mt-0.5" />
+                <Calendar className="h-5 w-5 text-warning mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm">Holerite de Salário</p>
+                  <p className="font-medium text-sm">Holerite Dia 20 - Adiantamento</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Inclui: Salário Combinado, Adiantamento Dia 20 (40%), Faltas, Vales e Empréstimos.
-                    O valor líquido representa o que será pago no dia 5.
+                    Pagamento antecipado de 40% do salário combinado. Sem descontos adicionais.
                   </p>
                 </div>
               </div>
@@ -830,7 +806,145 @@ export default function Holerites() {
           </Card>
         </TabsContent>
 
-        {/* Tab VT */}
+        {/* ========== TAB DIA 5 ========== */}
+        <TabsContent value="dia5" className="space-y-4 mt-4">
+          {/* Resumo Dia 5 */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <Card className="bg-success/5 border-success/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-success/10">
+                    <CalendarDays className="h-4 w-4 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Funcionários</p>
+                    <p className="text-2xl font-bold">{holeritesFiltrados.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Saldo Dia 5 (60%)</p>
+                    <p className="text-xl font-bold text-primary">{formatCurrency(resumo.saldoDia5)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-muted/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Selecionados</p>
+                    <p className="text-2xl font-bold">{selecionadosDia5.size}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Ações Dia 5 */}
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={gerarPDFsDia5EmLote}
+              disabled={selecionadosDia5.size === 0 || gerando}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {gerando ? 'Gerando...' : `Gerar PDFs (${selecionadosDia5.size})`}
+            </Button>
+          </div>
+
+          {/* Tabela Dia 5 */}
+          <Card>
+            <CardContent className="p-0">
+              <ScrollArea className="w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selecionadosDia5.size === holeritesFiltrados.length && holeritesFiltrados.length > 0}
+                          onCheckedChange={selecionarTodosDia5}
+                        />
+                      </TableHead>
+                      <TableHead className="w-20">Mat.</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Loja</TableHead>
+                      <TableHead className="text-right">Salário Base</TableHead>
+                      <TableHead className="text-right">Saldo Estimado</TableHead>
+                      <TableHead className="w-24 text-center">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {holeritesFiltrados.map((h) => (
+                      <TableRow key={h.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selecionadosDia5.has(h.id)}
+                            onCheckedChange={() => toggleSelecionadoDia5(h.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{h.matricula}</TableCell>
+                        <TableCell className="font-medium">{h.nome}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{h.loja}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(h.salario)}</TableCell>
+                        <TableCell className="text-right font-bold text-success">
+                          {formatCurrency(Math.round(h.salario * 0.6))}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => visualizarPDFDia5(h)} title="Visualizar">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => gerarPDFDia5Individual(h)} title="Download">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {holeritesFiltrados.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          Nenhum funcionário encontrado
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Info Dia 5 */}
+          <Card className="bg-success/5 border-success/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <CalendarDays className="h-5 w-5 text-success mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Holerite Dia 5 - Saldo Final</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Saldo restante (60%) com descontos de: Adiantamento Dia 20, Faltas, Vales e Empréstimos.
+                    Não inclui descontos legais (INSS, IRRF, DSR).
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ========== TAB VT ========== */}
         <TabsContent value="vt" className="space-y-4 mt-4">
           {/* Resumo VT */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -877,66 +991,28 @@ export default function Holerites() {
             </Card>
           </div>
 
-          {/* Botão de ação em lote VT */}
+          {/* Ações VT */}
           <div className="flex justify-end">
             <Button 
               variant="outline" 
               onClick={gerarPDFsVTEmLote}
-              disabled={selecionadosVT.size === 0 || gerandoVT}
+              disabled={selecionadosVT.size === 0 || gerando}
             >
               <Download className="h-4 w-4 mr-2" />
-              {gerandoVT ? 'Gerando...' : `Gerar PDFs VT (${selecionadosVT.size})`}
+              {gerando ? 'Gerando...' : `Gerar PDFs VT (${selecionadosVT.size})`}
             </Button>
           </div>
 
-          {/* Filtros VT */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-xs">Competência</Label>
-                  <Input
-                    type="month"
-                    value={competencia}
-                    onChange={(e) => setCompetencia(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Loja</Label>
-                  <Select value={lojaFiltro} onValueChange={setLojaFiltro}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todas">Todas as Lojas</SelectItem>
-                      {lojas.map(l => (
-                        <SelectItem key={l} value={l}>{l}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1 sm:col-span-2">
-                  <Label className="text-xs">Buscar</Label>
-                  <Input
-                    placeholder="Nome ou matrícula..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
           {/* Tabela VT */}
           <Card>
             <CardContent className="p-0">
               <ScrollArea className="w-full">
-                <Table className="table-zebra">
+                <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="w-12">
                         <Checkbox
-                          checked={selecionadosVT.size === holeritesVT.filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro).filter(h => !searchTerm || h.nome.toLowerCase().includes(searchTerm.toLowerCase()) || h.matricula.includes(searchTerm)).length && holeritesVT.length > 0}
+                          checked={selecionadosVT.size === holeritesVT.filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro).length && holeritesVT.length > 0}
                           onCheckedChange={selecionarTodosVT}
                         />
                       </TableHead>
@@ -945,7 +1021,7 @@ export default function Holerites() {
                       <TableHead>Loja</TableHead>
                       <TableHead className="text-right">Valor Diário</TableHead>
                       <TableHead className="text-right">VT Estimado</TableHead>
-                      <TableHead className="w-32 text-center">Ações</TableHead>
+                      <TableHead className="w-24 text-center">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -965,28 +1041,16 @@ export default function Holerites() {
                           <TableCell>
                             <Badge variant="outline" className="text-xs">{h.loja}</Badge>
                           </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(h.valorDiarioVT || 0)}
-                          </TableCell>
-                          <TableCell className="text-right font-medium text-primary">
+                          <TableCell className="text-right">{formatCurrency(h.valorDiarioVT || 0)}</TableCell>
+                          <TableCell className="text-right font-bold text-primary">
                             {formatCurrency((h.valorDiarioVT || 0) * calcularDiasUteis())}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => visualizarPDFVT(h)}
-                                title="Visualizar PDF VT"
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => visualizarPDFVT(h)} title="Visualizar">
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => gerarPDFVTIndividual(h)}
-                                title="Download PDF VT"
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => gerarPDFVTIndividual(h)} title="Download">
                                 <Download className="h-4 w-4" />
                               </Button>
                             </div>
@@ -1005,7 +1069,7 @@ export default function Holerites() {
               </ScrollArea>
             </CardContent>
           </Card>
-          
+
           {/* Info VT */}
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="p-4">
@@ -1016,7 +1080,6 @@ export default function Holerites() {
                   <p className="text-xs text-muted-foreground mt-1">
                     Calculado com base nos dias úteis do mês (escala 6x1). 
                     Descontos automáticos por faltas, atestados e férias.
-                    O documento deve ser assinado pelo funcionário.
                   </p>
                 </div>
               </div>
