@@ -604,16 +604,20 @@ export default function SimuladorFolha() {
   }, [calculosLote]);
 
   const totaisGerais = useMemo(() => {
+    // Calcular total de empréstimos
+    const totalEmprestimos = calculosLote.reduce((sum, c) => sum + c.profissional.emprestimos, 0);
+    
     return resumoPorLoja.reduce((acc, r) => ({
       totalDia20: acc.totalDia20 + r.totalDia20,
       totalDia5: acc.totalDia5 + r.totalDia5,
       totalVT: acc.totalVT + r.totalVT,
       totalVR: acc.totalVR + r.totalVR,
       totalCesta: acc.totalCesta + r.totalCesta,
+      totalEmprestimos: acc.totalEmprestimos,
       totalGeral: acc.totalGeral + r.totalGeral,
       funcionarios: acc.funcionarios + r.qtdFuncionarios,
-    }), { totalDia20: 0, totalDia5: 0, totalVT: 0, totalVR: 0, totalCesta: 0, totalGeral: 0, funcionarios: 0 });
-  }, [resumoPorLoja]);
+    }), { totalDia20: 0, totalDia5: 0, totalVT: 0, totalVR: 0, totalCesta: 0, totalEmprestimos, totalGeral: 0, funcionarios: 0 });
+  }, [resumoPorLoja, calculosLote]);
 
   const getStatusBadge = (status: Profissional['status']) => {
     const config: Record<string, { label: string; className: string }> = {

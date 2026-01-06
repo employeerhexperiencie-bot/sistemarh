@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   CheckCircle2, AlertTriangle, Loader2, Lock, FileText, 
-  DollarSign, Users, Calendar, Sparkles 
+  DollarSign, Users, Calendar, Sparkles, Banknote 
 } from 'lucide-react';
 
 interface CalculoProfissional {
@@ -48,6 +48,7 @@ interface TotaisGerais {
   totalVT: number;
   totalVR: number;
   totalCesta: number;
+  totalEmprestimos: number;
   totalGeral: number;
   funcionarios: number;
 }
@@ -154,6 +155,41 @@ export function FecharFolhaModal({
       }
 
       setProgress(50);
+
+      // Atualizar empréstimos empresa (registrar parcela paga e atualizar saldo)
+      const profissionaisComEmprestimo = calculosLote.filter(c => c.profissional.emprestimos > 0);
+      
+      for (const calc of profissionaisComEmprestimo) {
+        // Buscar empréstimos ativos do profissional
+        const { data: emprestimosAtivos } = await supabase
+          .from('emprestimos')
+          .select('*')
+          .eq('profissional_id', calc.profissional.id)
+          .eq('status', 'ativo');
+
+        for (const emp of emprestimosAtivos || []) {
+          const novasParcelasPagas = (emp.parcelas_pagas || 0) + 1;
+          let novoSaldoDevedor = Number(emp.saldo_devedor) - Number(emp.valor_parcela);
+          let novoStatus = emp.status;
+
+          // Se é empréstimo empresa e todas as parcelas foram pagas
+          if (emp.tipo === 'empresa' && emp.numero_parcelas && novasParcelasPagas >= emp.numero_parcelas) {
+            novoStatus = 'quitado';
+            novoSaldoDevedor = 0;
+          }
+
+          await supabase
+            .from('emprestimos')
+            .update({
+              parcelas_pagas: novasParcelasPagas,
+              saldo_devedor: Math.max(0, novoSaldoDevedor),
+              status: novoStatus
+            })
+            .eq('id', emp.id);
+        }
+      }
+
+      setProgress(55);
 
       // Preparar holerites
       const holeriteRecords = calculosLote.map(c => ({
@@ -299,6 +335,15 @@ export function FecharFolhaModal({
                 <span className="text-muted-foreground">Cesta Básica</span>
                 <span className="font-medium">{formatCurrency(totaisGerais.totalCesta)}</span>
               </div>
+              {totaisGerais.totalEmprestimos > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Banknote className="h-3 w-3" />
+                    Empréstimos (descontos)
+                  </span>
+                  <span className="font-medium text-warning">{formatCurrency(totaisGerais.totalEmprestimos)}</span>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between">
                 <span className="font-semibold">Total Geral</span>
@@ -311,6 +356,11 @@ export function FecharFolhaModal({
               <AlertTitle>Atenção</AlertTitle>
               <AlertDescription>
                 Após o fechamento, os valores serão gravados permanentemente nas tabelas de folha e holerites.
+                {totaisGerais.totalEmprestimos > 0 && (
+                  <span className="block mt-1 text-primary">
+                    Os empréstimos ativos serão atualizados automaticamente (parcelas pagas + saldo devedor).
+                  </span>
+                )}
               </AlertDescription>
             </Alert>
           </div>
@@ -320,8 +370,10 @@ export function FecharFolhaModal({
           <div className="py-8 space-y-4">
             <Progress value={progress} className="h-2" />
             <p className="text-center text-sm text-muted-foreground">
-              {progress < 50 
+              {progress < 20 
                 ? 'Gravando folha de pagamento...' 
+                : progress < 55 
+                ? 'Atualizando empréstimos...'
                 : 'Gerando holerites...'}
             </p>
             <p className="text-center text-2xl font-bold">{progress}%</p>
