@@ -20,6 +20,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento' | 'emprestimo';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
@@ -985,7 +986,7 @@ export function AlertasResumo() {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className={`overflow-hidden transition-all ${
+      <Card className={`overflow-hidden transition-all duration-300 ${
         alertasCriticos > 0 
           ? 'border-destructive/30 bg-destructive/5' 
           : 'border-warning/30 bg-warning/5'
@@ -1020,26 +1021,43 @@ export function AlertasResumo() {
                   Ver todos
                   <ChevronRight className="h-3 w-3 ml-1" />
                 </Button>
-                {isOpen ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                ) : (
+                <motion.div
+                  animate={{ rotate: isOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                )}
+                </motion.div>
               </div>
             </div>
           </CardHeader>
         </CollapsibleTrigger>
-        <CollapsibleContent>
-          <CardContent className="pt-0 pb-4 px-4">
-            <ScrollArea className="max-h-[250px]">
-              <div className="space-y-2 pr-2">
-                {alertas.map((alerta) => (
-                  <AlertaItem key={alerta.id} alerta={alerta} compact />
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </CollapsibleContent>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <CardContent className="pt-0 pb-4 px-4">
+                <ScrollArea className="max-h-[250px]">
+                  <div className="space-y-2 pr-2">
+                    {alertas.map((alerta, index) => (
+                      <motion.div
+                        key={alerta.id}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05, duration: 0.2 }}
+                      >
+                        <AlertaItem alerta={alerta} compact />
+                      </motion.div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
     </Collapsible>
   );
