@@ -42,7 +42,7 @@ export function Layout({ children }: LayoutProps) {
             <HeaderComponent currentMonth={currentMonth} />
 
             {/* Main Content */}
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto scrollbar-thin">
               <div className="animate-fade-in">
                 <Breadcrumbs />
                 {children}
