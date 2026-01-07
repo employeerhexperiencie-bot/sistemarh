@@ -72,7 +72,6 @@ const navSections = [
     defaultOpen: false,
     items: [
       { title: 'Férias', url: '/gestao-ferias', icon: Plane },
-      { title: 'Gerar Férias', url: '/importar-ferias', icon: Plane },
       { title: 'Afastamentos', url: '/gestao-afastamentos', icon: UserMinus },
       { title: 'Exames (ASO)', url: '/gestao-aso', icon: Heart },
       { title: 'EPIs', url: '/gestao-epi', icon: Package },

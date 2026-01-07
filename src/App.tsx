@@ -37,7 +37,7 @@ import ValidacaoDados from "@/pages/ValidacaoDados";
 import DashboardAnalitico from "@/pages/DashboardAnalitico";
 import MigrarDados from "@/pages/MigrarDados";
 import ImportarDadosExcel from "@/pages/ImportarDadosExcel";
-import ImportarFerias from "@/pages/ImportarFerias";
+
 import Ajuda from "@/pages/Ajuda";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
@@ -213,11 +213,6 @@ const App = () => (
           <Route path="/importar-dados-excel" element={
             <Layout>
               <ImportarDadosExcel />
-            </Layout>
-          } />
-          <Route path="/importar-ferias" element={
-            <Layout>
-              <ImportarFerias />
             </Layout>
           } />
           <Route path="/ajuda" element={<Ajuda />} />
