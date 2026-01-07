@@ -907,11 +907,12 @@ export function CentralAlertas() {
   );
 }
 
-// Componente de resumo para o Dashboard
+// Componente de resumo para o Dashboard - Formato de barra colapsável
 export function AlertasResumo() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [alertas, setAlertas] = useState<Alerta[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     loadAlertas();
@@ -972,15 +973,10 @@ export function AlertasResumo() {
 
   const alertasCriticos = alertas.filter(a => a.nivel === 'critico').length;
   const alertasUrgentes = alertas.filter(a => a.nivel === 'urgente').length;
+  const totalAlertas = alertasCriticos + alertasUrgentes;
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-32">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   if (alertas.length === 0) {
@@ -988,33 +984,63 @@ export function AlertasResumo() {
   }
 
   return (
-    <Card className={alertasCriticos > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-warning/50 bg-warning/5'}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Bell className={`h-5 w-5 ${alertasCriticos > 0 ? 'text-destructive' : 'text-warning'}`} />
-            Alertas Urgentes
-          </CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/alertas')}>
-            Ver todos
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-        {alertasCriticos > 0 && (
-          <CardDescription className="text-destructive">
-            {alertasCriticos} alerta(s) crítico(s) requer(em) ação imediata
-          </CardDescription>
-        )}
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[200px]">
-          <div className="space-y-2">
-            {alertas.map((alerta) => (
-              <AlertaItem key={alerta.id} alerta={alerta} compact />
-            ))}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className={`overflow-hidden transition-all ${
+        alertasCriticos > 0 
+          ? 'border-destructive/30 bg-destructive/5' 
+          : 'border-warning/30 bg-warning/5'
+      }`}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-1.5 rounded-lg ${
+                  alertasCriticos > 0 ? 'bg-destructive/10' : 'bg-warning/10'
+                }`}>
+                  <Bell className={`h-4 w-4 ${
+                    alertasCriticos > 0 ? 'text-destructive' : 'text-warning'
+                  }`} />
+                </div>
+                <span className={`text-sm font-medium ${
+                  alertasCriticos > 0 ? 'text-destructive' : 'text-warning'
+                }`}>
+                  {totalAlertas} alerta(s) crítico(s)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/alertas');
+                  }}
+                >
+                  Ver todos
+                  <ChevronRight className="h-3 w-3 ml-1" />
+                </Button>
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="pt-0 pb-4 px-4">
+            <ScrollArea className="max-h-[250px]">
+              <div className="space-y-2 pr-2">
+                {alertas.map((alerta) => (
+                  <AlertaItem key={alerta.id} alerta={alerta} compact />
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }
