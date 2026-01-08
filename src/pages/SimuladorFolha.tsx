@@ -28,7 +28,8 @@ import { RelatorioFolha } from '@/components/folha/RelatorioFolha';
 import { DecimoTerceiro } from '@/components/folha/DecimoTerceiro';
 import { GestaoEmprestimos } from '@/components/folha/GestaoEmprestimos';
 import { AdiantamentoSalario } from '@/components/folha/AdiantamentoSalario';
-import { EditarLancamentosModal } from '@/components/folha/EditarLancamentosModal';
+import { EditarLancamentosDrawer } from '@/components/folha/EditarLancamentosDrawer';
+import { DescontoDetalhePopover } from '@/components/folha/DescontoDetalhePopover';
 import { GraficoTendenciaFolha } from '@/components/folha/GraficoTendenciaFolha';
 import { ChecklistDados } from '@/components/folha/ChecklistDados';
 import { FecharFolhaModal } from '@/components/folha/FecharFolhaModal';
@@ -49,6 +50,11 @@ const arredondarValor = (valor: number): number => {
 
 const formatCurrency = (value: number): string => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+// Formato sem símbolo R$ para células da tabela (conforme documento de Product Excellence)
+const formatNumber = (value: number): string => {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 interface Loja {
@@ -913,7 +919,7 @@ export default function SimuladorFolha() {
               <ScrollArea className="w-full">
                 <div className="overflow-x-auto">
                   <Table className="table-zebra w-full min-w-[950px]">
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
                       <TableRow className="bg-muted/50 hover:bg-muted/50">
                         <TableHead className="font-semibold whitespace-nowrap min-w-[120px]">Loja</TableHead>
                         <TableHead className="text-center font-semibold whitespace-nowrap w-16">Func.</TableHead>
@@ -953,22 +959,22 @@ export default function SimuladorFolha() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums text-success whitespace-nowrap">
-                            {formatCurrency(r.totalDia20)}
+                            {formatNumber(r.totalDia20)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
-                            {formatCurrency(r.totalDia5)}
+                            {formatNumber(r.totalDia5)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-                            {formatCurrency(r.totalVT)}
+                            {formatNumber(r.totalVT)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-                            {formatCurrency(r.totalVR)}
+                            {formatNumber(r.totalVR)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-                            {formatCurrency(r.totalCesta)}
+                            {formatNumber(r.totalCesta)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums font-bold text-primary whitespace-nowrap">
-                            {formatCurrency(r.totalGeral)}
+                            {formatNumber(r.totalGeral)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1118,7 +1124,7 @@ export default function SimuladorFolha() {
               <ScrollArea className="w-full max-h-[600px]">
                 <div className="overflow-x-auto">
                   <Table className="table-zebra w-full min-w-[1100px]">
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
                       <TableRow className="bg-muted/50 hover:bg-muted/50">
                         <TableHead className="font-semibold w-[50px]"></TableHead>
                         <TableHead className="font-semibold whitespace-nowrap w-20">Mat.</TableHead>
@@ -1198,32 +1204,39 @@ export default function SimuladorFolha() {
                             )}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
-                            {formatCurrency(c.profissional.salario)}
+                            {formatNumber(c.profissional.salario)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums text-success whitespace-nowrap">
-                            {formatCurrency(c.valorDia20)}
+                            {formatNumber(c.valorDia20)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
-                            {formatCurrency(c.salarioLiquido)}
+                            {formatNumber(c.salarioLiquido)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums whitespace-nowrap">
                             {c.totalDescontos > 0 ? (
-                              <span className="text-destructive">-{formatCurrency(c.totalDescontos)}</span>
+                              <DescontoDetalhePopover
+                                emprestimo={c.profissional.emprestimos}
+                                vales={c.profissional.vales}
+                                pensao={c.profissional.pensao}
+                                faltas={c.descontoFaltas}
+                              >
+                                <span className="text-destructive cursor-pointer">-{formatNumber(c.totalDescontos)}</span>
+                              </DescontoDetalhePopover>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-                            {formatCurrency(c.valorVT)}
+                            {formatNumber(c.valorVT)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-                            {formatCurrency(c.valorVR)}
+                            {formatNumber(c.valorVR)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums text-muted-foreground whitespace-nowrap">
-                            {formatCurrency(c.valorCesta)}
+                            {formatNumber(c.valorCesta)}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums font-bold text-primary whitespace-nowrap">
-                            {formatCurrency(c.totalMes)}
+                            {formatNumber(c.totalMes)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1444,8 +1457,8 @@ export default function SimuladorFolha() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Edição de Lançamentos */}
-      <EditarLancamentosModal
+      {/* Drawer de Edição de Lançamentos (Painel Lateral) */}
+      <EditarLancamentosDrawer
         open={modalEdicao.open}
         onClose={fecharModalEdicao}
         profissional={modalEdicao.profissional}
