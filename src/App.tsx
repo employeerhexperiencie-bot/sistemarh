@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppearanceProvider } from "@/contexts/AppearanceContext";
 import { AuditLogProvider } from "@/contexts/AuditLogContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { Lancamentos } from "@/pages/Lancamentos";
@@ -37,194 +39,97 @@ import ValidacaoDados from "@/pages/ValidacaoDados";
 import DashboardAnalitico from "@/pages/DashboardAnalitico";
 import MigrarDados from "@/pages/MigrarDados";
 import ImportarDadosExcel from "@/pages/ImportarDadosExcel";
-
+import Login from "@/pages/Login";
 import Ajuda from "@/pages/Ajuda";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 
 const queryClient = new QueryClient();
 
+// Componente para redirecionar usuários autenticados da página de login
+function LoginRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return null;
+  }
+  
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <Login />;
+}
+
+// Wrapper para rotas protegidas com Layout
+function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <Layout>{children}</Layout>
+    </ProtectedRoute>
+  );
+}
+
 const App = () => (
-  <AppearanceProvider>
-    <AuditLogProvider>
-      <OnboardingProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <OnboardingWrapper />
-        <Routes>
-          <Route path="/" element={
-            <Layout>
-              <Dashboard />
-            </Layout>
-          } />
-          <Route path="/dashboard" element={
-            <Layout>
-              <Dashboard />
-            </Layout>
-          } />
-          <Route path="/lancamentos" element={
-            <Layout>
-              <Lancamentos />
-            </Layout>
-          } />
-          <Route path="/faltas" element={
-            <Layout>
-              <Faltas />
-            </Layout>
-          } />
-          <Route path="/holerites" element={
-            <Layout>
-              <Holerites />
-            </Layout>
-          } />
-          <Route path="/relatorios" element={
-            <Layout>
-              <Relatorios />
-            </Layout>
-          } />
-          <Route path="/pendencias" element={
-            <Layout>
-              <Pendencias />
-            </Layout>
-          } />
-          <Route path="/painel-loja" element={
-            <Layout>
-              <PainelLoja />
-            </Layout>
-          } />
-          <Route path="/painel-profissional" element={
-            <Layout>
-              <PainelProfissional />
-            </Layout>
-          } />
-          <Route path="/painel-profissional/:id" element={
-            <Layout>
-              <PainelProfissional />
-            </Layout>
-          } />
-          <Route path="/historico-profissional" element={
-            <Layout>
-              <HistoricoProfissional />
-            </Layout>
-          } />
-          <Route path="/cadastro-profissionais" element={
-            <Layout>
-              <CadastroProfissionais />
-            </Layout>
-          } />
-          <Route path="/gestao-aso" element={
-            <Layout>
-              <GestaoASO />
-            </Layout>
-          } />
-          <Route path="/gestao-ferias" element={
-            <Layout>
-              <GestaoFerias />
-            </Layout>
-          } />
-          <Route path="/gestao-epi" element={
-            <Layout>
-              <GestaoEPI />
-            </Layout>
-          } />
-          <Route path="/gestao-afastamentos" element={
-            <Layout>
-              <GestaoAfastamentos />
-            </Layout>
-          } />
-          <Route path="/gestao-emprestimos" element={
-            <Layout>
-              <GestaoEmprestimos />
-            </Layout>
-          } />
-          <Route path="/gestao-beneficios" element={
-            <Layout>
-              <GestaoBeneficios />
-            </Layout>
-          } />
-          <Route path="/gestao-beneficios-detalhado" element={
-            <Layout>
-              <GestaoBeneficiosDetalhado />
-            </Layout>
-          } />
-          <Route path="/referencia-sistema" element={
-            <Layout>
-              <ReferenciaSistema />
-            </Layout>
-          } />
-          <Route path="/simulador-folha" element={
-            <Layout>
-              <SimuladorFolha />
-            </Layout>
-          } />
-          <Route path="/configuracoes" element={
-            <Layout>
-              <Configuracoes />
-            </Layout>
-          } />
-          <Route path="/cadastro-lojas" element={
-            <Layout>
-              <CadastroLojas />
-            </Layout>
-          } />
-          <Route path="/importacao-dados" element={
-            <Layout>
-              <ImportacaoDados />
-            </Layout>
-          } />
-          <Route path="/alertas" element={
-            <Layout>
-              <Alertas />
-            </Layout>
-          } />
-          <Route path="/audit-log" element={
-            <Layout>
-              <AuditLog />
-            </Layout>
-          } />
-          <Route path="/analisar-ativos" element={
-            <Layout>
-              <AnalisarAtivos />
-            </Layout>
-          } />
-          <Route path="/carregar-dados-adicionais" element={
-            <Layout>
-              <CarregarDadosAdicionais />
-            </Layout>
-          } />
-          <Route path="/validacao-dados" element={
-            <Layout>
-              <ValidacaoDados />
-            </Layout>
-          } />
-          <Route path="/dashboard-analitico" element={
-            <Layout>
-              <DashboardAnalitico />
-            </Layout>
-          } />
-          <Route path="/migrar-dados" element={
-            <Layout>
-              <MigrarDados />
-            </Layout>
-          } />
-          <Route path="/importar-dados-excel" element={
-            <Layout>
-              <ImportarDadosExcel />
-            </Layout>
-          } />
-          <Route path="/ajuda" element={<Ajuda />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-          </TooltipProvider>
-        </QueryClientProvider>
-      </OnboardingProvider>
-    </AuditLogProvider>
-  </AppearanceProvider>
+  <AuthProvider>
+    <AppearanceProvider>
+      <AuditLogProvider>
+        <OnboardingProvider>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <OnboardingWrapper />
+                <Routes>
+                  {/* Rota de Login - Pública */}
+                  <Route path="/login" element={<LoginRoute />} />
+                  
+                  {/* Rotas Protegidas */}
+                  <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+                  <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+                  <Route path="/lancamentos" element={<ProtectedLayout><Lancamentos /></ProtectedLayout>} />
+                  <Route path="/faltas" element={<ProtectedLayout><Faltas /></ProtectedLayout>} />
+                  <Route path="/holerites" element={<ProtectedLayout><Holerites /></ProtectedLayout>} />
+                  <Route path="/relatorios" element={<ProtectedLayout><Relatorios /></ProtectedLayout>} />
+                  <Route path="/pendencias" element={<ProtectedLayout><Pendencias /></ProtectedLayout>} />
+                  <Route path="/painel-loja" element={<ProtectedLayout><PainelLoja /></ProtectedLayout>} />
+                  <Route path="/painel-profissional" element={<ProtectedLayout><PainelProfissional /></ProtectedLayout>} />
+                  <Route path="/painel-profissional/:id" element={<ProtectedLayout><PainelProfissional /></ProtectedLayout>} />
+                  <Route path="/historico-profissional" element={<ProtectedLayout><HistoricoProfissional /></ProtectedLayout>} />
+                  <Route path="/cadastro-profissionais" element={<ProtectedLayout><CadastroProfissionais /></ProtectedLayout>} />
+                  <Route path="/gestao-aso" element={<ProtectedLayout><GestaoASO /></ProtectedLayout>} />
+                  <Route path="/gestao-ferias" element={<ProtectedLayout><GestaoFerias /></ProtectedLayout>} />
+                  <Route path="/gestao-epi" element={<ProtectedLayout><GestaoEPI /></ProtectedLayout>} />
+                  <Route path="/gestao-afastamentos" element={<ProtectedLayout><GestaoAfastamentos /></ProtectedLayout>} />
+                  <Route path="/gestao-emprestimos" element={<ProtectedLayout><GestaoEmprestimos /></ProtectedLayout>} />
+                  <Route path="/gestao-beneficios" element={<ProtectedLayout><GestaoBeneficios /></ProtectedLayout>} />
+                  <Route path="/gestao-beneficios-detalhado" element={<ProtectedLayout><GestaoBeneficiosDetalhado /></ProtectedLayout>} />
+                  <Route path="/referencia-sistema" element={<ProtectedLayout><ReferenciaSistema /></ProtectedLayout>} />
+                  <Route path="/simulador-folha" element={<ProtectedLayout><SimuladorFolha /></ProtectedLayout>} />
+                  <Route path="/configuracoes" element={<ProtectedLayout><Configuracoes /></ProtectedLayout>} />
+                  <Route path="/cadastro-lojas" element={<ProtectedLayout><CadastroLojas /></ProtectedLayout>} />
+                  <Route path="/importacao-dados" element={<ProtectedLayout><ImportacaoDados /></ProtectedLayout>} />
+                  <Route path="/alertas" element={<ProtectedLayout><Alertas /></ProtectedLayout>} />
+                  <Route path="/audit-log" element={<ProtectedLayout><AuditLog /></ProtectedLayout>} />
+                  <Route path="/analisar-ativos" element={<ProtectedLayout><AnalisarAtivos /></ProtectedLayout>} />
+                  <Route path="/carregar-dados-adicionais" element={<ProtectedLayout><CarregarDadosAdicionais /></ProtectedLayout>} />
+                  <Route path="/validacao-dados" element={<ProtectedLayout><ValidacaoDados /></ProtectedLayout>} />
+                  <Route path="/dashboard-analitico" element={<ProtectedLayout><DashboardAnalitico /></ProtectedLayout>} />
+                  <Route path="/migrar-dados" element={<ProtectedLayout><MigrarDados /></ProtectedLayout>} />
+                  <Route path="/importar-dados-excel" element={<ProtectedLayout><ImportarDadosExcel /></ProtectedLayout>} />
+                  <Route path="/ajuda" element={<Ajuda />} />
+                  
+                  {/* Catch-all - Redireciona para 404 */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </QueryClientProvider>
+        </OnboardingProvider>
+      </AuditLogProvider>
+    </AppearanceProvider>
+  </AuthProvider>
 );
 
 export default App;

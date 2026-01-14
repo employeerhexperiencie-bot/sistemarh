@@ -1,14 +1,23 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { User, PanelLeftOpen, PanelLeftClose, HelpCircle } from 'lucide-react';
+import { User, PanelLeftOpen, PanelLeftClose, HelpCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { DocumentNotifications } from '@/components/DocumentNotifications';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { IconTooltip } from '@/components/ui/contextual-tooltip';
 import { useNavigate } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -59,6 +68,21 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      admin: 'Administrador',
+      gerente: 'Gerente',
+      operador: 'Operador'
+    };
+    return labels[role] || role;
+  };
 
   return (
     <header className="h-16 border-b border-border/40 bg-card/80 backdrop-blur-md px-4 lg:px-6 flex items-center justify-between sticky top-0 z-50">
@@ -105,18 +129,48 @@ function HeaderComponent({ currentMonth }: { currentMonth: string }) {
         
         <DocumentNotifications />
         
-        <IconTooltip content="Perfil do usuário e configurações">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="gap-2 h-9 px-3 hover:bg-muted"
-          >
-            <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center">
-              <User className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="hidden sm:inline text-sm font-medium">Admin</span>
-          </Button>
-        </IconTooltip>
+        {/* User Menu Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-2 h-9 px-3 hover:bg-muted"
+            >
+              <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center">
+                <User className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="hidden sm:inline text-sm font-medium">
+                {user?.name || 'Usuário'}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user?.name}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.email}
+                </p>
+                <p className="text-xs leading-none text-primary mt-1">
+                  {user?.role && getRoleLabel(user.role)}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
+              Configurações
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={handleLogout}
+              className="text-destructive focus:text-destructive focus:bg-destructive/10"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
