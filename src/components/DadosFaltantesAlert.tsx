@@ -21,7 +21,14 @@ interface DadosFaltantes {
   ferias: { total: number; pendentes: number };
   faltas: { total: number; mesAtual: number };
   aso: { total: number; vencidos: number; semExame: number };
-  profissionais: { total: number; semLoja: number; semCargo: number; semDataAdmissao: number };
+  profissionais: { 
+    total: number; 
+    semLoja: number; 
+    semCargo: number; 
+    semDataAdmissao: number;
+    semCpf: number;
+    semSalario: number;
+  };
 }
 
 export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compact' | 'full' }) {
@@ -43,7 +50,7 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       ] = await Promise.all([
         supabase
           .from('profissionais')
-          .select('id, loja_id, cargo, data_admissao')
+          .select('id, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario')
           .eq('status', 'ativo'),
         supabase
           .from('ferias')
@@ -73,7 +80,13 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
           total: profissionais.length,
           semLoja: profissionais.filter(p => !p.loja_id).length,
           semCargo: profissionais.filter(p => !p.cargo).length,
-          semDataAdmissao: profissionais.filter(p => !p.data_admissao).length
+          semDataAdmissao: profissionais.filter(p => !p.data_admissao).length,
+          semCpf: profissionais.filter(p => !p.cpf || p.cpf === '').length,
+          semSalario: profissionais.filter(p => 
+            (!p.salario_nominal || p.salario_nominal === 0) && 
+            (!p.ultimo_salario || p.ultimo_salario === 0) && 
+            (!p.primeiro_salario || p.primeiro_salario === 0)
+          ).length
         },
         ferias: {
           total: ferias.length,
@@ -135,12 +148,12 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
     {
       tipo: 'profissionais',
       titulo: 'Dados incompletos',
-      descricao: `${dados.profissionais.semDataAdmissao} sem data de admissão, ${dados.profissionais.semCargo} sem cargo`,
+      descricao: `${dados.profissionais.semDataAdmissao} sem data admissão, ${dados.profissionais.semCpf} sem CPF`,
       icone: Users,
       rota: '/cadastro-profissionais',
       acao: 'Completar Dados',
-      quantidade: dados.profissionais.semDataAdmissao + dados.profissionais.semCargo,
-      critico: dados.profissionais.semDataAdmissao > 0
+      quantidade: dados.profissionais.semDataAdmissao + dados.profissionais.semCpf + dados.profissionais.semSalario,
+      critico: dados.profissionais.semDataAdmissao > 0 || dados.profissionais.semCpf > 0 || dados.profissionais.semSalario > 0
     }
   ].filter(a => a.quantidade > 0 || a.info);
 
