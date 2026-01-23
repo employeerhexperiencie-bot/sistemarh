@@ -38,24 +38,16 @@ import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DataValidationAlert, ProfissionalValidationBadge } from '@/components/DataValidationAlert';
-
-// Função de arredondamento conforme regra do sistema
-const arredondarValor = (valor: number): number => {
-  const centavos = valor % 1;
-  if (centavos >= 0.50) {
-    return Math.ceil(valor);
-  }
-  return Math.floor(valor);
-};
-
-const formatCurrency = (value: number): string => {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
-// Formato sem símbolo R$ para células da tabela (conforme documento de Product Excellence)
-const formatNumber = (value: number): string => {
-  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
+import { 
+  calcularFolhaProfissional, 
+  calcularFolhaLote,
+  arredondarValor,
+  formatCurrency,
+  formatNumber,
+  type ProfissionalInput,
+  type ConfiguracaoFolha,
+  type ResultadoCalculo
+} from '@/lib/payrollCalculator';
 
 interface Loja {
   id: string;
@@ -63,123 +55,10 @@ interface Loja {
   codigo: string;
 }
 
-interface Profissional {
-  id: string;
-  nome: string;
-  matricula: string;
-  cargo: string | null;
-  lojaId: string;
-  salario: number;
-  escala: '6x1' | '5x2';
-  valorPassagem: number;
-  dataAdmissao: string | null;
-  status: 'ativo' | 'ferias' | 'afastado_acidente' | 'afastado_doenca' | 'licenca_maternidade';
-  recebeCesta: boolean;
-  recebeVT: boolean;
-  recebeVR: boolean;
-  faltas: number;
-  atestados: number;
-  diasFerias: number;
-  vales: number;
-  emprestimos: number;
-  pensao: number;
+// Interface local estendida (compatível com ProfissionalInput do motor)
+interface Profissional extends ProfissionalInput {
+  // Campos extras para UI
 }
-
-// Função para calcular valores de um profissional
-const calcularProfissional = (
-  p: Profissional,
-  diasUteis6x1: number,
-  diasUteis5x2: number,
-  valorVR: number,
-  percentualDia20: number,
-  competencia: string
-) => {
-  const diasUteis = p.escala === '6x1' ? diasUteis6x1 : diasUteis5x2;
-  const diasAbatidos = p.faltas + p.atestados + p.diasFerias;
-  const diasTrabalhados = Math.max(0, diasUteis - diasAbatidos);
-  const valorDia = p.salario / 30;
-  
-  let valorDia20 = 0;
-  let recebeDia20 = true;
-  let motivoDia20 = '';
-  
-  // Tratamento seguro para data de admissão
-  const temDataAdmissao = p.dataAdmissao && p.dataAdmissao !== '';
-  const dataAdmissao = temDataAdmissao ? new Date(p.dataAdmissao) : null;
-  const mesCompetencia = new Date(competencia + '-01');
-  
-  // Verificar se é mesmo mês de admissão (só se tiver data válida)
-  const mesmaCompetencia = dataAdmissao 
-    ? (dataAdmissao.getMonth() === mesCompetencia.getMonth() && 
-       dataAdmissao.getFullYear() === mesCompetencia.getFullYear())
-    : false;
-  
-  // Regras de elegibilidade para Dia 20
-  if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() > 10) {
-    // Admitido após dia 10 do mês de competência - recebe apenas 40%
-    valorDia20 = arredondarValor(p.salario * 0.40);
-    motivoDia20 = 'Admitido após dia 10 (40%)';
-  } else if (p.status === 'ferias') {
-    recebeDia20 = false;
-    motivoDia20 = 'Em férias';
-  } else if (p.status === 'afastado_acidente') {
-    recebeDia20 = false;
-    motivoDia20 = 'Afastado acidente';
-  } else if (p.faltas >= 10) {
-    recebeDia20 = false;
-    motivoDia20 = '+10 faltas';
-  } else if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() <= 10) {
-    valorDia20 = arredondarValor(p.salario * 0.40);
-    motivoDia20 = 'Admitido no mês (40%)';
-  } else {
-    // Caso padrão - usar percentual configurado
-    valorDia20 = arredondarValor(p.salario * (percentualDia20 / 100));
-    motivoDia20 = temDataAdmissao ? `${percentualDia20}%` : `${percentualDia20}% (sem data adm.)`;
-  }
-  
-  let valorVT = 0;
-  if (p.recebeVT && p.status === 'ativo') {
-    // valor_diario_rota já representa o custo diário total de transporte
-    valorVT = arredondarValor(diasTrabalhados * p.valorPassagem);
-  }
-  
-  let valorVRTotal = 0;
-  if (p.recebeVR && p.status === 'ativo') {
-    valorVRTotal = arredondarValor(diasTrabalhados * valorVR);
-  }
-  
-  // Valor da Cesta Básica padronizado
-  const VALOR_CESTA_BASICA = 180;
-  
-  let recebeCesta = p.recebeCesta;
-  // Cesta só é perdida por faltas INJUSTIFICADAS (não atestados)
-  if (p.faltas > 0) recebeCesta = false;
-  // Verificar data de admissão apenas se existir (admitido após dia 15 não recebe cesta)
-  if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() > 15) recebeCesta = false;
-  
-  const valorCesta = recebeCesta ? VALOR_CESTA_BASICA : 0;
-  
-  const descontoFaltas = arredondarValor(p.faltas * valorDia);
-  const totalDescontos = p.vales + p.emprestimos + p.pensao + descontoFaltas;
-  
-  const salarioBruto = p.salario - descontoFaltas;
-  const salarioLiquido = arredondarValor(salarioBruto - (recebeDia20 ? valorDia20 : 0) - totalDescontos + descontoFaltas);
-  
-  return {
-    diasTrabalhados,
-    recebeDia20,
-    valorDia20: recebeDia20 ? valorDia20 : 0,
-    motivoDia20,
-    valorVT,
-    valorVR: valorVRTotal,
-    recebeCesta,
-    valorCesta,
-    descontoFaltas,
-    totalDescontos,
-    salarioLiquido: Math.max(0, salarioLiquido),
-    totalMes: arredondarValor((recebeDia20 ? valorDia20 : 0) + Math.max(0, salarioLiquido) + valorVT + valorVRTotal + valorCesta),
-  };
-};
 
 type CardType = 'dia20' | 'dia5' | 'vt' | 'vr' | 'cesta' | 'total' | 'funcionarios' | null;
 
@@ -322,7 +201,7 @@ export default function SimuladorFolha() {
     ferias: Record<string, number>;
     vales: Record<string, number>;
     emprestimos: Record<string, number>;
-    afastamentos: Record<string, string>;
+    afastamentos: Record<string, { tipo: string; dias: number }>;
     isLoading: boolean;
   }>({
     faltas: {},
@@ -388,10 +267,10 @@ export default function SimuladorFolha() {
           .select('profissional_id, valor_parcela')
           .eq('status', 'ativo'),
         
-        // Afastamentos ativos no mês
+        // Afastamentos ativos no mês - incluir data_inicio para calcular dias
         supabase
           .from('afastamentos')
-          .select('profissional_id, tipo')
+          .select('profissional_id, tipo, data_inicio')
           .eq('status', 'ativo')
           .lte('data_inicio', fimMes)
           .or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`)
@@ -443,11 +322,14 @@ export default function SimuladorFolha() {
         emprestimosMap[e.profissional_id] = (emprestimosMap[e.profissional_id] || 0) + Number(e.valor_parcela);
       });
 
-      // Processar afastamentos
-      const afastamentosMap: Record<string, string> = {};
+      // Processar afastamentos com dias de afastamento
+      const hoje = new Date();
+      const afastamentosMap: Record<string, { tipo: string; dias: number }> = {};
       afastamentosRes.data?.forEach(a => {
         if (!a.profissional_id) return;
-        afastamentosMap[a.profissional_id] = a.tipo;
+        const dataInicio = a.data_inicio ? new Date(a.data_inicio) : hoje;
+        const diasAfastamento = Math.max(0, Math.ceil((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24)));
+        afastamentosMap[a.profissional_id] = { tipo: a.tipo, dias: diasAfastamento };
       });
 
       setDadosCompetencia({
@@ -493,12 +375,14 @@ export default function SimuladorFolha() {
         const salario = p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0;
         
         // Verificar afastamento ativo
-        const tipoAfastamento = dadosCompetencia.afastamentos[p.id];
+        const afastamentoInfo = dadosCompetencia.afastamentos[p.id];
         let status: 'ativo' | 'ferias' | 'afastado_acidente' | 'afastado_doenca' | 'licenca_maternidade' = 'ativo';
+        let diasAfastamento = 0;
         
-        if (tipoAfastamento) {
-          if (tipoAfastamento.includes('acidente')) status = 'afastado_acidente';
-          else if (tipoAfastamento.includes('maternidade')) status = 'licenca_maternidade';
+        if (afastamentoInfo) {
+          diasAfastamento = afastamentoInfo.dias;
+          if (afastamentoInfo.tipo.includes('acidente')) status = 'afastado_acidente';
+          else if (afastamentoInfo.tipo.includes('maternidade')) status = 'licenca_maternidade';
           else status = 'afastado_doenca';
         } else if (dadosCompetencia.ferias[p.id] && dadosCompetencia.ferias[p.id] >= 15) {
           status = 'ferias';
@@ -521,6 +405,8 @@ export default function SimuladorFolha() {
           valorPassagem: p.vale_transporte === true && p.valor_diario_rota ? Number(p.valor_diario_rota) : 0,
           dataAdmissao: p.data_admissao || null,
           status,
+          tipoAfastamento: afastamentoInfo?.tipo || null,
+          diasAfastamento,
           recebeCesta: p.cesta_basica === true,
           // VT: precisa ter vale_transporte = true E valor_diario_rota > 0
           recebeVT: p.vale_transporte === true && p.valor_diario_rota && Number(p.valor_diario_rota) > 0,
@@ -552,11 +438,66 @@ export default function SimuladorFolha() {
   }, [lojaSelecionada, filtroStatus, profissionais]);
 
   const calculosLote = useMemo(() => {
-    return profissionaisFiltrados.map(p => ({
-      profissional: p,
-      loja: lojas.find(l => l.id === p.lojaId),
-      ...calcularProfissional(p, diasUteis6x1, diasUteis5x2, valorVR, percentualDia20, competencia),
-    }));
+    // Configuração para o motor de cálculo
+    const config: ConfiguracaoFolha = {
+      diasUteis6x1,
+      diasUteis5x2,
+      valorVR,
+      percentualDia20,
+      valorCestaBasica: 180,
+      competencia
+    };
+    
+    return profissionaisFiltrados.map(p => {
+      // Mapear para o formato do motor
+      const profInput: ProfissionalInput = {
+        id: p.id,
+        nome: p.nome,
+        matricula: p.matricula,
+        cargo: p.cargo,
+        lojaId: p.lojaId,
+        salario: p.salario,
+        escala: p.escala,
+        valorPassagem: p.valorPassagem,
+        dataAdmissao: p.dataAdmissao,
+        status: p.status,
+        tipoAfastamento: p.tipoAfastamento,
+        diasAfastamento: p.diasAfastamento,
+        recebeCesta: p.recebeCesta,
+        recebeVT: p.recebeVT,
+        recebeVR: p.recebeVR,
+        faltas: p.faltas,
+        atestados: p.atestados,
+        diasFerias: p.diasFerias,
+        vales: p.vales,
+        emprestimos: p.emprestimos,
+        pensao: p.pensao
+      };
+      
+      // Usar o motor centralizado
+      const resultado = calcularFolhaProfissional(profInput, config);
+      
+      return {
+        profissional: p,
+        loja: lojas.find(l => l.id === p.lojaId),
+        diasTrabalhados: resultado.diasTrabalhados,
+        recebeDia20: resultado.recebeDia20,
+        valorDia20: resultado.valorDia20,
+        motivoDia20: resultado.motivoDia20,
+        valorVT: resultado.valorVT,
+        valorVR: resultado.valorVR,
+        recebeCesta: resultado.recebeCesta,
+        valorCesta: resultado.valorCesta,
+        descontoFaltas: resultado.descontoFaltas,
+        totalDescontos: resultado.totalDescontos,
+        salarioLiquido: resultado.salarioLiquido,
+        totalMes: resultado.totalMes,
+        // Campos extras do motor
+        valorAfastamento: resultado.valorAfastamento,
+        tipoAfastamento: resultado.tipoAfastamento,
+        detalhesCalculo: resultado.detalhesCalculo,
+      };
+    });
   }, [profissionaisFiltrados, diasUteis6x1, diasUteis5x2, valorVR, percentualDia20, competencia, lojas]);
 
   const resumoPorLoja = useMemo(() => {
