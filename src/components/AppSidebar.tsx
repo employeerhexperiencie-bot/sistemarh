@@ -24,8 +24,6 @@ import {
   ChevronDown,
   Bell,
   History,
-  FileBox,
-  Database,
   Banknote,
   HelpCircle
 } from 'lucide-react';
@@ -113,10 +111,6 @@ const navSections = [
     icon: Settings,
     defaultOpen: false,
     items: [
-      { title: 'Importar Excel', url: '/importar-dados-excel', icon: FileSpreadsheet },
-      { title: 'Análise Ativos', url: '/analisar-ativos', icon: FileBox },
-      { title: 'Dados Adicionais', url: '/carregar-dados-adicionais', icon: FileSpreadsheet },
-      { title: 'Migrar para BD', url: '/migrar-dados', icon: Database },
       { title: 'Validação de Dados', url: '/validacao-dados', icon: AlertTriangle },
       { title: 'Histórico Alterações', url: '/audit-log', icon: History },
       { title: 'Configurações', url: '/configuracoes', icon: Settings },
