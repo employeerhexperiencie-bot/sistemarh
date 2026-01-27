@@ -26,7 +26,10 @@ import {
   History,
   Banknote,
   HelpCircle,
-  Shield
+  Shield,
+  Database,
+  FileCheck,
+  ScrollText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -44,7 +47,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
-// Navigation structure organized by sections
+// Navigation structure organized by sections - CLIENT VISIBLE
 const navSections = [
   {
     label: 'Dashboard',
@@ -119,11 +122,33 @@ const navSections = [
   },
 ];
 
+// ADMIN ONLY routes - hidden from regular clients
+const adminSections = [
+  {
+    label: 'Administração',
+    icon: Shield,
+    defaultOpen: false,
+    adminOnly: true,
+    items: [
+      { title: 'Gestão Usuários', url: '/gestao-usuarios', icon: Shield },
+      { title: 'Migrar Dados', url: '/migrar-dados', icon: Database },
+      { title: 'Importar Excel', url: '/importar-dados-excel', icon: FileSpreadsheet },
+      { title: 'Validação Dados', url: '/validacao-dados', icon: FileCheck },
+      { title: 'Audit Log', url: '/audit-log', icon: ScrollText },
+    ],
+  },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const { user } = useAuth();
   const currentPath = location.pathname;
   const collapsed = state === 'collapsed';
+  const isAdmin = user?.role === 'admin';
+
+  // Combine sections based on user role
+  const allSections = isAdmin ? [...navSections, ...adminSections] : navSections;
 
   const isActive = (path: string) => currentPath === path;
   
@@ -133,11 +158,11 @@ export function AppSidebar() {
 
   // Initialize open state based on active routes
   const getInitialOpenState = () => {
-    const state: Record<string, boolean> = {};
-    navSections.forEach(section => {
-      state[section.label] = section.defaultOpen || isSectionActive(section.items);
+    const openState: Record<string, boolean> = {};
+    allSections.forEach(section => {
+      openState[section.label] = section.defaultOpen || isSectionActive(section.items);
     });
-    return state;
+    return openState;
   };
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(getInitialOpenState);
@@ -172,7 +197,7 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <SidebarContent className="px-2 py-4 scrollbar-thin">
-        {navSections.map((section) => {
+        {allSections.map((section) => {
           const SectionIcon = section.icon;
           const isOpen = openSections[section.label];
           const hasActiveItem = isSectionActive(section.items);
