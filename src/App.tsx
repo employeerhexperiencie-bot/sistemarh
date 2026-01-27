@@ -34,6 +34,7 @@ import ImportacaoDados from "@/pages/ImportacaoDados";
 import Alertas from "@/pages/Alertas";
 import AuditLog from "@/pages/AuditLog";
 import AnalisarAtivos from "@/pages/AnalisarAtivos";
+import AtualizarAtivos from "@/pages/AtualizarAtivos";
 import CarregarDadosAdicionais from "@/pages/CarregarDadosAdicionais";
 import ValidacaoDados from "@/pages/ValidacaoDados";
 import DashboardAnalitico from "@/pages/DashboardAnalitico";
@@ -145,6 +146,7 @@ const App = () => (
                   <Route path="/alertas" element={<ProtectedLayout><Alertas /></ProtectedLayout>} />
                   <Route path="/audit-log" element={<ProtectedLayout><AuditLog /></ProtectedLayout>} />
                   <Route path="/analisar-ativos" element={<ProtectedLayout><AnalisarAtivos /></ProtectedLayout>} />
+                  <Route path="/atualizar-ativos" element={<ProtectedLayout><AtualizarAtivos /></ProtectedLayout>} />
                   <Route path="/carregar-dados-adicionais" element={<ProtectedLayout><CarregarDadosAdicionais /></ProtectedLayout>} />
                   <Route path="/validacao-dados" element={<ProtectedLayout><ValidacaoDados /></ProtectedLayout>} />
                   <Route path="/dashboard-analitico" element={<ProtectedLayout><DashboardAnalitico /></ProtectedLayout>} />
