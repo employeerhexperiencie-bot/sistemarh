@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Settings, Save, Users, Phone, Mail, Sparkles, RotateCcw, HelpCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, Save, Users, Phone, Mail, Sparkles, RotateCcw, HelpCircle, Shield, UserPlus, Store, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,22 +8,39 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AppearanceCustomizer } from '@/components/AppearanceCustomizer';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-
-const mockLojas = [
-  { id: 'BROOKLIN', nome: 'Brooklin', telefone: '(11) 99999-1111', email: 'brooklin@empresa.com' },
-  { id: 'TATUAPE', nome: 'Tatuapé', telefone: '(11) 99999-2222', email: 'tatuape@empresa.com' },
-  { id: 'VILA_MADALENA', nome: 'Vila Madalena', telefone: '(11) 99999-3333', email: 'vilamadalena@empresa.com' },
-];
 
 export default function Configuracoes() {
   const { resetTour, hasSeenTour } = useOnboarding();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [lojas, setLojas] = useState<any[]>([]);
+  const [loadingLojas, setLoadingLojas] = useState(true);
   const [novaLoja, setNovaLoja] = useState({
     id: '',
     nome: '',
     telefone: '',
     email: '',
   });
+
+  // Carregar lojas do Supabase
+  useEffect(() => {
+    const fetchLojas = async () => {
+      const { data, error } = await supabase
+        .from('lojas')
+        .select('*')
+        .order('nome');
+      
+      if (!error && data) {
+        setLojas(data);
+      }
+      setLoadingLojas(false);
+    };
+    fetchLojas();
+  }, []);
 
   const handleAddLoja = () => {
     if (!novaLoja.id || !novaLoja.nome) return;
@@ -55,13 +72,43 @@ export default function Configuracoes() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
+          {/* Card de Gestão de Usuários - Acesso Rápido */}
+          {user?.role === 'admin' && (
+            <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/gestao-usuarios')}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Gestão de Usuários
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </CardTitle>
+                <CardDescription>
+                  Convide novos usuários, defina papéis e permissões de acesso ao sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Button size="sm" className="gap-2" onClick={(e) => { e.stopPropagation(); navigate('/gestao-usuarios'); }}>
+                    <UserPlus className="h-4 w-4" />
+                    Convidar Usuário
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-2" onClick={(e) => { e.stopPropagation(); navigate('/gestao-usuarios'); }}>
+                    <Users className="h-4 w-4" />
+                    Ver Usuários
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <AppearanceCustomizer />
 
           {/* Onboarding Card */}
-          <Card className="bg-primary/5 border-primary/20">
+          <Card className="bg-accent/5 border-accent/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
+                <Sparkles className="h-5 w-5 text-accent" />
                 Tour de Onboarding
               </CardTitle>
               <CardDescription>
@@ -104,40 +151,56 @@ export default function Configuracoes() {
           <Card className="bg-card/50 border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Gestão de Lojas
+                <Store className="h-5 w-5" />
+                Lojas Cadastradas
               </CardTitle>
+              <CardDescription>
+                {loadingLojas ? 'Carregando...' : `${lojas.length} loja(s) registrada(s)`}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Contato</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockLojas.map((loja, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-mono text-sm">{loja.id}</TableCell>
-                      <TableCell className="font-medium">{loja.nome}</TableCell>
-                      <TableCell>
-                        <div className="space-y-1 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {loja.telefone}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {loja.email}
-                          </div>
-                        </div>
-                      </TableCell>
+              {loadingLojas ? (
+                <div className="text-center py-8 text-muted-foreground">Carregando lojas...</div>
+              ) : lojas.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhuma loja cadastrada. Use a seção abaixo para adicionar.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Contato</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {lojas.map((loja) => (
+                      <TableRow key={loja.id}>
+                        <TableCell className="font-medium">{loja.nome}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1 text-sm">
+                            {loja.telefone && (
+                              <div className="flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {loja.telefone}
+                              </div>
+                            )}
+                            {loja.email && (
+                              <div className="flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {loja.email}
+                              </div>
+                            )}
+                            {!loja.telefone && !loja.email && (
+                              <span className="text-muted-foreground">Sem contato</span>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
 
