@@ -924,6 +924,7 @@ export type Database = {
           profissional_id: string
           salario_base: number
           status: string | null
+          tenant_id: string
           total_descontos: number | null
           total_proventos: number | null
           updated_at: string
@@ -960,6 +961,7 @@ export type Database = {
           profissional_id: string
           salario_base?: number
           status?: string | null
+          tenant_id?: string
           total_descontos?: number | null
           total_proventos?: number | null
           updated_at?: string
@@ -996,6 +998,7 @@ export type Database = {
           profissional_id?: string
           salario_base?: number
           status?: string | null
+          tenant_id?: string
           total_descontos?: number | null
           total_proventos?: number | null
           updated_at?: string
@@ -1019,6 +1022,13 @@ export type Database = {
             columns: ["profissional_id"]
             isOneToOne: false
             referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folha_pagamento_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1230,6 +1240,7 @@ export type Database = {
           salario_base: number
           salario_liquido: number
           status: string | null
+          tenant_id: string
           total_descontos: number
           total_proventos: number
           updated_at: string | null
@@ -1262,6 +1273,7 @@ export type Database = {
           salario_base: number
           salario_liquido: number
           status?: string | null
+          tenant_id?: string
           total_descontos: number
           total_proventos: number
           updated_at?: string | null
@@ -1294,6 +1306,7 @@ export type Database = {
           salario_base?: number
           salario_liquido?: number
           status?: string | null
+          tenant_id?: string
           total_descontos?: number
           total_proventos?: number
           updated_at?: string | null
@@ -1306,6 +1319,13 @@ export type Database = {
             columns: ["profissional_id"]
             isOneToOne: false
             referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "holerites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
