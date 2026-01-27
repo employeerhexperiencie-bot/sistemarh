@@ -248,6 +248,11 @@ export function StatusOperacao() {
     );
   }
 
+  // Análise de prontidão
+  const podeSimular = status.profissionaisAtivos > 0;
+  const podeFechar = podeSimular && status.profissionaisSemSalario === 0;
+  const temCriticos = criticos.length > 0;
+
   return (
     <Card className="border-2">
       <CardHeader className="pb-3">
@@ -282,6 +287,77 @@ export function StatusOperacao() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* 🎯 Perguntas-chave respondidas visualmente */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className={`p-3 rounded-lg border-2 text-center ${
+            podeSimular 
+              ? 'border-success/50 bg-success/5' 
+              : 'border-destructive/50 bg-destructive/5'
+          }`}>
+            <p className="text-xs text-muted-foreground mb-1">Posso simular?</p>
+            <div className="flex items-center justify-center gap-1">
+              {podeSimular ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                  <span className="font-bold text-success">SIM</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-5 w-5 text-destructive" />
+                  <span className="font-bold text-destructive">NÃO</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className={`p-3 rounded-lg border-2 text-center ${
+            podeFechar 
+              ? 'border-success/50 bg-success/5' 
+              : 'border-warning/50 bg-warning/5'
+          }`}>
+            <p className="text-xs text-muted-foreground mb-1">Posso fechar?</p>
+            <div className="flex items-center justify-center gap-1">
+              {podeFechar ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                  <span className="font-bold text-success">SIM</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-warning" />
+                  <span className="font-bold text-warning">COM ALERTA</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className={`p-3 rounded-lg border-2 text-center ${
+            temCriticos 
+              ? 'border-destructive/50 bg-destructive/5' 
+              : 'border-muted bg-muted/30'
+          }`}>
+            <p className="text-xs text-muted-foreground mb-1">Precisa atenção?</p>
+            <div className="flex items-center justify-center gap-1">
+              {temCriticos ? (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  <span className="font-bold text-destructive">{criticos.length} ITEM(S)</span>
+                </>
+              ) : pendencias.length > 0 ? (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-warning" />
+                  <span className="font-bold text-warning">{pendencias.length} ITEM(S)</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                  <span className="font-bold text-success">NADA</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Resumo rápido */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3 rounded-lg bg-muted/50 text-center">
@@ -366,11 +442,17 @@ export function StatusOperacao() {
             className="w-full h-12 text-base gap-2"
             size="lg"
             onClick={() => navigate('/simulador-folha')}
+            disabled={!podeSimular}
           >
             <Calculator className="h-5 w-5" />
             Simular Folha
             <ArrowRight className="h-5 w-5" />
           </Button>
+          {!podeSimular && (
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              Importe profissionais para começar
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
