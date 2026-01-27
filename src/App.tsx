@@ -44,6 +44,7 @@ import Login from "@/pages/Login";
 import SetupInicial from "@/pages/SetupInicial";
 import GestaoUsuarios from "@/pages/GestaoUsuarios";
 import Ajuda from "@/pages/Ajuda";
+import ComoUsar from "@/pages/ComoUsar";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Loader2 } from "lucide-react";
@@ -153,6 +154,7 @@ const App = () => (
                   <Route path="/migrar-dados" element={<ProtectedLayout><MigrarDados /></ProtectedLayout>} />
                   <Route path="/importar-dados-excel" element={<ProtectedLayout><ImportarDadosExcel /></ProtectedLayout>} />
                   <Route path="/ajuda" element={<ProtectedLayout><Ajuda /></ProtectedLayout>} />
+                  <Route path="/como-usar" element={<ProtectedLayout><ComoUsar /></ProtectedLayout>} />
                   
                   {/* Catch-all - Redireciona para 404 */}
                   <Route path="*" element={<NotFound />} />

@@ -15,8 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { DataValidationAlert } from '@/components/DataValidationAlert';
-import { DadosFaltantesAlert } from '@/components/DadosFaltantesAlert';
+import { StatusOperacao } from '@/components/StatusOperacao';
+import { FluxoGuiadoChecklist } from '@/components/FluxoGuiadoChecklist';
 import { ContextualTooltip, systemTooltips } from '@/components/ui/contextual-tooltip';
 
 // Interface para atividades recentes
@@ -249,13 +249,13 @@ export function Dashboard() {
         </p>
       </div>
 
-      {/* 🔴 VALIDAÇÃO DE DADOS - Alerta automático de inconsistências */}
-      <DataValidationAlert showOnlyIfProblems={true} maxItems={3} />
+      {/* 🎯 NOVO: Status da Operação - Responde o que está OK, atenção e ação */}
+      <StatusOperacao />
 
-      {/* 🟡 DADOS FALTANTES - Sinaliza informações que precisam ser preenchidas */}
-      <DadosFaltantesAlert variant="compact" />
+      {/* 🎯 NOVO: Fluxo Guiado - Checklist de primeiro uso */}
+      <FluxoGuiadoChecklist />
 
-      {/* 🔴 ALERTAS URGENTES - Movidos para o topo para visibilidade imediata */}
+      {/* 🔴 ALERTAS URGENTES */}
       <AlertasResumo />
 
       {/* Primary KPIs */}

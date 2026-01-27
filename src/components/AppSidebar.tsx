@@ -63,7 +63,6 @@ const navSections = [
     items: [
       { title: 'Lojas', url: '/cadastro-lojas', icon: Store },
       { title: 'Profissionais', url: '/cadastro-profissionais', icon: Users },
-      { title: 'Importação', url: '/importacao-dados', icon: FileSpreadsheet },
     ],
   },
   {
@@ -113,12 +112,9 @@ const navSections = [
     icon: Settings,
     defaultOpen: false,
     items: [
-      { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Shield },
-      { title: 'Validação de Dados', url: '/validacao-dados', icon: AlertTriangle },
-      { title: 'Histórico Alterações', url: '/audit-log', icon: History },
-      { title: 'Configurações', url: '/configuracoes', icon: Settings },
-      { title: 'Referência', url: '/referencia-sistema', icon: BookOpen },
+      { title: 'Como Usar', url: '/como-usar', icon: BookOpen },
       { title: 'Ajuda', url: '/ajuda', icon: HelpCircle },
+      { title: 'Configurações', url: '/configuracoes', icon: Settings },
     ],
   },
 ];

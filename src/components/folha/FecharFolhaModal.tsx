@@ -374,6 +374,20 @@ export function FecharFolhaModal({
 
         {step === 'confirm' && (
           <div className="space-y-4 py-4">
+            {/* Aviso de ação definitiva */}
+            <Alert className="border-destructive/50 bg-destructive/5">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <AlertTitle className="text-destructive">Ação Definitiva</AlertTitle>
+              <AlertDescription>
+                Ao confirmar, os valores serão gravados <strong>permanentemente</strong>. Esta ação gera:
+                <ul className="mt-2 space-y-1 text-sm">
+                  <li>• Registro definitivo da folha de pagamento</li>
+                  <li>• Atualização de parcelas de empréstimos</li>
+                  <li>• Geração de holerites para todos os funcionários</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
             {/* Resumo */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-lg bg-muted/50">
@@ -431,19 +445,6 @@ export function FecharFolhaModal({
                 <span className="text-lg font-bold text-primary">{formatCurrency(totaisGerais.totalGeral)}</span>
               </div>
             </div>
-
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Atenção</AlertTitle>
-              <AlertDescription>
-                Após o fechamento, os valores serão gravados permanentemente nas tabelas de folha e holerites.
-                {totaisGerais.totalEmprestimos > 0 && (
-                  <span className="block mt-1 text-primary">
-                    Os empréstimos ativos serão atualizados automaticamente (parcelas pagas + saldo devedor).
-                  </span>
-                )}
-              </AlertDescription>
-            </Alert>
           </div>
         )}
 
