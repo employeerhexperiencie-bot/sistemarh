@@ -150,7 +150,7 @@ const App = () => (
                   <Route path="/dashboard-analitico" element={<ProtectedLayout><DashboardAnalitico /></ProtectedLayout>} />
                   <Route path="/migrar-dados" element={<ProtectedLayout><MigrarDados /></ProtectedLayout>} />
                   <Route path="/importar-dados-excel" element={<ProtectedLayout><ImportarDadosExcel /></ProtectedLayout>} />
-                  <Route path="/ajuda" element={<Ajuda />} />
+                  <Route path="/ajuda" element={<ProtectedLayout><Ajuda /></ProtectedLayout>} />
                   
                   {/* Catch-all - Redireciona para 404 */}
                   <Route path="*" element={<NotFound />} />
