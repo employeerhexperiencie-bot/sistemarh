@@ -29,7 +29,8 @@ import {
   Shield,
   Database,
   FileCheck,
-  ScrollText
+  ScrollText,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -90,6 +91,7 @@ const navSections = [
       { title: 'Empréstimos', url: '/gestao-emprestimos', icon: Banknote },
       { title: 'Holerites', url: '/holerites', icon: FileText },
       { title: 'Pendências', url: '/pendencias', icon: AlertTriangle },
+      { title: 'Ocorrências', url: '/ocorrencias', icon: ClipboardList },
     ],
   },
   {

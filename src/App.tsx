@@ -45,6 +45,7 @@ import SetupInicial from "@/pages/SetupInicial";
 import GestaoUsuarios from "@/pages/GestaoUsuarios";
 import Ajuda from "@/pages/Ajuda";
 import ComoUsar from "@/pages/ComoUsar";
+import Ocorrencias from "@/pages/Ocorrencias";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Loader2 } from "lucide-react";
@@ -126,6 +127,7 @@ const App = () => (
                   <Route path="/holerites" element={<ProtectedLayout><Holerites /></ProtectedLayout>} />
                   <Route path="/relatorios" element={<ProtectedLayout><Relatorios /></ProtectedLayout>} />
                   <Route path="/pendencias" element={<ProtectedLayout><Pendencias /></ProtectedLayout>} />
+                  <Route path="/ocorrencias" element={<ProtectedLayout><Ocorrencias /></ProtectedLayout>} />
                   <Route path="/painel-loja" element={<ProtectedLayout><PainelLoja /></ProtectedLayout>} />
                   <Route path="/painel-profissional" element={<ProtectedLayout><PainelProfissional /></ProtectedLayout>} />
                   <Route path="/painel-profissional/:id" element={<ProtectedLayout><PainelProfissional /></ProtectedLayout>} />
