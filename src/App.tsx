@@ -40,9 +40,12 @@ import DashboardAnalitico from "@/pages/DashboardAnalitico";
 import MigrarDados from "@/pages/MigrarDados";
 import ImportarDadosExcel from "@/pages/ImportarDadosExcel";
 import Login from "@/pages/Login";
+import SetupInicial from "@/pages/SetupInicial";
+import GestaoUsuarios from "@/pages/GestaoUsuarios";
 import Ajuda from "@/pages/Ajuda";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
+import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -51,7 +54,11 @@ function LoginRoute() {
   const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
   
   if (isAuthenticated) {
@@ -59,6 +66,29 @@ function LoginRoute() {
   }
   
   return <Login />;
+}
+
+// Componente para setup inicial
+function SetupRoute() {
+  const { isAuthenticated, isLoading, isFirstUser } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  if (!isFirstUser) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <SetupInicial />;
 }
 
 // Wrapper para rotas protegidas com Layout
@@ -82,8 +112,9 @@ const App = () => (
               <BrowserRouter>
                 <OnboardingWrapper />
                 <Routes>
-                  {/* Rota de Login - Pública */}
+                  {/* Rotas Públicas */}
                   <Route path="/login" element={<LoginRoute />} />
+                  <Route path="/setup" element={<SetupRoute />} />
                   
                   {/* Rotas Protegidas */}
                   <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
@@ -108,6 +139,7 @@ const App = () => (
                   <Route path="/referencia-sistema" element={<ProtectedLayout><ReferenciaSistema /></ProtectedLayout>} />
                   <Route path="/simulador-folha" element={<ProtectedLayout><SimuladorFolha /></ProtectedLayout>} />
                   <Route path="/configuracoes" element={<ProtectedLayout><Configuracoes /></ProtectedLayout>} />
+                  <Route path="/gestao-usuarios" element={<ProtectedLayout><GestaoUsuarios /></ProtectedLayout>} />
                   <Route path="/cadastro-lojas" element={<ProtectedLayout><CadastroLojas /></ProtectedLayout>} />
                   <Route path="/importacao-dados" element={<ProtectedLayout><ImportacaoDados /></ProtectedLayout>} />
                   <Route path="/alertas" element={<ProtectedLayout><Alertas /></ProtectedLayout>} />

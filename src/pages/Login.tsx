@@ -1,25 +1,42 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Lock, Mail, Eye, EyeOff, Users, Shield, Building2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Lock, Mail, Eye, EyeOff, Users, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isLoading: authLoading } = useAuth();
+  const { login, signup, isAuthenticated, isLoading: authLoading, isFirstUser, checkIsFirstUser } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const check = async () => {
+      const isFirst = await checkIsFirstUser();
+      if (isFirst) {
+        navigate('/setup', { replace: true });
+      }
+    };
+    
+    if (!authLoading && !isAuthenticated) {
+      check();
+    }
+  }, [authLoading, isAuthenticated, checkIsFirstUser, navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
@@ -39,17 +56,44 @@ export default function Login() {
     }
   };
 
-  const demoAccounts = [
-    { email: 'admin@sistema.com', password: 'admin123', role: 'Administrador', icon: Shield },
-    { email: 'gerente@sistema.com', password: 'gerente123', role: 'Gerente', icon: Building2 },
-    { email: 'operador@sistema.com', password: 'operador123', role: 'Operador', icon: Users },
-  ];
-
-  const fillDemoAccount = (demoEmail: string, demoPassword: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
+
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await signup(email, password, name);
+      
+      if (result.success) {
+        navigate('/', { replace: true });
+      } else {
+        setError(result.error || 'Erro ao criar conta');
+      }
+    } catch (err) {
+      setError('Erro inesperado. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
@@ -72,7 +116,7 @@ export default function Login() {
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="mx-auto w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow"
+              className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg"
             >
               <Users className="h-8 w-8 text-primary-foreground" />
             </motion.div>
@@ -82,126 +126,224 @@ export default function Login() {
                 Sistema de Gestão RH
               </CardTitle>
               <CardDescription className="text-muted-foreground">
-                Faça login para acessar o sistema
+                Acesse sua conta para continuar
               </CardDescription>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  <Alert variant="destructive" className="border-destructive/50">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                </motion.div>
-              )}
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Entrar</TabsTrigger>
+                <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              </TabsList>
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11"
-                    disabled={isSubmitting}
-                    autoComplete="email"
-                    required
-                  />
-                </div>
-              </div>
+              <TabsContent value="login" className="space-y-4 mt-4">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                    >
+                      <Alert variant="destructive" className="border-destructive/50">
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    </motion.div>
+                  )}
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Senha
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 h-11"
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email" className="text-sm font-medium">
+                      Email
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 h-11"
+                        disabled={isSubmitting}
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password" className="text-sm font-medium">
+                      Senha
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 pr-10 h-11"
+                        disabled={isSubmitting}
+                        autoComplete="current-password"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-11 w-11 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:opacity-90 transition-opacity"
                     disabled={isSubmitting}
-                    autoComplete="current-password"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-11 w-11 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Entrando...
+                      </>
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      'Entrar'
                     )}
                   </Button>
-                </div>
-              </div>
+                </form>
+              </TabsContent>
 
-              <Button 
-                type="submit" 
-                className="w-full h-11 bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
-                disabled={isSubmitting || authLoading}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  'Entrar'
-                )}
-              </Button>
-            </form>
+              <TabsContent value="signup" className="space-y-4 mt-4">
+                <form onSubmit={handleSignup} className="space-y-4">
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                    >
+                      <Alert variant="destructive" className="border-destructive/50">
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    </motion.div>
+                  )}
 
-            {/* Demo accounts section */}
-            <div className="space-y-3 pt-4 border-t border-border/50">
-              <p className="text-xs text-center text-muted-foreground font-medium uppercase tracking-wider">
-                Contas de demonstração
-              </p>
-              <div className="grid gap-2">
-                {demoAccounts.map((account) => (
-                  <Button
-                    key={account.email}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start text-left h-auto py-2 px-3 hover:bg-muted/50"
-                    onClick={() => fillDemoAccount(account.email, account.password)}
+                  <Alert className="border-warning/30 bg-warning/5">
+                    <AlertDescription className="text-sm">
+                      O cadastro requer um convite prévio do administrador. 
+                      Após criar sua conta, aguarde a liberação do acesso.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name" className="text-sm font-medium">
+                      Nome completo
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-name"
+                        type="text"
+                        placeholder="Seu nome"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="pl-10 h-11"
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email" className="text-sm font-medium">
+                      Email
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 h-11"
+                        disabled={isSubmitting}
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password" className="text-sm font-medium">
+                      Senha
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Mínimo 6 caracteres"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 h-11"
+                        disabled={isSubmitting}
+                        autoComplete="new-password"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm" className="text-sm font-medium">
+                      Confirmar senha
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-confirm"
+                        type="password"
+                        placeholder="Digite a senha novamente"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pl-10 h-11"
+                        disabled={isSubmitting}
+                        autoComplete="new-password"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11"
                     disabled={isSubmitting}
                   >
-                    <account.icon className="h-4 w-4 mr-2 text-primary" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{account.role}</p>
-                      <p className="text-xs text-muted-foreground">{account.email}</p>
-                    </div>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Criando conta...
+                      </>
+                    ) : (
+                      'Criar Conta'
+                    )}
                   </Button>
-                ))}
-              </div>
-            </div>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground mt-6">
-          © 2024 Sistema de Gestão RH. Todos os direitos reservados.
+          © 2025 Sistema de Gestão RH. Todos os direitos reservados.
         </p>
       </motion.div>
     </div>
