@@ -258,13 +258,20 @@ export type Database = {
           mes_referencia: string
           profissional_id: string | null
           updated_at: string | null
+          valor_bem_mais: number | null
           valor_cesta: number | null
           valor_diario_vr: number | null
           valor_diario_vt: number | null
           valor_liquido_vr: number | null
           valor_liquido_vt: number | null
+          valor_odonto: number | null
+          valor_pensao: number | null
+          valor_seguro_vida: number | null
           valor_total_vr: number | null
           valor_total_vt: number | null
+          valor_vale_alimentacao: number | null
+          valor_vale_carne: number | null
+          valor_vale_dinheiro: number | null
         }
         Insert: {
           created_at?: string | null
@@ -277,13 +284,20 @@ export type Database = {
           mes_referencia: string
           profissional_id?: string | null
           updated_at?: string | null
+          valor_bem_mais?: number | null
           valor_cesta?: number | null
           valor_diario_vr?: number | null
           valor_diario_vt?: number | null
           valor_liquido_vr?: number | null
           valor_liquido_vt?: number | null
+          valor_odonto?: number | null
+          valor_pensao?: number | null
+          valor_seguro_vida?: number | null
           valor_total_vr?: number | null
           valor_total_vt?: number | null
+          valor_vale_alimentacao?: number | null
+          valor_vale_carne?: number | null
+          valor_vale_dinheiro?: number | null
         }
         Update: {
           created_at?: string | null
@@ -296,13 +310,20 @@ export type Database = {
           mes_referencia?: string
           profissional_id?: string | null
           updated_at?: string | null
+          valor_bem_mais?: number | null
           valor_cesta?: number | null
           valor_diario_vr?: number | null
           valor_diario_vt?: number | null
           valor_liquido_vr?: number | null
           valor_liquido_vt?: number | null
+          valor_odonto?: number | null
+          valor_pensao?: number | null
+          valor_seguro_vida?: number | null
           valor_total_vr?: number | null
           valor_total_vt?: number | null
+          valor_vale_alimentacao?: number | null
+          valor_vale_carne?: number | null
+          valor_vale_dinheiro?: number | null
         }
         Relationships: [
           {
@@ -1273,6 +1294,89 @@ export type Database = {
           },
         ]
       }
+      pensoes_alimenticias: {
+        Row: {
+          agencia: string | null
+          ativo: boolean | null
+          banco: string | null
+          base_calculo: string | null
+          chave_pix: string | null
+          conta: string | null
+          cpf_beneficiario: string | null
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string
+          data_nascimento_filho: string | null
+          id: string
+          nome_beneficiario: string
+          nome_filho: string | null
+          observacoes: string | null
+          operacao: string | null
+          percentual: number | null
+          profissional_id: string | null
+          tipo_calculo: string
+          tipo_conta: string | null
+          updated_at: string | null
+          valor_fixo: number | null
+        }
+        Insert: {
+          agencia?: string | null
+          ativo?: boolean | null
+          banco?: string | null
+          base_calculo?: string | null
+          chave_pix?: string | null
+          conta?: string | null
+          cpf_beneficiario?: string | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio: string
+          data_nascimento_filho?: string | null
+          id?: string
+          nome_beneficiario: string
+          nome_filho?: string | null
+          observacoes?: string | null
+          operacao?: string | null
+          percentual?: number | null
+          profissional_id?: string | null
+          tipo_calculo?: string
+          tipo_conta?: string | null
+          updated_at?: string | null
+          valor_fixo?: number | null
+        }
+        Update: {
+          agencia?: string | null
+          ativo?: boolean | null
+          banco?: string | null
+          base_calculo?: string | null
+          chave_pix?: string | null
+          conta?: string | null
+          cpf_beneficiario?: string | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          data_nascimento_filho?: string | null
+          id?: string
+          nome_beneficiario?: string
+          nome_filho?: string | null
+          observacoes?: string | null
+          operacao?: string | null
+          percentual?: number | null
+          profissional_id?: string | null
+          tipo_calculo?: string
+          tipo_conta?: string | null
+          updated_at?: string | null
+          valor_fixo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pensoes_alimenticias_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_documents: {
         Row: {
           categoria: string | null
@@ -1378,6 +1482,7 @@ export type Database = {
         Row: {
           aviso_trabalhado: boolean | null
           bairro: string | null
+          bem_mais: boolean | null
           cargo: string | null
           categoria_cnh: string | null
           cbo: string | null
@@ -1407,11 +1512,13 @@ export type Database = {
           matricula: string
           motivo_demissao: string | null
           nome: string
+          odonto: boolean | null
           pensao_alimenticia: number | null
           pis: string | null
           primeiro_salario: number | null
           rg: string | null
           salario_nominal: number | null
+          seguro_vida: boolean | null
           setor: string | null
           sexo: string | null
           sindicato: string | null
@@ -1419,14 +1526,22 @@ export type Database = {
           telefone: string | null
           ultimo_salario: number | null
           updated_at: string | null
+          vale_alimentacao: boolean | null
+          vale_carne: boolean | null
           vale_refeicao: boolean | null
           vale_transporte: boolean | null
           validade_cnh: string | null
+          valor_bem_mais: number | null
           valor_diario_rota: number | null
+          valor_odonto: number | null
+          valor_seguro_vida: number | null
+          valor_vale_alimentacao: number | null
+          valor_vale_carne: number | null
         }
         Insert: {
           aviso_trabalhado?: boolean | null
           bairro?: string | null
+          bem_mais?: boolean | null
           cargo?: string | null
           categoria_cnh?: string | null
           cbo?: string | null
@@ -1456,11 +1571,13 @@ export type Database = {
           matricula: string
           motivo_demissao?: string | null
           nome: string
+          odonto?: boolean | null
           pensao_alimenticia?: number | null
           pis?: string | null
           primeiro_salario?: number | null
           rg?: string | null
           salario_nominal?: number | null
+          seguro_vida?: boolean | null
           setor?: string | null
           sexo?: string | null
           sindicato?: string | null
@@ -1468,14 +1585,22 @@ export type Database = {
           telefone?: string | null
           ultimo_salario?: number | null
           updated_at?: string | null
+          vale_alimentacao?: boolean | null
+          vale_carne?: boolean | null
           vale_refeicao?: boolean | null
           vale_transporte?: boolean | null
           validade_cnh?: string | null
+          valor_bem_mais?: number | null
           valor_diario_rota?: number | null
+          valor_odonto?: number | null
+          valor_seguro_vida?: number | null
+          valor_vale_alimentacao?: number | null
+          valor_vale_carne?: number | null
         }
         Update: {
           aviso_trabalhado?: boolean | null
           bairro?: string | null
+          bem_mais?: boolean | null
           cargo?: string | null
           categoria_cnh?: string | null
           cbo?: string | null
@@ -1505,11 +1630,13 @@ export type Database = {
           matricula?: string
           motivo_demissao?: string | null
           nome?: string
+          odonto?: boolean | null
           pensao_alimenticia?: number | null
           pis?: string | null
           primeiro_salario?: number | null
           rg?: string | null
           salario_nominal?: number | null
+          seguro_vida?: boolean | null
           setor?: string | null
           sexo?: string | null
           sindicato?: string | null
@@ -1517,10 +1644,17 @@ export type Database = {
           telefone?: string | null
           ultimo_salario?: number | null
           updated_at?: string | null
+          vale_alimentacao?: boolean | null
+          vale_carne?: boolean | null
           vale_refeicao?: boolean | null
           vale_transporte?: boolean | null
           validade_cnh?: string | null
+          valor_bem_mais?: number | null
           valor_diario_rota?: number | null
+          valor_odonto?: number | null
+          valor_seguro_vida?: number | null
+          valor_vale_alimentacao?: number | null
+          valor_vale_carne?: number | null
         }
         Relationships: [
           {
