@@ -175,6 +175,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: 'Erro ao criar sessão' };
       }
 
+      // Verificar se o usuário está ativo
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('ativo')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (roleError) {
+        console.error('Erro ao verificar status do usuário:', roleError);
+        // Se não encontrou role, pode ser primeiro usuário - deixa passar
+      } else if (userRole && userRole.ativo === false) {
+        // Usuário está bloqueado - fazer logout
+        await supabase.auth.signOut();
+        return { success: false, error: 'Seu acesso foi bloqueado. Entre em contato com o administrador.' };
+      }
+
       return { success: true };
     } catch (err) {
       console.error('Erro no login:', err);
