@@ -40,7 +40,7 @@ interface UserRole {
 interface UserInvite {
   id: string;
   email: string;
-  role: AppRole;
+  role?: AppRole;
   loja_id: string | null;
   expires_at: string;
   accepted_at: string | null;
