@@ -25,8 +25,10 @@ import {
   Bell,
   History,
   Banknote,
-  HelpCircle
+  HelpCircle,
+  Shield
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Sidebar,
@@ -111,6 +113,7 @@ const navSections = [
     icon: Settings,
     defaultOpen: false,
     items: [
+      { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Shield },
       { title: 'Validação de Dados', url: '/validacao-dados', icon: AlertTriangle },
       { title: 'Histórico Alterações', url: '/audit-log', icon: History },
       { title: 'Configurações', url: '/configuracoes', icon: Settings },

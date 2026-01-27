@@ -1,133 +1,266 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
-// Mock user type
+// Tipo de papel do sistema
+export type AppRole = 'admin' | 'gerente' | 'operador';
+
+// User type com papel
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'gerente' | 'operador';
+  role: AppRole;
+  loja_id?: string;
   avatar?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isFirstUser: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
+  checkIsFirstUser: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo (sem banco de dados)
-const MOCK_USERS: Record<string, { password: string; user: User }> = {
-  'admin@sistema.com': {
-    password: 'admin123',
-    user: {
-      id: '1',
-      email: 'admin@sistema.com',
-      name: 'Administrador',
-      role: 'admin'
-    }
-  },
-  'gerente@sistema.com': {
-    password: 'gerente123',
-    user: {
-      id: '2',
-      email: 'gerente@sistema.com',
-      name: 'Gerente Regional',
-      role: 'gerente'
-    }
-  },
-  'operador@sistema.com': {
-    password: 'operador123',
-    user: {
-      id: '3',
-      email: 'operador@sistema.com',
-      name: 'Operador RH',
-      role: 'operador'
-    }
-  }
-};
-
-const AUTH_STORAGE_KEY = 'rh-auth-user';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFirstUser, setIsFirstUser] = useState(false);
 
-  // Carregar usuário do localStorage na inicialização
-  useEffect(() => {
-    const loadStoredUser = () => {
-      try {
-        const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-        if (stored) {
-          const parsedUser = JSON.parse(stored);
-          setUser(parsedUser);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar usuário:', error);
-        localStorage.removeItem(AUTH_STORAGE_KEY);
-      } finally {
-        setIsLoading(false);
+  // Verificar se é o primeiro usuário do sistema
+  const checkIsFirstUser = useCallback(async (): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('is_first_user');
+      if (error) {
+        console.error('Erro ao verificar primeiro usuário:', error);
+        return false;
       }
-    };
-
-    // Simular delay de verificação de autenticação
-    const timeout = setTimeout(loadStoredUser, 300);
-    return () => clearTimeout(timeout);
+      setIsFirstUser(data === true);
+      return data === true;
+    } catch (err) {
+      console.error('Erro ao verificar primeiro usuário:', err);
+      return false;
+    }
   }, []);
 
+  // Buscar papel do usuário
+  const fetchUserRole = useCallback(async (userId: string): Promise<{ role: AppRole; loja_id?: string; nome?: string } | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role, loja_id, nome')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Erro ao buscar papel do usuário:', error);
+        return null;
+      }
+
+      return data as { role: AppRole; loja_id?: string; nome?: string } | null;
+    } catch (err) {
+      console.error('Erro ao buscar papel:', err);
+      return null;
+    }
+  }, []);
+
+  // Processar sessão e buscar dados do usuário
+  const processSession = useCallback(async (currentSession: Session | null) => {
+    if (!currentSession?.user) {
+      setUser(null);
+      setSession(null);
+      return;
+    }
+
+    setSession(currentSession);
+
+    // Buscar papel do usuário
+    const roleData = await fetchUserRole(currentSession.user.id);
+
+    if (roleData) {
+      setUser({
+        id: currentSession.user.id,
+        email: currentSession.user.email || '',
+        name: roleData.nome || currentSession.user.email?.split('@')[0] || 'Usuário',
+        role: roleData.role,
+        loja_id: roleData.loja_id || undefined
+      });
+    } else {
+      // Usuário autenticado mas sem papel - verificar se é primeiro usuário
+      const isFirst = await checkIsFirstUser();
+      if (isFirst) {
+        // Primeiro usuário - será configurado como admin
+        setUser({
+          id: currentSession.user.id,
+          email: currentSession.user.email || '',
+          name: currentSession.user.email?.split('@')[0] || 'Administrador',
+          role: 'admin'
+        });
+      } else {
+        // Usuário sem papel e não é primeiro - aguardando convite/configuração
+        setUser({
+          id: currentSession.user.id,
+          email: currentSession.user.email || '',
+          name: currentSession.user.email?.split('@')[0] || 'Usuário',
+          role: 'operador' // Default temporário
+        });
+      }
+    }
+  }, [fetchUserRole, checkIsFirstUser]);
+
+  // Inicialização e listener de auth
+  useEffect(() => {
+    // Configurar listener PRIMEIRO
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          // Usar setTimeout para evitar deadlock
+          setTimeout(() => {
+            processSession(currentSession);
+          }, 0);
+        } else {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // DEPOIS verificar sessão existente
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (currentSession) {
+        processSession(currentSession);
+      }
+      setIsLoading(false);
+    });
+
+    // Verificar se é primeiro usuário
+    checkIsFirstUser();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [processSession, checkIsFirstUser]);
+
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // Validação básica
     if (!email || !password) {
       return { success: false, error: 'Email e senha são obrigatórios' };
     }
 
-    const emailLower = email.toLowerCase().trim();
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password
+      });
 
-    // Simular delay de autenticação
-    await new Promise(resolve => setTimeout(resolve, 800));
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          return { success: false, error: 'Email ou senha incorretos' };
+        }
+        return { success: false, error: error.message };
+      }
 
-    const mockEntry = MOCK_USERS[emailLower];
+      if (!data.session) {
+        return { success: false, error: 'Erro ao criar sessão' };
+      }
 
-    if (!mockEntry) {
-      return { success: false, error: 'Usuário não encontrado' };
+      return { success: true };
+    } catch (err) {
+      console.error('Erro no login:', err);
+      return { success: false, error: 'Erro inesperado. Tente novamente.' };
     }
-
-    if (mockEntry.password !== password) {
-      return { success: false, error: 'Senha incorreta' };
-    }
-
-    // Login bem-sucedido
-    setUser(mockEntry.user);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mockEntry.user));
-
-    return { success: true };
   }, []);
 
-  const logout = useCallback(() => {
+  const signup = useCallback(async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {
+    if (!email || !password) {
+      return { success: false, error: 'Email e senha são obrigatórios' };
+    }
+
+    if (password.length < 6) {
+      return { success: false, error: 'A senha deve ter pelo menos 6 caracteres' };
+    }
+
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            name: name
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message.includes('already registered')) {
+          return { success: false, error: 'Este email já está cadastrado' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      if (!data.user) {
+        return { success: false, error: 'Erro ao criar usuário' };
+      }
+
+      // Se é o primeiro usuário, criar papel de admin automaticamente
+      const isFirst = await checkIsFirstUser();
+      if (isFirst && data.session) {
+        try {
+          await supabase.from('user_roles').insert({
+            user_id: data.user.id,
+            role: 'admin',
+            nome: name
+          });
+        } catch (roleError) {
+          console.error('Erro ao criar papel admin:', roleError);
+        }
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error('Erro no cadastro:', err);
+      return { success: false, error: 'Erro inesperado. Tente novamente.' };
+    }
+  }, [checkIsFirstUser]);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    setSession(null);
   }, []);
 
   const updateUser = useCallback((updates: Partial<User>) => {
     setUser(prev => {
       if (!prev) return null;
-      const updated = { ...prev, ...updates };
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
-      return updated;
+      return { ...prev, ...updates };
     });
   }, []);
 
   const value: AuthContextType = {
     user,
-    isAuthenticated: !!user,
+    session,
+    isAuthenticated: !!user && !!session,
     isLoading,
+    isFirstUser,
     login,
+    signup,
     logout,
-    updateUser
+    updateUser,
+    checkIsFirstUser
   };
 
   return (
