@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Database, Upload, CheckCircle2, XCircle, Loader2, AlertTriangle, Calendar, UserX, Plane } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Database, Upload, CheckCircle2, Loader2, AlertTriangle, Calendar, UserX, Plane, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 interface MigrationResults {
@@ -18,9 +19,9 @@ interface MigrationResults {
 }
 
 const MigrarDados = () => {
+  const { user } = useAuth();
   const [migrating, setMigrating] = useState(false);
   const [results, setResults] = useState<MigrationResults | null>(null);
-  const [clearing, setClearing] = useState(false);
   const [dbStatus, setDbStatus] = useState({ 
     profissionais: 0, 
     lojas: 0,
@@ -29,60 +30,42 @@ const MigrarDados = () => {
     afastamentos: 0
   });
 
+  // Verificar se usuário é admin
+  const isAdmin = user?.role === 'admin';
+
   // Carregar status do banco ao montar
   useEffect(() => {
     const loadDbStatus = async () => {
-      const [profResult, lojaResult, feriasResult, faltasResult, afastamentosResult] = await Promise.all([
-        supabase.from('profissionais').select('id', { count: 'exact', head: true }),
-        supabase.from('lojas').select('id', { count: 'exact', head: true }),
-        supabase.from('ferias').select('id', { count: 'exact', head: true }),
-        supabase.from('faltas').select('id', { count: 'exact', head: true }),
-        supabase.from('afastamentos').select('id', { count: 'exact', head: true })
-      ]);
-      
-      setDbStatus({
-        profissionais: profResult.count || 0,
-        lojas: lojaResult.count || 0,
-        ferias: feriasResult.count || 0,
-        faltas: faltasResult.count || 0,
-        afastamentos: afastamentosResult.count || 0
-      });
+      try {
+        const [profResult, lojaResult, feriasResult, faltasResult, afastamentosResult] = await Promise.all([
+          supabase.from('profissionais').select('id', { count: 'exact', head: true }),
+          supabase.from('lojas').select('id', { count: 'exact', head: true }),
+          supabase.from('ferias').select('id', { count: 'exact', head: true }),
+          supabase.from('faltas').select('id', { count: 'exact', head: true }),
+          supabase.from('afastamentos').select('id', { count: 'exact', head: true })
+        ]);
+        
+        setDbStatus({
+          profissionais: profResult.count || 0,
+          lojas: lojaResult.count || 0,
+          ferias: feriasResult.count || 0,
+          faltas: faltasResult.count || 0,
+          afastamentos: afastamentosResult.count || 0
+        });
+      } catch (error) {
+        console.error('Erro ao carregar status do banco:', error);
+      }
     };
     
     loadDbStatus();
   }, []);
 
-  const handleClearDatabase = async () => {
-    if (!confirm("⚠️ Tem certeza? Isso irá DELETAR TODOS os dados do banco de dados!")) {
+  const handleMigration = async () => {
+    if (!isAdmin) {
+      toast.error("Acesso negado. Apenas administradores podem executar migrações.");
       return;
     }
 
-    setClearing(true);
-    try {
-      // Deletar todos os dados em ordem reversa (devido às foreign keys)
-      await supabase.from('beneficios').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('exames_aso').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('faltas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('ferias').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('afastamentos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('professional_vales').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('professional_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('loja_documents').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('historico_salarios').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('profissionais').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('lojas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-      toast.success("Banco de dados limpo com sucesso!");
-      setResults(null);
-      setDbStatus({ profissionais: 0, lojas: 0, ferias: 0, faltas: 0, afastamentos: 0 });
-    } catch (error: any) {
-      toast.error(`Erro ao limpar banco: ${error.message}`);
-    } finally {
-      setClearing(false);
-    }
-  };
-
-  const handleMigration = async () => {
     setMigrating(true);
     setResults(null);
 
@@ -98,13 +81,13 @@ const MigrarDados = () => {
 
       if (!profissionaisImportados) {
         toast.error("Dados não encontrados! Carregue os arquivos Excel primeiro.");
+        setMigrating(false);
         return;
       }
 
       const profissionais = JSON.parse(profissionaisImportados);
       const lojas = lojasData ? JSON.parse(lojasData) : [];
       
-      // Parse ASO e Benefícios - podem estar no formato {dados: [...]} ou como array direto
       const parsedASO = dadosASO ? JSON.parse(dadosASO) : null;
       const examesASO = parsedASO ? (Array.isArray(parsedASO) ? parsedASO : parsedASO.dados || []) : [];
       
@@ -130,7 +113,14 @@ const MigrarDados = () => {
         afastamentos: afastamentos.length
       });
 
-      // Chamar edge function
+      // Chamar edge function com autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        setMigrating(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('migrate-excel-data', {
         body: {
           profissionais,
@@ -146,6 +136,7 @@ const MigrarDados = () => {
       if (error) {
         toast.error(`Erro na migração: ${error.message}`);
         console.error('Erro:', error);
+        setMigrating(false);
         return;
       }
 
@@ -170,7 +161,7 @@ const MigrarDados = () => {
           afastamentos: afastamentosResult.count || 0
         });
       } else {
-        toast.error("Erro na migração dos dados");
+        toast.error(data?.error || "Erro na migração dos dados");
       }
     } catch (error: any) {
       toast.error(`Erro: ${error.message}`);
@@ -189,7 +180,6 @@ const MigrarDados = () => {
     const dadosFaltas = localStorage.getItem('dadosFaltas');
     const dadosAfastamentos = localStorage.getItem('dadosAfastamentos');
 
-    // Helper para parsear dados que podem estar no formato {dados: [...]} ou array direto
     const parseData = (data: string | null) => {
       if (!data) return 0;
       try {
@@ -216,14 +206,50 @@ const MigrarDados = () => {
   const dadosDisponiveis = verificarDadosLocalStorage();
   const temDados = dadosDisponiveis.profissionais > 0;
 
+  // Se não é admin, mostrar mensagem de acesso negado
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Migrar Dados</h1>
+          <p className="text-muted-foreground">
+            Migração de dados das planilhas Excel
+          </p>
+        </div>
+
+        <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertDescription className="ml-2">
+            <strong>Acesso Restrito</strong>
+            <p className="mt-1">
+              Esta funcionalidade está disponível apenas para administradores do sistema.
+              Entre em contato com o administrador se precisar migrar dados.
+            </p>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold mb-2">Migrar Dados para Banco de Dados</h1>
         <p className="text-muted-foreground">
-          Migre os dados das planilhas Excel para o banco de dados Lovable Cloud
+          Migre os dados das planilhas Excel para o banco de dados (somente administradores)
         </p>
       </div>
+
+      {/* Aviso de Segurança */}
+      <Alert>
+        <ShieldAlert className="h-4 w-4" />
+        <AlertDescription className="ml-2">
+          <strong>Área Administrativa Protegida</strong>
+          <p className="text-sm mt-1">
+            Esta operação é registrada no log de auditoria do sistema. Todas as ações são rastreadas.
+          </p>
+        </AlertDescription>
+      </Alert>
 
       {/* Status dos dados disponíveis */}
       <Card>
@@ -279,6 +305,7 @@ const MigrarDados = () => {
 
           {!temDados && (
             <Alert>
+              <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 Nenhum dado encontrado no localStorage. Por favor, carregue os arquivos Excel primeiro 
                 na página <a href="/analisar-ativos" className="underline font-medium">Analisar Ativos</a>.
@@ -357,26 +384,6 @@ const MigrarDados = () => {
             )}
           </Button>
 
-          <Button
-            onClick={handleClearDatabase}
-            disabled={clearing}
-            size="lg"
-            variant="destructive"
-            className="w-full"
-          >
-            {clearing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Limpando banco...
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 mr-2" />
-                Limpar Banco de Dados (Resetar)
-              </>
-            )}
-          </Button>
-
           <Alert>
             <AlertDescription>
               💡 <strong>Dica:</strong> Após a migração, todos os dados estarão disponíveis no banco de dados 
@@ -406,12 +413,16 @@ const MigrarDados = () => {
               </div>
               {results.lojas.errors.length > 0 && (
                 <div className="bg-destructive/10 p-3 rounded-md space-y-1">
-                  {results.lojas.errors.map((error, idx) => (
-                    <p key={idx} className="text-sm text-destructive flex items-start gap-2">
-                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  {results.lojas.errors.slice(0, 5).map((error, idx) => (
+                    <p key={idx} className="text-sm text-destructive">
                       {error}
                     </p>
                   ))}
+                  {results.lojas.errors.length > 5 && (
+                    <p className="text-sm text-muted-foreground">
+                      ... e mais {results.lojas.errors.length - 5} erros
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -431,39 +442,16 @@ const MigrarDados = () => {
                   </Badge>
                 </div>
               </div>
-              
-              {/* Warnings - para RH revisar */}
-              {results.profissionais.warnings && results.profissionais.warnings.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 p-3 rounded-md space-y-1 max-h-60 overflow-y-auto">
-                  <p className="text-sm font-medium text-amber-800 mb-2">
-                    ⚠️ Registros para revisão do RH:
-                  </p>
-                  {results.profissionais.warnings.slice(0, 20).map((warning, idx) => (
-                    <p key={idx} className="text-sm text-amber-700 flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      {warning}
-                    </p>
-                  ))}
-                  {results.profissionais.warnings.length > 20 && (
-                    <p className="text-sm text-amber-600 italic">
-                      ... e mais {results.profissionais.warnings.length - 20} avisos
-                    </p>
-                  )}
-                </div>
-              )}
-              
-              {/* Errors */}
               {results.profissionais.errors.length > 0 && (
-                <div className="bg-destructive/10 p-3 rounded-md space-y-1 max-h-60 overflow-y-auto">
-                  {results.profissionais.errors.slice(0, 10).map((error, idx) => (
-                    <p key={idx} className="text-sm text-destructive flex items-start gap-2">
-                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div className="bg-destructive/10 p-3 rounded-md space-y-1">
+                  {results.profissionais.errors.slice(0, 5).map((error, idx) => (
+                    <p key={idx} className="text-sm text-destructive">
                       {error}
                     </p>
                   ))}
-                  {results.profissionais.errors.length > 10 && (
-                    <p className="text-sm text-muted-foreground italic">
-                      ... e mais {results.profissionais.errors.length - 10} erros
+                  {results.profissionais.errors.length > 5 && (
+                    <p className="text-sm text-muted-foreground">
+                      ... e mais {results.profissionais.errors.length - 5} erros
                     </p>
                   )}
                 </div>
@@ -478,115 +466,36 @@ const MigrarDados = () => {
                   {results.examesASO.inserted} inseridos
                 </Badge>
               </div>
-              {results.examesASO.errors.length > 0 && (
-                <div className="bg-destructive/10 p-3 rounded-md space-y-1 max-h-40 overflow-y-auto">
-                  {results.examesASO.errors.slice(0, 5).map((error, idx) => (
-                    <p key={idx} className="text-sm text-destructive flex items-start gap-2">
-                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      {error}
-                    </p>
-                  ))}
-                  {results.examesASO.errors.length > 5 && (
-                    <p className="text-sm text-muted-foreground italic">
-                      ... e mais {results.examesASO.errors.length - 5} erros
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Benefícios */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Benefícios</h3>
-                <Badge variant={results.beneficios.errors.length > 0 ? "destructive" : "default"}>
-                  {results.beneficios.inserted} inseridos
-                </Badge>
-              </div>
             </div>
 
             {/* Férias */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Plane className="h-4 w-4 text-blue-500" />
-                  Férias
-                </h3>
-                <Badge variant={results.ferias.errors.length > 0 ? "destructive" : "default"} className="bg-blue-100 text-blue-800">
+                <h3 className="font-semibold">Férias</h3>
+                <Badge variant={results.ferias.errors.length > 0 ? "destructive" : "default"}>
                   {results.ferias.inserted} inseridas
                 </Badge>
               </div>
-              {results.ferias.errors.length > 0 && (
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-md space-y-1 max-h-40 overflow-y-auto">
-                  {results.ferias.errors.slice(0, 5).map((error, idx) => (
-                    <p key={idx} className="text-sm text-blue-700 flex items-start gap-2">
-                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      {error}
-                    </p>
-                  ))}
-                  {results.ferias.errors.length > 5 && (
-                    <p className="text-sm text-blue-600 italic">
-                      ... e mais {results.ferias.errors.length - 5} erros
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Faltas */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <UserX className="h-4 w-4 text-orange-500" />
-                  Faltas
-                </h3>
-                <Badge variant={results.faltas.errors.length > 0 ? "destructive" : "default"} className="bg-orange-100 text-orange-800">
+                <h3 className="font-semibold">Faltas</h3>
+                <Badge variant={results.faltas.errors.length > 0 ? "destructive" : "default"}>
                   {results.faltas.inserted} inseridas
                 </Badge>
               </div>
-              {results.faltas.errors.length > 0 && (
-                <div className="bg-orange-50 border border-orange-200 p-3 rounded-md space-y-1 max-h-40 overflow-y-auto">
-                  {results.faltas.errors.slice(0, 5).map((error, idx) => (
-                    <p key={idx} className="text-sm text-orange-700 flex items-start gap-2">
-                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      {error}
-                    </p>
-                  ))}
-                  {results.faltas.errors.length > 5 && (
-                    <p className="text-sm text-orange-600 italic">
-                      ... e mais {results.faltas.errors.length - 5} erros
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Afastamentos */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-purple-500" />
-                  Afastamentos
-                </h3>
-                <Badge variant={results.afastamentos.errors.length > 0 ? "destructive" : "default"} className="bg-purple-100 text-purple-800">
+                <h3 className="font-semibold">Afastamentos</h3>
+                <Badge variant={results.afastamentos.errors.length > 0 ? "destructive" : "default"}>
                   {results.afastamentos.inserted} inseridos
                 </Badge>
               </div>
-              {results.afastamentos.errors.length > 0 && (
-                <div className="bg-purple-50 border border-purple-200 p-3 rounded-md space-y-1 max-h-40 overflow-y-auto">
-                  {results.afastamentos.errors.slice(0, 5).map((error, idx) => (
-                    <p key={idx} className="text-sm text-purple-700 flex items-start gap-2">
-                      <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      {error}
-                    </p>
-                  ))}
-                  {results.afastamentos.errors.length > 5 && (
-                    <p className="text-sm text-purple-600 italic">
-                      ... e mais {results.afastamentos.errors.length - 5} erros
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
