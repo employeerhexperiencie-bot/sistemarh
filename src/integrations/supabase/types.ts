@@ -2391,6 +2391,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_sensitive_hr_data: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       has_min_role: {
         Args: {
