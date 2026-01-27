@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Utensils, ShoppingBasket, CreditCard, Beef, Info, AlertTriangle } from 'lucide-react';
+import { Utensils, ShoppingBasket, CreditCard, Beef, Info, AlertTriangle, Banknote } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface BeneficioConfig {
@@ -12,6 +12,7 @@ interface BeneficioConfig {
   valorCestaBasica: number;
   valorValeAlimentacao: number;
   valorValeCarne: number;
+  valorValeDinheiro: number;
   diasUteis: number;
 }
 
@@ -26,6 +27,7 @@ interface ProfissionalAlimentacao {
   vale_carne: boolean;
   valor_vale_alimentacao: number;
   valor_vale_carne: number;
+  valor_vale_dinheiro: number;
 }
 
 export function BeneficiosAlimentacaoTab() {
@@ -38,6 +40,7 @@ export function BeneficiosAlimentacaoTab() {
     valorCestaBasica: 150.00,
     valorValeAlimentacao: 200.00,
     valorValeCarne: 100.00,
+    valorValeDinheiro: 100.00,
     diasUteis: 22,
   });
 
@@ -48,7 +51,8 @@ export function BeneficiosAlimentacaoTab() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Carregar profissionais
+      const { data: profsData, error: profsError } = await supabase
         .from('profissionais')
         .select(`
           id, matricula, nome,
@@ -59,9 +63,20 @@ export function BeneficiosAlimentacaoTab() {
         .eq('status', 'ativo')
         .order('nome');
 
-      if (error) throw error;
+      if (profsError) throw profsError;
 
-      const mapped = (data || []).map((p: any) => ({
+      // Carregar valores de vale dinheiro da tabela beneficios (mês atual)
+      const mesAtual = new Date().toISOString().slice(0, 7);
+      const { data: beneficiosData } = await supabase
+        .from('beneficios')
+        .select('profissional_id, valor_vale_dinheiro')
+        .eq('mes_referencia', mesAtual);
+
+      const beneficiosMap = new Map(
+        (beneficiosData || []).map(b => [b.profissional_id, b.valor_vale_dinheiro || 0])
+      );
+
+      const mapped = (profsData || []).map((p: any) => ({
         id: p.id,
         matricula: p.matricula,
         nome: p.nome,
@@ -72,6 +87,7 @@ export function BeneficiosAlimentacaoTab() {
         vale_carne: p.vale_carne || false,
         valor_vale_alimentacao: p.valor_vale_alimentacao || config.valorValeAlimentacao,
         valor_vale_carne: p.valor_vale_carne || config.valorValeCarne,
+        valor_vale_dinheiro: beneficiosMap.get(p.id) || 0,
       }));
 
       setProfissionais(mapped);
@@ -91,6 +107,7 @@ export function BeneficiosAlimentacaoTab() {
   const totalCesta = profissionais.filter(p => p.cesta_basica).length * config.valorCestaBasica;
   const totalVA = profissionais.filter(p => p.vale_alimentacao).reduce((sum, p) => sum + p.valor_vale_alimentacao, 0);
   const totalCarne = profissionais.filter(p => p.vale_carne).reduce((sum, p) => sum + p.valor_vale_carne, 0);
+  const totalDinheiro = profissionais.reduce((sum, p) => sum + p.valor_vale_dinheiro, 0);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -99,7 +116,7 @@ export function BeneficiosAlimentacaoTab() {
   return (
     <div className="space-y-4">
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="border-orange-200 bg-orange-50/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -138,7 +155,7 @@ export function BeneficiosAlimentacaoTab() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-indigo-600" />
-              Vale Alimentação (Alelo)
+              Vale Alimentação
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -167,6 +184,23 @@ export function BeneficiosAlimentacaoTab() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="border-emerald-200 bg-emerald-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Banknote className="h-4 w-4 text-emerald-600" />
+              Vale Dinheiro
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col">
+              <span className="text-2xl font-bold text-emerald-600">
+                {profissionais.filter(p => p.valor_vale_dinheiro > 0).length}
+              </span>
+              <span className="text-sm font-semibold">{formatCurrency(totalDinheiro)}</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Configurações */}
@@ -179,7 +213,7 @@ export function BeneficiosAlimentacaoTab() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>VR por dia (R$)</Label>
                 <Input
@@ -215,6 +249,24 @@ export function BeneficiosAlimentacaoTab() {
                   onChange={(e) => setConfig(prev => ({ ...prev, valorValeAlimentacao: parseFloat(e.target.value) || 0 }))}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Vale Carne (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={config.valorValeCarne}
+                  onChange={(e) => setConfig(prev => ({ ...prev, valorValeCarne: parseFloat(e.target.value) || 0 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Vale Dinheiro (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={config.valorValeDinheiro}
+                  onChange={(e) => setConfig(prev => ({ ...prev, valorValeDinheiro: parseFloat(e.target.value) || 0 }))}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -231,6 +283,7 @@ export function BeneficiosAlimentacaoTab() {
             <p>• Admissão até dia 15: tem direito no mês</p>
             <p>• Admissão após dia 15: não tem direito no mês da admissão</p>
             <p>• VR: Descontar faltas, atestados e férias</p>
+            <p>• Vale Dinheiro: Lançado mensalmente conforme necessidade</p>
           </CardContent>
         </Card>
       </div>
@@ -256,21 +309,22 @@ export function BeneficiosAlimentacaoTab() {
                   <TableHead>Loja</TableHead>
                   <TableHead className="text-center">VR</TableHead>
                   <TableHead className="text-center">Cesta</TableHead>
-                  <TableHead className="text-center">VA (Alelo)</TableHead>
-                  <TableHead className="text-center">Vale Carne</TableHead>
+                  <TableHead className="text-center">VA</TableHead>
+                  <TableHead className="text-center">Carne</TableHead>
+                  <TableHead className="text-center">Dinheiro</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filteredProfissionais.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nenhum registro encontrado
                     </TableCell>
                   </TableRow>
@@ -280,7 +334,8 @@ export function BeneficiosAlimentacaoTab() {
                     const cestaValue = p.cesta_basica ? config.valorCestaBasica : 0;
                     const vaValue = p.vale_alimentacao ? p.valor_vale_alimentacao : 0;
                     const carneValue = p.vale_carne ? p.valor_vale_carne : 0;
-                    const total = vrValue + cestaValue + vaValue + carneValue;
+                    const dinheiroValue = p.valor_vale_dinheiro;
+                    const total = vrValue + cestaValue + vaValue + carneValue + dinheiroValue;
 
                     return (
                       <TableRow key={p.id}>
@@ -311,6 +366,13 @@ export function BeneficiosAlimentacaoTab() {
                         <TableCell className="text-center">
                           {p.vale_carne ? (
                             <Badge className="bg-rose-100 text-rose-700">{formatCurrency(carneValue)}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {dinheiroValue > 0 ? (
+                            <Badge className="bg-emerald-100 text-emerald-700">{formatCurrency(dinheiroValue)}</Badge>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
