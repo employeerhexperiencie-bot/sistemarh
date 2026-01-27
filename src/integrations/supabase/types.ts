@@ -2423,6 +2423,7 @@ export type Database = {
         }
         Returns: string
       }
+      require_auth: { Args: never; Returns: boolean }
       user_belongs_to_tenant: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
