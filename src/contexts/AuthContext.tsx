@@ -220,10 +220,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isFirst = await checkIsFirstUser();
       if (isFirst && data.session) {
         try {
+          // Associar ao tenant padrão que já tem os dados do cliente
+          const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+          
           await supabase.from('user_roles').insert({
             user_id: data.user.id,
             role: 'admin',
-            nome: name
+            nome: name,
+            tenant_id: DEFAULT_TENANT_ID
           });
         } catch (roleError) {
           console.error('Erro ao criar papel admin:', roleError);
