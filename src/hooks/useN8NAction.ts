@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface N8NResponse {
   ok: boolean;
@@ -7,6 +8,7 @@ interface N8NResponse {
   data?: any;
   code?: string;
   pid?: string;
+  demo?: boolean;
 }
 
 interface UseN8NActionOptions {
@@ -26,16 +28,35 @@ export function useN8NAction() {
     setLoading(true);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_BASE || 'https://n8n.example.com/webhook'}/action`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_PUBLIC_API_TOKEN || 'demo-token'}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, ...payload }),
+      // Use secure edge function proxy instead of direct client-side calls
+      const { data, error } = await supabase.functions.invoke('n8n-proxy', {
+        body: { action, ...payload },
       });
 
-      const result: N8NResponse = await response.json();
+      if (error) {
+        console.error('N8N Action Error:', error);
+        toast({
+          title: 'Erro',
+          description: error.message || 'Erro na conexão com o servidor',
+          variant: 'destructive',
+        });
+        options.onError?.(error);
+        return null;
+      }
+
+      const result = data as N8NResponse;
+
+      // Handle demo mode response
+      if (result.demo) {
+        console.log('N8N running in demo mode');
+        toast({
+          title: 'Modo Demo',
+          description: 'Integração N8N não configurada - operando em modo demonstração',
+          variant: 'default',
+        });
+        options.onSuccess?.(result.data);
+        return result;
+      }
 
       if (result.ok) {
         toast({
@@ -76,23 +97,50 @@ export function useN8NAction() {
     setLoading(true);
     
     try {
+      // Get auth session for the edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: 'Erro de Autenticação',
+          description: 'Você precisa estar logado para fazer upload',
+          variant: 'destructive',
+        });
+        return null;
+      }
+
+      // Create FormData and call the edge function
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`${import.meta.env.VITE_N8N_WEBHOOK_BASE || 'https://n8n.example.com/webhook'}/upload`, {
+      // Use fetch with proper auth header for file uploads
+      const { data: { publicUrl } } = supabase.storage.from('temp').getPublicUrl('');
+      const supabaseUrl = publicUrl.replace('/storage/v1/object/public/temp/', '');
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/n8n-proxy`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_PUBLIC_API_TOKEN || 'demo-token'}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: formData,
       });
 
       const result = await response.json();
 
+      // Handle demo mode
+      if (result.demo) {
+        toast({
+          title: 'Modo Demo',
+          description: 'Upload em modo demonstração - N8N não configurado',
+          variant: 'default',
+        });
+        return null;
+      }
+
       if (result.ok) {
         toast({
           title: 'Upload realizado',
-          description: `Arquivo ${result.fileName} enviado com sucesso`,
+          description: `Arquivo ${result.fileName || file.name} enviado com sucesso`,
           variant: 'default',
         });
         
