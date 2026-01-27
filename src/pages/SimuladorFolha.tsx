@@ -636,6 +636,16 @@ export default function SimuladorFolha() {
         </div>
       </div>
 
+      {/* ⚠️ AVISO IMPORTANTE - Simulação não gera descontos */}
+      <Alert className="border-info/50 bg-info/5">
+        <Info className="h-4 w-4 text-info" />
+        <AlertTitle className="text-info">Isso é apenas uma simulação</AlertTitle>
+        <AlertDescription className="text-muted-foreground">
+          Você pode ajustar valores e simular quantas vezes quiser. <strong>Nenhum desconto será aplicado</strong> e 
+          <strong> nenhum holerite será gerado</strong> até você clicar em "Finalizar e Gerar Holerites".
+        </AlertDescription>
+      </Alert>
+
       {/* Checklist de Dados - Pré-Simulação */}
       <ChecklistDados
         profissionais={supabaseData.totalProfissionais}
