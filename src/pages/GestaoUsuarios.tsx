@@ -22,7 +22,9 @@ import {
   RefreshCw,
   Clock,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Ban,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -35,6 +37,7 @@ interface UserRole {
   loja_id: string | null;
   nome: string | null;
   created_at: string;
+  ativo: boolean;
 }
 
 interface UserInvite {
@@ -163,6 +166,27 @@ export default function GestaoUsuarios() {
     } catch (error) {
       console.error('Erro ao remover usuário:', error);
       toast.error('Erro ao remover usuário');
+    }
+  };
+
+  const handleToggleUserActive = async (userRoleId: string, userId: string, currentStatus: boolean) => {
+    if (userId === user?.id) {
+      toast.error('Você não pode desativar sua própria conta');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ ativo: !currentStatus })
+        .eq('id', userRoleId);
+      
+      if (error) throw error;
+      toast.success(currentStatus ? 'Acesso bloqueado' : 'Acesso liberado');
+      loadData();
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      toast.error('Erro ao alterar status do usuário');
     }
   };
 
@@ -340,13 +364,14 @@ export default function GestaoUsuarios() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Papel</TableHead>
                   <TableHead>Loja</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Desde</TableHead>
-                  <TableHead className="w-[100px]">Ações</TableHead>
+                  <TableHead className="w-[140px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((userRole) => (
-                  <TableRow key={userRole.id}>
+                  <TableRow key={userRole.id} className={!userRole.ativo ? 'opacity-60' : ''}>
                     <TableCell className="font-medium">
                       {userRole.nome || 'Sem nome'}
                       {userRole.user_id === user?.id && (
@@ -355,19 +380,45 @@ export default function GestaoUsuarios() {
                     </TableCell>
                     <TableCell>{getRoleBadge(userRole.role)}</TableCell>
                     <TableCell>{getLojaName(userRole.loja_id)}</TableCell>
+                    <TableCell>
+                      {userRole.ativo ? (
+                        <Badge className="bg-success">
+                          <Check className="h-3 w-3 mr-1" />
+                          Ativo
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">
+                          <Ban className="h-3 w-3 mr-1" />
+                          Bloqueado
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {format(new Date(userRole.created_at), "dd/MM/yyyy", { locale: ptBR })}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteUser(userRole.id, userRole.user_id)}
-                        disabled={userRole.user_id === user?.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={userRole.ativo ? 'Bloquear acesso' : 'Liberar acesso'}
+                          className={userRole.ativo ? 'text-destructive hover:text-destructive' : 'text-success hover:text-success'}
+                          onClick={() => handleToggleUserActive(userRole.id, userRole.user_id, userRole.ativo)}
+                          disabled={userRole.user_id === user?.id}
+                        >
+                          {userRole.ativo ? <Ban className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Remover usuário"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteUser(userRole.id, userRole.user_id)}
+                          disabled={userRole.user_id === user?.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

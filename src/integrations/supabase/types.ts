@@ -2169,6 +2169,7 @@ export type Database = {
           id: string
           invited_by: string | null
           loja_id: string | null
+          role: Database["public"]["Enums"]["app_role"]
           tenant_id: string
           token: string | null
         }
@@ -2180,6 +2181,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           loja_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
           tenant_id?: string
           token?: string | null
         }
@@ -2191,6 +2193,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           loja_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
           tenant_id?: string
           token?: string | null
         }
@@ -2257,6 +2260,7 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          ativo: boolean
           created_at: string | null
           id: string
           loja_id: string | null
@@ -2267,6 +2271,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ativo?: boolean
           created_at?: string | null
           id?: string
           loja_id?: string | null
@@ -2277,6 +2282,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ativo?: boolean
           created_at?: string | null
           id?: string
           loja_id?: string | null
