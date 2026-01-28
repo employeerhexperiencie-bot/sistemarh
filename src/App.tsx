@@ -105,6 +105,15 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Wrapper para rotas EXCLUSIVAS de super_admin
+function SuperAdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute superAdminOnly>
+      <Layout>{children}</Layout>
+    </ProtectedRoute>
+  );
+}
+
 const App = () => (
   <AuthProvider>
     <AppearanceProvider>
@@ -147,18 +156,21 @@ const App = () => (
                   <Route path="/referencia-sistema" element={<ProtectedLayout><ReferenciaSistema /></ProtectedLayout>} />
                   <Route path="/simulador-folha" element={<ProtectedLayout><SimuladorFolha /></ProtectedLayout>} />
                   <Route path="/configuracoes" element={<ProtectedLayout><Configuracoes /></ProtectedLayout>} />
-                  <Route path="/gestao-usuarios" element={<ProtectedLayout><GestaoUsuarios /></ProtectedLayout>} />
+                  {/* ROTAS EXCLUSIVAS SUPER_ADMIN - Cliente NÃO pode acessar */}
+                  <Route path="/gestao-usuarios" element={<SuperAdminLayout><GestaoUsuarios /></SuperAdminLayout>} />
+                  <Route path="/audit-log" element={<SuperAdminLayout><AuditLog /></SuperAdminLayout>} />
+                  <Route path="/validacao-dados" element={<SuperAdminLayout><ValidacaoDados /></SuperAdminLayout>} />
+                  <Route path="/migrar-dados" element={<SuperAdminLayout><MigrarDados /></SuperAdminLayout>} />
+                  <Route path="/importar-dados-excel" element={<SuperAdminLayout><ImportarDadosExcel /></SuperAdminLayout>} />
+                  <Route path="/importacao-dados" element={<SuperAdminLayout><ImportacaoDados /></SuperAdminLayout>} />
+                  <Route path="/analisar-ativos" element={<SuperAdminLayout><AnalisarAtivos /></SuperAdminLayout>} />
+                  <Route path="/atualizar-ativos" element={<SuperAdminLayout><AtualizarAtivos /></SuperAdminLayout>} />
+                  <Route path="/carregar-dados-adicionais" element={<SuperAdminLayout><CarregarDadosAdicionais /></SuperAdminLayout>} />
+                  
+                  {/* Rotas normais */}
                   <Route path="/cadastro-lojas" element={<ProtectedLayout><CadastroLojas /></ProtectedLayout>} />
-                  <Route path="/importacao-dados" element={<ProtectedLayout><ImportacaoDados /></ProtectedLayout>} />
                   <Route path="/alertas" element={<ProtectedLayout><Alertas /></ProtectedLayout>} />
-                  <Route path="/audit-log" element={<ProtectedLayout><AuditLog /></ProtectedLayout>} />
-                  <Route path="/analisar-ativos" element={<ProtectedLayout><AnalisarAtivos /></ProtectedLayout>} />
-                  <Route path="/atualizar-ativos" element={<ProtectedLayout><AtualizarAtivos /></ProtectedLayout>} />
-                  <Route path="/carregar-dados-adicionais" element={<ProtectedLayout><CarregarDadosAdicionais /></ProtectedLayout>} />
-                  <Route path="/validacao-dados" element={<ProtectedLayout><ValidacaoDados /></ProtectedLayout>} />
                   <Route path="/dashboard-analitico" element={<ProtectedLayout><DashboardAnalitico /></ProtectedLayout>} />
-                  <Route path="/migrar-dados" element={<ProtectedLayout><MigrarDados /></ProtectedLayout>} />
-                  <Route path="/importar-dados-excel" element={<ProtectedLayout><ImportarDadosExcel /></ProtectedLayout>} />
                   <Route path="/ajuda" element={<ProtectedLayout><Ajuda /></ProtectedLayout>} />
                   <Route path="/como-usar" element={<ProtectedLayout><ComoUsar /></ProtectedLayout>} />
                   

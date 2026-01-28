@@ -69,13 +69,14 @@ export default function GestaoUsuarios() {
   const [inviteRole, setInviteRole] = useState<AppRole>('operador');
   const [inviteLoja, setInviteLoja] = useState<string>('');
 
-  const isAdmin = user?.role === 'admin';
+  // IMPORTANTE: Apenas super_admin pode gerenciar usuários
+  const isSuperAdmin = user?.role === 'super_admin';
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isSuperAdmin) {
       loadData();
     }
-  }, [isAdmin]);
+  }, [isSuperAdmin]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -207,7 +208,7 @@ export default function GestaoUsuarios() {
     return loja?.nome || 'Desconhecida';
   };
 
-  if (!isAdmin) {
+  if (!isSuperAdmin) {
     return (
       <div className="space-y-6">
         <Alert variant="destructive">

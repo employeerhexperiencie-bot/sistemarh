@@ -61,8 +61,8 @@ export default function Configuracoes() {
 
         {/* Tab: Sistema */}
         <TabsContent value="sistema" className="space-y-6">
-          {/* Card de Gestão de Usuários - Acesso Rápido */}
-          {user?.role === 'admin' && (
+          {/* Card de Gestão de Usuários - APENAS super_admin */}
+          {user?.role === 'super_admin' && (
             <Card className="bg-primary/5 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/gestao-usuarios')}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
