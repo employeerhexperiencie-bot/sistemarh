@@ -48,16 +48,16 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
-// Navigation structure organized by sections - CLIENT VISIBLE
+// Navigation structure - SIMPLIFICADO para cliente
+// Apenas o essencial que o cliente precisa usar
 const navSections = [
   {
-    label: 'Dashboard',
+    label: 'Principal',
     icon: LayoutDashboard,
     defaultOpen: true,
     items: [
-      { title: 'Visão Geral', url: '/', icon: LayoutDashboard },
+      { title: 'Painel', url: '/', icon: LayoutDashboard },
       { title: 'Alertas', url: '/alertas', icon: Bell },
-      { title: 'Simulador Folha', url: '/simulador-folha', icon: Calculator },
     ],
   },
   {
@@ -113,13 +113,13 @@ const navSections = [
     ],
   },
   {
-    label: 'Sistema',
-    icon: Settings,
+    label: 'Ajuda',
+    icon: HelpCircle,
     defaultOpen: false,
     items: [
       { title: 'Como Usar', url: '/como-usar', icon: BookOpen },
-      { title: 'Ajuda', url: '/ajuda', icon: HelpCircle },
-      { title: 'Configurações', url: '/configuracoes', icon: Settings },
+      { title: 'Suporte', url: '/ajuda', icon: HelpCircle },
+      { title: 'Aparência', url: '/configuracoes', icon: Settings },
     ],
   },
 ];
