@@ -27,12 +27,12 @@
 | Bem Mais | Flag | Tab Saúde | ❌ Não desconta | ✅ Correto |
 | Vale Alimentação (Alelo) | Flag | Tab Alimentação | ❌ Não desconta | ✅ Correto |
 
-### ⚠️ Benefícios Pendentes de Confirmação
+### ✅ Benefícios com Desconto MANUAL (RH Define Quando)
 
-| Benefício | Status Atual | Pendência |
-|-----------|--------------|-----------|
-| Vale Carne | Flag existe | Confirmar regra (desconta ou não?) |
-| Vale Dinheiro | Sem flag | Confirmar se precisa flag ou só lançamento manual |
+| Benefício | Cadastro | Gestão | Desconto | Status |
+|-----------|----------|--------|----------|--------|
+| Vale Carne | Flag | Tab Alimentação | Profissional paga (RH define quando) | ✅ Confirmado |
+| Vale Dinheiro | Lançamento | Tab Alimentação | Profissional paga (RH define quando) | ✅ Confirmado |
 
 ---
 
@@ -133,25 +133,27 @@ if (mesmaCompetencia && dataAdmissao.getDate() > 15) {
 
 ---
 
-### 7. Vale Carne ⚠️
-**Tipo:** A confirmar
+### 7. Vale Carne ✅
+**Tipo:** Desconto manual (RH define quando descontar)
 
-| Aspecto | Status | Pendência |
-|---------|--------|-----------|
-| Flag no cadastro | ✅ | `vale_carne` existe |
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` - campo `vale_carne` |
 | Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
-| Regra desconto | ❓ | **Confirmar: desconta ou 100% empresa?** |
+| Desconto | ✅ | Via lançamento manual em `lancamentos_financeiros` |
+| Regra | ✅ | **Profissional paga - RH define quando descontar** |
 
 ---
 
-### 8. Vale Dinheiro ⚠️
-**Tipo:** A confirmar
+### 8. Vale Dinheiro ✅
+**Tipo:** Desconto manual (RH define quando descontar)
 
-| Aspecto | Status | Pendência |
-|---------|--------|-----------|
-| Flag no cadastro | ❌ | Não existe flag |
-| Lançamento manual | ✅ | Via `lancamentos_financeiros` |
-| Regra | ❓ | **Confirmar: precisa flag ou só manual?** |
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ❌ | Não precisa - lançamento avulso |
+| Lançamento | ✅ | Via `lancamentos_financeiros` |
+| Desconto | ✅ | Profissional paga quando HR registra |
+| Regra | ✅ | **Profissional paga - RH define quando descontar** |
 
 ---
 
@@ -214,22 +216,22 @@ descontoVT6Porcento = Math.min(
 
 ### Implementação Completa (11/11 benefícios mapeados)
 
-**COM desconto automático (5):**
+**COM desconto AUTOMÁTICO (5):**
 - ✅ Vale Transporte (6% limitado)
 - ✅ Vale Refeição (dias × R$25)
 - ✅ Cesta Básica (perde por falta)
 - ✅ Empréstimo CLT
 - ✅ Empréstimo Loja
 
-**SEM desconto - só gerenciamento (4):**
-- ✅ Odonto
-- ✅ Seguro Vida
-- ✅ Bem Mais
-- ✅ Vale Alimentação (Alelo)
+**COM desconto MANUAL - RH define quando (2):**
+- ✅ Vale Carne (profissional paga)
+- ✅ Vale Dinheiro (profissional paga)
 
-**Pendentes confirmação (2):**
-- ⚠️ Vale Carne
-- ⚠️ Vale Dinheiro
+**SEM desconto - só gerenciamento (4):**
+- ✅ Odonto (empresa paga)
+- ✅ Seguro Vida (empresa paga)
+- ✅ Bem Mais (empresa paga)
+- ✅ Vale Alimentação/Alelo (empresa paga)
 
 ---
 *Documento atualizado em: 28/01/2026*
