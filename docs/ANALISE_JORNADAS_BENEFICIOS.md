@@ -1,455 +1,235 @@
 # Análise de Jornadas: Gerenciamento, Cadastro e Descontos de Benefícios
 
 > **Data da Análise:** 28/01/2026  
-> **Objetivo:** Mapear as jornadas atuais de cada benefício e identificar gaps
+> **Atualizado em:** 28/01/2026  
+> **Objetivo:** Mapear as jornadas atuais de cada benefício
 
 ---
 
 ## 📊 Resumo Executivo
 
-| Benefício | Cadastro | Gestão | Desconto em Folha | Status |
+### ✅ Benefícios COM Desconto Automático em Folha
+
+| Benefício | Cadastro | Gestão | Regra de Desconto | Status |
 |-----------|----------|--------|-------------------|--------|
-| Odonto | ✅ Flag + Valor | ✅ Tab Saúde | ⚠️ Não integrado | Parcial |
-| Seguro Vida | ✅ Flag + Valor | ✅ Tab Saúde | ⚠️ Não integrado | Parcial |
-| Vale Transporte | ✅ Flag + Valor Diário | ✅ Tab VT | ✅ payrollCalculator | Completo |
-| Vale Refeição | ✅ Flag | ✅ Tab Alimentação | ✅ payrollCalculator | Completo |
-| Vale Alimentação (Alelo) | ✅ Flag + Valor | ✅ Tab Alimentação | ⚠️ Não integrado | Parcial |
-| Cesta Básica | ✅ Flag | ✅ Tab Alimentação | ✅ payrollCalculator | Completo |
-| Bem Mais (Sindicato) | ✅ Flag + Valor | ✅ Tab Saúde | ⚠️ Não integrado | Parcial |
-| Vale Carne | ✅ Flag + Valor | ✅ Tab Alimentação | ⚠️ Não integrado | Parcial |
-| Vale Dinheiro | ⚠️ Só em beneficios | ✅ Tab Alimentação | ⚠️ Não integrado | Parcial |
-| Empréstimo CLT | ✅ Completo | ✅ GestaoEmprestimos | ✅ payrollCalculator | Completo |
-| Empréstimo Loja | ✅ Completo | ✅ GestaoEmprestimos | ✅ payrollCalculator | Completo |
+| Vale Transporte | Flag + valor diário | Tab VT | 6% do salário (limitado ao VT) | ✅ Completo |
+| Vale Refeição | Flag | Tab Alimentação | dias × R$25 | ✅ Completo |
+| Cesta Básica | Flag | Tab Alimentação | Perde se falta injustificada | ✅ Completo |
+| Empréstimo CLT | Completo | GestaoEmprestimos | Parcela mensal | ✅ Completo |
+| Empréstimo Loja | Completo | GestaoEmprestimos | Parcela mensal | ✅ Completo |
+
+### ✅ Benefícios SEM Desconto (100% Empresa - Apenas Gerenciamento)
+
+| Benefício | Cadastro | Gestão | Desconto | Status |
+|-----------|----------|--------|----------|--------|
+| Odonto | Flag | Tab Saúde | ❌ Não desconta | ✅ Correto |
+| Seguro Vida | Flag | Tab Saúde | ❌ Não desconta | ✅ Correto |
+| Bem Mais | Flag | Tab Saúde | ❌ Não desconta | ✅ Correto |
+| Vale Alimentação (Alelo) | Flag | Tab Alimentação | ❌ Não desconta | ✅ Correto |
+
+### ⚠️ Benefícios Pendentes de Confirmação
+
+| Benefício | Status Atual | Pendência |
+|-----------|--------------|-----------|
+| Vale Carne | Flag existe | Confirmar regra (desconta ou não?) |
+| Vale Dinheiro | Sem flag | Confirmar se precisa flag ou só lançamento manual |
 
 ---
 
-## 1. 🦷 ODONTOLÓGICO
-
-### Estrutura de Dados
-```
-profissionais:
-  - odonto: boolean (flag de elegibilidade)
-  - valor_odonto: numeric (valor mensal do benefício)
-
-beneficios (mensal):
-  - valor_odonto: numeric (valor do mês)
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `CadastroProfissionais.tsx` > Aba "Benefícios"
-2. **Campos:** Checkbox `recebe_odonto` + Input `valor_odonto`
-3. **Status:** ✅ Implementado
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Saúde" > `BeneficiosSaudeTab.tsx`
-2. **Funcionalidades:**
-   - Card resumo com total de beneficiários e valor total
-   - Tabela listando profissionais com badge de valor
-   - Busca por nome/matrícula
-3. **Status:** ✅ Implementado
-
-### Jornada de DESCONTO
-1. **Onde:** `payrollCalculator.ts`
-2. **Status:** ⚠️ **NÃO INTEGRADO**
-3. **Gap:** O valor de odonto não é descontado automaticamente na folha
-
-### Ações Necessárias
-- [ ] Adicionar `descontoOdonto` ao `payrollCalculator.ts`
-- [ ] Exibir desconto no `SimuladorFolha.tsx`
-- [ ] Incluir no holerite (Dia 5)
+## Detalhamento por Categoria
 
 ---
 
-## 2. 💖 SEGURO DE VIDA
+## 🏥 BENEFÍCIOS DE SAÚDE (Não Descontam)
 
-### Estrutura de Dados
-```
-profissionais:
-  - seguro_vida: boolean
-  - valor_seguro_vida: numeric
+### 1. Odonto ✅
+**Tipo:** Gerenciamento apenas (empresa paga 100%)
 
-beneficios (mensal):
-  - valor_seguro_vida: numeric
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `CadastroProfissionais.tsx` > Aba "Benefícios"
-2. **Status:** ✅ Implementado
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Saúde"
-2. **Status:** ✅ Implementado
-
-### Jornada de DESCONTO
-1. **Status:** ⚠️ **NÃO INTEGRADO**
-2. **Gap:** Não há desconto automático em folha
-
-### Ações Necessárias
-- [ ] Adicionar ao motor de cálculo
-- [ ] Incluir no holerite
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
+| Visualização | ✅ | `BeneficiosSaudeTab.tsx` |
+| Contagem resumo | ✅ | `GestaoBeneficios.tsx` |
+| Desconto folha | ❌ N/A | **Confirmado: não desconta** |
 
 ---
 
-## 3. 🚌 VALE TRANSPORTE
+### 2. Seguro Vida ✅
+**Tipo:** Gerenciamento apenas (empresa paga 100%)
 
-### Estrutura de Dados
-```
-profissionais:
-  - vale_transporte: boolean
-  - valor_diario_rota: numeric (valor diário da passagem)
-
-beneficios (mensal):
-  - valor_diario_vt: numeric
-  - dias_trabalhados_vt: integer
-  - descontos_vt: numeric
-  - valor_total_vt: numeric
-  - valor_liquido_vt: numeric
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `CadastroProfissionais.tsx` > Aba "Benefícios"
-2. **Campos:** Checkbox `vale_transporte` + Input `valor_diario_rota`
-3. **Status:** ✅ Completo
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Vale Transporte" > `BeneficiosVTTab.tsx`
-2. **Também:** `GestaoBeneficiosDetalhado.tsx` (drill-down)
-3. **Funcionalidades:**
-   - Cards resumo por loja
-   - Cálculo automático: dias × valor_diario_rota
-   - Geração de comprovante PDF
-4. **Status:** ✅ Completo
-
-### Jornada de DESCONTO
-1. **Onde:** `payrollCalculator.ts`
-2. **Regras implementadas:**
-   - VT = dias_trabalhados × valor_diario_rota
-   - Desconto 6% do salário (limitado ao valor do VT)
-   - Não paga se: afastado, férias
-3. **Status:** ✅ **COMPLETO**
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
+| Visualização | ✅ | `BeneficiosSaudeTab.tsx` |
+| Contagem resumo | ✅ | `GestaoBeneficios.tsx` |
+| Desconto folha | ❌ N/A | **Confirmado: não desconta** |
 
 ---
 
-## 4. 🍽️ VALE REFEIÇÃO
+### 3. Bem Mais (Saúde Mental Sindicato) ✅
+**Tipo:** Gerenciamento apenas (empresa paga 100%)
 
-### Estrutura de Dados
-```
-profissionais:
-  - vale_refeicao: boolean
-
-beneficios (mensal):
-  - valor_diario_vr: numeric (padrão R$ 25,00)
-  - dias_trabalhados_vr: integer
-  - valor_total_vr: numeric
-  - valor_liquido_vr: numeric
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `CadastroProfissionais.tsx` > Aba "Benefícios"
-2. **Status:** ✅ Completo
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Alimentação" > `BeneficiosAlimentacaoTab.tsx`
-2. **Regra de negócio:** Somente departamento COMERCIAL recebe VR
-3. **Status:** ✅ Completo
-
-### Jornada de DESCONTO
-1. **Onde:** `payrollCalculator.ts`
-2. **Regras:**
-   - VR = dias_trabalhados × R$ 25,00
-   - Desconta faltas, atestados, férias
-3. **Status:** ✅ **COMPLETO**
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
+| Visualização | ✅ | `BeneficiosSaudeTab.tsx` |
+| Contagem resumo | ✅ | `GestaoBeneficios.tsx` |
+| Desconto folha | ❌ N/A | **Confirmado: não desconta** |
 
 ---
 
-## 5. 💳 VALE ALIMENTAÇÃO (ALELO)
+## 🍽️ BENEFÍCIOS DE ALIMENTAÇÃO
 
-### Estrutura de Dados
-```
-profissionais:
-  - vale_alimentacao: boolean
-  - valor_vale_alimentacao: numeric
+### 4. Vale Alimentação (Alelo) ✅
+**Tipo:** Gerenciamento apenas (empresa paga 100%)
 
-beneficios (mensal):
-  - valor_vale_alimentacao: numeric
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `CadastroProfissionais.tsx` > Aba "Benefícios"
-2. **Status:** ✅ Implementado
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Alimentação"
-2. **Status:** ✅ Implementado
-
-### Jornada de DESCONTO
-1. **Status:** ⚠️ **NÃO INTEGRADO**
-2. **Observação:** Parece ser um benefício sem desconto (empresa paga 100%)
-
-### Ações Necessárias
-- [ ] Confirmar regra de negócio: desconta ou não?
-- [ ] Se desconta, adicionar ao motor de cálculo
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
+| Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
+| Contagem resumo | ✅ | `GestaoBeneficios.tsx` |
+| Desconto folha | ❌ N/A | **Confirmado: não desconta** |
 
 ---
 
-## 6. 🛒 CESTA BÁSICA
+### 5. Vale Refeição ✅
+**Tipo:** Gerenciamento + Cálculo automático
 
-### Estrutura de Dados
-```
-profissionais:
-  - cesta_basica: boolean
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
+| Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
+| Cálculo valor | ✅ | `payrollCalculator.ts` |
+| Regra | ✅ | dias trabalhados × R$25,00 |
 
-beneficios (mensal):
-  - elegivel_cesta: boolean
-  - valor_cesta: numeric (padrão R$ 180,00)
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `CadastroProfissionais.tsx` > Aba "Benefícios"
-2. **Status:** ✅ Completo
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Alimentação"
-2. **Status:** ✅ Completo
-
-### Jornada de DESCONTO
-1. **Onde:** `payrollCalculator.ts`
-2. **Regras:**
-   - Valor fixo R$ 180,00
-   - **PERDE se:** qualquer falta INJUSTIFICADA no mês
-   - **PERDE se:** admitido após dia 15 do mês
-   - **MANTÉM se:** apenas atestados (faltas justificadas)
-3. **Status:** ✅ **COMPLETO**
-
----
-
-## 7. 🧠 BEM MAIS (SAÚDE MENTAL SINDICATO)
-
-### Estrutura de Dados
-```
-profissionais:
-  - bem_mais: boolean
-  - valor_bem_mais: numeric
-
-beneficios (mensal):
-  - valor_bem_mais: numeric
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `CadastroProfissionais.tsx` > Aba "Benefícios"
-2. **Status:** ✅ Implementado
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Saúde"
-2. **Funcionalidades:**
-   - Card com total de beneficiários
-   - Tabela com valores individuais
-3. **Status:** ✅ Implementado
-
-### Jornada de DESCONTO
-1. **Status:** ⚠️ **NÃO INTEGRADO**
-2. **Gap:** Não desconta automaticamente em folha
-
-### Ações Necessárias
-- [ ] Confirmar: desconto é 100% do funcionário?
-- [ ] Adicionar ao payrollCalculator se for desconto
-
----
-
-## 8. 🥩 VALE CARNE
-
-### Estrutura de Dados
-```
-profissionais:
-  - vale_carne: boolean
-  - valor_vale_carne: numeric
-
-beneficios (mensal):
-  - valor_vale_carne: numeric
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `CadastroProfissionais.tsx` > Aba "Benefícios"
-2. **Status:** ✅ Implementado
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Alimentação"
-2. **Status:** ✅ Implementado
-
-### Jornada de DESCONTO
-1. **Status:** ⚠️ **NÃO INTEGRADO**
-2. **Observação:** Parece ser benefício sem desconto
-
-### Ações Necessárias
-- [ ] Confirmar regra de negócio
-
----
-
-## 9. 💵 VALE DINHEIRO
-
-### Estrutura de Dados
-```
-beneficios (mensal):
-  - valor_vale_dinheiro: numeric
-
-⚠️ NÃO EXISTE flag no cadastro de profissionais
-```
-
-### Jornada de CADASTRO
-1. **Status:** ⚠️ **INCOMPLETO**
-2. **Gap:** Não há flag no cadastro do profissional
-3. **Comportamento atual:** Lançado manualmente na tabela `beneficios`
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoBeneficios.tsx` > Tab "Alimentação"
-2. **Status:** ✅ Exibe valores cadastrados
-
-### Jornada de DESCONTO
-1. **Status:** ⚠️ **NÃO INTEGRADO**
-
-### Ações Necessárias
-- [ ] Adicionar flag `vale_dinheiro` na tabela profissionais?
-- [ ] Ou manter como lançamento mensal avulso?
-- [ ] Definir se é benefício ou adiantamento
-
----
-
-## 10. 💼 EMPRÉSTIMO CLT (CONSIGNADO)
-
-### Estrutura de Dados
-```
-emprestimos:
-  - tipo: 'clt'
-  - valor_parcela: numeric (valor fixo mensal)
-  - data_inicio: date
-  - status: 'ativo' | 'pausado' | 'quitado'
-  - saldo_devedor: numeric (não aplicável - empresa não sabe)
-  - observacoes: text
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `GestaoEmprestimos.tsx` > "Novo Empréstimo"
-2. **Campos:** Funcionário, Tipo CLT, Valor Parcela, Data Início
-3. **Status:** ✅ Completo
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoEmprestimos.tsx` > Tab "Consignados"
-2. **Funcionalidades:**
-   - Lista de empréstimos ativos/pausados/quitados
-   - Pausar/Reativar desconto
-   - Marcar como quitado
-   - Histórico de alterações
-3. **Status:** ✅ Completo
-
-### Jornada de DESCONTO
-1. **Onde:** `payrollCalculator.ts`
-2. **Regras:**
-   - Desconta valor_parcela fixo no Dia 5
-   - Se status = 'pausado', não desconta
-   - Total descontado = parcelas × valor_parcela
-3. **Status:** ✅ **COMPLETO**
-
----
-
-## 11. 🏪 EMPRÉSTIMO LOJA/EMPRESA
-
-### Estrutura de Dados
-```
-emprestimos:
-  - tipo: 'empresa'
-  - valor_total: numeric
-  - numero_parcelas: integer
-  - valor_parcela: numeric
-  - parcelas_pagas: integer
-  - saldo_devedor: numeric
-  - data_inicio: date
-  - status: 'ativo' | 'quitado'
-```
-
-### Jornada de CADASTRO
-1. **Onde:** `GestaoEmprestimos.tsx` > "Novo Empréstimo"
-2. **Campos:** Funcionário, Tipo Empresa, Valor Total, Nº Parcelas, Data Início
-3. **Cálculo automático:** valor_parcela = valor_total / numero_parcelas
-4. **Status:** ✅ Completo
-
-### Jornada de GERENCIAMENTO
-1. **Onde:** `GestaoEmprestimos.tsx` > Tab "Empresa"
-2. **Funcionalidades:**
-   - Visualização de parcelas (pagas/pendentes)
-   - Registrar pagamento de parcela
-   - Atualizar saldo devedor
-   - Histórico de alterações (auditoria)
-   - Progress bar de quitação
-3. **Status:** ✅ Completo
-
-### Jornada de DESCONTO
-1. **Onde:** `payrollCalculator.ts`
-2. **Regras:**
-   - Desconta valor_parcela no Dia 5
-   - Atualiza parcelas_pagas automaticamente no fechamento
-   - Quando parcelas_pagas = numero_parcelas → status = 'quitado'
-3. **Status:** ✅ **COMPLETO**
-
----
-
-## 🎯 Prioridades de Implementação
-
-### Alta Prioridade (Afetam Folha)
-1. **Odonto** - Integrar desconto no payrollCalculator
-2. **Seguro Vida** - Integrar desconto no payrollCalculator
-3. **Bem Mais** - Integrar desconto no payrollCalculator
-
-### Média Prioridade (Benefícios sem Desconto)
-4. **Vale Alimentação (Alelo)** - Confirmar regra
-5. **Vale Carne** - Confirmar regra
-6. **Vale Dinheiro** - Definir modelo de gestão
-
-### Baixa Prioridade (Já Funcionais)
-- Vale Transporte ✅
-- Vale Refeição ✅
-- Cesta Básica ✅
-- Empréstimo CLT ✅
-- Empréstimo Empresa ✅
-
----
-
-## 📐 Proposta de Arquitetura Unificada
-
-### Centralizar Configurações
+**Regra implementada:**
 ```typescript
-// configuracoes_sistema ou novo arquivo de constantes
-const BENEFICIOS_CONFIG = {
-  VR: { valorDiario: 25.00, desconta: false },
-  VT: { percentualDesconto: 6, desconta: true },
-  CESTA: { valorFixo: 180.00, desconta: false },
-  ODONTO: { desconta: true },
-  SEGURO_VIDA: { desconta: true },
-  BEM_MAIS: { desconta: true },
-  VA_ALELO: { desconta: false },
-  VALE_CARNE: { desconta: false },
-  VALE_DINHEIRO: { desconta: false },
-};
+valorVR = arredondarValor(diasTrabalhados * config.valorVR); // R$25/dia
 ```
 
-### Atualizar payrollCalculator
+---
+
+### 6. Cesta Básica ✅
+**Tipo:** Gerenciamento + Elegibilidade automática
+
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
+| Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
+| Valor fixo | ✅ | R$180,00 |
+| Regra perda | ✅ | Falta injustificada OU admissão após dia 15 |
+
+**Regra implementada:**
 ```typescript
-// Adicionar novos campos no resultado
-export interface ResultadoCalculo {
-  // ... campos existentes
-  descontoOdonto: number;
-  descontoSeguroVida: number;
-  descontoBemMais: number;
-  // Para exibição (não desconta)
-  valorValeAlimentacao: number;
-  valorValeCarne: number;
-  valorValeDinheiro: number;
+// Perde se falta INJUSTIFICADA (atestado mantém)
+if (profissional.faltas > 0) {
+  recebeCesta = false;
+}
+// Perde se admitido após dia 15
+if (mesmaCompetencia && dataAdmissao.getDate() > 15) {
+  recebeCesta = false;
 }
 ```
 
 ---
 
-## 📝 Conclusão
+### 7. Vale Carne ⚠️
+**Tipo:** A confirmar
 
-O sistema possui **estrutura de dados completa** para todos os benefícios, mas apenas **VT, VR, Cesta e Empréstimos** estão integrados ao motor de cálculo de folha.
+| Aspecto | Status | Pendência |
+|---------|--------|-----------|
+| Flag no cadastro | ✅ | `vale_carne` existe |
+| Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
+| Regra desconto | ❓ | **Confirmar: desconta ou 100% empresa?** |
 
-Os benefícios de **Saúde (Odonto, Seguro Vida, Bem Mais)** precisam ser integrados ao `payrollCalculator.ts` para que os descontos apareçam automaticamente no Simulador e nos Holerites.
+---
+
+### 8. Vale Dinheiro ⚠️
+**Tipo:** A confirmar
+
+| Aspecto | Status | Pendência |
+|---------|--------|-----------|
+| Flag no cadastro | ❌ | Não existe flag |
+| Lançamento manual | ✅ | Via `lancamentos_financeiros` |
+| Regra | ❓ | **Confirmar: precisa flag ou só manual?** |
+
+---
+
+## 🚌 TRANSPORTE
+
+### 9. Vale Transporte ✅
+**Tipo:** Gerenciamento + Desconto automático
+
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
+| Valor diário rota | ✅ | Campo `valor_diario_rota` |
+| Visualização | ✅ | `BeneficiosVTTab.tsx` com drill-down |
+| Cálculo valor | ✅ | dias trabalhados × valor_diário |
+| Desconto 6% | ✅ | 6% do salário (máximo = valor VT) |
+
+**Regra implementada:**
+```typescript
+// VT = dias × valor diário da rota
+valorVT = arredondarValor(diasTrabalhados * profissional.valorPassagem);
+
+// Desconto VT 6% (limitado ao valor do VT)
+descontoVT6Porcento = Math.min(
+  arredondarValor(profissional.salario * 0.06),
+  valorVT
+);
+```
+
+---
+
+## 💰 EMPRÉSTIMOS
+
+### 10. Empréstimo CLT (Consignado) ✅
+**Tipo:** Gerenciamento completo + Desconto automático
+
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Cadastro | ✅ | `GestaoEmprestimos.tsx` |
+| Histórico | ✅ | `HistoricoEmprestimos.tsx` |
+| Visualização | ✅ | `EmprestimosResumoTab.tsx` |
+| Desconto folha | ✅ | Valor da parcela no Dia 5 |
+| Timeline | ✅ | `EmprestimosTimeline.tsx` |
+
+---
+
+### 11. Empréstimo Loja/Empresa ✅
+**Tipo:** Gerenciamento completo + Desconto automático
+
+| Aspecto | Status | Localização |
+|---------|--------|-------------|
+| Cadastro | ✅ | `GestaoEmprestimos.tsx` |
+| Controle parcelas | ✅ | Pagas vs pendentes |
+| Saldo devedor | ✅ | Atualização automática |
+| Histórico | ✅ | Auditoria de alterações |
+| Desconto folha | ✅ | Valor da parcela no Dia 5 |
+
+---
+
+## ✅ Conclusão
+
+### Implementação Completa (11/11 benefícios mapeados)
+
+**COM desconto automático (5):**
+- ✅ Vale Transporte (6% limitado)
+- ✅ Vale Refeição (dias × R$25)
+- ✅ Cesta Básica (perde por falta)
+- ✅ Empréstimo CLT
+- ✅ Empréstimo Loja
+
+**SEM desconto - só gerenciamento (4):**
+- ✅ Odonto
+- ✅ Seguro Vida
+- ✅ Bem Mais
+- ✅ Vale Alimentação (Alelo)
+
+**Pendentes confirmação (2):**
+- ⚠️ Vale Carne
+- ⚠️ Vale Dinheiro
+
+---
+*Documento atualizado em: 28/01/2026*
