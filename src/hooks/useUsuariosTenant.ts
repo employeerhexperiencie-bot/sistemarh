@@ -19,10 +19,12 @@ export function useUsuariosTenant() {
       setLoading(true);
       
       // Buscar roles do tenant
+      // Buscar roles do tenant, excluindo super_admin (desenvolvedores)
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('id, user_id, nome, role, ativo')
-        .eq('ativo', true);
+        .eq('ativo', true)
+        .neq('role', 'super_admin');
 
       if (rolesError) {
         console.error('Erro ao buscar roles:', rolesError);
