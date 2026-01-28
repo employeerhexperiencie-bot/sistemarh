@@ -8,8 +8,10 @@
  *    - NÃO recebe se: Em férias, Afastado por acidente, +10 faltas no mês
  *    - Admitido após dia 10: recebe 40% mesmo assim
  * 
- * 2. DIA 5 (Saldo - 60% menos descontos):
- *    - Salário base - Dia 20 - Descontos (empréstimos, vales, faltas, pensão)
+ * 2. DIA 5 (Saldo - 60% do salário):
+ *    - Salário base - Dia 20 - Descontos OPERACIONAIS (empréstimos, vales, faltas, pensão)
+ *    - NÃO desconta benefícios (VT, VR, Cesta) - estes são para PAGAR ao profissional
+ *    - NÃO desconta encargos trabalhistas (INSS, IRRF) - calculados separadamente pela contabilidade
  * 
  * 3. AFASTAMENTOS:
  *    - MATERNIDADE: 40% do salário (empresa paga, INSS reembolsa)
@@ -18,13 +20,15 @@
  *    - Nos primeiros 15 dias, empresa paga 100%
  * 
  * 4. VT (Vale Transporte):
+ *    - APENAS PARA CONTROLE DE QUANTO PAGAR ao profissional
  *    - Calculado: dias trabalhados × valor_diario_rota
  *    - Não paga se: afastado, férias
- *    - Desconto VT na folha: 6% do salário (máx. valor VT)
+ *    - SEM DESCONTO do profissional (empresa paga integralmente)
  * 
  * 5. VR (Vale Refeição):
  *    - Calculado: dias trabalhados × R$ 25,00
  *    - Não paga se: afastado, férias
+ *    - Valor a PAGAR para o profissional
  * 
  * 6. CESTA BÁSICA:
  *    - Valor fixo: R$ 180,00
@@ -239,23 +243,21 @@ export function calcularFolhaProfissional(
     detalhes.push(`Dia 20: Padrão ${config.percentualDia20}% - R$ ${valorDia20.toFixed(2)}`);
   }
   
-  // 5. Calcular VT
+  // 5. Calcular VT (APENAS para controle de quanto PAGAR ao profissional)
+  // IMPORTANTE: VT não é descontado do salário - empresa paga integralmente
   let valorVT = 0;
   if (profissional.recebeVT && profissional.status === 'ativo' && diasTrabalhados > 0) {
     valorVT = arredondarValor(diasTrabalhados * profissional.valorPassagem);
-    detalhes.push(`VT: ${diasTrabalhados} dias × R$ ${profissional.valorPassagem.toFixed(2)} = R$ ${valorVT.toFixed(2)}`);
+    detalhes.push(`VT a PAGAR: ${diasTrabalhados} dias × R$ ${profissional.valorPassagem.toFixed(2)} = R$ ${valorVT.toFixed(2)}`);
   } else if (profissional.recebeVT) {
     detalhes.push(`VT: R$ 0,00 (${profissional.status !== 'ativo' ? 'status não-ativo' : 'sem dias trabalhados'})`);
   }
   
-  // 6. Desconto VT 6% (limitado ao valor do VT)
-  let descontoVT6Porcento = 0;
+  // 6. Desconto VT 6% - REMOVIDO conforme regra de negócio
+  // VT é 100% custeado pela empresa, sem desconto do profissional
+  const descontoVT6Porcento = 0;
   if (valorVT > 0) {
-    descontoVT6Porcento = Math.min(
-      arredondarValor(profissional.salario * 0.06),
-      valorVT
-    );
-    detalhes.push(`Desconto VT 6%: R$ ${descontoVT6Porcento.toFixed(2)} (limitado ao valor VT)`);
+    detalhes.push(`VT: Sem desconto do profissional (empresa paga integral)`);
   }
   
   // 7. Calcular VR
@@ -289,29 +291,33 @@ export function calcularFolhaProfissional(
     detalhes.push(`Cesta: R$ ${valorCesta.toFixed(2)}`);
   }
   
-  // 9. Calcular descontos
+  // 9. Calcular descontos OPERACIONAIS (não inclui benefícios nem encargos)
+  // IMPORTANTE: Dia 5 NÃO desconta benefícios (VT, VR, Cesta) nem encargos (INSS, IRRF)
   const descontoFaltas = arredondarValor(profissional.faltas * valorDia);
   if (descontoFaltas > 0) {
     detalhes.push(`Desconto faltas: ${profissional.faltas} × R$ ${valorDia.toFixed(2)} = R$ ${descontoFaltas.toFixed(2)}`);
   }
   
-  // Descontos de benefícios adicionais (Vale Carne, Vale Dinheiro, etc.)
+  // Descontos manuais/adicionais (Vale Carne, Vale Dinheiro - são compras do profissional)
   const valeCarne = profissional.valeCarne || 0;
   const valeDinheiro = profissional.valeDinheiro || 0;
-  const valeAlimentacao = profissional.valeAlimentacao || 0;
   const outrosDescontos = profissional.outrosDescontos || 0;
-  const descontosAdicionais = valeCarne + valeDinheiro + valeAlimentacao + outrosDescontos;
+  // Nota: valeAlimentacao (Alelo) é benefício pago ao profissional, não desconto
+  const descontosAdicionais = valeCarne + valeDinheiro + outrosDescontos;
   
-  if (valeCarne > 0) detalhes.push(`Vale Carne: R$ ${valeCarne.toFixed(2)}`);
-  if (valeDinheiro > 0) detalhes.push(`Vale Dinheiro: R$ ${valeDinheiro.toFixed(2)}`);
-  if (valeAlimentacao > 0) detalhes.push(`Vale Alimentação: R$ ${valeAlimentacao.toFixed(2)}`);
+  if (valeCarne > 0) detalhes.push(`Vale Carne (compra): R$ ${valeCarne.toFixed(2)}`);
+  if (valeDinheiro > 0) detalhes.push(`Vale Dinheiro (compra): R$ ${valeDinheiro.toFixed(2)}`);
   if (outrosDescontos > 0) detalhes.push(`Outros Descontos: R$ ${outrosDescontos.toFixed(2)}`);
   
-  // Total de descontos (vales + empréstimos + pensão + faltas + descontos adicionais)
+  // Total de descontos OPERACIONAIS (vales comprados + empréstimos + pensão + faltas)
+  // NÃO inclui: VT, VR, Cesta (são pagamentos AO profissional), INSS, IRRF (encargos)
   const totalDescontos = profissional.vales + profissional.emprestimos + profissional.pensao + descontoFaltas + descontosAdicionais;
-  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, faltas: ${descontoFaltas}, adicionais: ${descontosAdicionais})`);
+  detalhes.push(`Total descontos operacionais: R$ ${totalDescontos.toFixed(2)} (vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, faltas: ${descontoFaltas}, adicionais: ${descontosAdicionais})`);
   
   // 10. Calcular salário líquido (Dia 5)
+  // Fórmula: Salário Base - Dia 20 - Descontos Operacionais
+  // NÃO desconta benefícios (VT, VR, Cesta são PAGOS ao profissional)
+  // NÃO desconta encargos (INSS, IRRF calculados pela contabilidade)
   let salarioBase = profissional.salario;
   
   // Se está em afastamento, usar valor do afastamento como base
@@ -320,11 +326,11 @@ export function calcularFolhaProfissional(
     detalhes.push(`Base cálculo ajustada para afastamento: R$ ${salarioBase.toFixed(2)}`);
   }
   
-  const salarioAposDescontos = salarioBase - descontoFaltas;
   const valorDia20Final = recebeDia20 ? valorDia20 : 0;
-  const salarioLiquido = arredondarValor(Math.max(0, salarioAposDescontos - valorDia20Final - totalDescontos + descontoFaltas));
+  // Salário líquido = Base - Dia 20 - Descontos operacionais (faltas já estão em totalDescontos)
+  const salarioLiquido = arredondarValor(Math.max(0, salarioBase - valorDia20Final - totalDescontos));
   
-  detalhes.push(`Salário líquido (Dia 5): R$ ${salarioLiquido.toFixed(2)}`);
+  detalhes.push(`Salário líquido (Dia 5): R$ ${salarioLiquido.toFixed(2)} = Base(${salarioBase.toFixed(2)}) - Dia20(${valorDia20Final.toFixed(2)}) - Descontos(${totalDescontos.toFixed(2)})`);
   
   // 11. Calcular total do mês
   const totalMes = arredondarValor(
