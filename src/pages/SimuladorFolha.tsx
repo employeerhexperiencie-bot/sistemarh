@@ -202,6 +202,8 @@ export default function SimuladorFolha() {
     vales: Record<string, number>;
     emprestimos: Record<string, number>;
     afastamentos: Record<string, { tipo: string; dias: number }>;
+    beneficiosAdicionais: Record<string, { valeCarne: number; valeDinheiro: number; valeAlimentacao: number }>;
+    lancamentosFinanceiros: Record<string, number>;
     isLoading: boolean;
   }>({
     faltas: {},
@@ -209,6 +211,8 @@ export default function SimuladorFolha() {
     vales: {},
     emprestimos: {},
     afastamentos: {},
+    beneficiosAdicionais: {},
+    lancamentosFinanceiros: {},
     isLoading: true,
   });
 
@@ -239,7 +243,7 @@ export default function SimuladorFolha() {
       const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
 
       // Buscar todos os dados em paralelo
-      const [faltasRes, feriasRes, valesRes, emprestimosRes, afastamentosRes] = await Promise.all([
+      const [faltasRes, feriasRes, valesRes, emprestimosRes, afastamentosRes, beneficiosRes, lancamentosRes] = await Promise.all([
         // Faltas do mês
         supabase
           .from('faltas')
@@ -273,7 +277,20 @@ export default function SimuladorFolha() {
           .select('profissional_id, tipo, data_inicio')
           .eq('status', 'ativo')
           .lte('data_inicio', fimMes)
-          .or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`)
+          .or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`),
+          
+        // Benefícios do mês (Vale Carne, Vale Dinheiro, Vale Alimentação)
+        supabase
+          .from('beneficios')
+          .select('profissional_id, valor_vale_carne, valor_vale_dinheiro, valor_vale_alimentacao')
+          .eq('mes_referencia', inicioMes),
+          
+        // Lançamentos financeiros do mês (descontos manuais)
+        supabase
+          .from('lancamentos_financeiros')
+          .select('profissional_id, tipo, valor')
+          .eq('mes_referencia', inicioMes)
+          .eq('tipo', 'desconto')
       ]);
 
       // Processar faltas
@@ -331,6 +348,24 @@ export default function SimuladorFolha() {
         const diasAfastamento = Math.max(0, Math.ceil((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24)));
         afastamentosMap[a.profissional_id] = { tipo: a.tipo, dias: diasAfastamento };
       });
+      
+      // Processar benefícios adicionais (vale carne, vale dinheiro, vale alimentação)
+      const beneficiosAdicionaisMap: Record<string, { valeCarne: number; valeDinheiro: number; valeAlimentacao: number }> = {};
+      beneficiosRes.data?.forEach((b: any) => {
+        if (!b.profissional_id) return;
+        beneficiosAdicionaisMap[b.profissional_id] = {
+          valeCarne: Number(b.valor_vale_carne || 0),
+          valeDinheiro: Number(b.valor_vale_dinheiro || 0),
+          valeAlimentacao: Number(b.valor_vale_alimentacao || 0),
+        };
+      });
+      
+      // Processar lançamentos financeiros (descontos manuais)
+      const lancamentosMap: Record<string, number> = {};
+      lancamentosRes.data?.forEach((l: any) => {
+        if (!l.profissional_id) return;
+        lancamentosMap[l.profissional_id] = (lancamentosMap[l.profissional_id] || 0) + Number(l.valor);
+      });
 
       setDadosCompetencia({
         faltas: faltasMap,
@@ -338,6 +373,8 @@ export default function SimuladorFolha() {
         vales: valesMap,
         emprestimos: emprestimosMap,
         afastamentos: afastamentosMap,
+        beneficiosAdicionais: beneficiosAdicionaisMap,
+        lancamentosFinanceiros: lancamentosMap,
         isLoading: false,
       });
     } catch (error) {
@@ -393,6 +430,12 @@ export default function SimuladorFolha() {
         // Dados reais da competência
         const faltasProf = dadosCompetencia.faltas[p.id] || { injustificadas: 0, justificadas: 0 };
         
+        // Benefícios adicionais (Vale Carne, Vale Dinheiro, Vale Alimentação)
+        const benefAdicionais = dadosCompetencia.beneficiosAdicionais[p.id] || { valeCarne: 0, valeDinheiro: 0, valeAlimentacao: 0 };
+        
+        // Lançamentos financeiros (descontos manuais)
+        const lancamentosDesc = dadosCompetencia.lancamentosFinanceiros[p.id] || 0;
+        
         return {
           id: p.id,
           nome: p.nome,
@@ -417,6 +460,11 @@ export default function SimuladorFolha() {
           vales: dadosCompetencia.vales[p.id] || 0,
           emprestimos: dadosCompetencia.emprestimos[p.id] || 0,
           pensao: p.pensao_alimenticia || 0,
+          // Novos campos de descontos adicionais
+          valeCarne: benefAdicionais.valeCarne,
+          valeDinheiro: benefAdicionais.valeDinheiro,
+          valeAlimentacao: benefAdicionais.valeAlimentacao,
+          outrosDescontos: lancamentosDesc,
         };
       })
     : [];
