@@ -691,7 +691,10 @@ export default function GestaoLancamentos() {
               <Label>Profissional *</Label>
               <ProfissionalAutocomplete
                 value={formData.profissional_id}
-                onChange={(id) => setFormData(prev => ({ ...prev, profissional_id: id }))}
+                onChange={(matricula, profissionalId) => setFormData(prev => ({ 
+                  ...prev, 
+                  profissional_id: profissionalId || '' 
+                }))}
                 placeholder="Buscar por nome ou matrícula"
               />
             </div>
