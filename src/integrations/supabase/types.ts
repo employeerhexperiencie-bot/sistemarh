@@ -2117,12 +2117,14 @@ export type Database = {
           ativo: boolean | null
           cnpj: string | null
           created_at: string | null
+          data_bloqueio: string | null
           email: string | null
           endereco: string | null
           id: string
           limite_profissionais: number | null
           limite_storage_mb: number | null
           limite_usuarios: number | null
+          motivo_bloqueio: string | null
           nome: string
           plano: string | null
           telefone: string | null
@@ -2132,12 +2134,14 @@ export type Database = {
           ativo?: boolean | null
           cnpj?: string | null
           created_at?: string | null
+          data_bloqueio?: string | null
           email?: string | null
           endereco?: string | null
           id?: string
           limite_profissionais?: number | null
           limite_storage_mb?: number | null
           limite_usuarios?: number | null
+          motivo_bloqueio?: string | null
           nome: string
           plano?: string | null
           telefone?: string | null
@@ -2147,12 +2151,14 @@ export type Database = {
           ativo?: boolean | null
           cnpj?: string | null
           created_at?: string | null
+          data_bloqueio?: string | null
           email?: string | null
           endereco?: string | null
           id?: string
           limite_profissionais?: number | null
           limite_storage_mb?: number | null
           limite_usuarios?: number | null
+          motivo_bloqueio?: string | null
           nome?: string
           plano?: string | null
           telefone?: string | null
@@ -2219,8 +2225,11 @@ export type Database = {
           created_at: string | null
           id: string
           modulo: string
+          pode_aprovar: boolean | null
+          pode_convidar_usuarios: boolean | null
           pode_deletar: boolean | null
           pode_editar: boolean | null
+          pode_exportar: boolean | null
           pode_visualizar: boolean | null
           tenant_id: string
           updated_at: string | null
@@ -2230,8 +2239,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           modulo: string
+          pode_aprovar?: boolean | null
+          pode_convidar_usuarios?: boolean | null
           pode_deletar?: boolean | null
           pode_editar?: boolean | null
+          pode_exportar?: boolean | null
           pode_visualizar?: boolean | null
           tenant_id?: string
           updated_at?: string | null
@@ -2241,8 +2253,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           modulo?: string
+          pode_aprovar?: boolean | null
+          pode_convidar_usuarios?: boolean | null
           pode_deletar?: boolean | null
           pode_editar?: boolean | null
+          pode_exportar?: boolean | null
           pode_visualizar?: boolean | null
           tenant_id?: string
           updated_at?: string | null
@@ -2412,6 +2427,7 @@ export type Database = {
       }
       is_first_user: { Args: never; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_tenant_active: { Args: { _tenant_id: string }; Returns: boolean }
       log_security_event: {
         Args: {
           _categoria: string
@@ -2426,6 +2442,10 @@ export type Database = {
       require_auth: { Args: never; Returns: boolean }
       user_belongs_to_tenant: {
         Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_has_permission: {
+        Args: { _acao?: string; _modulo: string; _user_id: string }
         Returns: boolean
       }
     }
