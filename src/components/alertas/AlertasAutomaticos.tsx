@@ -14,13 +14,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { 
   Bell, AlertTriangle, Calendar, FileText, Stethoscope, 
   Clock, CheckCircle, XCircle, Building2, User, ChevronRight,
-  Filter, Download, RefreshCw, Eye, CheckCircle2, Info, Loader2, ChevronDown, ChevronUp
+  Filter, Download, RefreshCw, Eye, CheckCircle2, Info, Loader2, ChevronDown, ChevronUp,
+  UserPlus, Send
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { DelegarAlertaModal, DelegarAlertaData } from './DelegarAlertaModal';
 
 export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento' | 'emprestimo';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
@@ -90,11 +93,13 @@ interface AlertaItemProps {
   onMarcarLido?: (id: string) => void;
   onResolver?: (id: string) => void;
   onAcaoRapida?: (alerta: Alerta, acao: string) => void;
+  onDelegar?: (alerta: Alerta) => void;
   resolvendo?: string | null;
   compact?: boolean;
+  isAdmin?: boolean;
 }
 
-export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, resolvendo, compact = false }: AlertaItemProps) {
+export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, onDelegar, resolvendo, compact = false, isAdmin = false }: AlertaItemProps) {
   const navigate = useNavigate();
   const nivelConfig = getNivelConfig(alerta.nivel);
   const tipoConfig = getTipoConfig(alerta.tipo);
@@ -230,6 +235,18 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, res
               </Button>
             ))
           )}
+          {/* Botão Delegar - apenas para admins */}
+          {isAdmin && onDelegar && !alerta.resolvido && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelegar(alerta)}
+              className="h-7 text-xs border-primary/50 text-primary hover:bg-primary/10"
+            >
+              <UserPlus className="h-3 w-3 mr-1" />
+              Delegar
+            </Button>
+          )}
           {alerta.acaoUrl && (
             <Button variant="ghost" size="sm" onClick={() => navigate(alerta.acaoUrl!)}>
               <Eye className="h-4 w-4" />
@@ -263,6 +280,9 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, res
 
 export function CentralAlertas() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  
   const [loading, setLoading] = useState(true);
   const [resolvendo, setResolvendo] = useState<string | null>(null);
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
@@ -274,6 +294,10 @@ export function CentralAlertas() {
   const [alertasSistema, setAlertasSistema] = useState<any[]>([]);
   const [lojas, setLojas] = useState<string[]>([]);
   const [listaAberta, setListaAberta] = useState(true);
+  
+  // Modal de delegação
+  const [showDelegarModal, setShowDelegarModal] = useState(false);
+  const [alertaParaDelegar, setAlertaParaDelegar] = useState<Alerta | null>(null);
 
   useEffect(() => {
     loadData();
@@ -665,6 +689,58 @@ export function CentralAlertas() {
     }
   };
 
+  // Handler para delegar alerta
+  const handleDelegar = (alerta: Alerta) => {
+    setAlertaParaDelegar(alerta);
+    setShowDelegarModal(true);
+  };
+
+  // Handler para criar ocorrência a partir do alerta
+  const handleDelegarSubmit = async (data: DelegarAlertaData) => {
+    try {
+      // Criar pendência/ocorrência no banco
+      const { error } = await supabase
+        .from('pendencias')
+        .insert({
+          tipo: data.alerta.tipo,
+          titulo: `[Alerta] ${data.alerta.titulo}`,
+          descricao: `${data.alerta.descricao}\n\nLoja: ${data.alerta.loja}\nProfissional: ${data.alerta.profissional || 'N/A'}\n\n${data.observacoes}`,
+          prioridade: data.prioridade,
+          status: 'pendente',
+          executor_id: data.executor_id,
+          criado_por: user?.id,
+          data_prazo: data.data_prazo,
+          profissional_id: null, // Pode ser melhorado para buscar o ID do profissional
+          historico: [{
+            acao: 'delegado_do_alerta',
+            usuario: user?.name || user?.email,
+            data: new Date().toISOString(),
+            alerta_original: data.alerta.titulo,
+          }],
+        });
+
+      if (error) throw error;
+
+      toast.success('Alerta delegado como ocorrência!');
+      
+      // Marcar alerta como resolvido localmente
+      setAlertas(prev => prev.map(a => 
+        a.id === data.alerta.id ? { ...a, resolvido: true } : a
+      ));
+
+      // Se for alerta do BD, remover
+      if (data.alerta.id.startsWith('db-')) {
+        const dbId = data.alerta.id.replace('db-', '');
+        await supabase.from('alertas_sistema').delete().eq('id', dbId);
+      }
+
+    } catch (error) {
+      console.error('Erro ao delegar alerta:', error);
+      toast.error('Erro ao delegar alerta');
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -893,7 +969,9 @@ export function CentralAlertas() {
                           onMarcarLido={handleMarcarLido}
                           onResolver={handleResolver}
                           onAcaoRapida={handleAcaoRapida}
+                          onDelegar={handleDelegar}
                           resolvendo={resolvendo}
+                          isAdmin={isAdmin}
                         />
                       ))
                     )}
@@ -904,6 +982,14 @@ export function CentralAlertas() {
           </CollapsibleContent>
         </Card>
       </Collapsible>
+
+      {/* Modal de Delegação */}
+      <DelegarAlertaModal
+        open={showDelegarModal}
+        onOpenChange={setShowDelegarModal}
+        alerta={alertaParaDelegar}
+        onDelegar={handleDelegarSubmit}
+      />
     </div>
   );
 }
