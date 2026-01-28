@@ -197,9 +197,14 @@ Deno.serve(async (req) => {
     const lojaIdMap = new Map<string, string>();
     const lojaNomeNormalizado = new Map<string, string>();
 
-    const normalizarNome = (nome: string) => {
-      return nome.trim().toLowerCase().replace(/\s+/g, ' ');
-    };
+  const normalizarNome = (nome: string) => {
+    return nome.trim().toLowerCase().replace(/\s+/g, ' ');
+  };
+
+  // SECURITY: Escape special characters for ILIKE patterns to prevent unintended matching
+  const escapeLikePattern = (str: string): string => {
+    return str.replace(/[%_\\]/g, '\\$&');
+  };
 
     const parseBoolean = (value: any): boolean => {
       if (typeof value === 'boolean') return value;
@@ -466,10 +471,12 @@ Deno.serve(async (req) => {
         }
         
         if (!profId && exame.nome) {
+          // SECURITY: Escape special ILIKE characters to prevent pattern matching attacks
+          const escapedName = escapeLikePattern(exame.nome.trim());
           const { data } = await supabase
             .from('profissionais')
             .select('id')
-            .ilike('nome', `%${exame.nome.trim()}%`)
+            .ilike('nome', `%${escapedName}%`)
             .maybeSingle();
           if (data) profId = data.id;
         }

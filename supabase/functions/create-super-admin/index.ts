@@ -12,11 +12,39 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, password, name } = await req.json();
+    // SECURITY: Require one-time setup token for super admin creation
+    const setupToken = Deno.env.get('SUPER_ADMIN_SETUP_TOKEN');
+    
+    if (!setupToken) {
+      console.log('SUPER_ADMIN_SETUP_TOKEN not configured - function disabled');
+      return new Response(
+        JSON.stringify({ error: 'Function disabled. Configure SUPER_ADMIN_SETUP_TOKEN to enable.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { email, password, name, token } = await req.json();
+
+    // SECURITY: Validate setup token
+    if (!token || token !== setupToken) {
+      console.warn('Invalid setup token attempt for super admin creation');
+      return new Response(
+        JSON.stringify({ error: 'Invalid or missing setup token' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!email || !password) {
       return new Response(
         JSON.stringify({ error: 'email and password are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return new Response(
+        JSON.stringify({ error: 'Password must be at least 8 characters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -34,6 +62,29 @@ Deno.serve(async (req) => {
         }
       }
     );
+
+    // SECURITY: Check if super_admin already exists to prevent multiple creations
+    const { data: existingAdmins, error: checkError } = await supabaseAdmin
+      .from('user_roles')
+      .select('id')
+      .eq('role', 'super_admin')
+      .limit(1);
+
+    if (checkError) {
+      console.error('Error checking existing admins:', checkError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify existing admins' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (existingAdmins && existingAdmins.length > 0) {
+      console.warn('Attempt to create additional super_admin blocked');
+      return new Response(
+        JSON.stringify({ error: 'Super admin already exists. Contact system administrator.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Create user using admin API
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
