@@ -258,6 +258,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [checkIsFirstUser]);
 
   const logout = useCallback(async () => {
+    // SECURITY: Clear all import data from localStorage on logout
+    // This prevents sensitive employee data from persisting after session ends
+    localStorage.removeItem('profissionaisImportados');
+    localStorage.removeItem('lojasImportadas');
+    localStorage.removeItem('lojas');
+    localStorage.removeItem('dadosASO');
+    localStorage.removeItem('dadosBeneficios');
+    localStorage.removeItem('dadosASO_timestamp');
+    localStorage.removeItem('dadosBeneficios_timestamp');
+    localStorage.removeItem('dadosFerias');
+    localStorage.removeItem('dadosFaltas');
+    localStorage.removeItem('dadosAfastamentos');
+    
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
