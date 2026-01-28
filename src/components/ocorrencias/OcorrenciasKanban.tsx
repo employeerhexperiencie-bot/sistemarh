@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, AlertTriangle, CheckCircle, XCircle, User, Calendar } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle, XCircle, User, Calendar, UserCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Ocorrencia, OcorrenciaStatus, OcorrenciaPrioridade } from '@/hooks/useOcorrencias';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useUsuariosTenant } from '@/hooks/useUsuariosTenant';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OcorrenciasKanbanProps {
   ocorrencias: Ocorrencia[];
@@ -31,16 +33,21 @@ const prioridadeConfig: Record<OcorrenciaPrioridade, { label: string; variant: '
 function OcorrenciaCard({ 
   ocorrencia, 
   onStatusChange, 
-  onViewDetails 
+  onViewDetails,
+  usuarios,
+  isAdmin,
 }: { 
   ocorrencia: Ocorrencia; 
   onStatusChange: (id: string, status: OcorrenciaStatus) => void;
   onViewDetails: (ocorrencia: Ocorrencia) => void;
+  usuarios: { user_id: string; nome: string | null; email: string }[];
+  isAdmin: boolean;
 }) {
   const prioridade = prioridadeConfig[ocorrencia.prioridade] || prioridadeConfig.media;
   const isVencida = ocorrencia.data_prazo && 
     new Date(ocorrencia.data_prazo) < new Date() && 
     ocorrencia.status !== 'concluida';
+  const executor = usuarios.find(u => u.user_id === ocorrencia.executor_id);
 
   return (
     <Card 
@@ -62,6 +69,13 @@ function OcorrenciaCard({
         )}
 
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          {isAdmin && executor && (
+            <div className="flex items-center gap-1 text-primary">
+              <UserCheck className="h-3 w-3" />
+              <span>{executor.nome || executor.email}</span>
+            </div>
+          )}
+          
           {ocorrencia.profissional && (
             <div className="flex items-center gap-1">
               <User className="h-3 w-3" />
@@ -70,7 +84,7 @@ function OcorrenciaCard({
           )}
           
           {ocorrencia.data_prazo && (
-            <div className={`flex items-center gap-1 ${isVencida ? 'text-red-500' : ''}`}>
+            <div className={`flex items-center gap-1 ${isVencida ? 'text-destructive' : ''}`}>
               <Calendar className="h-3 w-3" />
               <span>{format(new Date(ocorrencia.data_prazo), 'dd/MM', { locale: ptBR })}</span>
             </div>
@@ -112,6 +126,9 @@ function OcorrenciaCard({
 
 export function OcorrenciasKanban({ ocorrencias, onStatusChange, onViewDetails }: OcorrenciasKanbanProps) {
   const columns: OcorrenciaStatus[] = ['pendente', 'em_andamento', 'concluida'];
+  const { usuarios } = useUsuariosTenant();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -145,6 +162,8 @@ export function OcorrenciasKanban({ ocorrencias, onStatusChange, onViewDetails }
                         ocorrencia={ocorrencia}
                         onStatusChange={onStatusChange}
                         onViewDetails={onViewDetails}
+                        usuarios={usuarios}
+                        isAdmin={isAdmin}
                       />
                     ))
                   )}
