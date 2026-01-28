@@ -1,14 +1,15 @@
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: 'admin' | 'gerente' | 'operador';
+  requiredRole?: AppRole;
+  superAdminOnly?: boolean; // Nova prop para rotas exclusivas de super_admin
 }
 
-export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredRole, superAdminOnly }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
@@ -29,24 +30,26 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // IMPORTANTE: Verificar se rota é exclusiva para super_admin
+  if (superAdminOnly && user?.role !== 'super_admin') {
+    return <Navigate to="/" replace />;
+  }
+
   // Verificar permissão de role se especificado
   if (requiredRole && user) {
-    const roleHierarchy = { admin: 3, gerente: 2, operador: 1 };
+    // Hierarquia completa de roles (super_admin > admin > gerente > executor > operador)
+    const roleHierarchy: Record<AppRole, number> = { 
+      super_admin: 5,
+      admin: 4, 
+      gerente: 3, 
+      executor: 2,
+      operador: 1 
+    };
     const userLevel = roleHierarchy[user.role] || 0;
     const requiredLevel = roleHierarchy[requiredRole] || 0;
 
     if (userLevel < requiredLevel) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-bold text-destructive">Acesso Negado</h1>
-            <p className="text-muted-foreground">
-              Você não tem permissão para acessar esta página.
-            </p>
-            <Navigate to="/" replace />
-          </div>
-        </div>
-      );
+      return <Navigate to="/" replace />;
     }
   }
 

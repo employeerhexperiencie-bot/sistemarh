@@ -30,8 +30,8 @@ const MigrarDados = () => {
     afastamentos: 0
   });
 
-  // Verificar se usuário é admin
-  const isAdmin = user?.role === 'admin';
+  // IMPORTANTE: Apenas super_admin pode migrar dados
+  const isSuperAdmin = user?.role === 'super_admin';
 
   // Carregar status do banco ao montar
   useEffect(() => {
@@ -61,8 +61,8 @@ const MigrarDados = () => {
   }, []);
 
   const handleMigration = async () => {
-    if (!isAdmin) {
-      toast.error("Acesso negado. Apenas administradores podem executar migrações.");
+    if (!isSuperAdmin) {
+      toast.error("Acesso negado. Apenas super administradores podem executar migrações.");
       return;
     }
 
@@ -206,8 +206,8 @@ const MigrarDados = () => {
   const dadosDisponiveis = verificarDadosLocalStorage();
   const temDados = dadosDisponiveis.profissionais > 0;
 
-  // Se não é admin, mostrar mensagem de acesso negado
-  if (!isAdmin) {
+  // Se não é super_admin, mostrar mensagem de acesso negado
+  if (!isSuperAdmin) {
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div>
