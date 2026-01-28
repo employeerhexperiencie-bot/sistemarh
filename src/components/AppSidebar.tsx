@@ -86,8 +86,8 @@ const navSections = [
     icon: CreditCard,
     defaultOpen: false,
     items: [
+      { title: 'Simulador Folha', url: '/simulador-folha', icon: Calculator },
       { title: 'Gestão Lançamentos', url: '/gestao-lancamentos', icon: CreditCard },
-      { title: 'Lançamentos (Legado)', url: '/lancamentos', icon: CreditCard },
       { title: 'Faltas', url: '/faltas', icon: UserX },
       { title: 'Empréstimos', url: '/gestao-emprestimos', icon: Banknote },
       { title: 'Holerites', url: '/holerites', icon: FileText },
