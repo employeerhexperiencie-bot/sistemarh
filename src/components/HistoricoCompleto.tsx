@@ -40,11 +40,11 @@ export const HistoricoCompleto: React.FC<HistoricoCompletoProps> = ({
 
   const loadHistorico = async () => {
     try {
-      // Carregar vales
+      // Carregar vales da tabela correta
       const { data: valesData, error: valesError } = await supabase
-        .from('vales' as any)
+        .from('professional_vales')
         .select('*')
-        .eq('professional_id', professionalId)
+        .eq('profissional_id', professionalId)
         .order('data_lancamento', { ascending: false });
 
       if (valesError) {
