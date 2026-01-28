@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
-// Tipo de papel do sistema
-export type AppRole = 'admin' | 'gerente' | 'operador';
+// Tipo de papel do sistema - super_admin é apenas para desenvolvedores
+export type AppRole = 'super_admin' | 'admin' | 'gerente' | 'operador' | 'executor';
 
 // User type com papel
 interface User {
