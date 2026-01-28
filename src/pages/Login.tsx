@@ -205,6 +205,15 @@ export default function Login() {
                     </div>
                   </div>
 
+                  <div className="flex justify-end">
+                    <Link 
+                      to="/recuperar-senha" 
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Esqueceu sua senha?
+                    </Link>
+                  </div>
+
                   <Button 
                     type="submit" 
                     className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:opacity-90 transition-opacity"
