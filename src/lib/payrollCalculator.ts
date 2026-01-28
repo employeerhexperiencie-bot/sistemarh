@@ -60,6 +60,11 @@ export interface ProfissionalInput {
   vales: number;
   emprestimos: number;
   pensao: number;
+  // Novos campos de descontos adicionais
+  valeCarne?: number;
+  valeDinheiro?: number;
+  valeAlimentacao?: number;
+  outrosDescontos?: number;
 }
 
 export interface ConfiguracaoFolha {
@@ -290,9 +295,21 @@ export function calcularFolhaProfissional(
     detalhes.push(`Desconto faltas: ${profissional.faltas} × R$ ${valorDia.toFixed(2)} = R$ ${descontoFaltas.toFixed(2)}`);
   }
   
-  // Total de descontos (vales + empréstimos + pensão + faltas)
-  const totalDescontos = profissional.vales + profissional.emprestimos + profissional.pensao + descontoFaltas;
-  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, faltas: ${descontoFaltas})`);
+  // Descontos de benefícios adicionais (Vale Carne, Vale Dinheiro, etc.)
+  const valeCarne = profissional.valeCarne || 0;
+  const valeDinheiro = profissional.valeDinheiro || 0;
+  const valeAlimentacao = profissional.valeAlimentacao || 0;
+  const outrosDescontos = profissional.outrosDescontos || 0;
+  const descontosAdicionais = valeCarne + valeDinheiro + valeAlimentacao + outrosDescontos;
+  
+  if (valeCarne > 0) detalhes.push(`Vale Carne: R$ ${valeCarne.toFixed(2)}`);
+  if (valeDinheiro > 0) detalhes.push(`Vale Dinheiro: R$ ${valeDinheiro.toFixed(2)}`);
+  if (valeAlimentacao > 0) detalhes.push(`Vale Alimentação: R$ ${valeAlimentacao.toFixed(2)}`);
+  if (outrosDescontos > 0) detalhes.push(`Outros Descontos: R$ ${outrosDescontos.toFixed(2)}`);
+  
+  // Total de descontos (vales + empréstimos + pensão + faltas + descontos adicionais)
+  const totalDescontos = profissional.vales + profissional.emprestimos + profissional.pensao + descontoFaltas + descontosAdicionais;
+  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, faltas: ${descontoFaltas}, adicionais: ${descontosAdicionais})`);
   
   // 10. Calcular salário líquido (Dia 5)
   let salarioBase = profissional.salario;
