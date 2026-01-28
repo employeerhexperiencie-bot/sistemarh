@@ -153,8 +153,8 @@ const App = () => (
                   <Route path="/gestao-emprestimos" element={<ProtectedLayout><GestaoEmprestimos /></ProtectedLayout>} />
                   <Route path="/gestao-beneficios" element={<ProtectedLayout><GestaoBeneficios /></ProtectedLayout>} />
                   <Route path="/gestao-beneficios-detalhado" element={<ProtectedLayout><GestaoBeneficiosDetalhado /></ProtectedLayout>} />
-                  <Route path="/referencia-sistema" element={<ProtectedLayout><ReferenciaSistema /></ProtectedLayout>} />
-                  <Route path="/simulador-folha" element={<ProtectedLayout><SimuladorFolha /></ProtectedLayout>} />
+                  <Route path="/referencia-sistema" element={<SuperAdminLayout><ReferenciaSistema /></SuperAdminLayout>} />
+                  <Route path="/simulador-folha" element={<SuperAdminLayout><SimuladorFolha /></SuperAdminLayout>} />
                   <Route path="/configuracoes" element={<ProtectedLayout><Configuracoes /></ProtectedLayout>} />
                   {/* ROTAS EXCLUSIVAS SUPER_ADMIN - Cliente NÃO pode acessar */}
                   <Route path="/gestao-usuarios" element={<SuperAdminLayout><GestaoUsuarios /></SuperAdminLayout>} />
