@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, LayoutGrid, List, Filter, AlertTriangle, Clock, CheckCircle, TrendingUp } from 'lucide-react';
+import { Plus, LayoutGrid, List, Filter, AlertTriangle, Clock, CheckCircle, TrendingUp, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,12 +11,19 @@ import { NovaOcorrenciaModal } from '@/components/ocorrencias/NovaOcorrenciaModa
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useUsuariosTenant } from '@/hooks/useUsuariosTenant';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Ocorrencias() {
   const [view, setView] = useState<'kanban' | 'lista'>('kanban');
   const [showNovaModal, setShowNovaModal] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [filtroPrioridade, setFiltroPrioridade] = useState<string>('todos');
+  const [filtroExecutor, setFiltroExecutor] = useState<string>('todos');
+  
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const { usuarios } = useUsuariosTenant();
   
   const { 
     ocorrencias, 
@@ -40,6 +47,7 @@ export default function Ocorrencias() {
   const filteredOcorrencias = ocorrencias.filter(o => {
     if (filtroStatus !== 'todos' && o.status !== filtroStatus) return false;
     if (filtroPrioridade !== 'todos' && o.prioridade !== filtroPrioridade) return false;
+    if (filtroExecutor !== 'todos' && o.executor_id !== filtroExecutor) return false;
     return true;
   });
 
@@ -112,7 +120,7 @@ export default function Ocorrencias() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <Select value={filtroStatus} onValueChange={setFiltroStatus}>
@@ -141,6 +149,25 @@ export default function Ocorrencias() {
                   <SelectItem value="critica">Crítica</SelectItem>
                 </SelectContent>
               </Select>
+
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <Select value={filtroExecutor} onValueChange={setFiltroExecutor}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Executor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos Usuários</SelectItem>
+                      {usuarios.map((usuario) => (
+                        <SelectItem key={usuario.user_id} value={usuario.user_id}>
+                          {usuario.nome || usuario.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -182,47 +209,63 @@ export default function Ocorrencias() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Prioridade</TableHead>
                   <TableHead>Status</TableHead>
+                  {isAdmin && <TableHead>Executor</TableHead>}
                   <TableHead>Profissional</TableHead>
                   <TableHead>Prazo</TableHead>
                   <TableHead>Criado em</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOcorrencias.map((ocorrencia) => (
-                  <TableRow 
-                    key={ocorrencia.id} 
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleViewDetails(ocorrencia)}
-                  >
-                    <TableCell className="font-medium">{ocorrencia.titulo}</TableCell>
-                    <TableCell>{ocorrencia.tipo}</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        ocorrencia.prioridade === 'critica' ? 'destructive' :
-                        ocorrencia.prioridade === 'alta' ? 'default' :
-                        'secondary'
-                      }>
-                        {ocorrencia.prioridade}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{ocorrencia.status}</Badge>
-                    </TableCell>
-                    <TableCell>{ocorrencia.profissional?.nome || '-'}</TableCell>
-                    <TableCell>
-                      {ocorrencia.data_prazo 
-                        ? format(new Date(ocorrencia.data_prazo), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-                        : '-'
-                      }
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(ocorrencia.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredOcorrencias.map((ocorrencia) => {
+                  const executor = usuarios.find(u => u.user_id === ocorrencia.executor_id);
+                  return (
+                    <TableRow 
+                      key={ocorrencia.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleViewDetails(ocorrencia)}
+                    >
+                      <TableCell className="font-medium">{ocorrencia.titulo}</TableCell>
+                      <TableCell>{ocorrencia.tipo}</TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          ocorrencia.prioridade === 'critica' ? 'destructive' :
+                          ocorrencia.prioridade === 'alta' ? 'default' :
+                          'secondary'
+                        }>
+                          {ocorrencia.prioridade}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{ocorrencia.status}</Badge>
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          {executor ? (
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm">{executor.nome || executor.email}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">Não atribuída</span>
+                          )}
+                        </TableCell>
+                      )}
+                      <TableCell>{ocorrencia.profissional?.nome || '-'}</TableCell>
+                      <TableCell>
+                        {ocorrencia.data_prazo 
+                          ? format(new Date(ocorrencia.data_prazo), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+                          : '-'
+                        }
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(new Date(ocorrencia.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 {filteredOcorrencias.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       Nenhuma ocorrência encontrada
                     </TableCell>
                   </TableRow>

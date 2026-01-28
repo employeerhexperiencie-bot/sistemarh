@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CreateOcorrenciaData, OcorrenciaPrioridade } from '@/hooks/useOcorrencias';
 import { supabase } from '@/integrations/supabase/client';
+import { useUsuariosTenant } from '@/hooks/useUsuariosTenant';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NovaOcorrenciaModalProps {
   open: boolean;
@@ -27,12 +29,16 @@ const tiposOcorrencia = [
 export function NovaOcorrenciaModal({ open, onOpenChange, onSubmit }: NovaOcorrenciaModalProps) {
   const [loading, setLoading] = useState(false);
   const [profissionais, setProfissionais] = useState<{ id: string; nome: string; matricula: string }[]>([]);
+  const { usuarios } = useUsuariosTenant();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const [formData, setFormData] = useState<CreateOcorrenciaData>({
     tipo: '',
     titulo: '',
     descricao: '',
     prioridade: 'media',
     profissional_id: undefined,
+    executor_id: undefined,
     data_prazo: '',
     sla_horas: 48,
     observacoes: '',
@@ -72,6 +78,7 @@ export function NovaOcorrenciaModal({ open, onOpenChange, onSubmit }: NovaOcorre
         descricao: '',
         prioridade: 'media',
         profissional_id: undefined,
+        executor_id: undefined,
         data_prazo: '',
         sla_horas: 48,
         observacoes: '',
@@ -169,12 +176,45 @@ export function NovaOcorrenciaModal({ open, onOpenChange, onSubmit }: NovaOcorre
               </Select>
             </div>
 
+            {isAdmin && (
+              <div className="space-y-2">
+                <Label>Atribuir a Usuário</Label>
+                <Select
+                  value={formData.executor_id || ''}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, executor_id: value || undefined }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um executor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usuarios.map((usuario) => (
+                      <SelectItem key={usuario.user_id} value={usuario.user_id}>
+                        {usuario.nome || usuario.email} ({usuario.role})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Data Prazo</Label>
               <Input
                 type="datetime-local"
                 value={formData.data_prazo}
                 onChange={(e) => setFormData(prev => ({ ...prev, data_prazo: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>SLA (horas)</Label>
+              <Input
+                type="number"
+                min={1}
+                value={formData.sla_horas}
+                onChange={(e) => setFormData(prev => ({ ...prev, sla_horas: parseInt(e.target.value) || 48 }))}
               />
             </div>
           </div>
