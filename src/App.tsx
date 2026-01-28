@@ -42,6 +42,8 @@ import MigrarDados from "@/pages/MigrarDados";
 import ImportarDadosExcel from "@/pages/ImportarDadosExcel";
 import Login from "@/pages/Login";
 import SetupInicial from "@/pages/SetupInicial";
+import RecuperarSenha from "@/pages/RecuperarSenha";
+import RedefinirSenha from "@/pages/RedefinirSenha";
 import GestaoUsuarios from "@/pages/GestaoUsuarios";
 import Ajuda from "@/pages/Ajuda";
 import ComoUsar from "@/pages/ComoUsar";
@@ -118,6 +120,8 @@ const App = () => (
                   {/* Rotas Públicas */}
                   <Route path="/login" element={<LoginRoute />} />
                   <Route path="/setup" element={<SetupRoute />} />
+                  <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+                  <Route path="/redefinir-senha" element={<RedefinirSenha />} />
                   
                   {/* Rotas Protegidas */}
                   <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
