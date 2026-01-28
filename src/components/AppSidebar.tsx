@@ -147,10 +147,13 @@ export function AppSidebar() {
   const { user } = useAuth();
   const currentPath = location.pathname;
   const collapsed = state === 'collapsed';
-  const isAdmin = user?.role === 'admin';
+  
+  // IMPORTANTE: Apenas super_admin vê as telas de administração
+  // Admin comum (clientes) NÃO veem essas telas
+  const isSuperAdmin = user?.role === 'super_admin';
 
-  // Combine sections based on user role
-  const allSections = isAdmin ? [...navSections, ...adminSections] : navSections;
+  // Combine sections based on user role - ONLY super_admin sees admin sections
+  const allSections = isSuperAdmin ? [...navSections, ...adminSections] : navSections;
 
   const isActive = (path: string) => currentPath === path;
   
