@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Users, 
   UserPlus, 
@@ -24,11 +25,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   Ban,
-  Check
+  Check,
+  Settings2,
+  Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TenantManagement } from '@/components/usuarios/TenantManagement';
+import { UserPermissionsConfig } from '@/components/usuarios/UserPermissionsConfig';
 
 interface UserRole {
   id: string;
@@ -69,14 +74,18 @@ export default function GestaoUsuarios() {
   const [inviteRole, setInviteRole] = useState<AppRole>('operador');
   const [inviteLoja, setInviteLoja] = useState<string>('');
 
-  // IMPORTANTE: Apenas super_admin pode gerenciar usuários
+  // Permissions config state
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<UserRole | null>(null);
+
+  // IMPORTANTE: super_admin tem acesso total, admin pode gerenciar usuários do seu tenant
   const isSuperAdmin = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || isSuperAdmin;
 
   useEffect(() => {
-    if (isSuperAdmin) {
+    if (isAdmin) {
       loadData();
     }
-  }, [isSuperAdmin]);
+  }, [isAdmin]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -193,12 +202,18 @@ export default function GestaoUsuarios() {
 
   const getRoleBadge = (role: AppRole) => {
     switch (role) {
+      case 'super_admin':
+        return <Badge className="bg-gradient-to-r from-primary to-accent"><Crown className="h-3 w-3 mr-1" />Super Admin</Badge>;
       case 'admin':
         return <Badge className="bg-primary"><Shield className="h-3 w-3 mr-1" />Admin</Badge>;
       case 'gerente':
         return <Badge variant="secondary"><Building2 className="h-3 w-3 mr-1" />Gerente</Badge>;
+      case 'executor':
+        return <Badge variant="outline" className="border-primary/50"><UserIcon className="h-3 w-3 mr-1" />Executor</Badge>;
       case 'operador':
         return <Badge variant="outline"><UserIcon className="h-3 w-3 mr-1" />Operador</Badge>;
+      default:
+        return <Badge variant="outline">{role}</Badge>;
     }
   };
 
@@ -208,7 +223,7 @@ export default function GestaoUsuarios() {
     return loja?.nome || 'Desconhecida';
   };
 
-  if (!isSuperAdmin) {
+  if (!isAdmin) {
     return (
       <div className="space-y-6">
         <Alert variant="destructive">
@@ -231,7 +246,9 @@ export default function GestaoUsuarios() {
             Gestão de Usuários
           </h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie os usuários e convites do sistema
+            {isSuperAdmin 
+              ? 'Gerencie clientes e usuários do sistema' 
+              : 'Gerencie os usuários da sua organização'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -275,16 +292,24 @@ export default function GestaoUsuarios() {
                       <SelectValue placeholder="Selecione o papel" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Administrador
-                        </div>
-                      </SelectItem>
+                      {isSuperAdmin && (
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            Administrador
+                          </div>
+                        </SelectItem>
+                      )}
                       <SelectItem value="gerente">
                         <div className="flex items-center gap-2">
                           <Building2 className="h-4 w-4" />
                           Gerente
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="executor">
+                        <div className="flex items-center gap-2">
+                          <UserIcon className="h-4 w-4" />
+                          Executor
                         </div>
                       </SelectItem>
                       <SelectItem value="operador">
@@ -338,6 +363,152 @@ export default function GestaoUsuarios() {
         </div>
       </div>
 
+      {/* Tabs para super_admin ver gestão de tenants */}
+      {isSuperAdmin ? (
+        <Tabs defaultValue="usuarios" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="usuarios" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="clientes" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Clientes (Tenants)
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="usuarios" className="space-y-6">
+            <UsersTable 
+              users={users}
+              invites={invites}
+              lojas={lojas}
+              isLoading={isLoading}
+              currentUserId={user?.id}
+              isSuperAdmin={isSuperAdmin}
+              getRoleBadge={getRoleBadge}
+              getLojaName={getLojaName}
+              onToggleActive={handleToggleUserActive}
+              onDeleteUser={handleDeleteUser}
+              onDeleteInvite={handleDeleteInvite}
+              onConfigurePermissions={setSelectedUserForPermissions}
+            />
+          </TabsContent>
+
+          <TabsContent value="clientes">
+            <TenantManagement />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <UsersTable 
+          users={users}
+          invites={invites}
+          lojas={lojas}
+          isLoading={isLoading}
+          currentUserId={user?.id}
+          isSuperAdmin={isSuperAdmin}
+          getRoleBadge={getRoleBadge}
+          getLojaName={getLojaName}
+          onToggleActive={handleToggleUserActive}
+          onDeleteUser={handleDeleteUser}
+          onDeleteInvite={handleDeleteInvite}
+          onConfigurePermissions={setSelectedUserForPermissions}
+        />
+      )}
+
+      {/* Modal de configuração de permissões */}
+      {selectedUserForPermissions && (
+        <UserPermissionsConfig
+          userId={selectedUserForPermissions.user_id}
+          userName={selectedUserForPermissions.nome || 'Usuário'}
+          isOpen={!!selectedUserForPermissions}
+          onClose={() => setSelectedUserForPermissions(null)}
+        />
+      )}
+
+      {/* Legenda de Papéis */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Níveis de Acesso</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {isSuperAdmin && (
+              <div className="flex items-start gap-3 p-3 rounded-lg border bg-gradient-to-br from-primary/10 to-accent/10">
+                <Crown className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium">Super Admin</p>
+                  <p className="text-sm text-muted-foreground">
+                    Acesso global, gerencia todos os clientes
+                  </p>
+                </div>
+              </div>
+            )}
+            <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
+              <Shield className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <p className="font-medium">Administrador</p>
+                <p className="text-sm text-muted-foreground">
+                  Acesso total ao tenant, gerencia usuários
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
+              <Building2 className="h-5 w-5 text-secondary-foreground mt-0.5" />
+              <div>
+                <p className="font-medium">Gerente</p>
+                <p className="text-sm text-muted-foreground">
+                  Gerencia sua loja designada
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
+              <UserIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="font-medium">Operador</p>
+                <p className="text-sm text-muted-foreground">
+                  Acesso limitado para consultas
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Componente separado para tabela de usuários
+interface UsersTableProps {
+  users: UserRole[];
+  invites: UserInvite[];
+  lojas: Loja[];
+  isLoading: boolean;
+  currentUserId?: string;
+  isSuperAdmin: boolean;
+  getRoleBadge: (role: AppRole) => JSX.Element;
+  getLojaName: (lojaId: string | null) => string;
+  onToggleActive: (userRoleId: string, userId: string, currentStatus: boolean) => void;
+  onDeleteUser: (userRoleId: string, userId: string) => void;
+  onDeleteInvite: (inviteId: string) => void;
+  onConfigurePermissions: (user: UserRole) => void;
+}
+
+function UsersTable({
+  users,
+  invites,
+  lojas,
+  isLoading,
+  currentUserId,
+  isSuperAdmin,
+  getRoleBadge,
+  getLojaName,
+  onToggleActive,
+  onDeleteUser,
+  onDeleteInvite,
+  onConfigurePermissions
+}: UsersTableProps) {
+  return (
+    <>
       {/* Usuários Ativos */}
       <Card>
         <CardHeader>
@@ -367,7 +538,7 @@ export default function GestaoUsuarios() {
                   <TableHead>Loja</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Desde</TableHead>
-                  <TableHead className="w-[140px]">Ações</TableHead>
+                  <TableHead className="w-[180px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -375,7 +546,7 @@ export default function GestaoUsuarios() {
                   <TableRow key={userRole.id} className={!userRole.ativo ? 'opacity-60' : ''}>
                     <TableCell className="font-medium">
                       {userRole.nome || 'Sem nome'}
-                      {userRole.user_id === user?.id && (
+                      {userRole.user_id === currentUserId && (
                         <Badge variant="outline" className="ml-2 text-xs">Você</Badge>
                       )}
                     </TableCell>
@@ -399,13 +570,24 @@ export default function GestaoUsuarios() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        {/* Botão de configurar permissões - apenas para roles não-admin */}
+                        {userRole.role !== 'super_admin' && userRole.role !== 'admin' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Configurar permissões"
+                            onClick={() => onConfigurePermissions(userRole)}
+                          >
+                            <Settings2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
                           title={userRole.ativo ? 'Bloquear acesso' : 'Liberar acesso'}
                           className={userRole.ativo ? 'text-destructive hover:text-destructive' : 'text-success hover:text-success'}
-                          onClick={() => handleToggleUserActive(userRole.id, userRole.user_id, userRole.ativo)}
-                          disabled={userRole.user_id === user?.id}
+                          onClick={() => onToggleActive(userRole.id, userRole.user_id, userRole.ativo)}
+                          disabled={userRole.user_id === currentUserId || userRole.role === 'super_admin'}
                         >
                           {userRole.ativo ? <Ban className="h-4 w-4" /> : <Check className="h-4 w-4" />}
                         </Button>
@@ -414,8 +596,8 @@ export default function GestaoUsuarios() {
                           size="icon"
                           title="Remover usuário"
                           className="text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteUser(userRole.id, userRole.user_id)}
-                          disabled={userRole.user_id === user?.id}
+                          onClick={() => onDeleteUser(userRole.id, userRole.user_id)}
+                          disabled={userRole.user_id === currentUserId || userRole.role === 'super_admin'}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -469,7 +651,7 @@ export default function GestaoUsuarios() {
                   return (
                     <TableRow key={invite.id}>
                       <TableCell className="font-medium">{invite.email}</TableCell>
-                      <TableCell>{getRoleBadge(invite.role)}</TableCell>
+                      <TableCell>{getRoleBadge(invite.role || 'operador')}</TableCell>
                       <TableCell>{getLojaName(invite.loja_id)}</TableCell>
                       <TableCell>
                         {isAccepted ? (
@@ -498,7 +680,7 @@ export default function GestaoUsuarios() {
                             variant="ghost"
                             size="icon"
                             className="text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteInvite(invite.id)}
+                            onClick={() => onDeleteInvite(invite.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -512,44 +694,6 @@ export default function GestaoUsuarios() {
           )}
         </CardContent>
       </Card>
-
-      {/* Legenda de Papéis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Níveis de Acesso</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
-              <Shield className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium">Administrador</p>
-                <p className="text-sm text-muted-foreground">
-                  Acesso total ao sistema, pode gerenciar usuários e configurações
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
-              <Building2 className="h-5 w-5 text-secondary-foreground mt-0.5" />
-              <div>
-                <p className="font-medium">Gerente</p>
-                <p className="text-sm text-muted-foreground">
-                  Visualiza todas as lojas, edita apenas sua loja designada
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
-              <UserIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="font-medium">Operador</p>
-                <p className="text-sm text-muted-foreground">
-                  Acesso limitado para consulta e operações básicas
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    </>
   );
 }
