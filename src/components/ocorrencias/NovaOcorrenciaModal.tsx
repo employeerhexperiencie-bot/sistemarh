@@ -220,16 +220,6 @@ export function NovaOcorrenciaModal({ open, onOpenChange, onSubmit }: NovaOcorre
           </div>
 
           <div className="space-y-2">
-            <Label>SLA (horas)</Label>
-            <Input
-              type="number"
-              min={1}
-              value={formData.sla_horas}
-              onChange={(e) => setFormData(prev => ({ ...prev, sla_horas: parseInt(e.target.value) || 48 }))}
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label>Observações</Label>
             <Textarea
               placeholder="Observações adicionais"
