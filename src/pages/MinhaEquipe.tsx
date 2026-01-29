@@ -314,12 +314,12 @@ export default function MinhaEquipe() {
                 {inviteRole !== 'admin' && (
                   <div className="space-y-2">
                     <Label htmlFor="loja">Loja (opcional)</Label>
-                    <Select value={inviteLoja} onValueChange={setInviteLoja}>
+                    <Select value={inviteLoja || 'todas'} onValueChange={(v) => setInviteLoja(v === 'todas' ? '' : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todas as lojas" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas as lojas</SelectItem>
+                        <SelectItem value="todas">Todas as lojas</SelectItem>
                         {lojas.map((loja) => (
                           <SelectItem key={loja.id} value={loja.id}>
                             {loja.nome}
