@@ -49,6 +49,7 @@ import GestaoUsuarios from "@/pages/GestaoUsuarios";
 import Ajuda from "@/pages/Ajuda";
 import ComoUsar from "@/pages/ComoUsar";
 import Ocorrencias from "@/pages/Ocorrencias";
+import MinhaEquipe from "@/pages/MinhaEquipe";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Loader2 } from "lucide-react";
@@ -175,6 +176,7 @@ const App = () => (
                   <Route path="/dashboard-analitico" element={<ProtectedLayout><DashboardAnalitico /></ProtectedLayout>} />
                   <Route path="/ajuda" element={<ProtectedLayout><Ajuda /></ProtectedLayout>} />
                   <Route path="/como-usar" element={<ProtectedLayout><ComoUsar /></ProtectedLayout>} />
+                  <Route path="/minha-equipe" element={<ProtectedLayout><MinhaEquipe /></ProtectedLayout>} />
                   
                   {/* Catch-all - Redireciona para 404 */}
                   <Route path="*" element={<NotFound />} />

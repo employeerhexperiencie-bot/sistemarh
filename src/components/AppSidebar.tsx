@@ -114,13 +114,21 @@ const navSections = [
     ],
   },
   {
+    label: 'Configurações',
+    icon: Settings,
+    defaultOpen: false,
+    items: [
+      { title: 'Minha Equipe', url: '/minha-equipe', icon: Users },
+      { title: 'Aparência', url: '/configuracoes', icon: Settings },
+    ],
+  },
+  {
     label: 'Ajuda',
     icon: HelpCircle,
     defaultOpen: false,
     items: [
       { title: 'Como Usar', url: '/como-usar', icon: BookOpen },
       { title: 'Suporte', url: '/ajuda', icon: HelpCircle },
-      { title: 'Aparência', url: '/configuracoes', icon: Settings },
     ],
   },
 ];
