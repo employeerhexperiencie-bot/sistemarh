@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
     const { error } = await supabaseAnon.auth.resetPasswordForEmail(
       email.toLowerCase().trim(),
-      { redirectTo: 'https://eazdev.com/redefinir-senha' }
+      { redirectTo: 'https://sistemarh.lovable.app/redefinir-senha' }
     );
 
     if (error) {
