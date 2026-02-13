@@ -2,25 +2,36 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Patch para prevenir erro "removeChild" causado por extensões do navegador
-// (ex: Google Tradutor) que modificam o DOM fora do controle do React
+// Patch para prevenir erro "removeChild"/"insertBefore" causado por extensões
+// do navegador (ex: Google Tradutor, Grammarly) que modificam o DOM
 if (typeof Node !== 'undefined') {
-  const originalRemoveChild = Node.prototype.removeChild;
-  Node.prototype.removeChild = function <T extends Node>(child: T): T {
+  const proto = Node.prototype;
+
+  const origRemoveChild = proto.removeChild;
+  proto.removeChild = function <T extends Node>(child: T): T {
     if (child.parentNode !== this) {
-      console.warn('[DOM Patch] removeChild ignorado - nó não é filho deste elemento');
+      console.warn('[DOM Patch] removeChild ignorado');
       return child;
     }
-    return originalRemoveChild.call(this, child) as T;
+    return origRemoveChild.call(this, child) as T;
   };
 
-  const originalInsertBefore = Node.prototype.insertBefore;
-  Node.prototype.insertBefore = function <T extends Node>(newNode: T, referenceNode: Node | null): T {
-    if (referenceNode && referenceNode.parentNode !== this) {
-      console.warn('[DOM Patch] insertBefore ignorado - nó de referência não é filho deste elemento');
+  const origInsertBefore = proto.insertBefore;
+  proto.insertBefore = function <T extends Node>(newNode: T, refNode: Node | null): T {
+    if (refNode && refNode.parentNode !== this) {
+      console.warn('[DOM Patch] insertBefore ignorado');
       return newNode;
     }
-    return originalInsertBefore.call(this, newNode, referenceNode) as T;
+    return origInsertBefore.call(this, newNode, refNode) as T;
+  };
+
+  const origReplaceChild = proto.replaceChild;
+  proto.replaceChild = function <T extends Node>(newChild: Node, oldChild: T): T {
+    if (oldChild.parentNode !== this) {
+      console.warn('[DOM Patch] replaceChild ignorado');
+      return oldChild;
+    }
+    return origReplaceChild.call(this, newChild, oldChild) as T;
   };
 }
 
