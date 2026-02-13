@@ -8,6 +8,7 @@ import { AuditLogProvider } from "@/contexts/AuditLogContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { Lancamentos } from "@/pages/Lancamentos";
@@ -117,6 +118,7 @@ function SuperAdminLayout({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
+  <ErrorBoundary>
   <AuthProvider>
     <AppearanceProvider>
       <AuditLogProvider>
@@ -188,6 +190,7 @@ const App = () => (
       </AuditLogProvider>
     </AppearanceProvider>
   </AuthProvider>
+  </ErrorBoundary>
 );
 
 export default App;
