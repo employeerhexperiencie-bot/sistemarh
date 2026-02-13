@@ -121,32 +121,43 @@ export default function MinhaEquipe() {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('user_invites').insert({
+      // Call edge function to create auth account + role
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: inviteEmail.trim().toLowerCase(),
+          nome: inviteNome.trim() || undefined,
+          role: inviteRole,
+          loja_id: inviteLoja || null
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Also save to user_invites for tracking
+      await supabase.from('user_invites').insert({
         email: inviteEmail.trim().toLowerCase(),
         role: inviteRole,
         loja_id: inviteLoja || null,
         invited_by: user?.id
-      });
+      }).maybeSingle();
 
-      if (error) {
-        if (error.message.includes('duplicate')) {
-          toast.error('Este email já foi convidado');
-        } else {
-          throw error;
-        }
-        return;
-      }
-
-      toast.success('Colaborador cadastrado com sucesso!');
+      toast.success('Colaborador cadastrado! Ele já pode usar "Esqueci minha senha" para criar o acesso.');
       setIsDialogOpen(false);
       setInviteEmail('');
       setInviteNome('');
       setInviteRole('operador');
       setInviteLoja('');
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao cadastrar colaborador:', error);
-      toast.error('Erro ao cadastrar colaborador');
+      toast.error(error?.message || 'Erro ao cadastrar colaborador');
     } finally {
       setIsSubmitting(false);
     }
