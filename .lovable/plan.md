@@ -25,6 +25,61 @@
 
 ---
 
+## Decisoes Arquiteturais Aprovadas (2026-02-24)
+
+### 1. Tabela de Fechamentos
+- **Decisao:** Criar nova tabela `fechamentos_folha` com snapshots JSON
+- **Motivo:** Separar dados calculados em tempo real (folha_pagamento) dos dados congelados no fechamento
+
+### 2. Tipo de Fechamento
+- **Decisao:** Fechamentos INDEPENDENTES por tipo (Dia 20, Dia 5, VT, Beneficios)
+- **Motivo:** Permite fechar parcialmente, ex: fechar Dia 20 antes de ter todos os dados do Dia 5
+
+### 3. Emprestimos
+- **Decisao:** Controle MANUAL pelo cliente
+- **Motivo:** O RH decide quando cobrar a parcela, nao e automatico no fechamento
+- **Implicacao:** Botao de "registrar pagamento de parcela" fica no modulo de emprestimos, nao no fechamento
+
+### 4. Valores de Beneficios (VA, Dinheiro, Vale Carne, etc.)
+- **Decisao:** Cadastro por profissional, controle total do usuario
+- **Motivo:** Cada profissional pode ter valor diferente, RH tem autonomia para definir
+- **Implicacao:** Campos `valor_vale_alimentacao`, `valor_vale_carne`, etc. ficam em `profissionais` ou `beneficios`
+
+### 5. Recibo de Pagamento
+- **Decisao:** Controle pelo usuario (campo recibo_assinado)
+- **Implicacao:** Campo na folha/fechamento para marcar se recibo fisico foi assinado
+
+---
+
+## Proximos Passos (Priorizacao Pendente)
+
+### Seguranca (URGENTE)
+- [ ] Corrigir RLS: TO public → TO authenticated em 33 tabelas
+- [ ] Ativar verify_jwt = true nas edge functions admin
+- [ ] Enforcar limites do tenant no codigo
+- [ ] Ativar auditoria real (historico_acoes gravando todas as acoes)
+
+### Central de Fechamentos
+- [ ] Criar tabela `fechamentos_folha` (tipo, loja_id, competencia, status, snapshot, versao)
+- [ ] Criar tela /fechamentos com dashboard por loja
+- [ ] Implementar fluxo: Aberto → Fechado → Reaberto (com versionamento)
+- [ ] Integrar com geracao de relatorios PDF
+
+### Relatorios PDF (6 layouts dos PDFs enviados)
+- [ ] Relatorio Adiantamento Dia 20 (por loja)
+- [ ] Relatorio Folha Pagamento Dia 5 (por loja)
+- [ ] Relatorio Vale Transporte (por loja/periodo)
+- [ ] Relatorio Cesta Basica (por loja)
+- [ ] Relatorio Vale Alimentacao Alelo (por loja)
+- [ ] Recibo de Pagamento (3 por pagina A4)
+
+### Gaps de Dados para Relatorios
+- [ ] Adicionar campo `nome_mae` em profissionais (necessario para Alelo)
+- [ ] Garantir `valor_vale_alimentacao` variavel por profissional
+- [ ] Confirmar campos Vale Carne e Dinheiro como lancamentos ou campos dedicados
+
+---
+
 ## 33 Tabelas no Banco -- Classificacao por Uso Real
 
 ### COM dados reais e funcionando
@@ -51,61 +106,6 @@
 | `advertencias` | 0 | Tela existe, sem dados |
 | `professional_vales` | 2 | Praticamente vazio |
 | `historico_acoes` | 3 | Auditoria quase nao grava |
-| `security_logs` | ? | Provavelmente vazio |
-| `adiantamentos` | ? | Provavelmente vazio |
-| `decimo_terceiro` | ? | Provavelmente vazio |
-| `beneficios` | ? | Provavelmente vazio |
-
----
-
-## 40 Paginas -- O que Realmente Funciona vs O que e Tela Bonita
-
-### FUNCIONANDO com dados reais
-| Pagina | O que faz de verdade |
-|--------|---------------------|
-| `/login` | Autenticacao real com Supabase Auth |
-| `/setup` | Primeiro usuario cria conta + tenant |
-| `/recuperar-senha` | Envio de email de recuperacao |
-| `/` (Dashboard) | KPIs reais: 278 ativos, 14 lojas, alertas ASO |
-| `/cadastro-profissionais` | CRUD completo, busca, filtros por loja |
-| `/cadastro-lojas` | CRUD completo das 14 lojas |
-| `/gestao-aso` | 158 exames, alertas de vencimento (5 vencidos) |
-| `/gestao-emprestimos` | 69 emprestimos, separacao CLT/empresa |
-| `/gestao-ferias` | 278 registros de periodo aquisitivo |
-| `/simulador-folha` | Calculo real Dia 20 (40%) e Dia 5 (60%) |
-| `/holerites` | 591 holerites, geracao PDF funciona |
-| `/faltas` | 11 registros de faltas |
-| `/painel-loja` | Drill-down por loja com dados reais |
-| `/painel-profissional` | Visao 360 do profissional |
-| `/configuracoes` | White-label (logo, cores, nome) |
-| `/gestao-usuarios` | Gerenciar usuarios e permissoes (super_admin) |
-
-### TELA EXISTE mas com dados vazios ou mock
-| Pagina | Situacao |
-|--------|---------|
-| `/gestao-lancamentos` | Tela pronta, tabela `lancamentos_financeiros` vazia |
-| `/gestao-epi` | Tela pronta, tabela `epis` vazia |
-| `/gestao-afastamentos` | Tela pronta, tabela `afastamentos` vazia |
-| `/gestao-beneficios` | Tela pronta, leitura parcial dos dados |
-| `/gestao-beneficios-detalhado` | Tela pronta, depende de dados completos |
-| `/ocorrencias` | Tabela `ocorrencias` **nao existe** no banco |
-| `/pendencias` | Tela pronta, tabela `pendencias` pode estar vazia |
-| `/alertas` | Tela pronta, alertas parciais |
-| `/relatorios` | 6 cards de relatorio mas **exportacao nao funciona** (console.log) |
-| `/dashboard-analitico` | Graficos podem usar dados parciais |
-| `/historico-profissional` | Timeline, depende de historico gravado |
-| `/minha-equipe` | Depende de vinculo usuario-loja |
-
-### Ferramentas administrativas (super_admin)
-| Pagina | Situacao |
-|--------|---------|
-| `/importacao-dados` | Funciona - dados ja foram carregados por aqui |
-| `/importar-dados-excel` | Funciona via edge function |
-| `/migrar-dados` | Funciona via edge function |
-| `/validacao-dados` | Tela de conferencia |
-| `/analisar-ativos` | Analise da base ATIVOS.xlsx |
-| `/atualizar-ativos` | Atualizacao em massa |
-| `/audit-log` | Apenas 3 registros gravados |
 
 ---
 
@@ -132,25 +132,8 @@
 | Aspecto | Status | Risco |
 |---------|--------|-------|
 | Autenticacao | Funciona | Baixo |
-| RLS (33 tabelas) | Existe mas `TO public` | **ALTO** - deveria ser `TO authenticated` |
-| RBAC 5 niveis | Funciona na UI | Medio - enforcement parcial |
-| Limites do tenant | Definidos (100 prof, 10 users) | **ALTO** - nao sao verificados no codigo |
-| Edge functions JWT | Parcial | **MEDIO** - `invite-user` sem JWT |
-| Audit trail | 3 registros apenas | **ALTO** - praticamente desligado |
-
----
-
-## Resumo Executivo
-
-**O que funciona de verdade e o cliente usa:**
-- Login, cadastro de profissionais (280), lojas (14), ASO (158), emprestimos (69), ferias (278), faltas (11), simulador de folha com calculo real, geracao de holerites PDF
-
-**O que existe como estrutura mas esta vazio:**
-- Lancamentos financeiros, EPIs, afastamentos, pensoes, advertencias, auditoria
-
-**O que tem tela mas nao funciona:**
-- Exportacao de relatorios (so faz console.log), tabela de ocorrencias nao existe no banco
-
-**O que precisa urgente para escalar:**
-- Corrigir RLS (`TO authenticated`), ativar auditoria real, enforcar limites do tenant, implementar exportacao real dos relatorios
-
+| RLS (33 tabelas) | Existe mas `TO public` | **ALTO** |
+| RBAC 5 niveis | Funciona na UI | Medio |
+| Limites do tenant | Definidos mas nao enforced | **ALTO** |
+| Edge functions JWT | Parcial | **MEDIO** |
+| Audit trail | 3 registros apenas | **ALTO** |
