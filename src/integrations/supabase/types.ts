@@ -828,6 +828,81 @@ export type Database = {
           },
         ]
       }
+      fechamentos_folha: {
+        Row: {
+          competencia: string
+          created_at: string | null
+          fechado_em: string | null
+          fechado_por: string | null
+          id: string
+          loja_id: string
+          observacoes: string | null
+          reaberto_em: string | null
+          reaberto_por: string | null
+          snapshot: Json | null
+          status: string
+          tenant_id: string
+          tipo: string
+          total_profissionais: number | null
+          total_valor: number | null
+          updated_at: string | null
+          versao: number
+        }
+        Insert: {
+          competencia: string
+          created_at?: string | null
+          fechado_em?: string | null
+          fechado_por?: string | null
+          id?: string
+          loja_id: string
+          observacoes?: string | null
+          reaberto_em?: string | null
+          reaberto_por?: string | null
+          snapshot?: Json | null
+          status?: string
+          tenant_id?: string
+          tipo: string
+          total_profissionais?: number | null
+          total_valor?: number | null
+          updated_at?: string | null
+          versao?: number
+        }
+        Update: {
+          competencia?: string
+          created_at?: string | null
+          fechado_em?: string | null
+          fechado_por?: string | null
+          id?: string
+          loja_id?: string
+          observacoes?: string | null
+          reaberto_em?: string | null
+          reaberto_por?: string | null
+          snapshot?: Json | null
+          status?: string
+          tenant_id?: string
+          tipo?: string
+          total_profissionais?: number | null
+          total_valor?: number | null
+          updated_at?: string | null
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fechamentos_folha_loja_id_fkey"
+            columns: ["loja_id"]
+            isOneToOne: false
+            referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fechamentos_folha_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ferias: {
         Row: {
           created_at: string | null
