@@ -51,6 +51,7 @@ import Ajuda from "@/pages/Ajuda";
 import ComoUsar from "@/pages/ComoUsar";
 import Ocorrencias from "@/pages/Ocorrencias";
 import MinhaEquipe from "@/pages/MinhaEquipe";
+import Fechamentos from "@/pages/Fechamentos";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Loader2 } from "lucide-react";
@@ -160,6 +161,7 @@ const App = () => (
                   <Route path="/gestao-beneficios-detalhado" element={<ProtectedLayout><GestaoBeneficiosDetalhado /></ProtectedLayout>} />
                   <Route path="/referencia-sistema" element={<SuperAdminLayout><ReferenciaSistema /></SuperAdminLayout>} />
                   <Route path="/simulador-folha" element={<ProtectedLayout><SimuladorFolha /></ProtectedLayout>} />
+                  <Route path="/fechamentos" element={<ProtectedLayout><Fechamentos /></ProtectedLayout>} />
                   <Route path="/configuracoes" element={<ProtectedLayout><Configuracoes /></ProtectedLayout>} />
                   {/* ROTAS EXCLUSIVAS SUPER_ADMIN - Cliente NÃO pode acessar */}
                   <Route path="/gestao-usuarios" element={<SuperAdminLayout><GestaoUsuarios /></SuperAdminLayout>} />
