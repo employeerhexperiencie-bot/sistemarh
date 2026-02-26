@@ -51,21 +51,17 @@
 
 ---
 
-## Proximos Passos (Priorizacao Pendente)
+## Cronograma de Execucao
 
-### Seguranca (URGENTE)
-- [ ] Corrigir RLS: TO public → TO authenticated em 33 tabelas
-- [ ] Ativar verify_jwt = true nas edge functions admin
-- [ ] Enforcar limites do tenant no codigo
-- [ ] Ativar auditoria real (historico_acoes gravando todas as acoes)
+### FASE 1 — Fechamento Funcional (Semana 1: 26/02 - 04/03)
+- [x] Criar tabela `fechamentos_folha` (tipo, loja_id, competencia, status, snapshot, versao)
+- [x] Criar tela /fechamentos com dashboard por loja
+- [x] Implementar fluxo: Aberto → Fechado → Reaberto (com versionamento)
+- [ ] Integrar payrollCalculator nos snapshots (valores reais Dia 20/Dia 5)
+- [ ] Adicionar campo `recibo_assinado` nos holerites
+- [ ] Gerar relatorios PDF a partir dos snapshots fechados
 
-### Central de Fechamentos
-- [ ] Criar tabela `fechamentos_folha` (tipo, loja_id, competencia, status, snapshot, versao)
-- [ ] Criar tela /fechamentos com dashboard por loja
-- [ ] Implementar fluxo: Aberto → Fechado → Reaberto (com versionamento)
-- [ ] Integrar com geracao de relatorios PDF
-
-### Relatorios PDF (6 layouts dos PDFs enviados)
+### FASE 2 — Relatorios PDF (Semana 2: 05/03 - 11/03)
 - [ ] Relatorio Adiantamento Dia 20 (por loja)
 - [ ] Relatorio Folha Pagamento Dia 5 (por loja)
 - [ ] Relatorio Vale Transporte (por loja/periodo)
@@ -73,10 +69,57 @@
 - [ ] Relatorio Vale Alimentacao Alelo (por loja)
 - [ ] Recibo de Pagamento (3 por pagina A4)
 
-### Gaps de Dados para Relatorios
+### FASE 3 — Integracao EzPointWeb (Semana 3-4: 12/03 - 25/03)
+- [ ] Configurar secrets (EZPOINT_EMPRESA, EZPOINT_USUARIO, EZPOINT_SENHA)
+- [ ] Edge Function `ezpoint-login` — autenticacao e cache do Bearer token
+- [ ] Edge Function `ezpoint-sync` — consultar /batida por periodo e paginar
+- [ ] Vincular profissionais locais via CPF → id_ezpoint (campo em `profissionais`)
+- [ ] Calcular dias trabalhados reais a partir das batidas
+- [ ] Consultar /espelhoDePontos para detalhamento (faltas, atrasos, extras)
+- [ ] Alimentar payrollCalculator automaticamente com dados do ponto
+- [ ] Tela de configuracao EzPoint (credenciais + status de conexao)
+- [ ] Sincronizacao bidirecional: ferias e abonos → POST /ferias e /abonoDeFalta
+- [ ] Cron job para sincronizacao diaria automatica
+
+### FASE 4 — Seguranca e Hardening (Semana 5: 26/03 - 01/04)
+- [ ] Corrigir RLS: TO public → TO authenticated em 33 tabelas
+- [ ] Ativar verify_jwt = true nas edge functions admin
+- [ ] Enforcar limites do tenant no codigo
+- [ ] Ativar auditoria real (historico_acoes gravando todas as acoes)
+
+### FASE 5 — Gaps de Dados e Polish (Semana 6: 02/04 - 08/04)
 - [ ] Adicionar campo `nome_mae` em profissionais (necessario para Alelo)
+- [ ] Adicionar campo `id_ezpoint` em profissionais
 - [ ] Garantir `valor_vale_alimentacao` variavel por profissional
 - [ ] Confirmar campos Vale Carne e Dinheiro como lancamentos ou campos dedicados
+
+---
+
+## Detalhes da Integracao EzPointWeb
+
+### API: https://api.ezpointweb.com.br/ezweb-ws
+### Versao documentacao: v15
+
+| Endpoint | Metodo | Uso no Sistema |
+|----------|--------|----------------|
+| `/login` | POST | Autenticacao (empresa, usuario, senha) → Bearer token |
+| `/funcionario` | GET | Vincular profissionais via CPF → obter id_ezpoint |
+| `/batida` | GET | **Fonte primaria de dias trabalhados** (paginado, max 6 meses) |
+| `/espelhoDePontos` | GET | Detalhamento: faltas, atrasos, extras, horas (max 2 meses) |
+| `/ferias` | POST | Sincronizar ferias do sistema → EzPoint |
+| `/abonoDeFalta` | POST | Enviar atestados/abonos → EzPoint |
+
+### Fluxo no Fechamento
+1. Ao abrir fechamento → Edge Function consulta /batida do periodo
+2. Cruza matricula/CPF com profissionais locais
+3. Calcula dias efetivamente trabalhados
+4. Alimenta payrollCalculator com dados reais (substitui entrada manual)
+5. /espelhoDePontos para detalhes (atrasos, extras) → snapshot
+
+### Secrets Necessarios
+- `EZPOINT_EMPRESA` — nome da empresa no EzPoint
+- `EZPOINT_USUARIO` — usuario da API
+- `EZPOINT_SENHA` — senha da API
 
 ---
 
