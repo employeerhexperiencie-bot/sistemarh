@@ -1,45 +1,58 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, TrendingUp, FileText, Filter, ArrowLeft, Plus, Loader2 } from 'lucide-react';
+import { Calendar, TrendingUp, FileText, Filter, ArrowLeft, Loader2, History, DollarSign, Bus, Package } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getCompetenciaAtual } from '@/lib/competencia';
+import { getCompetenciaAtual, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
+import { formatCurrency } from '@/lib/payrollCalculator';
 
-interface HistoricoItem {
-  data: string;
+interface FechamentoHistorico {
+  id: string;
+  competencia: string;
   tipo: string;
-  valor: number;
-  descricao: string;
   status: string;
+  versao: number;
+  fechado_em: string | null;
+  loja_nome: string;
+  dados: {
+    salarioBase: number;
+    valorDia20: number;
+    recebeDia20: boolean;
+    motivoDia20: string;
+    salarioLiquido: number;
+    totalDescontos: number;
+    valorVT: number;
+    valorVR: number;
+    valorCesta: number;
+    recebeCesta: boolean;
+    totalMes: number;
+    diasTrabalhados: number;
+    detalhesCalculo: string[];
+  } | null;
 }
 
 export default function HistoricoProfissional() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [competencia, setCompetencia] = useState(getCompetenciaAtual);
-  const [novoItem, setNovoItem] = useState({ tipo: '', valor: '', descricao: '' });
-  const [historico, setHistorico] = useState<HistoricoItem[]>([]);
-  const [profissionalInfo, setProfissionalInfo] = useState<{ nome: string; loja: string } | null>(null);
+  const [profissionalInfo, setProfissionalInfo] = useState<{ id: string; nome: string; loja: string; salario: number } | null>(null);
+  const [fechamentosHistorico, setFechamentosHistorico] = useState<FechamentoHistorico[]>([]);
+  const [vales, setVales] = useState<any[]>([]);
+  const [emprestimos, setEmprestimos] = useState<any[]>([]);
+  const [faltas, setFaltas] = useState<any[]>([]);
   
   const matricula = searchParams.get('matricula') || '';
   const profissional = searchParams.get('profissional') || '';
   const loja = searchParams.get('loja') || '';
 
   useEffect(() => {
-    if (matricula) {
-      loadData();
-    } else {
-      setLoading(false);
-    }
+    if (matricula) loadData();
+    else setLoading(false);
   }, [matricula]);
 
   const loadData = async () => {
@@ -48,117 +61,66 @@ export default function HistoricoProfissional() {
       // Buscar profissional
       const { data: prof } = await supabase
         .from('profissionais')
-        .select(`
-          id,
-          nome,
-          salario_nominal,
-          lojas:lojas!profissionais_loja_id_fkey(nome)
-        `)
+        .select(`id, nome, salario_nominal, ultimo_salario, primeiro_salario, lojas:lojas!profissionais_loja_id_fkey(nome)`)
         .eq('matricula', matricula)
         .maybeSingle();
 
       if (!prof) {
-        setProfissionalInfo({ nome: profissional || 'Não encontrado', loja: loja || '' });
-        setHistorico([]);
+        setProfissionalInfo({ id: '', nome: profissional || 'Não encontrado', loja: loja || '', salario: 0 });
         setLoading(false);
         return;
       }
 
+      const salario = prof.salario_nominal || prof.ultimo_salario || prof.primeiro_salario || 0;
       setProfissionalInfo({
+        id: prof.id,
         nome: prof.nome,
-        loja: prof.lojas?.nome || loja || ''
+        loja: (prof.lojas as any)?.nome || loja || '',
+        salario,
       });
 
-      const historicoItems: HistoricoItem[] = [];
-      const salario = prof.salario_nominal || 0;
+      // Buscar todos os fechamentos que contêm este profissional nos snapshots
+      const { data: fechamentos } = await supabase
+        .from('fechamentos_folha')
+        .select('id, competencia, tipo, status, versao, fechado_em, loja_id, snapshot')
+        .eq('status', 'fechado')
+        .order('competencia', { ascending: false })
+        .limit(50);
 
-      // Buscar benefícios
-      const { data: beneficios } = await supabase
-        .from('beneficios')
-        .select('*')
-        .eq('profissional_id', prof.id)
-        .order('mes_referencia', { ascending: false })
-        .limit(1);
+      // Buscar nomes das lojas
+      const { data: lojasData } = await supabase.from('lojas').select('id, nome');
+      const lojasMap = new Map((lojasData || []).map(l => [l.id, l.nome]));
 
-      if (beneficios && beneficios.length > 0) {
-        const b = beneficios[0];
-        if (b.valor_liquido_vt) {
-          historicoItems.push({
-            data: b.mes_referencia,
-            tipo: 'VALE',
-            valor: Math.floor(b.valor_liquido_vt * 100),
-            descricao: 'Vale Transporte',
-            status: 'APROVADO',
-          });
-        }
-        if (b.valor_liquido_vr) {
-          historicoItems.push({
-            data: b.mes_referencia,
-            tipo: 'VALE',
-            valor: Math.floor(b.valor_liquido_vr * 100),
-            descricao: 'Vale Refeição',
-            status: 'APROVADO',
-          });
-        }
-        if (b.valor_cesta) {
-          historicoItems.push({
-            data: b.mes_referencia,
-            tipo: 'VALE',
-            valor: Math.floor(b.valor_cesta * 100),
-            descricao: 'Cesta Básica',
-            status: 'APROVADO',
-          });
-        }
-      }
-
-      // Adiantamento estimado
-      if (salario > 0) {
-        historicoItems.push({
-          data: new Date().toISOString().split('T')[0],
-          tipo: 'ADIANTAMENTO',
-          valor: Math.floor(salario * 0.4 * 100),
-          descricao: 'Adiantamento dia 20 (40%)',
-          status: 'APROVADO',
-        });
-      }
-
-      // Buscar faltas
-      const { data: faltas } = await supabase
-        .from('faltas')
-        .select('*')
-        .eq('profissional_id', prof.id)
-        .order('data_falta', { ascending: false });
-
-      (faltas || []).forEach((f: any) => {
-        if (f.tipo === 'injustificada') {
-          historicoItems.push({
-            data: f.data_falta,
-            tipo: 'FALTA',
-            valor: -Math.floor(salario * 0.035 * 100),
-            descricao: `Falta injustificada - ${f.motivo || 'sem observação'}`,
-            status: 'DESCONTADO',
+      // Filtrar fechamentos que contêm o profissional no snapshot
+      const historicoFechamentos: FechamentoHistorico[] = [];
+      (fechamentos || []).forEach((f: any) => {
+        const resultados = f.snapshot?.resultados || [];
+        const profData = resultados.find((r: any) => r.profissionalId === prof.id);
+        if (profData) {
+          historicoFechamentos.push({
+            id: f.id,
+            competencia: f.competencia,
+            tipo: f.tipo,
+            status: f.status,
+            versao: f.versao,
+            fechado_em: f.fechado_em,
+            loja_nome: lojasMap.get(f.loja_id) || '',
+            dados: profData,
           });
         }
       });
+      setFechamentosHistorico(historicoFechamentos);
 
-      // Buscar vales
-      const { data: vales } = await supabase
-        .from('professional_vales')
-        .select('*')
-        .eq('profissional_id', prof.id)
-        .order('data_lancamento', { ascending: false });
+      // Buscar vales, empréstimos e faltas
+      const [valesRes, empRes, faltasRes] = await Promise.all([
+        supabase.from('professional_vales').select('*').eq('profissional_id', prof.id).order('data_lancamento', { ascending: false }).limit(20),
+        supabase.from('emprestimos').select('*').eq('profissional_id', prof.id).order('data_inicio', { ascending: false }),
+        supabase.from('faltas').select('*').eq('profissional_id', prof.id).order('data_falta', { ascending: false }).limit(30),
+      ]);
 
-      (vales || []).forEach((v: any) => {
-        historicoItems.push({
-          data: v.data_lancamento,
-          tipo: 'VALE',
-          valor: Math.floor(v.valor * 100),
-          descricao: v.descricao || v.tipo,
-          status: v.status?.toUpperCase() || 'APROVADO',
-        });
-      });
-
-      setHistorico(historicoItems.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()));
+      setVales(valesRes.data || []);
+      setEmprestimos(empRes.data || []);
+      setFaltas(faltasRes.data || []);
     } catch (error) {
       console.error('Erro ao carregar histórico:', error);
       toast.error('Erro ao carregar histórico');
@@ -167,74 +129,47 @@ export default function HistoricoProfissional() {
     }
   };
 
-  const formatCurrency = (centavos: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(centavos / 100);
-  };
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('pt-BR');
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const exportCSV = () => {
-    const headers = ['Data', 'Tipo', 'Valor', 'Descrição', 'Status'];
-    const rows = historico.map(item => [
-      formatDate(item.data),
-      item.tipo,
-      formatCurrency(item.valor),
-      item.descricao,
-      item.status,
-    ]);
-
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `historico_${(profissionalInfo?.nome || profissional).replace(' ', '_')}_${competencia}.csv`;
-    a.click();
-  };
-
-  const getStatusBadge = (status: string, tipo: string) => {
-    if (tipo === 'FALTA') {
-      return <Badge variant="destructive">Desconto</Badge>;
-    }
-    
-    switch (status) {
-      case 'APROVADO':
-        return <Badge className="bg-success/10 text-success border-success/20">Aprovado</Badge>;
-      case 'DESCONTADO':
-        return <Badge variant="destructive">Descontado</Badge>;
-      case 'PENDENTE':
-        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Pendente</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const getTipoBadge = (tipo: string) => {
+  const getTipoIcon = (tipo: string) => {
     switch (tipo) {
-      case 'VALE':
-        return <Badge className="bg-primary/10 text-primary border-primary/20">Vale</Badge>;
-      case 'ADIANTAMENTO':
-        return <Badge className="bg-accent/10 text-accent border-accent/20">Adiantamento</Badge>;
-      case 'FALTA':
-        return <Badge variant="destructive">Falta</Badge>;
-      case 'EMPRESTIMO':
-        return <Badge className="bg-warning/10 text-warning border-warning/20">Empréstimo</Badge>;
-      default:
-        return <Badge variant="outline">{tipo}</Badge>;
+      case 'dia_20': return <Calendar className="h-4 w-4 text-warning" />;
+      case 'dia_5': return <DollarSign className="h-4 w-4 text-success" />;
+      case 'vt': return <Bus className="h-4 w-4 text-primary" />;
+      case 'beneficios': return <Package className="h-4 w-4 text-accent" />;
+      default: return <FileText className="h-4 w-4" />;
     }
   };
 
-  const totais = useMemo(() => ({
-    vales: historico.filter(item => item.tipo === 'VALE' && item.valor > 0).reduce((acc, item) => acc + item.valor, 0),
-    adiantamentos: historico.filter(item => item.tipo === 'ADIANTAMENTO').reduce((acc, item) => acc + item.valor, 0),
-    descontos: Math.abs(historico.filter(item => item.valor < 0).reduce((acc, item) => acc + item.valor, 0)),
-    saldo: historico.reduce((acc, item) => acc + item.valor, 0),
-  }), [historico]);
+  const getTipoLabel = (tipo: string) => {
+    switch (tipo) {
+      case 'dia_20': return 'Dia 20';
+      case 'dia_5': return 'Dia 5';
+      case 'vt': return 'VT';
+      case 'beneficios': return 'Benefícios';
+      default: return tipo;
+    }
+  };
+
+  const getValorPrincipal = (item: FechamentoHistorico): number => {
+    if (!item.dados) return 0;
+    switch (item.tipo) {
+      case 'dia_20': return item.dados.valorDia20;
+      case 'dia_5': return item.dados.salarioLiquido;
+      case 'vt': return item.dados.valorVT;
+      case 'beneficios': return item.dados.valorVR + item.dados.valorCesta;
+      default: return item.dados.totalMes;
+    }
+  };
+
+  // Resumos
+  const totais = useMemo(() => {
+    const pagamentos = fechamentosHistorico.reduce((sum, f) => sum + getValorPrincipal(f), 0);
+    const totalVales = vales.reduce((sum, v) => sum + Number(v.valor), 0);
+    const totalEmprestimos = emprestimos.filter(e => e.status === 'ativo').reduce((sum, e) => sum + Number(e.saldo_devedor), 0);
+    const totalFaltas = faltas.filter(f => f.tipo === 'injustificada').length;
+    return { pagamentos, totalVales, totalEmprestimos, totalFaltas };
+  }, [fechamentosHistorico, vales, emprestimos, faltas]);
 
   if (loading) {
     return (
@@ -258,138 +193,244 @@ export default function HistoricoProfissional() {
             Voltar
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Histórico - {profissionalInfo?.nome || profissional}</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl font-bold">Histórico — {profissionalInfo?.nome || profissional}</h1>
+            <p className="text-sm text-muted-foreground">
               Loja: <span className="font-medium">{profissionalInfo?.loja || loja}</span>
+              {profissionalInfo?.salario ? ` • Salário: ${formatCurrency(profissionalInfo.salario)}` : ''}
             </p>
           </div>
         </div>
-        <Badge variant="outline" className="bg-accent/10">
-          <Calendar className="h-4 w-4 mr-2" />
-          Histórico individual
-        </Badge>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-primary" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xl font-bold text-primary">{formatCurrency(totais.vales)}</p>
-                <p className="text-xs text-muted-foreground">Total em Vales</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-accent/5 border-accent/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-accent" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xl font-bold text-accent">{formatCurrency(totais.adiantamentos)}</p>
-                <p className="text-xs text-muted-foreground">Total Adiantamentos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-destructive/5 border-destructive/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-destructive" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xl font-bold text-destructive">{formatCurrency(totais.descontos)}</p>
-                <p className="text-xs text-muted-foreground">Total Descontos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-success/5 border-success/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-success" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xl font-bold text-success">{formatCurrency(totais.saldo)}</p>
-                <p className="text-xs text-muted-foreground">Saldo Líquido</p>
+              <DollarSign className="h-5 w-5 text-success" />
+              <div>
+                <p className="text-lg font-bold text-success">{formatCurrency(totais.pagamentos)}</p>
+                <p className="text-xs text-muted-foreground">Total Recebido</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-lg font-bold text-primary">{formatCurrency(totais.totalVales)}</p>
+                <p className="text-xs text-muted-foreground">Total Vales</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-warning/5 border-warning/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-warning" />
+              <div>
+                <p className="text-lg font-bold text-warning">{formatCurrency(totais.totalEmprestimos)}</p>
+                <p className="text-xs text-muted-foreground">Saldo Empréstimos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-destructive/5 border-destructive/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-destructive" />
+              <div>
+                <p className="text-lg font-bold text-destructive">{totais.totalFaltas}</p>
+                <p className="text-xs text-muted-foreground">Faltas Injustificadas</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="bg-card/50 border-border/50">
+      {/* Histórico de Fechamentos (dados oficiais) */}
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros e Ações
+            <History className="h-5 w-5" />
+            Histórico de Pagamentos (Fechamentos Oficiais)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 items-end flex-wrap">
-            <div className="space-y-2">
-              <Label htmlFor="competencia">Competência</Label>
-              <Input
-                id="competencia"
-                placeholder="2025-08"
-                value={competencia}
-                onChange={(e) => setCompetencia(e.target.value)}
-                className="w-32"
-              />
-            </div>
-            <Button onClick={exportCSV} variant="outline">
-              <FileText className="h-4 w-4 mr-2" />
-              Exportar Histórico
-            </Button>
-          </div>
+          {fechamentosHistorico.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhum fechamento registrado para este profissional</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Competência</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Loja</TableHead>
+                  <TableHead className="text-right">Salário Base</TableHead>
+                  <TableHead className="text-right">Valor Pago</TableHead>
+                  <TableHead className="text-right">Descontos</TableHead>
+                  <TableHead className="text-right">Dias Trab.</TableHead>
+                  <TableHead>Versão</TableHead>
+                  <TableHead>Data Fechamento</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {fechamentosHistorico.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {formatCompetencia(item.competencia.substring(0, 7))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                        {getTipoIcon(item.tipo)}
+                        {getTipoLabel(item.tipo)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{item.loja_nome}</TableCell>
+                    <TableCell className="text-right">{item.dados ? formatCurrency(item.dados.salarioBase) : '—'}</TableCell>
+                    <TableCell className="text-right font-bold text-success">
+                      {formatCurrency(getValorPrincipal(item))}
+                    </TableCell>
+                    <TableCell className="text-right text-destructive">
+                      {item.dados && item.dados.totalDescontos > 0 ? `-${formatCurrency(item.dados.totalDescontos)}` : '—'}
+                    </TableCell>
+                    <TableCell className="text-right">{item.dados?.diasTrabalhados ?? '—'}</TableCell>
+                    <TableCell><Badge variant="secondary">v{item.versao}</Badge></TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {item.fechado_em ? new Date(item.fechado_em).toLocaleDateString('pt-BR') : '—'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
-      <Card className="bg-card/50 border-border/50">
+      {/* Vales e Empréstimos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Vales */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Vales Registrados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {vales.length === 0 ? (
+              <p className="text-center py-4 text-muted-foreground text-sm">Nenhum vale</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vales.map((v: any) => (
+                    <TableRow key={v.id}>
+                      <TableCell className="text-sm">{formatDate(v.data_lancamento)}</TableCell>
+                      <TableCell className="text-sm">{v.descricao || v.tipo}</TableCell>
+                      <TableCell className="text-right font-medium">{formatCurrency(Number(v.valor))}</TableCell>
+                      <TableCell>
+                        <Badge variant={v.status === 'pendente' ? 'outline' : 'default'} className="text-xs">
+                          {v.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Empréstimos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Empréstimos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {emprestimos.length === 0 ? (
+              <p className="text-center py-4 text-muted-foreground text-sm">Nenhum empréstimo</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Parcela</TableHead>
+                    <TableHead className="text-right">Progresso</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {emprestimos.map((e: any) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="text-sm">{e.tipo === 'clt' ? 'CLT' : 'Empresa'}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(Number(e.valor_parcela))}</TableCell>
+                      <TableCell className="text-right text-sm">
+                        {e.parcelas_pagas || 0}/{e.numero_parcelas || '∞'}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">{formatCurrency(Number(e.saldo_devedor))}</TableCell>
+                      <TableCell>
+                        <Badge variant={e.status === 'ativo' ? 'default' : 'secondary'} className="text-xs">
+                          {e.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Faltas */}
+      <Card>
         <CardHeader>
-          <CardTitle>Histórico Detalhado - {competencia}</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Faltas Registradas
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {faltas.length === 0 ? (
+            <p className="text-center py-4 text-muted-foreground text-sm">Nenhuma falta registrada</p>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead>Motivo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {historico.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Nenhum registro encontrado
+                {faltas.map((f: any) => (
+                  <TableRow key={f.id}>
+                    <TableCell>{formatDate(f.data_falta)}</TableCell>
+                    <TableCell>
+                      <Badge variant={f.tipo === 'injustificada' ? 'destructive' : 'outline'} className="text-xs">
+                        {f.tipo === 'injustificada' ? 'Injustificada' : 'Justificada'}
+                      </Badge>
                     </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{f.motivo || '—'}</TableCell>
                   </TableRow>
-                ) : (
-                  historico.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{formatDate(item.data)}</TableCell>
-                      <TableCell>{getTipoBadge(item.tipo)}</TableCell>
-                      <TableCell className={`text-right font-medium ${
-                        item.valor > 0 ? 'text-success' : 'text-destructive'
-                      }`}>
-                        {item.valor > 0 ? '+' : ''}{formatCurrency(item.valor)}
-                      </TableCell>
-                      <TableCell>{item.descricao}</TableCell>
-                      <TableCell className="text-center">
-                        {getStatusBadge(item.status, item.tipo)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
