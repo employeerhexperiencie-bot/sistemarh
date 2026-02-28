@@ -1904,6 +1904,7 @@ export type Database = {
           estado: string | null
           estado_civil: string | null
           id: string
+          insalubridade: string | null
           local_homologacao: string | null
           loja_id: string | null
           loja_registro_id: string | null
@@ -1964,6 +1965,7 @@ export type Database = {
           estado?: string | null
           estado_civil?: string | null
           id?: string
+          insalubridade?: string | null
           local_homologacao?: string | null
           loja_id?: string | null
           loja_registro_id?: string | null
@@ -2024,6 +2026,7 @@ export type Database = {
           estado?: string | null
           estado_civil?: string | null
           id?: string
+          insalubridade?: string | null
           local_homologacao?: string | null
           loja_id?: string | null
           loja_registro_id?: string | null

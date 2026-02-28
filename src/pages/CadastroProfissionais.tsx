@@ -120,6 +120,7 @@ interface FormDataCompleto {
   salario_nominal: string;
   segundo_sabado: string;
   sem_registro_jornada: boolean;
+  insalubridade: 'nao' | '10' | '20';
   
   // Contratação
   motivo_contratacao: string;
@@ -221,6 +222,7 @@ const initialFormData: FormDataCompleto = {
   salario_nominal: '',
   segundo_sabado: '',
   sem_registro_jornada: false,
+  insalubridade: 'nao',
   motivo_contratacao: '',
   status: 'ativo',
   data_demissao: '',
@@ -537,6 +539,7 @@ export const CadastroProfissionais: React.FC = () => {
         loja_registro_id: formData.loja_registro_id || null,
         cargo: formData.cargo || null,
         salario_nominal: parseCurrencyToCentavos(formData.salario_nominal || formData.primeiro_salario),
+        insalubridade: formData.insalubridade,
         status: formData.status,
         data_admissao: formData.data_admissao || null,
         data_demissao: formData.data_demissao || null,
@@ -620,6 +623,7 @@ export const CadastroProfissionais: React.FC = () => {
       loja_registro_id: professional.loja_registro_id || '',
       cargo: professional.cargo || '',
       salario_nominal: formatCurrency((professional.salario_nominal || 0).toString()),
+      insalubridade: (professional as any).insalubridade || 'nao',
       status: professional.status as 'ativo' | 'demitido' | 'afastado',
       data_admissao: professional.data_admissao || '',
       data_demissao: professional.data_demissao || '',
@@ -1614,7 +1618,7 @@ export const CadastroProfissionais: React.FC = () => {
                           placeholder="07:30 / 30 min de intervalo / 13:45"
                         />
                       </div>
-                      <div className="space-y-2 flex items-end">
+                       <div className="space-y-2 flex items-end">
                         <div className="flex items-center gap-2 h-10">
                           <Checkbox
                             id="sem_registro_jornada"
@@ -1623,6 +1627,26 @@ export const CadastroProfissionais: React.FC = () => {
                           />
                           <Label htmlFor="sem_registro_jornada" className="text-sm">Sem Registro de Jornada</Label>
                         </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="insalubridade" className="flex items-center gap-2">
+                          Insalubridade
+                          <Badge variant="outline" className="text-xs font-normal">Controle</Badge>
+                        </Label>
+                        <Select
+                          value={formData.insalubridade}
+                          onValueChange={(value) => setFormData({ ...formData, insalubridade: value as 'nao' | '10' | '20' })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="nao">Não</SelectItem>
+                            <SelectItem value="10">10%</SelectItem>
+                            <SelectItem value="20">20%</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Apenas para controle, não afeta cálculos</p>
                       </div>
                     </div>
                   </TabsContent>
