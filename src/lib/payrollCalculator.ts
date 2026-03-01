@@ -69,6 +69,7 @@ export interface ProfissionalInput {
   valeDinheiro?: number;
   valeAlimentacao?: number;
   outrosDescontos?: number;
+  insalubridade?: 'nao' | '10' | '20';
 }
 
 export interface ConfiguracaoFolha {
@@ -110,6 +111,9 @@ export interface ResultadoCalculo {
   valorAfastamento: number;
   tipoAfastamento: string | null;
   
+  // Insalubridade
+  valorInsalubridade: number;
+  
   // Totais
   salarioLiquido: number;  // Dia 5
   totalMes: number;
@@ -145,6 +149,14 @@ export function calcularFolhaProfissional(
   detalhes.push(`Salário base: R$ ${profissional.salario.toFixed(2)}`);
   detalhes.push(`Escala: ${profissional.escala} (${diasUteis} dias úteis)`);
   detalhes.push(`Valor dia: R$ ${valorDia.toFixed(2)}`);
+  
+  // 1.1 Calcular insalubridade
+  let valorInsalubridade = 0;
+  if (profissional.insalubridade && profissional.insalubridade !== 'nao') {
+    const percentInsalubridade = profissional.insalubridade === '10' ? 0.10 : 0.20;
+    valorInsalubridade = arredondarValor(profissional.salario * percentInsalubridade);
+    detalhes.push(`Insalubridade ${profissional.insalubridade}%: R$ ${valorInsalubridade.toFixed(2)}`);
+  }
   
   // 2. Calcular dias trabalhados
   const diasAbatidos = profissional.faltas + profissional.atestados + profissional.diasFerias;
@@ -318,7 +330,7 @@ export function calcularFolhaProfissional(
   // Fórmula: Salário Base - Dia 20 - Descontos Operacionais
   // NÃO desconta benefícios (VT, VR, Cesta são PAGOS ao profissional)
   // NÃO desconta encargos (INSS, IRRF calculados pela contabilidade)
-  let salarioBase = profissional.salario;
+  let salarioBase = profissional.salario + valorInsalubridade;
   
   // Se está em afastamento, usar valor do afastamento como base
   if (valorAfastamento > 0 && profissional.status !== 'ativo' && profissional.status !== 'ferias') {
@@ -361,6 +373,7 @@ export function calcularFolhaProfissional(
     totalDescontos,
     valorAfastamento,
     tipoAfastamento,
+    valorInsalubridade,
     salarioLiquido,
     totalMes,
     detalhesCalculo: detalhes,

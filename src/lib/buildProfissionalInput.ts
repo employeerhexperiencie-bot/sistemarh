@@ -140,6 +140,7 @@ export function buildProfissionalInput(
     valeDinheiro: benefAdicionais.valeDinheiro,
     valeAlimentacao: benefAdicionais.valeAlimentacao,
     outrosDescontos: lancamentosDesc,
+    insalubridade: (p.insalubridade as 'nao' | '10' | '20') || 'nao',
   };
 }
 
