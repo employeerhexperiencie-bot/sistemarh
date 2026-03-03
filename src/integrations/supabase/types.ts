@@ -1234,6 +1234,53 @@ export type Database = {
           },
         ]
       }
+      historico_importacoes: {
+        Row: {
+          created_at: string | null
+          erros: Json | null
+          id: string
+          modulo: string
+          nome_arquivo: string
+          registros_erro: number
+          registros_sucesso: number
+          tenant_id: string
+          total_registros: number
+          usuario: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          erros?: Json | null
+          id?: string
+          modulo: string
+          nome_arquivo: string
+          registros_erro?: number
+          registros_sucesso?: number
+          tenant_id?: string
+          total_registros?: number
+          usuario?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          erros?: Json | null
+          id?: string
+          modulo?: string
+          nome_arquivo?: string
+          registros_erro?: number
+          registros_sucesso?: number
+          tenant_id?: string
+          total_registros?: number
+          usuario?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_importacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historico_salarios: {
         Row: {
           created_at: string | null
