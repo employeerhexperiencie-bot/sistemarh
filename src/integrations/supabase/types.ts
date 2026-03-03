@@ -997,6 +997,7 @@ export type Database = {
           outras_adicoes: number | null
           outros_descontos: number | null
           profissional_id: string
+          recibo_assinado: boolean | null
           salario_base: number
           status: string | null
           tenant_id: string
@@ -1034,6 +1035,7 @@ export type Database = {
           outras_adicoes?: number | null
           outros_descontos?: number | null
           profissional_id: string
+          recibo_assinado?: boolean | null
           salario_base?: number
           status?: string | null
           tenant_id?: string
@@ -1071,6 +1073,7 @@ export type Database = {
           outras_adicoes?: number | null
           outros_descontos?: number | null
           profissional_id?: string
+          recibo_assinado?: boolean | null
           salario_base?: number
           status?: string | null
           tenant_id?: string
@@ -1312,6 +1315,7 @@ export type Database = {
           pdf_path: string | null
           pensao_alimenticia: number | null
           profissional_id: string | null
+          recibo_assinado: boolean | null
           salario_base: number
           salario_liquido: number
           status: string | null
@@ -1345,6 +1349,7 @@ export type Database = {
           pdf_path?: string | null
           pensao_alimenticia?: number | null
           profissional_id?: string | null
+          recibo_assinado?: boolean | null
           salario_base: number
           salario_liquido: number
           status?: string | null
@@ -1378,6 +1383,7 @@ export type Database = {
           pdf_path?: string | null
           pensao_alimenticia?: number | null
           profissional_id?: string | null
+          recibo_assinado?: boolean | null
           salario_base?: number
           salario_liquido?: number
           status?: string | null
@@ -1904,6 +1910,7 @@ export type Database = {
           estado: string | null
           estado_civil: string | null
           id: string
+          id_ezpoint: string | null
           insalubridade: string | null
           local_homologacao: string | null
           loja_id: string | null
@@ -1911,6 +1918,7 @@ export type Database = {
           matricula: string
           motivo_demissao: string | null
           nome: string
+          nome_mae: string | null
           odonto: boolean | null
           pensao_alimenticia: number | null
           pis: string | null
@@ -1965,6 +1973,7 @@ export type Database = {
           estado?: string | null
           estado_civil?: string | null
           id?: string
+          id_ezpoint?: string | null
           insalubridade?: string | null
           local_homologacao?: string | null
           loja_id?: string | null
@@ -1972,6 +1981,7 @@ export type Database = {
           matricula: string
           motivo_demissao?: string | null
           nome: string
+          nome_mae?: string | null
           odonto?: boolean | null
           pensao_alimenticia?: number | null
           pis?: string | null
@@ -2026,6 +2036,7 @@ export type Database = {
           estado?: string | null
           estado_civil?: string | null
           id?: string
+          id_ezpoint?: string | null
           insalubridade?: string | null
           local_homologacao?: string | null
           loja_id?: string | null
@@ -2033,6 +2044,7 @@ export type Database = {
           matricula?: string
           motivo_demissao?: string | null
           nome?: string
+          nome_mae?: string | null
           odonto?: boolean | null
           pensao_alimenticia?: number | null
           pis?: string | null

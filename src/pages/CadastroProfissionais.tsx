@@ -531,7 +531,7 @@ export const CadastroProfissionais: React.FC = () => {
 
     setLoading(true);
     try {
-      // Dados principais para salvar no banco (campos existentes)
+      // Dados principais para salvar no banco
       const professionalData = {
         matricula: formData.matricula,
         nome: formData.nome,
@@ -545,6 +545,7 @@ export const CadastroProfissionais: React.FC = () => {
         status: formData.status,
         data_admissao: formData.data_admissao || null,
         data_demissao: formData.data_demissao || null,
+        nome_mae: (formData as any).nome_mae || null,
       };
 
       if (editingProfessional) {
