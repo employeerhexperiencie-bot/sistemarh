@@ -25,6 +25,7 @@ import { HistoricoCompleto } from '@/components/HistoricoCompleto';
 import { EmprestimosTimeline } from '@/components/EmprestimosTimeline';
 import { formatCurrency, formatCurrencyFromNumber, parseCurrencyToCentavos } from '@/lib/utils';
 import { useAuditLog } from '@/contexts/AuditLogContext';
+import { useTenantLimits } from '@/hooks/useTenantLimits';
 
 interface Professional {
   id: string;
@@ -422,6 +423,7 @@ export const CadastroProfissionais: React.FC = () => {
   const [usingImportedData, setUsingImportedData] = useState(false);
   const { toast } = useToast();
   const { addLog } = useAuditLog();
+  const { canAddProfissional, limits } = useTenantLimits();
   
   // 🔍 FILTROS RÁPIDOS
   const [searchTerm, setSearchTerm] = useState('');
@@ -567,6 +569,17 @@ export const CadastroProfissionais: React.FC = () => {
           description: "Profissional atualizado com sucesso"
         });
       } else {
+        // Verificar limite do tenant antes de inserir
+        if (!canAddProfissional()) {
+          toast({
+            title: "Limite atingido",
+            description: `O limite de ${limits?.limite_profissionais} profissionais foi atingido. Entre em contato para aumentar seu plano.`,
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase
           .from('profissionais')
           .insert([professionalData]);

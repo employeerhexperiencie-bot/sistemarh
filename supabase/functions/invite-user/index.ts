@@ -55,6 +55,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ============================================
+    // VERIFICAR LIMITES DO TENANT
+    // ============================================
+    const { data: tenantData } = await supabaseAdmin
+      .from('tenants')
+      .select('limite_usuarios')
+      .eq('id', callerRole.tenant_id)
+      .single();
+
+    if (tenantData?.limite_usuarios) {
+      const { count: currentUsers } = await supabaseAdmin
+        .from('user_roles')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', callerRole.tenant_id)
+        .eq('ativo', true)
+        .neq('role', 'super_admin');
+
+      if (currentUsers !== null && currentUsers >= tenantData.limite_usuarios) {
+        return new Response(JSON.stringify({ 
+          error: `Limite de ${tenantData.limite_usuarios} usuários atingido. Entre em contato para aumentar seu plano.` 
+        }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     // Check if user already exists in auth
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(u => u.email === email.toLowerCase().trim());
