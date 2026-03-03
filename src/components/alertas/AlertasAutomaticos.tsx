@@ -448,7 +448,7 @@ export function CentralAlertas() {
         });
       });
 
-      // Carregar afastamentos com perícia
+      // Carregar afastamentos ativos e com perícia
       const { data: afastamentos } = await supabase
         .from('afastamentos')
         .select(`
@@ -459,12 +459,12 @@ export function CentralAlertas() {
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
-        .eq('status', 'aguardando_pericia');
+        .in('status', ['ativo', 'aguardando_pericia']);
 
       (afastamentos || []).forEach((a: any) => {
         if (!a.data_prevista_retorno) return;
-        const dataPericia = new Date(a.data_prevista_retorno);
-        const diasRestantes = Math.floor((dataPericia.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        const dataRetorno = new Date(a.data_prevista_retorno);
+        const diasRestantes = Math.floor((dataRetorno.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
         
         if (diasRestantes > 30) return;
 
@@ -473,14 +473,18 @@ export function CentralAlertas() {
         else if (diasRestantes <= 7) nivel = 'urgente';
         else if (diasRestantes <= 15) nivel = 'atencao';
 
+        const isPericia = a.status === 'aguardando_pericia';
+        const tituloVencido = isPericia ? 'Perícia Atrasada' : 'Retorno Atrasado';
+        const tituloPendente = isPericia ? 'Perícia Agendada' : 'Retorno Previsto';
+
         alertasGerados.push({
           id: `afastamento-${id++}`,
           tipo: 'afastamento',
           nivel,
-          titulo: diasRestantes <= 0 ? 'Perícia Atrasada' : 'Perícia Agendada',
+          titulo: diasRestantes <= 0 ? tituloVencido : tituloPendente,
           descricao: diasRestantes <= 0 
-            ? `Perícia estava agendada há ${Math.abs(diasRestantes)} dias`
-            : `Perícia agendada em ${diasRestantes} dias`,
+            ? `${isPericia ? 'Perícia' : 'Retorno previsto'} há ${Math.abs(diasRestantes)} dias — ${a.tipo}`
+            : `${isPericia ? 'Perícia' : 'Retorno previsto'} em ${diasRestantes} dias — ${a.tipo}`,
           dataVencimento: a.data_prevista_retorno,
           diasRestantes,
           loja: a.profissionais?.lojas?.nome || 'N/A',
@@ -555,7 +559,7 @@ export function CentralAlertas() {
         .eq('tipo', 'empresa');
 
       (emprestimos || []).forEach((e: any) => {
-        if (!e.numero_parcelas || !e.parcelas_pagas) return;
+        if (!e.numero_parcelas || e.parcelas_pagas == null) return;
         
         const parcelasRestantes = (e.numero_parcelas || 0) - (e.parcelas_pagas || 0);
         
