@@ -67,6 +67,7 @@ const navSections = [
     items: [
       { title: 'Lojas', url: '/cadastro-lojas', icon: Store },
       { title: 'Profissionais', url: '/cadastro-profissionais', icon: Users },
+      { title: 'Importar Dados', url: '/central-importacao', icon: FileSpreadsheet },
     ],
   },
   {

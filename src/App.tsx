@@ -52,6 +52,7 @@ import ComoUsar from "@/pages/ComoUsar";
 import Ocorrencias from "@/pages/Ocorrencias";
 import MinhaEquipe from "@/pages/MinhaEquipe";
 import Fechamentos from "@/pages/Fechamentos";
+import CentralImportacao from "@/pages/CentralImportacao";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Loader2 } from "lucide-react";
@@ -181,6 +182,7 @@ const App = () => (
                   <Route path="/ajuda" element={<ProtectedLayout><Ajuda /></ProtectedLayout>} />
                   <Route path="/como-usar" element={<ProtectedLayout><ComoUsar /></ProtectedLayout>} />
                   <Route path="/minha-equipe" element={<ProtectedLayout><MinhaEquipe /></ProtectedLayout>} />
+                  <Route path="/central-importacao" element={<ProtectedLayout><CentralImportacao /></ProtectedLayout>} />
                   
                   {/* Catch-all - Redireciona para 404 */}
                   <Route path="*" element={<NotFound />} />
