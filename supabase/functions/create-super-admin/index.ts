@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
     if (createError) {
       console.error('Error creating user:', createError);
       return new Response(
-        JSON.stringify({ error: createError.message }),
+        JSON.stringify({ error: 'Failed to create user. Please try again.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
       // Try to delete the user if role creation failed
       await supabaseAdmin.auth.admin.deleteUser(userData.user.id);
       return new Response(
-        JSON.stringify({ error: `Role creation failed: ${roleError.message}` }),
+        JSON.stringify({ error: 'Role setup failed. Please try again.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
