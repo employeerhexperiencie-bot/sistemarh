@@ -465,6 +465,7 @@ export default function SimuladorFolha() {
           valeDinheiro: benefAdicionais.valeDinheiro,
           valeAlimentacao: benefAdicionais.valeAlimentacao,
           outrosDescontos: lancamentosDesc,
+          insalubridade: (p.insalubridade as 'nao' | '10' | '20') || 'nao',
         };
       })
     : [];
@@ -519,7 +520,12 @@ export default function SimuladorFolha() {
         diasFerias: p.diasFerias,
         vales: p.vales,
         emprestimos: p.emprestimos,
-        pensao: p.pensao
+        pensao: p.pensao,
+        valeCarne: p.valeCarne,
+        valeDinheiro: p.valeDinheiro,
+        valeAlimentacao: p.valeAlimentacao,
+        outrosDescontos: p.outrosDescontos,
+        insalubridade: (p as any).insalubridade || 'nao',
       };
       
       // Usar o motor centralizado

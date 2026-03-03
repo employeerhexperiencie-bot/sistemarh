@@ -126,7 +126,7 @@ export default function Fechamentos() {
         .from('profissionais')
         .select('*')
         .eq('loja_id', selectedLoja.id)
-        .eq('status', 'ativo');
+        .in('status', ['ativo', 'afastado_acidente', 'afastado_doenca', 'licenca_maternidade']);
 
       const profs = profissionais || [];
       
