@@ -150,12 +150,10 @@ export function calcularFolhaProfissional(
   detalhes.push(`Escala: ${profissional.escala} (${diasUteis} dias úteis)`);
   detalhes.push(`Valor dia: R$ ${valorDia.toFixed(2)}`);
   
-  // 1.1 Calcular insalubridade
-  let valorInsalubridade = 0;
+  // 1.1 Insalubridade é apenas informativo no cadastro, NÃO entra no cálculo da folha
+  const valorInsalubridade = 0;
   if (profissional.insalubridade && profissional.insalubridade !== 'nao') {
-    const percentInsalubridade = profissional.insalubridade === '10' ? 0.10 : 0.20;
-    valorInsalubridade = arredondarValor(profissional.salario * percentInsalubridade);
-    detalhes.push(`Insalubridade ${profissional.insalubridade}%: R$ ${valorInsalubridade.toFixed(2)}`);
+    detalhes.push(`Insalubridade ${profissional.insalubridade}% (informativo - não calculado na folha)`);
   }
   
   // 2. Calcular dias trabalhados
