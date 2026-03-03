@@ -492,6 +492,54 @@ export function CentralAlertas() {
         });
       });
 
+      // Alertas para profissionais com status de afastamento mas SEM registro formal na tabela afastamentos
+      const { data: profAfastados } = await supabase
+        .from('profissionais')
+        .select(`
+          id,
+          matricula,
+          nome,
+          status,
+          lojas:lojas!profissionais_loja_id_fkey (nome)
+        `)
+        .in('status', ['afastado_acidente', 'licenca_maternidade', 'afastado_doenca', 'afastado']);
+
+      if (profAfastados && profAfastados.length > 0) {
+        // Verificar quais já têm registro na tabela afastamentos
+        const profIds = profAfastados.map((p: any) => p.id);
+        const { data: afastamentosExistentes } = await supabase
+          .from('afastamentos')
+          .select('profissional_id')
+          .in('profissional_id', profIds);
+
+        const idsComRegistro = new Set((afastamentosExistentes || []).map((a: any) => a.profissional_id));
+
+        profAfastados.forEach((p: any) => {
+          if (idsComRegistro.has(p.id)) return; // já tem registro formal
+
+          const tipoLabel = p.status === 'licenca_maternidade' ? 'Licença Maternidade'
+            : p.status === 'afastado_acidente' ? 'Afastado por Acidente'
+            : p.status === 'afastado_doenca' ? 'Afastado por Doença'
+            : 'Afastado';
+
+          alertasGerados.push({
+            id: `afastamento-sem-registro-${id++}`,
+            tipo: 'afastamento',
+            nivel: 'urgente',
+            titulo: 'Afastamento sem Registro',
+            descricao: `${p.nome} está como "${tipoLabel}" mas não tem registro formal de afastamento (datas, documentos). Cadastre na Gestão de Afastamentos.`,
+            dataVencimento: new Date().toISOString(),
+            diasRestantes: 0,
+            loja: p.lojas?.nome || 'N/A',
+            profissional: p.nome,
+            matricula: p.matricula,
+            acaoUrl: '/gestao-afastamentos',
+            lido: false,
+            resolvido: false,
+          });
+        });
+      }
+
       // Carregar empréstimos próximos de quitação ou com situações especiais
       const { data: emprestimos } = await supabase
         .from('emprestimos')
