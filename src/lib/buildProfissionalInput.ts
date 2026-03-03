@@ -121,7 +121,7 @@ export function buildProfissionalInput(
     cargo: p.cargo || null,
     lojaId: p.loja_id || 'sem-loja',
     salario,
-    escala: '6x1',
+    escala: (p.escala === '5x2' ? '5x2' : '6x1') as '6x1' | '5x2',
     valorPassagem: p.vale_transporte === true && p.valor_diario_rota ? Number(p.valor_diario_rota) : 0,
     dataAdmissao: p.data_admissao || null,
     status,
@@ -144,10 +144,33 @@ export function buildProfissionalInput(
   };
 }
 
+/**
+ * Calcula dias úteis reais do mês baseado no calendário
+ * 6x1: todos os dias menos domingos
+ * 5x2: todos os dias menos sábados e domingos
+ */
+function calcularDiasUteisMes(competencia: string, escala: '6x1' | '5x2'): number {
+  const [ano, mes] = competencia.split('-').map(Number);
+  const diasNoMes = new Date(ano, mes, 0).getDate();
+  let diasUteis = 0;
+
+  for (let dia = 1; dia <= diasNoMes; dia++) {
+    const date = new Date(ano, mes - 1, dia);
+    const diaSemana = date.getDay(); // 0=dom, 6=sab
+    if (escala === '6x1') {
+      if (diaSemana !== 0) diasUteis++; // exclui domingos
+    } else {
+      if (diaSemana !== 0 && diaSemana !== 6) diasUteis++; // exclui sab+dom
+    }
+  }
+
+  return diasUteis;
+}
+
 export function getDefaultConfig(competencia: string): ConfiguracaoFolha {
   return {
-    diasUteis6x1: 26,
-    diasUteis5x2: 22,
+    diasUteis6x1: calcularDiasUteisMes(competencia, '6x1'),
+    diasUteis5x2: calcularDiasUteisMes(competencia, '5x2'),
     valorVR: 25,
     percentualDia20: 40,
     valorCestaBasica: 180,
