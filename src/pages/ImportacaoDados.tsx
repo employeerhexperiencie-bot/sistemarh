@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, Download, FileSpreadsheet, CheckCircle2, AlertCircle, FileImage } from "lucide-react";
+import { Upload, Download, FileSpreadsheet, CheckCircle2, AlertCircle, FileImage, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
+import { ImportarFaltasModal } from '@/components/faltas/ImportarFaltasModal';
 
 interface ImportResult {
   success: number;
@@ -18,6 +19,7 @@ export default function ImportacaoDados() {
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [documentsFiles, setDocumentsFiles] = useState<FileList | null>(null);
+  const [importFaltasOpen, setImportFaltasOpen] = useState(false);
   const { toast } = useToast();
 
   const downloadTemplate = (type: 'lojas' | 'profissionais') => {
@@ -226,9 +228,13 @@ export default function ImportacaoDados() {
       </div>
 
       <Tabs defaultValue="lojas" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="lojas">Lojas</TabsTrigger>
           <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
+          <TabsTrigger value="faltas" className="flex items-center gap-1">
+            <CalendarDays className="h-4 w-4" />
+            Faltas
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="lojas" className="space-y-4">
@@ -359,7 +365,48 @@ export default function ImportacaoDados() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="faltas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Importar Faltas em Lote</CardTitle>
+              <CardDescription>
+                Faça upload de uma planilha com as faltas dos profissionais — ideal para quem não usa ponto eletrônico integrado
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  variant="default"
+                  onClick={() => setImportFaltasOpen(true)}
+                  className="flex-1"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Abrir Importador de Faltas
+                </Button>
+              </div>
+
+              <Alert>
+                <CalendarDays className="h-4 w-4" />
+                <AlertDescription>
+                  <p><strong>Como funciona:</strong></p>
+                  <ul className="list-disc pl-4 mt-1 space-y-1 text-sm">
+                    <li>Baixe o template Excel com as colunas MATRICULA, DATA_FALTA e TIPO</li>
+                    <li>Preencha com as faltas do mês (uma linha por falta/dia)</li>
+                    <li>O sistema valida matrículas, detecta duplicatas e mostra preview antes de importar</li>
+                    <li>Tipos aceitos: <strong>injustificada</strong>, <strong>justificada</strong> e <strong>atestado</strong></li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      <ImportarFaltasModal
+        open={importFaltasOpen}
+        onOpenChange={setImportFaltasOpen}
+      />
 
       {importResult && (
         <Card>
