@@ -51,13 +51,15 @@
 - [x] Adicionar campo `recibo_assinado` nos holerites (migration executada)
 - [ ] Gerar relatorios PDF a partir dos snapshots fechados (movido para FASE 2)
 
-### FASE 2 — Relatorios PDF (PRÓXIMA)
-- [ ] Relatorio Adiantamento Dia 20 (por loja)
-- [ ] Relatorio Folha Pagamento Dia 5 (por loja)
-- [ ] Relatorio Vale Transporte (por loja/periodo)
-- [ ] Relatorio Cesta Basica (por loja)
-- [ ] Relatorio Vale Alimentacao Alelo (por loja)
-- [ ] Recibo de Pagamento (3 por pagina A4)
+### FASE 2 — Relatorios PDF ✅ CONCLUÍDA
+- [x] Relatorio Adiantamento Dia 20 (por loja) — gerarRelatorioDia20
+- [x] Relatorio Folha Pagamento Dia 5 (por loja) — gerarRelatorioDia5
+- [x] Relatorio Vale Transporte (por loja/periodo) — gerarRelatorioVT
+- [x] Relatorio Cesta Basica (por loja) — gerarRelatorioCesta
+- [x] Relatorio Vale Alimentacao Alelo (por loja) — gerarRelatorioAlelo
+- [x] Recibo de Pagamento (3 por pagina A4) — gerarRecibos3PorPagina
+- [x] Exportacao CSV para todos os tipos
+- [x] Pagina /relatorios integrada com filtros e auditoria
 
 ### FASE 3 — Integracao EzPointWeb (Semana 3-4)
 - [ ] Configurar secrets (EZPOINT_EMPRESA, EZPOINT_USUARIO, EZPOINT_SENHA)
