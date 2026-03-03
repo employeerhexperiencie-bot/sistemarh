@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, Trash2, Eye, AlertCircle, Download, FileDown, Filter, X, Loader2 } from 'lucide-react';
+import { Calendar, Trash2, Eye, AlertCircle, Download, FileDown, Filter, X, Loader2, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ImportarFaltasModal } from '@/components/faltas/ImportarFaltasModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +29,7 @@ interface Falta {
 export default function Faltas() {
   const [faltas, setFaltas] = useState<Falta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     matricula: '',
@@ -231,7 +233,7 @@ export default function Faltas() {
           <h1 className="text-3xl font-bold">Registro de Faltas</h1>
           <p className="text-muted-foreground">Controle de faltas e ausências dos profissionais</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="h-4 w-4 mr-2" />
             Filtros
@@ -239,6 +241,10 @@ export default function Faltas() {
           <Button variant="outline" onClick={exportarCSV}>
             <FileDown className="h-4 w-4 mr-2" />
             Exportar CSV
+          </Button>
+          <Button variant="outline" onClick={() => setImportModalOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Importar Lote
           </Button>
           <Button onClick={() => setIsDialogOpen(true)}>
             <Calendar className="h-4 w-4 mr-2" />
@@ -483,6 +489,12 @@ export default function Faltas() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ImportarFaltasModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        onImportComplete={loadData}
+      />
     </div>
   );
 }
