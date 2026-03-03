@@ -441,11 +441,11 @@ export function StatusOperacao() {
           <Button 
             className="w-full h-12 text-base gap-2"
             size="lg"
-            onClick={() => navigate('/simulador-folha')}
+            onClick={() => navigate('/fechamentos')}
             disabled={!podeSimular}
           >
             <Calculator className="h-5 w-5" />
-            Simular Folha
+            Abrir Fechamentos
             <ArrowRight className="h-5 w-5" />
           </Button>
           {!podeSimular && (

@@ -201,9 +201,9 @@ const videoTutorials = [
     thumbnail: '/placeholder.svg'
   },
   {
-    id: 'simulador-folha',
-    title: 'Usando o Simulador de Folha',
-    description: 'Como simular a folha de pagamento antes do fechamento',
+    id: 'fechamentos',
+    title: 'Central de Fechamentos',
+    description: 'Como visualizar, editar e fechar a folha de pagamento',
     duration: '6:45',
     category: 'Folha',
     icon: CreditCard,

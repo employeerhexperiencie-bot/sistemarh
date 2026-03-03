@@ -29,7 +29,7 @@ import GestaoEmprestimos from "@/pages/GestaoEmprestimos";
 import GestaoBeneficios from "@/pages/GestaoBeneficios";
 import GestaoBeneficiosDetalhado from "@/pages/GestaoBeneficiosDetalhado";
 import ReferenciaSistema from "@/pages/ReferenciaSistema";
-import SimuladorFolha from "@/pages/SimuladorFolha";
+
 import Configuracoes from "@/pages/Configuracoes";
 import { CadastroLojas } from "@/pages/CadastroLojas";
 import ImportacaoDados from "@/pages/ImportacaoDados";
@@ -160,7 +160,7 @@ const App = () => (
                   <Route path="/gestao-beneficios" element={<ProtectedLayout><GestaoBeneficios /></ProtectedLayout>} />
                   <Route path="/gestao-beneficios-detalhado" element={<ProtectedLayout><GestaoBeneficiosDetalhado /></ProtectedLayout>} />
                   <Route path="/referencia-sistema" element={<SuperAdminLayout><ReferenciaSistema /></SuperAdminLayout>} />
-                  <Route path="/simulador-folha" element={<ProtectedLayout><SimuladorFolha /></ProtectedLayout>} />
+                  <Route path="/simulador-folha" element={<ProtectedLayout><Fechamentos /></ProtectedLayout>} />
                   <Route path="/fechamentos" element={<ProtectedLayout><Fechamentos /></ProtectedLayout>} />
                   <Route path="/configuracoes" element={<ProtectedLayout><Configuracoes /></ProtectedLayout>} />
                   {/* ROTAS EXCLUSIVAS SUPER_ADMIN - Cliente NÃO pode acessar */}

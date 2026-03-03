@@ -90,9 +90,9 @@ export function FluxoGuiadoChecklist() {
     {
       id: 'simular-folha',
       numero: 3,
-      titulo: 'Simular folha',
-      descricao: 'Visualize os valores antes de fechar (não gera descontos)',
-      rota: '/simulador-folha',
+      titulo: 'Visualizar folha',
+      descricao: 'Visualize os valores antes de fechar',
+      rota: '/fechamentos',
       icone: Calculator,
       verificar: async () => {
         // Consideramos concluído se visitou o simulador
@@ -112,7 +112,7 @@ export function FluxoGuiadoChecklist() {
       numero: 4,
       titulo: 'Fechar folha',
       descricao: 'Confirme os valores e gere os registros definitivos',
-      rota: '/simulador-folha',
+      rota: '/fechamentos',
       icone: FileText,
       verificar: async () => {
         const { data } = await supabase
