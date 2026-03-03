@@ -12,7 +12,7 @@ const routeLabels: Record<string, string> = {
   '/': 'Dashboard',
   '/dashboard': 'Dashboard',
   '/alertas': 'Alertas',
-  '/simulador-folha': 'Simulador de Folha',
+  '/simulador-folha': 'Fechamentos',
   '/cadastro-lojas': 'Lojas',
   '/cadastro-profissionais': 'Profissionais',
   '/importacao-dados': 'Importação',

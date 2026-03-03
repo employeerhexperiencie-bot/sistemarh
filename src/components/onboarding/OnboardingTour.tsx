@@ -46,11 +46,11 @@ const tourSteps: TourStep[] = [
     position: 'center'
   },
   {
-    id: 'simulador',
-    title: 'Simulador de Folha',
-    description: 'Simule a folha de pagamento completa com cálculos automáticos de VT, VR, descontos e adiantamentos. Exporte relatórios e feche a folha.',
+    id: 'fechamentos',
+    title: 'Fechamentos de Folha',
+    description: 'Visualize, edite e feche a folha de pagamento por loja com cálculos automáticos de VT, VR, descontos e adiantamentos.',
     icon: Calculator,
-    route: '/simulador-folha',
+    route: '/fechamentos',
     position: 'center'
   },
   {
@@ -98,7 +98,7 @@ const tourSteps: TourStep[] = [
     title: 'Pronto para começar! ✨',
     description: 'Você conheceu as principais funcionalidades. Explore o menu lateral para acessar todos os módulos. Bom trabalho!',
     icon: CheckCircle2,
-    route: '/simulador-folha',
+    route: '/fechamentos',
     position: 'center'
   }
 ];

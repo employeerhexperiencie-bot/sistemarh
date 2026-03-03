@@ -96,11 +96,11 @@ const setupSteps: SetupStep[] = [
   },
   {
     id: 'simulacao',
-    title: 'Simular Primeira Folha',
-    description: 'Faça uma simulação da folha de pagamento para validar se tudo está correto.',
+    title: 'Primeira Folha',
+    description: 'Visualize e feche a folha de pagamento para validar se tudo está correto.',
     icon: Calculator,
-    route: '/simulador-folha',
-    actionLabel: 'Simular Folha',
+    route: '/fechamentos',
+    actionLabel: 'Abrir Fechamentos',
     skipLabel: 'Fazer depois',
     checkComplete: async () => {
       return {
