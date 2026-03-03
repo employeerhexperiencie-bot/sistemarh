@@ -1622,6 +1622,53 @@ export type Database = {
           },
         ]
       }
+      pagamentos_tenant: {
+        Row: {
+          comprovante_url: string | null
+          created_at: string | null
+          data_pagamento: string
+          data_referencia: string
+          forma_pagamento: string | null
+          id: string
+          observacoes: string | null
+          registrado_por: string | null
+          tenant_id: string
+          valor: number
+        }
+        Insert: {
+          comprovante_url?: string | null
+          created_at?: string | null
+          data_pagamento: string
+          data_referencia: string
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          registrado_por?: string | null
+          tenant_id: string
+          valor: number
+        }
+        Update: {
+          comprovante_url?: string | null
+          created_at?: string | null
+          data_pagamento?: string
+          data_referencia?: string
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          registrado_por?: string | null
+          tenant_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_tenant_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pendencias: {
         Row: {
           alerta_critico_enviado: boolean | null
@@ -2255,6 +2302,9 @@ export type Database = {
           cnpj: string | null
           created_at: string | null
           data_bloqueio: string | null
+          data_proximo_vencimento: string | null
+          data_ultimo_pagamento: string | null
+          dia_vencimento: number | null
           email: string | null
           endereco: string | null
           id: string
@@ -2263,15 +2313,22 @@ export type Database = {
           limite_usuarios: number | null
           motivo_bloqueio: string | null
           nome: string
+          observacoes_financeiras: string | null
           plano: string | null
+          status_pagamento: string | null
           telefone: string | null
+          total_pago: number | null
           updated_at: string | null
+          valor_mensalidade: number | null
         }
         Insert: {
           ativo?: boolean | null
           cnpj?: string | null
           created_at?: string | null
           data_bloqueio?: string | null
+          data_proximo_vencimento?: string | null
+          data_ultimo_pagamento?: string | null
+          dia_vencimento?: number | null
           email?: string | null
           endereco?: string | null
           id?: string
@@ -2280,15 +2337,22 @@ export type Database = {
           limite_usuarios?: number | null
           motivo_bloqueio?: string | null
           nome: string
+          observacoes_financeiras?: string | null
           plano?: string | null
+          status_pagamento?: string | null
           telefone?: string | null
+          total_pago?: number | null
           updated_at?: string | null
+          valor_mensalidade?: number | null
         }
         Update: {
           ativo?: boolean | null
           cnpj?: string | null
           created_at?: string | null
           data_bloqueio?: string | null
+          data_proximo_vencimento?: string | null
+          data_ultimo_pagamento?: string | null
+          dia_vencimento?: number | null
           email?: string | null
           endereco?: string | null
           id?: string
@@ -2297,9 +2361,13 @@ export type Database = {
           limite_usuarios?: number | null
           motivo_bloqueio?: string | null
           nome?: string
+          observacoes_financeiras?: string | null
           plano?: string | null
+          status_pagamento?: string | null
           telefone?: string | null
+          total_pago?: number | null
           updated_at?: string | null
+          valor_mensalidade?: number | null
         }
         Relationships: []
       }
