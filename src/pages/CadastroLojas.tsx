@@ -20,7 +20,7 @@ interface Loja {
   endereco?: string;
   telefone?: string;
   email?: string;
-  responsavel?: string;
+  gerente?: string;
   created_at: string;
 }
 
@@ -36,7 +36,7 @@ export const CadastroLojas: React.FC = () => {
     endereco: '',
     telefone: '',
     email: '',
-    responsavel: ''
+    gerente: ''
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -74,7 +74,6 @@ export const CadastroLojas: React.FC = () => {
     setLoading(true);
     try {
       if (editingLoja) {
-        // Update existing loja
         const dadosAnteriores = { ...editingLoja };
         const { error } = await supabase
           .from('lojas')
@@ -83,7 +82,6 @@ export const CadastroLojas: React.FC = () => {
 
         if (error) throw error;
         
-        // Registrar atividade de atualização
         addLog({
           usuario: 'Sistema',
           acao: 'EDITAR',
@@ -105,7 +103,6 @@ export const CadastroLojas: React.FC = () => {
         await loadLojas();
         handleCloseDialog();
       } else {
-        // Create new loja
         const { data, error } = await supabase
           .from('lojas')
           .insert([formData])
@@ -114,7 +111,6 @@ export const CadastroLojas: React.FC = () => {
 
         if (error) throw error;
 
-        // Registrar atividade de criação
         addLog({
           usuario: 'Sistema',
           acao: 'CRIAR',
@@ -132,10 +128,7 @@ export const CadastroLojas: React.FC = () => {
           description: "Loja cadastrada! Agora você pode adicionar documentos."
         });
 
-        // Load lojas to update the list
         await loadLojas();
-        
-        // Set the newly created loja as editing to enable documents tab
         setEditingLoja(data);
         setActiveTab('documentos');
       }
@@ -159,7 +152,7 @@ export const CadastroLojas: React.FC = () => {
       endereco: loja.endereco || '',
       telefone: loja.telefone || '',
       email: loja.email || '',
-      responsavel: loja.responsavel || ''
+      gerente: loja.gerente || ''
     });
     setActiveTab('dados');
     setIsDialogOpen(true);
@@ -202,7 +195,7 @@ export const CadastroLojas: React.FC = () => {
       endereco: '',
       telefone: '',
       email: '',
-      responsavel: ''
+      gerente: ''
     });
   };
 
@@ -291,11 +284,11 @@ export const CadastroLojas: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="responsavel">Responsável</Label>
+                  <Label htmlFor="gerente">Responsável / Gerente</Label>
                   <Input
-                    id="responsavel"
-                    value={formData.responsavel}
-                    onChange={(e) => setFormData({ ...formData, responsavel: e.target.value })}
+                    id="gerente"
+                    value={formData.gerente}
+                    onChange={(e) => setFormData({ ...formData, gerente: e.target.value })}
                     placeholder="Nome do responsável"
                   />
                 </div>
@@ -401,7 +394,7 @@ export const CadastroLojas: React.FC = () => {
                     <TableHead>Nome</TableHead>
                     <TableHead>CNPJ</TableHead>
                     <TableHead>Telefone</TableHead>
-                    <TableHead>Responsável</TableHead>
+                    <TableHead>Gerente</TableHead>
                     <TableHead>Data Cadastro</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
@@ -412,7 +405,7 @@ export const CadastroLojas: React.FC = () => {
                       <TableCell className="font-medium">{loja.nome}</TableCell>
                       <TableCell>{loja.cnpj || '-'}</TableCell>
                       <TableCell>{loja.telefone || '-'}</TableCell>
-                      <TableCell>{loja.responsavel || '-'}</TableCell>
+                      <TableCell>{loja.gerente || '-'}</TableCell>
                       <TableCell>
                         {new Date(loja.created_at).toLocaleDateString('pt-BR')}
                       </TableCell>
