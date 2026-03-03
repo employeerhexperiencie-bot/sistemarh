@@ -12,17 +12,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { 
   Lock, Unlock, Building2, Calendar, 
   CheckCircle2, AlertCircle, Clock, RefreshCw,
   TrendingUp, Users, DollarSign, Loader2, Download, Eye,
-  History, ChevronLeft, Edit3, FileText, ArrowRight
+  History, ChevronLeft, Edit3, FileText, ArrowRight, FileDown
 } from 'lucide-react';
 import { formatCurrency, calcularFolhaProfissional, type ResultadoCalculo, type ProfissionalInput } from '@/lib/payrollCalculator';
 import { getCompetenciaAtual, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
 import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, type DadosCompetencia } from '@/lib/buildProfissionalInput';
 import { gerarHoleritePDF, gerarHoleriteDia20, gerarHoleriteDia5, gerarHoleriteVT } from '@/components/folha/HoleritePDF';
+import { 
+  gerarRelatorioDia20, gerarRelatorioDia5, gerarRelatorioVT, 
+  gerarRelatorioCesta, exportarCSV,
+  type ProfissionalRelatorio, type ConfigRelatorio
+} from '@/lib/relatoriosPDF';
 
 type TipoFechamento = 'dia_20' | 'dia_5' | 'vt' | 'beneficios';
 type StatusFechamento = 'aberto' | 'fechado' | 'reaberto';
@@ -68,7 +74,7 @@ const statusConfig: Record<StatusFechamento, { label: string; variant: 'default'
 interface PreviewData {
   profissionais: any[];
   inputs: ProfissionalInput[];
-  resultados: (ResultadoCalculo & { matricula: string; cargo: string | null; salarioBase: number })[];
+  resultados: (ResultadoCalculo & { matricula: string; cargo: string | null; salarioBase: number; lojaNome?: string })[];
   dadosComp: DadosCompetencia;
 }
 
@@ -97,6 +103,8 @@ export default function Fechamentos() {
   // View state
   const [viewMode, setViewMode] = useState<ViewMode>('lista');
   const [selectedLoja, setSelectedLoja] = useState<Loja | null>(null);
+  const [selectedLojas, setSelectedLojas] = useState<Loja[]>([]);
+  const [checkedLojaIds, setCheckedLojaIds] = useState<Set<string>>(new Set());
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [editOverrides, setEditOverrides] = useState<EditOverrides>({});
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
@@ -196,9 +204,10 @@ export default function Fechamentos() {
       .sort((a, b) => b.versao - a.versao);
   };
 
-  // Open preview for a store
+  // Open preview for a single store
   const handleOpenPreview = async (loja: Loja) => {
     setSelectedLoja(loja);
+    setSelectedLojas([loja]);
     setViewMode('preview');
     setIsLoadingPreview(true);
     setEditOverrides({});
@@ -217,7 +226,7 @@ export default function Fechamentos() {
       const inputs = profs.map(p => buildProfissionalInput(p, dadosComp));
       const resultados = profs.map((p, i) => {
         const resultado = calcularFolhaProfissional(inputs[i], config);
-        return { ...resultado, matricula: p.matricula, cargo: p.cargo, salarioBase: inputs[i].salario };
+        return { ...resultado, matricula: p.matricula, cargo: p.cargo, salarioBase: inputs[i].salario, lojaNome: loja.nome };
       });
 
       setPreviewData({ profissionais: profs, inputs, resultados, dadosComp });
@@ -227,6 +236,76 @@ export default function Fechamentos() {
       setViewMode('lista');
     } finally {
       setIsLoadingPreview(false);
+    }
+  };
+
+  // Open preview for multiple stores (consolidated)
+  const handleOpenMultiPreview = async (lojasToPreview: Loja[]) => {
+    if (lojasToPreview.length === 0) {
+      toast.error('Selecione ao menos uma loja');
+      return;
+    }
+    setSelectedLoja(lojasToPreview.length === 1 ? lojasToPreview[0] : null);
+    setSelectedLojas(lojasToPreview);
+    setViewMode('preview');
+    setIsLoadingPreview(true);
+    setEditOverrides({});
+
+    try {
+      const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
+      const config = getDefaultConfig(competencia);
+
+      let allProfs: any[] = [];
+      let allInputs: ProfissionalInput[] = [];
+      let allResultados: (ResultadoCalculo & { matricula: string; cargo: string | null; salarioBase: number; lojaNome?: string })[] = [];
+
+      // Build lojaMap for name lookups
+      const lojaMap = new Map(lojasToPreview.map(l => [l.id, l.nome]));
+
+      for (const loja of lojasToPreview) {
+        const { data: profissionais } = await supabase
+          .from('profissionais')
+          .select('*')
+          .eq('loja_id', loja.id)
+          .in('status', ['ativo', 'afastado_acidente', 'afastado_doenca', 'licenca_maternidade']);
+
+        const profs = profissionais || [];
+        const inputs = profs.map(p => buildProfissionalInput(p, dadosComp));
+        const resultados = profs.map((p, i) => {
+          const resultado = calcularFolhaProfissional(inputs[i], config);
+          return { ...resultado, matricula: p.matricula, cargo: p.cargo, salarioBase: inputs[i].salario, lojaNome: loja.nome };
+        });
+
+        allProfs = [...allProfs, ...profs];
+        allInputs = [...allInputs, ...inputs];
+        allResultados = [...allResultados, ...resultados];
+      }
+
+      setPreviewData({ profissionais: allProfs, inputs: allInputs, resultados: allResultados, dadosComp });
+    } catch (err) {
+      console.error('Erro ao carregar preview consolidado:', err);
+      toast.error('Erro ao carregar dados');
+      setViewMode('lista');
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  // Toggle loja checkbox
+  const toggleLojaCheck = (lojaId: string) => {
+    setCheckedLojaIds(prev => {
+      const next = new Set(prev);
+      if (next.has(lojaId)) next.delete(lojaId);
+      else next.add(lojaId);
+      return next;
+    });
+  };
+
+  const toggleAllLojas = () => {
+    if (checkedLojaIds.size === lojas.length) {
+      setCheckedLojaIds(new Set());
+    } else {
+      setCheckedLojaIds(new Set(lojas.map(l => l.id)));
     }
   };
 
@@ -529,18 +608,109 @@ export default function Fechamentos() {
     );
   };
 
-  // Sub-view: Preview of professionals
-  if (viewMode === 'preview' && selectedLoja) {
+  // Helper to build report data from preview
+  const buildReportProfs = (): ProfissionalRelatorio[] => {
+    if (!previewData) return [];
+    return previewData.resultados.map((r, idx) => {
+      const inp = previewData.inputs[idx];
+      const p = previewData.profissionais[idx];
+      return {
+        nome: r.profissionalNome,
+        matricula: r.matricula,
+        cpf: p?.cpf || '',
+        cargo: r.cargo || '',
+        loja: r.lojaNome || selectedLoja?.nome || '',
+        salarioBase: r.salarioBase,
+        dataAdmissao: p?.data_admissao || '',
+        nomeMae: p?.nome_mae || '',
+        valorDia20: r.valorDia20,
+        valorDia5: r.salarioLiquido,
+        valorVT: r.valorVT,
+        valorVR: r.valorVR,
+        valorCesta: r.valorCesta,
+        valorAlelo: inp.valeAlimentacao || 0,
+        diasTrabalhados: r.diasTrabalhados,
+        diasUteis: r.diasUteis,
+        faltas: inp.faltas,
+        descontoFaltas: r.descontoFaltas,
+        emprestimo: inp.emprestimos,
+        vales: inp.vales,
+        totalDescontos: r.totalDescontos,
+        insalubridade: 0,
+      };
+    });
+  };
+
+  const handleDownloadPDF = () => {
+    if (!previewData) return;
+    const profs = buildReportProfs();
+    const lojaLabel = selectedLojas.length === 1 ? selectedLojas[0].nome : `${selectedLojas.length} Lojas`;
+    const config: ConfigRelatorio = {
+      empresaNome: 'Sistema RH',
+      empresaCNPJ: '',
+      competencia: formatCompetencia(competencia),
+      loja: lojaLabel,
+      geradoPor: user?.email || 'Sistema',
+    };
+
+    let doc;
+    switch (tipoAtivo) {
+      case 'dia_20': doc = gerarRelatorioDia20(profs, config); break;
+      case 'dia_5': doc = gerarRelatorioDia5(profs, config); break;
+      case 'vt': doc = gerarRelatorioVT(profs, config); break;
+      case 'beneficios': doc = gerarRelatorioCesta(profs, config); break;
+    }
+
+    if (doc) {
+      const fileLabel = selectedLojas.length === 1 ? selectedLojas[0].nome : 'consolidado';
+      doc.save(`relatorio_${tipoAtivo}_${fileLabel}_${competencia}.pdf`);
+      toast.success('Relatório PDF gerado!');
+    }
+  };
+
+  const handleDownloadCSV = () => {
+    if (!previewData) return;
+    const profs = buildReportProfs();
+    const lojaLabel = selectedLojas.length === 1 ? selectedLojas[0].nome : 'consolidado';
+    const config: ConfigRelatorio = {
+      empresaNome: 'Sistema RH',
+      empresaCNPJ: '',
+      competencia: formatCompetencia(competencia),
+      loja: lojaLabel,
+    };
+    exportarCSV(profs, tipoAtivo, config);
+    toast.success('CSV exportado!');
+  };
+
+  // Sub-view: Preview of professionals (single or multi-store)
+  if (viewMode === 'preview' && (selectedLoja || selectedLojas.length > 0)) {
+    const isMulti = selectedLojas.length > 1;
+    const previewTitle = isMulti 
+      ? `${selectedLojas.length} Lojas Selecionadas` 
+      : (selectedLoja?.nome || selectedLojas[0]?.nome || '');
+
+    // Calculate totals for summary
+    const totalPrincipal = previewData?.resultados.reduce((s, r) => s + getValorPrincipal(r), 0) || 0;
+    const totalSalariosPreview = previewData?.resultados.reduce((s, r) => s + r.salarioBase, 0) || 0;
+    const totalDescontosPreview = previewData?.resultados.reduce((s, r) => s + r.totalDescontos, 0) || 0;
+    const totalDia20Prev = previewData?.resultados.reduce((s, r) => s + r.valorDia20, 0) || 0;
+    const totalVTPrev = previewData?.resultados.reduce((s, r) => s + r.valorVT, 0) || 0;
+    const totalVRPrev = previewData?.resultados.reduce((s, r) => s + r.valorVR, 0) || 0;
+    const totalCestaPrev = previewData?.resultados.reduce((s, r) => s + r.valorCesta, 0) || 0;
+    const profCount = previewData?.resultados.length || 0;
+
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => { setViewMode('lista'); setSelectedLoja(null); setPreviewData(null); setEditOverrides({}); }}>
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => { setViewMode('lista'); setSelectedLoja(null); setSelectedLojas([]); setPreviewData(null); setEditOverrides({}); }}>
             <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">{selectedLoja.nome}</h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold text-foreground truncate">{previewTitle}</h1>
             <p className="text-sm text-muted-foreground">
               {TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} — {formatCompetencia(competencia)}
+              {isMulti && <span className="ml-2 text-xs">({selectedLojas.map(l => l.nome).join(', ')})</span>}
             </p>
           </div>
           {Object.keys(editOverrides).length > 0 && (
@@ -550,10 +720,22 @@ export default function Fechamentos() {
             </Badge>
           )}
           {previewData && (
-            <Button onClick={handleOpenResumo} className="gap-2">
-              <Lock className="h-4 w-4" />
-              Revisar e Fechar
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadPDF} className="gap-1.5">
+                <FileDown className="h-4 w-4" />
+                <span className="hidden md:inline">Baixar PDF</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadCSV} className="gap-1.5">
+                <Download className="h-4 w-4" />
+                <span className="hidden md:inline">CSV</span>
+              </Button>
+              {!isMulti && (
+                <Button onClick={handleOpenResumo} className="gap-2">
+                  <Lock className="h-4 w-4" />
+                  Revisar e Fechar
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -563,118 +745,162 @@ export default function Fechamentos() {
             <span className="ml-3 text-muted-foreground">Calculando folha...</span>
           </div>
         ) : previewData ? (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                  {previewData.resultados.length} Profissionais
-                </CardTitle>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Total {TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label}</p>
-                  <p className="text-xl font-bold text-foreground">
-                    {formatCurrency(previewData.resultados.reduce((s, r) => s + getValorPrincipal(r), 0))}
-                  </p>
+          <>
+            {/* 💰 RESUMO FINANCEIRO */}
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="pt-6 pb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="col-span-2 md:col-span-1 text-center md:text-left">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                      {tipoAtivo === 'dia_20' ? 'Total Adiantamento' : tipoAtivo === 'dia_5' ? 'Total Líquido a Pagar' : tipoAtivo === 'vt' ? 'Total VT' : 'Total Benefícios'}
+                    </p>
+                    <p className="text-3xl font-bold text-primary mt-1">{formatCurrency(totalPrincipal)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{profCount} profissionais{isMulti ? ` • ${selectedLojas.length} lojas` : ''}</p>
+                  </div>
+                  {tipoAtivo === 'dia_5' && (
+                    <>
+                      <div><p className="text-xs text-muted-foreground">Folha Bruta</p><p className="text-lg font-semibold">{formatCurrency(totalSalariosPreview)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Adiantamento D20</p><p className="text-lg font-semibold text-warning">-{formatCurrency(totalDia20Prev)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Descontos</p><p className="text-lg font-semibold text-destructive">-{formatCurrency(totalDescontosPreview)}</p></div>
+                    </>
+                  )}
+                  {tipoAtivo === 'dia_20' && (
+                    <>
+                      <div><p className="text-xs text-muted-foreground">Folha Bruta</p><p className="text-lg font-semibold">{formatCurrency(totalSalariosPreview)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Percentual</p><p className="text-lg font-semibold">40%</p></div>
+                      <div><p className="text-xs text-muted-foreground">Profissionais</p><p className="text-lg font-semibold">{profCount}</p></div>
+                    </>
+                  )}
+                  {tipoAtivo === 'vt' && (
+                    <>
+                      <div><p className="text-xs text-muted-foreground">Recebem VT</p><p className="text-lg font-semibold">{previewData.resultados.filter(r => r.valorVT > 0).length}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Não recebem</p><p className="text-lg font-semibold">{previewData.resultados.filter(r => r.valorVT === 0).length}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Média/prof</p><p className="text-lg font-semibold">{formatCurrency(totalVTPrev / Math.max(1, previewData.resultados.filter(r => r.valorVT > 0).length))}</p></div>
+                    </>
+                  )}
+                  {tipoAtivo === 'beneficios' && (
+                    <>
+                      <div><p className="text-xs text-muted-foreground">VR Total</p><p className="text-lg font-semibold">{formatCurrency(totalVRPrev)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Cesta Básica</p><p className="text-lg font-semibold">{formatCurrency(totalCestaPrev)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Recebem Cesta</p><p className="text-lg font-semibold">{previewData.resultados.filter(r => r.recebeCesta).length}</p></div>
+                    </>
+                  )}
                 </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                💡 Clique nos valores de <strong>Vales</strong>, <strong>Empréstimos</strong>, <strong>V. Carne</strong>, <strong>V. Dinheiro</strong>, <strong>Outros Desc.</strong> ou <strong>Faltas</strong> para editar diretamente. O cálculo atualiza em tempo real.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="max-h-[60vh]">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="text-xs">
-                      <TableHead className="w-14">Mat.</TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead className="text-right">Salário</TableHead>
-                      <TableHead className="text-right">Faltas</TableHead>
-                      <TableHead className="text-right">Vales</TableHead>
-                      <TableHead className="text-right">Emprést.</TableHead>
-                      <TableHead className="text-right">V.Carne</TableHead>
-                      <TableHead className="text-right">V.Dinh.</TableHead>
-                      <TableHead className="text-right">Outros</TableHead>
-                      {tipoAtivo === 'dia_20' && <TableHead className="text-right font-bold">Dia 20</TableHead>}
-                      {tipoAtivo === 'dia_5' && (
-                        <>
-                          <TableHead className="text-right">Dia 20</TableHead>
-                          <TableHead className="text-right font-bold">Líquido</TableHead>
-                        </>
-                      )}
-                      {tipoAtivo === 'vt' && <TableHead className="text-right font-bold">VT</TableHead>}
-                      {tipoAtivo === 'beneficios' && (
-                        <>
-                          <TableHead className="text-right">VR</TableHead>
-                          <TableHead className="text-right">Cesta</TableHead>
-                        </>
-                      )}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {previewData.resultados.map((r, idx) => {
-                      const inp = previewData.inputs[idx];
-                      const isEdited = !!editOverrides[r.profissionalId];
-                      return (
-                        <TableRow key={r.profissionalId} className={`text-xs ${isEdited ? 'bg-primary/5' : ''}`}>
-                          <TableCell className="font-mono">{r.matricula}</TableCell>
-                          <TableCell className="font-medium max-w-[120px] truncate" title={r.profissionalNome}>{r.profissionalNome}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(r.salarioBase)}</TableCell>
-                          <TableCell className="text-right">
-                            <EditableCell profId={r.profissionalId} field="faltas" value={inp.faltas} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <EditableCell profId={r.profissionalId} field="vales" value={inp.vales} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <EditableCell profId={r.profissionalId} field="emprestimos" value={inp.emprestimos} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <EditableCell profId={r.profissionalId} field="valeCarne" value={inp.valeCarne || 0} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <EditableCell profId={r.profissionalId} field="valeDinheiro" value={inp.valeDinheiro || 0} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <EditableCell profId={r.profissionalId} field="outrosDescontos" value={inp.outrosDescontos || 0} />
-                          </TableCell>
-                          {tipoAtivo === 'dia_20' && (
-                            <TableCell className="text-right font-semibold">
-                              {r.recebeDia20 ? formatCurrency(r.valorDia20) : (
-                                <span className="text-destructive">{r.motivoDia20}</span>
-                              )}
-                            </TableCell>
-                          )}
-                          {tipoAtivo === 'dia_5' && (
-                            <>
-                              <TableCell className="text-right">
+              </CardContent>
+            </Card>
+
+            {/* Tabela de profissionais */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">{profCount} Profissionais</CardTitle>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Clique nos valores de <strong>Vales</strong>, <strong>Empréstimos</strong>, <strong>V. Carne</strong>, <strong>V. Dinheiro</strong>, <strong>Outros Desc.</strong> ou <strong>Faltas</strong> para editar diretamente.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="max-h-[60vh]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="text-xs">
+                        {isMulti && <TableHead>Loja</TableHead>}
+                        <TableHead className="w-14">Mat.</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead className="text-right">Salário</TableHead>
+                        <TableHead className="text-right">Faltas</TableHead>
+                        <TableHead className="text-right">Vales</TableHead>
+                        <TableHead className="text-right">Emprést.</TableHead>
+                        <TableHead className="text-right">V.Carne</TableHead>
+                        <TableHead className="text-right">V.Dinh.</TableHead>
+                        <TableHead className="text-right">Outros</TableHead>
+                        {tipoAtivo === 'dia_20' && <TableHead className="text-right font-bold">Dia 20</TableHead>}
+                        {tipoAtivo === 'dia_5' && (
+                          <>
+                            <TableHead className="text-right">Dia 20</TableHead>
+                            <TableHead className="text-right font-bold">Líquido</TableHead>
+                          </>
+                        )}
+                        {tipoAtivo === 'vt' && <TableHead className="text-right font-bold">VT</TableHead>}
+                        {tipoAtivo === 'beneficios' && (
+                          <>
+                            <TableHead className="text-right">VR</TableHead>
+                            <TableHead className="text-right">Cesta</TableHead>
+                          </>
+                        )}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previewData.resultados.map((r, idx) => {
+                        const inp = previewData.inputs[idx];
+                        const isEdited = !!editOverrides[r.profissionalId];
+                        return (
+                          <TableRow key={r.profissionalId} className={`text-xs ${isEdited ? 'bg-primary/5' : ''}`}>
+                            {isMulti && <TableCell className="text-xs text-muted-foreground">{r.lojaNome}</TableCell>}
+                            <TableCell className="font-mono">{r.matricula}</TableCell>
+                            <TableCell className="font-medium max-w-[120px] truncate" title={r.profissionalNome}>{r.profissionalNome}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(r.salarioBase)}</TableCell>
+                            <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="faltas" value={inp.faltas} /></TableCell>
+                            <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="vales" value={inp.vales} /></TableCell>
+                            <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimos" value={inp.emprestimos} /></TableCell>
+                            <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="valeCarne" value={inp.valeCarne || 0} /></TableCell>
+                            <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="valeDinheiro" value={inp.valeDinheiro || 0} /></TableCell>
+                            <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="outrosDescontos" value={inp.outrosDescontos || 0} /></TableCell>
+                            {tipoAtivo === 'dia_20' && (
+                              <TableCell className="text-right font-semibold">
                                 {r.recebeDia20 ? formatCurrency(r.valorDia20) : <span className="text-destructive">{r.motivoDia20}</span>}
                               </TableCell>
-                              <TableCell className="text-right font-bold text-success">
-                                {formatCurrency(r.salarioLiquido)}
-                              </TableCell>
-                            </>
-                          )}
-                          {tipoAtivo === 'vt' && (
-                            <TableCell className="text-right font-semibold">
-                              {r.valorVT > 0 ? formatCurrency(r.valorVT) : '—'}
-                            </TableCell>
-                          )}
-                          {tipoAtivo === 'beneficios' && (
-                            <>
-                              <TableCell className="text-right">{r.valorVR > 0 ? formatCurrency(r.valorVR) : '—'}</TableCell>
-                              <TableCell className="text-right">
-                                {r.recebeCesta ? formatCurrency(r.valorCesta) : <span className="text-destructive">Perdeu</span>}
-                              </TableCell>
-                            </>
-                          )}
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                            )}
+                            {tipoAtivo === 'dia_5' && (
+                              <>
+                                <TableCell className="text-right">{r.recebeDia20 ? formatCurrency(r.valorDia20) : <span className="text-destructive">{r.motivoDia20}</span>}</TableCell>
+                                <TableCell className="text-right font-bold text-success">{formatCurrency(r.salarioLiquido)}</TableCell>
+                              </>
+                            )}
+                            {tipoAtivo === 'vt' && (
+                              <TableCell className="text-right font-semibold">{r.valorVT > 0 ? formatCurrency(r.valorVT) : '—'}</TableCell>
+                            )}
+                            {tipoAtivo === 'beneficios' && (
+                              <>
+                                <TableCell className="text-right">{r.valorVR > 0 ? formatCurrency(r.valorVR) : '—'}</TableCell>
+                                <TableCell className="text-right">{r.recebeCesta ? formatCurrency(r.valorCesta) : <span className="text-destructive">Perdeu</span>}</TableCell>
+                              </>
+                            )}
+                          </TableRow>
+                        );
+                      })}
+                      {/* Linha de totais */}
+                      <TableRow className="bg-muted/50 font-semibold text-xs border-t-2">
+                        {isMulti && <TableCell />}
+                        <TableCell colSpan={2}>TOTAL</TableCell>
+                        <TableCell className="text-right">{formatCurrency(totalSalariosPreview)}</TableCell>
+                        <TableCell className="text-right">{previewData.inputs.reduce((s, i) => s + i.faltas, 0)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.vales, 0))}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.emprestimos, 0))}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.valeCarne || 0), 0))}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.valeDinheiro || 0), 0))}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.outrosDescontos || 0), 0))}</TableCell>
+                        {tipoAtivo === 'dia_20' && <TableCell className="text-right text-primary">{formatCurrency(totalDia20Prev)}</TableCell>}
+                        {tipoAtivo === 'dia_5' && (
+                          <>
+                            <TableCell className="text-right">{formatCurrency(totalDia20Prev)}</TableCell>
+                            <TableCell className="text-right text-success">{formatCurrency(totalPrincipal)}</TableCell>
+                          </>
+                        )}
+                        {tipoAtivo === 'vt' && <TableCell className="text-right text-primary">{formatCurrency(totalVTPrev)}</TableCell>}
+                        {tipoAtivo === 'beneficios' && (
+                          <>
+                            <TableCell className="text-right">{formatCurrency(totalVRPrev)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(totalCestaPrev)}</TableCell>
+                          </>
+                        )}
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </>
         ) : null}
       </div>
     );
@@ -937,13 +1163,41 @@ export default function Fechamentos() {
           <TabsContent key={tipo.value} value={tipo.value}>
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {tipo.icon}
-                  {tipo.label} — {formatCompetencia(competencia)}
-                </CardTitle>
-                <CardDescription>
-                  Clique na loja para visualizar profissionais antes de fechar.
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {tipo.icon}
+                      {tipo.label} — {formatCompetencia(competencia)}
+                    </CardTitle>
+                    <CardDescription>
+                      Selecione lojas para visualizar consolidado ou clique individualmente.
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleAllLojas}
+                      className="gap-1.5"
+                    >
+                      <Checkbox checked={checkedLojaIds.size === lojas.length && lojas.length > 0} className="h-3.5 w-3.5" />
+                      {checkedLojaIds.size === lojas.length ? 'Desmarcar' : 'Todas'}
+                    </Button>
+                    {checkedLojaIds.size > 0 && (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const lojasSelected = lojas.filter(l => checkedLojaIds.has(l.id));
+                          handleOpenMultiPreview(lojasSelected);
+                        }}
+                        className="gap-1.5"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Visualizar {checkedLojaIds.size === lojas.length ? 'Todas' : `${checkedLojaIds.size} selecionada(s)`}
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -965,17 +1219,23 @@ export default function Fechamentos() {
                       return (
                         <div key={loja.id} className="border rounded-lg hover:border-primary/30 transition-colors">
                           <div className="flex items-center justify-between p-4">
-                            <div 
-                              className="flex items-center gap-3 flex-1 cursor-pointer"
-                              onClick={() => {
-                                if (status === 'fechado') {
-                                  setSelectedLoja(loja);
-                                  setViewMode('historico');
-                                } else {
-                                  handleOpenPreview(loja);
-                                }
-                              }}
-                            >
+                            <div className="flex items-center gap-3 flex-1">
+                              <Checkbox
+                                checked={checkedLojaIds.has(loja.id)}
+                                onCheckedChange={() => toggleLojaCheck(loja.id)}
+                                className="h-4 w-4"
+                              />
+                              <div 
+                                className="flex-1 cursor-pointer"
+                                onClick={() => {
+                                  if (status === 'fechado') {
+                                    setSelectedLoja(loja);
+                                    setViewMode('historico');
+                                  } else {
+                                    handleOpenPreview(loja);
+                                  }
+                                }}
+                              >
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
                                   <span className="font-semibold text-foreground">{loja.nome}</span>
@@ -1004,6 +1264,7 @@ export default function Fechamentos() {
                                     </span>
                                   )}
                                 </div>
+                              </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
