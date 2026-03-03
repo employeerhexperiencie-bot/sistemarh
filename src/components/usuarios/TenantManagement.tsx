@@ -423,7 +423,11 @@ export function TenantManagement() {
                       </div>
 
                       {/* Financeiro inline */}
-                      <div className="hidden lg:flex items-center gap-4">
+                      <div className="hidden lg:flex items-center gap-6">
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Ganho total</p>
+                          <p className="text-sm font-bold text-success">R$ {(tenant.total_pago || 0).toFixed(2)}</p>
+                        </div>
                         <div className="text-right">
                           <p className="text-sm font-medium">R$ {(tenant.valor_mensalidade || 0).toFixed(2)}/mês</p>
                           {getPaymentBadge(tenant.status_pagamento)}
@@ -473,9 +477,9 @@ export function TenantManagement() {
                                 : 'Nenhum'}
                             </p>
                           </div>
-                          <div>
+                        <div>
                             <p className="text-muted-foreground">Limites</p>
-                            <p className="font-medium">{tenant.limite_usuarios} users / {tenant.limite_profissionais} profs</p>
+                            <p className="font-medium">{tenant.limite_usuarios ?? '∞'} users / {tenant.limite_profissionais ?? '∞'} profs</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Uso Atual</p>
@@ -673,8 +677,16 @@ export function TenantManagement() {
                 <div className="space-y-2"><Label>Mensalidade (R$)</Label><Input type="number" value={editTenant.valor_mensalidade || 0} onChange={e => setEditTenant({ ...editTenant, valor_mensalidade: Number(e.target.value) })} /></div>
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2"><Label>Lim. Usuários</Label><Input type="number" value={editTenant.limite_usuarios || 0} onChange={e => setEditTenant({ ...editTenant, limite_usuarios: Number(e.target.value) })} /></div>
-                <div className="space-y-2"><Label>Lim. Profissionais</Label><Input type="number" value={editTenant.limite_profissionais || 0} onChange={e => setEditTenant({ ...editTenant, limite_profissionais: Number(e.target.value) })} /></div>
+                <div className="space-y-2">
+                  <Label>Lim. Usuários</Label>
+                  <Input type="number" placeholder="Vazio = ilimitado" value={editTenant.limite_usuarios ?? ''} onChange={e => setEditTenant({ ...editTenant, limite_usuarios: e.target.value === '' ? null : Number(e.target.value) })} />
+                  <p className="text-xs text-muted-foreground">Deixe vazio para ilimitado</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Lim. Profissionais</Label>
+                  <Input type="number" placeholder="Vazio = ilimitado" value={editTenant.limite_profissionais ?? ''} onChange={e => setEditTenant({ ...editTenant, limite_profissionais: e.target.value === '' ? null : Number(e.target.value) })} />
+                  <p className="text-xs text-muted-foreground">Deixe vazio para ilimitado</p>
+                </div>
                 <div className="space-y-2"><Label>Dia Vencimento</Label><Input type="number" min={1} max={31} value={editTenant.dia_vencimento || 10} onChange={e => setEditTenant({ ...editTenant, dia_vencimento: Number(e.target.value) })} /></div>
               </div>
               <div className="space-y-2">
