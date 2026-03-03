@@ -9,17 +9,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { 
-  Lock, Unlock, FileText, Building2, Calendar, 
+  Lock, Unlock, Building2, Calendar, 
   CheckCircle2, AlertCircle, Clock, RefreshCw,
   TrendingUp, Users, DollarSign, Loader2, Download, Eye,
-  History, ChevronDown, ChevronUp
+  History, ChevronLeft, Edit3, FileText, ArrowRight
 } from 'lucide-react';
-import { formatCurrency, calcularFolhaProfissional, type ResultadoCalculo } from '@/lib/payrollCalculator';
+import { formatCurrency, calcularFolhaProfissional, type ResultadoCalculo, type ProfissionalInput } from '@/lib/payrollCalculator';
 import { getCompetenciaAtual, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
-import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig } from '@/lib/buildProfissionalInput';
+import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, type DadosCompetencia } from '@/lib/buildProfissionalInput';
 import { gerarHoleritePDF, gerarHoleriteDia20, gerarHoleriteDia5, gerarHoleriteVT } from '@/components/folha/HoleritePDF';
 
 type TipoFechamento = 'dia_20' | 'dia_5' | 'vt' | 'beneficios';
@@ -48,6 +50,8 @@ interface Loja {
   nome: string;
 }
 
+type ViewMode = 'lista' | 'preview' | 'resumo' | 'historico';
+
 const TIPOS_FECHAMENTO: { value: TipoFechamento; label: string; icon: React.ReactNode; color: string }[] = [
   { value: 'dia_20', label: 'Dia 20 (Adiantamento)', icon: <Calendar className="h-4 w-4" />, color: 'bg-primary/10 text-primary' },
   { value: 'dia_5', label: 'Dia 5 (Saldo)', icon: <DollarSign className="h-4 w-4" />, color: 'bg-accent/10 text-accent' },
@@ -61,6 +65,13 @@ const statusConfig: Record<StatusFechamento, { label: string; variant: 'default'
   reaberto: { label: 'Reaberto', variant: 'destructive', icon: <AlertCircle className="h-3 w-3" /> },
 };
 
+interface PreviewData {
+  profissionais: any[];
+  inputs: ProfissionalInput[];
+  resultados: (ResultadoCalculo & { matricula: string; cargo: string | null; salarioBase: number })[];
+  dadosComp: DadosCompetencia;
+}
+
 export default function Fechamentos() {
   const { user } = useAuth();
   const [lojas, setLojas] = useState<Loja[]>([]);
@@ -68,13 +79,21 @@ export default function Fechamentos() {
   const [isLoading, setIsLoading] = useState(true);
   const [competencia, setCompetencia] = useState(getCompetenciaAtual());
   const [tipoAtivo, setTipoAtivo] = useState<TipoFechamento>('dia_20');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogAction, setDialogAction] = useState<'fechar' | 'reabrir'>('fechar');
-  const [selectedLoja, setSelectedLoja] = useState<Loja | null>(null);
   const [observacoes, setObservacoes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [detalheFechamento, setDetalheFechamento] = useState<Fechamento | null>(null);
-  const [expandedLoja, setExpandedLoja] = useState<string | null>(null);
+  
+  // View state
+  const [viewMode, setViewMode] = useState<ViewMode>('lista');
+  const [selectedLoja, setSelectedLoja] = useState<Loja | null>(null);
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  
+  // Dialog for reopen
+  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
+  const [reopenLoja, setReopenLoja] = useState<Loja | null>(null);
+  
+  // Loja summary cache (pre-calculated totals for list view)
+  const [lojaSummaries, setLojaSummaries] = useState<Record<string, { totalProf: number; totalValor: number; loading: boolean }>>({});
 
   const competencias = getCompetenciasDisponiveis(6, 1);
 
@@ -99,7 +118,58 @@ export default function Fechamentos() {
     }
   }, [competencia, tipoAtivo]);
 
+  // Load summary for open stores (calculate on-the-fly)
+  const loadLojaSummaries = useCallback(async () => {
+    if (lojas.length === 0) return;
+    
+    const openLojas = lojas.filter(l => {
+      const f = fechamentos.filter(fe => fe.loja_id === l.id).sort((a, b) => b.versao - a.versao)[0];
+      return !f || f.status !== 'fechado';
+    });
+    
+    if (openLojas.length === 0) return;
+
+    try {
+      const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
+      const config = getDefaultConfig(competencia);
+      const summaries: Record<string, { totalProf: number; totalValor: number; loading: boolean }> = {};
+
+      for (const loja of openLojas) {
+        const { data: profs } = await supabase
+          .from('profissionais')
+          .select('id, nome, matricula, cargo, salario_nominal, ultimo_salario, primeiro_salario, loja_id, data_admissao, vale_transporte, valor_diario_rota, vale_refeicao, cesta_basica, pensao_alimenticia, status, insalubridade')
+          .eq('loja_id', loja.id)
+          .in('status', ['ativo', 'afastado_acidente', 'afastado_doenca', 'licenca_maternidade']);
+
+        if (!profs || profs.length === 0) {
+          summaries[loja.id] = { totalProf: 0, totalValor: 0, loading: false };
+          continue;
+        }
+
+        const resultados = profs.map(p => {
+          const input = buildProfissionalInput(p, dadosComp);
+          return calcularFolhaProfissional(input, config);
+        });
+
+        let total = 0;
+        switch (tipoAtivo) {
+          case 'dia_20': total = resultados.reduce((s, r) => s + r.valorDia20, 0); break;
+          case 'dia_5': total = resultados.reduce((s, r) => s + r.salarioLiquido, 0); break;
+          case 'vt': total = resultados.reduce((s, r) => s + r.valorVT, 0); break;
+          case 'beneficios': total = resultados.reduce((s, r) => s + r.valorVR + r.valorCesta, 0); break;
+        }
+
+        summaries[loja.id] = { totalProf: profs.length, totalValor: total, loading: false };
+      }
+
+      setLojaSummaries(summaries);
+    } catch (err) {
+      console.error('Erro ao calcular resumos:', err);
+    }
+  }, [lojas, fechamentos, competencia, tipoAtivo]);
+
   useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { if (!isLoading && lojas.length > 0) loadLojaSummaries(); }, [isLoading, lojas, loadLojaSummaries]);
 
   const getFechamentoLoja = (lojaId: string): Fechamento | undefined => {
     return fechamentos
@@ -107,64 +177,70 @@ export default function Fechamentos() {
       .sort((a, b) => b.versao - a.versao)[0];
   };
 
-  const handleOpenDialog = (loja: Loja, action: 'fechar' | 'reabrir') => {
-    setSelectedLoja(loja);
-    setDialogAction(action);
-    setObservacoes('');
-    setDialogOpen(true);
+  const getAllFechamentosLoja = (lojaId: string): Fechamento[] => {
+    return fechamentos
+      .filter(f => f.loja_id === lojaId)
+      .sort((a, b) => b.versao - a.versao);
   };
 
+  // Open preview for a store
+  const handleOpenPreview = async (loja: Loja) => {
+    setSelectedLoja(loja);
+    setViewMode('preview');
+    setIsLoadingPreview(true);
+
+    try {
+      const { data: profissionais } = await supabase
+        .from('profissionais')
+        .select('*')
+        .eq('loja_id', loja.id)
+        .in('status', ['ativo', 'afastado_acidente', 'afastado_doenca', 'licenca_maternidade']);
+
+      const profs = profissionais || [];
+      const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
+      const config = getDefaultConfig(competencia);
+
+      const inputs = profs.map(p => buildProfissionalInput(p, dadosComp));
+      const resultados = profs.map((p, i) => {
+        const resultado = calcularFolhaProfissional(inputs[i], config);
+        return { ...resultado, matricula: p.matricula, cargo: p.cargo, salarioBase: inputs[i].salario };
+      });
+
+      setPreviewData({ profissionais: profs, inputs, resultados, dadosComp });
+    } catch (err) {
+      console.error('Erro ao carregar preview:', err);
+      toast.error('Erro ao carregar dados da loja');
+      setViewMode('lista');
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  // Open resumo (summary before closing)
+  const handleOpenResumo = () => {
+    setObservacoes('');
+    setViewMode('resumo');
+  };
+
+  // Perform closing
   const handleFechar = async () => {
-    if (!selectedLoja) return;
+    if (!selectedLoja || !previewData) return;
     setIsProcessing(true);
 
     try {
       const existing = getFechamentoLoja(selectedLoja.id);
-
-      // Buscar profissionais da loja com todos os campos necessários
-      const { data: profissionais } = await supabase
-        .from('profissionais')
-        .select('*')
-        .eq('loja_id', selectedLoja.id)
-        .in('status', ['ativo', 'afastado_acidente', 'afastado_doenca', 'licenca_maternidade']);
-
-      const profs = profissionais || [];
-      
-      // Carregar dados reais da competência
-      const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
       const config = getDefaultConfig(competencia);
 
-      // Calcular folha para cada profissional usando o motor centralizado
-      const resultados: (ResultadoCalculo & { matricula: string; cargo: string | null; salarioBase: number })[] = profs.map(p => {
-        const input = buildProfissionalInput(p, dadosComp);
-        const resultado = calcularFolhaProfissional(input, config);
-        return {
-          ...resultado,
-          matricula: p.matricula,
-          cargo: p.cargo,
-          salarioBase: input.salario,
-        };
-      });
-
-      // Calcular total baseado no tipo de fechamento
       let totalValor = 0;
       switch (tipoAtivo) {
-        case 'dia_20':
-          totalValor = resultados.reduce((sum, r) => sum + r.valorDia20, 0);
-          break;
-        case 'dia_5':
-          totalValor = resultados.reduce((sum, r) => sum + r.salarioLiquido, 0);
-          break;
-        case 'vt':
-          totalValor = resultados.reduce((sum, r) => sum + r.valorVT, 0);
-          break;
-        case 'beneficios':
-          totalValor = resultados.reduce((sum, r) => sum + r.valorVR + r.valorCesta, 0);
-          break;
+        case 'dia_20': totalValor = previewData.resultados.reduce((s, r) => s + r.valorDia20, 0); break;
+        case 'dia_5': totalValor = previewData.resultados.reduce((s, r) => s + r.salarioLiquido, 0); break;
+        case 'vt': totalValor = previewData.resultados.reduce((s, r) => s + r.valorVT, 0); break;
+        case 'beneficios': totalValor = previewData.resultados.reduce((s, r) => s + r.valorVR + r.valorCesta, 0); break;
       }
 
       const snapshot = {
-        resultados: resultados.map(r => ({
+        resultados: previewData.resultados.map(r => ({
           profissionalId: r.profissionalId,
           profissionalNome: r.profissionalNome,
           matricula: r.matricula,
@@ -202,7 +278,7 @@ export default function Fechamentos() {
         status: 'fechado',
         versao: newVersao,
         snapshot: snapshot as any,
-        total_profissionais: profs.length,
+        total_profissionais: previewData.resultados.length,
         total_valor: totalValor,
         fechado_por: user?.email || 'Sistema',
         fechado_em: new Date().toISOString(),
@@ -211,7 +287,6 @@ export default function Fechamentos() {
 
       if (error) throw error;
 
-      // Registrar no histórico de ações
       await supabase.from('historico_acoes').insert({
         usuario: user?.email || 'Sistema',
         acao: 'fechamento',
@@ -219,12 +294,14 @@ export default function Fechamentos() {
         entidade_tipo: 'fechamento_folha',
         entidade_id: selectedLoja.id,
         entidade_nome: selectedLoja.nome,
-        descricao: `Fechamento ${TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} v${newVersao} - ${formatCompetencia(competencia)} - ${profs.length} profissionais - ${formatCurrency(totalValor)}`,
-        dados_novos: { tipo: tipoAtivo, competencia, versao: newVersao, total_valor: totalValor, total_profissionais: profs.length },
+        descricao: `Fechamento ${TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} v${newVersao} - ${formatCompetencia(competencia)} - ${previewData.resultados.length} profissionais - ${formatCurrency(totalValor)}`,
+        dados_novos: { tipo: tipoAtivo, competencia, versao: newVersao, total_valor: totalValor, total_profissionais: previewData.resultados.length },
       });
 
-      toast.success(`Fechamento realizado com cálculos reais para ${selectedLoja.nome} - ${formatCurrency(totalValor)}`);
-      setDialogOpen(false);
+      toast.success(`Fechamento v${newVersao} realizado — ${formatCurrency(totalValor)}`);
+      setViewMode('lista');
+      setSelectedLoja(null);
+      setPreviewData(null);
       loadData();
     } catch (error: any) {
       console.error('Erro ao fechar:', error);
@@ -235,11 +312,11 @@ export default function Fechamentos() {
   };
 
   const handleReabrir = async () => {
-    if (!selectedLoja) return;
+    if (!reopenLoja) return;
     setIsProcessing(true);
 
     try {
-      const existing = getFechamentoLoja(selectedLoja.id);
+      const existing = getFechamentoLoja(reopenLoja.id);
       if (!existing) throw new Error('Fechamento não encontrado');
 
       const { error } = await supabase
@@ -254,19 +331,19 @@ export default function Fechamentos() {
 
       if (error) throw error;
 
-      // Registrar no histórico
       await supabase.from('historico_acoes').insert({
         usuario: user?.email || 'Sistema',
         acao: 'reabertura',
         modulo: 'folha',
         entidade_tipo: 'fechamento_folha',
-        entidade_id: selectedLoja.id,
-        entidade_nome: selectedLoja.nome,
+        entidade_id: reopenLoja.id,
+        entidade_nome: reopenLoja.nome,
         descricao: `Reabertura ${TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} v${existing.versao} - ${formatCompetencia(competencia)}`,
       });
 
-      toast.success(`Fechamento reaberto para ${selectedLoja.nome}`);
-      setDialogOpen(false);
+      toast.success(`Fechamento reaberto para ${reopenLoja.nome}`);
+      setReopenDialogOpen(false);
+      setObservacoes('');
       loadData();
     } catch (error: any) {
       console.error('Erro ao reabrir:', error);
@@ -276,7 +353,6 @@ export default function Fechamentos() {
     }
   };
 
-  // Gerar holerites PDF a partir do snapshot fechado
   const gerarHoleritesDaLoja = async (fechamento: Fechamento, lojaNome: string) => {
     if (!fechamento.snapshot?.resultados) {
       toast.error('Snapshot sem dados de cálculo');
@@ -323,7 +399,6 @@ export default function Fechamentos() {
       }
     }
 
-    // Registrar geração de holerites no histórico
     await supabase.from('historico_acoes').insert({
       usuario: user?.email || 'Sistema',
       acao: 'geracao_holerites',
@@ -337,11 +412,317 @@ export default function Fechamentos() {
     toast.success(`${gerados} holerites gerados com sucesso!`);
   };
 
-  // Contadores
   const totalLojas = lojas.length;
   const lojasFechadas = lojas.filter(l => getFechamentoLoja(l.id)?.status === 'fechado').length;
   const lojasAbertas = totalLojas - lojasFechadas;
 
+  const getValorPrincipal = (r: any) => {
+    switch (tipoAtivo) {
+      case 'dia_20': return r.valorDia20;
+      case 'dia_5': return r.salarioLiquido;
+      case 'vt': return r.valorVT;
+      case 'beneficios': return (r.valorVR || 0) + (r.valorCesta || 0);
+      default: return 0;
+    }
+  };
+
+  // ============ RENDER ============
+
+  // Sub-view: Preview of professionals
+  if (viewMode === 'preview' && selectedLoja) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => { setViewMode('lista'); setSelectedLoja(null); setPreviewData(null); }}>
+            <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-foreground">{selectedLoja.nome}</h1>
+            <p className="text-sm text-muted-foreground">
+              {TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} — {formatCompetencia(competencia)}
+            </p>
+          </div>
+          {previewData && (
+            <Button onClick={handleOpenResumo} className="gap-2">
+              <Lock className="h-4 w-4" />
+              Revisar e Fechar
+            </Button>
+          )}
+        </div>
+
+        {isLoadingPreview ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-muted-foreground">Calculando folha...</span>
+          </div>
+        ) : previewData ? (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">
+                  {previewData.resultados.length} Profissionais
+                </CardTitle>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Total {TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label}</p>
+                  <p className="text-xl font-bold text-foreground">
+                    {formatCurrency(previewData.resultados.reduce((s, r) => s + getValorPrincipal(r), 0))}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="max-h-[60vh]">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="text-xs">
+                      <TableHead className="w-16">Mat.</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Cargo</TableHead>
+                      <TableHead className="text-right">Salário</TableHead>
+                      <TableHead className="text-right">Dias Trab.</TableHead>
+                      {tipoAtivo === 'dia_20' && <TableHead className="text-right">Dia 20</TableHead>}
+                      {tipoAtivo === 'dia_5' && (
+                        <>
+                          <TableHead className="text-right">Dia 20</TableHead>
+                          <TableHead className="text-right">Descontos</TableHead>
+                          <TableHead className="text-right">Líquido</TableHead>
+                        </>
+                      )}
+                      {tipoAtivo === 'vt' && <TableHead className="text-right">VT</TableHead>}
+                      {tipoAtivo === 'beneficios' && (
+                        <>
+                          <TableHead className="text-right">VR</TableHead>
+                          <TableHead className="text-right">Cesta</TableHead>
+                        </>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {previewData.resultados.map((r) => (
+                      <TableRow key={r.profissionalId} className="text-xs">
+                        <TableCell className="font-mono">{r.matricula}</TableCell>
+                        <TableCell className="font-medium">{r.profissionalNome}</TableCell>
+                        <TableCell className="text-muted-foreground">{r.cargo || '—'}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(r.salarioBase)}</TableCell>
+                        <TableCell className="text-right">{r.diasTrabalhados}</TableCell>
+                        {tipoAtivo === 'dia_20' && (
+                          <TableCell className="text-right font-semibold">
+                            {r.recebeDia20 ? formatCurrency(r.valorDia20) : (
+                              <span className="text-destructive text-xs">{r.motivoDia20}</span>
+                            )}
+                          </TableCell>
+                        )}
+                        {tipoAtivo === 'dia_5' && (
+                          <>
+                            <TableCell className="text-right">
+                              {r.recebeDia20 ? formatCurrency(r.valorDia20) : <span className="text-destructive text-xs">{r.motivoDia20}</span>}
+                            </TableCell>
+                            <TableCell className="text-right text-destructive">
+                              {r.totalDescontos > 0 ? `-${formatCurrency(r.totalDescontos)}` : '—'}
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-success">
+                              {formatCurrency(r.salarioLiquido)}
+                            </TableCell>
+                          </>
+                        )}
+                        {tipoAtivo === 'vt' && (
+                          <TableCell className="text-right font-semibold">
+                            {r.valorVT > 0 ? formatCurrency(r.valorVT) : '—'}
+                          </TableCell>
+                        )}
+                        {tipoAtivo === 'beneficios' && (
+                          <>
+                            <TableCell className="text-right">{r.valorVR > 0 ? formatCurrency(r.valorVR) : '—'}</TableCell>
+                            <TableCell className="text-right">
+                              {r.recebeCesta ? formatCurrency(r.valorCesta) : <span className="text-destructive">Perdeu</span>}
+                            </TableCell>
+                          </>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Sub-view: Summary before closing
+  if (viewMode === 'resumo' && selectedLoja && previewData) {
+    const totalValor = previewData.resultados.reduce((s, r) => s + getValorPrincipal(r), 0);
+    const totalDia20 = previewData.resultados.reduce((s, r) => s + r.valorDia20, 0);
+    const totalDescontos = previewData.resultados.reduce((s, r) => s + r.totalDescontos, 0);
+    const totalVT = previewData.resultados.reduce((s, r) => s + r.valorVT, 0);
+    const totalVR = previewData.resultados.reduce((s, r) => s + r.valorVR, 0);
+    const totalCesta = previewData.resultados.reduce((s, r) => s + r.valorCesta, 0);
+    const existing = getFechamentoLoja(selectedLoja.id);
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setViewMode('preview')}>
+            <ChevronLeft className="h-4 w-4 mr-1" /> Editar
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-foreground">Resumo do Fechamento</h1>
+            <p className="text-sm text-muted-foreground">{selectedLoja.nome} — {formatCompetencia(competencia)}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                Informações
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Loja</span><span className="font-medium">{selectedLoja.nome}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Tipo</span><span className="font-medium">{TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Competência</span><span className="font-medium">{formatCompetencia(competencia)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Versão</span><span className="font-medium">v{existing ? existing.versao + 1 : 1}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Profissionais</span><span className="font-medium">{previewData.resultados.length}</span></div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                Valores Totais
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {(tipoAtivo === 'dia_20' || tipoAtivo === 'dia_5') && (
+                <div className="flex justify-between"><span className="text-muted-foreground">Dia 20 (Adiantamento)</span><span className="font-medium">{formatCurrency(totalDia20)}</span></div>
+              )}
+              {tipoAtivo === 'dia_5' && (
+                <>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Descontos</span><span className="font-medium text-destructive">-{formatCurrency(totalDescontos)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Líquido Dia 5</span><span className="font-bold text-success">{formatCurrency(totalValor)}</span></div>
+                </>
+              )}
+              {tipoAtivo === 'vt' && (
+                <div className="flex justify-between"><span className="text-muted-foreground">VT Total</span><span className="font-bold">{formatCurrency(totalVT)}</span></div>
+              )}
+              {tipoAtivo === 'beneficios' && (
+                <>
+                  <div className="flex justify-between"><span className="text-muted-foreground">VR</span><span className="font-medium">{formatCurrency(totalVR)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Cesta Básica</span><span className="font-medium">{formatCurrency(totalCesta)}</span></div>
+                </>
+              )}
+              <Separator />
+              <div className="flex justify-between text-base">
+                <span className="font-semibold">Total</span>
+                <span className="font-bold text-primary">{formatCurrency(totalValor)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
+            <Textarea
+              placeholder="Observações do fechamento (opcional)"
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+              rows={3}
+            />
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-3 justify-end">
+          <Button variant="outline" onClick={() => setViewMode('preview')}>
+            <Edit3 className="h-4 w-4 mr-2" />
+            Voltar e Editar
+          </Button>
+          <Button onClick={handleFechar} disabled={isProcessing} className="gap-2">
+            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+            Confirmar Fechamento e Gerar Holerites
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Sub-view: History of a store
+  if (viewMode === 'historico' && selectedLoja) {
+    const allFechamentos = getAllFechamentosLoja(selectedLoja.id);
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => { setViewMode('lista'); setSelectedLoja(null); }}>
+            <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-foreground">Histórico — {selectedLoja.nome}</h1>
+            <p className="text-sm text-muted-foreground">{TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} — {formatCompetencia(competencia)}</p>
+          </div>
+        </div>
+
+        {allFechamentos.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Nenhum fechamento registrado para esta loja e competência.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {allFechamentos.map(f => (
+              <Card key={f.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Versão {f.versao}
+                      <Badge variant={statusConfig[f.status].variant} className="flex items-center gap-1">
+                        {statusConfig[f.status].icon}
+                        {statusConfig[f.status].label}
+                      </Badge>
+                    </CardTitle>
+                    <div className="text-right">
+                      <p className="font-bold text-foreground">{formatCurrency(Number(f.total_valor))}</p>
+                      <p className="text-xs text-muted-foreground">{f.total_profissionais} prof.</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="text-sm space-y-2">
+                  {f.fechado_em && (
+                    <div className="flex gap-2 text-muted-foreground">
+                      <Lock className="h-3.5 w-3.5 mt-0.5" />
+                      Fechado em {new Date(f.fechado_em).toLocaleString('pt-BR')} por {f.fechado_por}
+                    </div>
+                  )}
+                  {f.reaberto_em && (
+                    <div className="flex gap-2 text-destructive">
+                      <Unlock className="h-3.5 w-3.5 mt-0.5" />
+                      Reaberto em {new Date(f.reaberto_em).toLocaleString('pt-BR')} por {f.reaberto_por}
+                    </div>
+                  )}
+                  {f.observacoes && (
+                    <p className="text-xs bg-muted/50 p-2 rounded">{f.observacoes}</p>
+                  )}
+                  {f.status === 'fechado' && (
+                    <Button size="sm" variant="outline" onClick={() => gerarHoleritesDaLoja(f, selectedLoja.nome)} className="gap-1 mt-2">
+                      <Download className="h-3.5 w-3.5" />
+                      Gerar Holerites desta versão
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ============ MAIN LIST VIEW ============
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -431,7 +812,7 @@ export default function Fechamentos() {
                   {tipo.label} — {formatCompetencia(competencia)}
                 </CardTitle>
                 <CardDescription>
-                  Cálculos reais via motor centralizado. Clique na seta para ver detalhes do snapshot.
+                  Clique na loja para visualizar profissionais antes de fechar.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -445,39 +826,71 @@ export default function Fechamentos() {
                       const fechamento = getFechamentoLoja(loja.id);
                       const status = fechamento?.status || 'aberto';
                       const cfg = statusConfig[status];
-                      const isExpanded = expandedLoja === loja.id;
-                      const snapshotResultados = fechamento?.snapshot?.resultados || [];
+                      const summary = lojaSummaries[loja.id];
+                      const allVersions = getAllFechamentosLoja(loja.id);
+
+                      const totalProf = fechamento?.total_profissionais || summary?.totalProf || 0;
+                      const totalValor = fechamento?.total_valor ? Number(fechamento.total_valor) : (summary?.totalValor || 0);
 
                       return (
-                        <div key={loja.id} className="border rounded-lg">
-                          <div className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors">
-                            <div className="flex items-center gap-3 flex-1">
-                              {fechamento && snapshotResultados.length > 0 && (
+                        <div key={loja.id} className="border rounded-lg hover:border-primary/30 transition-colors">
+                          <div className="flex items-center justify-between p-4">
+                            <div 
+                              className="flex items-center gap-3 flex-1 cursor-pointer"
+                              onClick={() => {
+                                if (status === 'fechado') {
+                                  setSelectedLoja(loja);
+                                  setViewMode('historico');
+                                } else {
+                                  handleOpenPreview(loja);
+                                }
+                              }}
+                            >
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-foreground">{loja.nome}</span>
+                                  <Badge variant={cfg.variant} className="flex items-center gap-1 w-fit text-xs">
+                                    {cfg.icon}
+                                    {cfg.label}
+                                  </Badge>
+                                  {fechamento && allVersions.length > 0 && (
+                                    <span className="text-xs text-muted-foreground">v{fechamento.versao}</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    {totalProf} profissionais
+                                  </span>
+                                  {totalValor > 0 && (
+                                    <span className="font-semibold text-foreground text-sm">
+                                      {formatCurrency(totalValor)}
+                                    </span>
+                                  )}
+                                  {fechamento?.fechado_em && (
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      {new Date(fechamento.fechado_em).toLocaleDateString('pt-BR')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {allVersions.length > 1 && (
                                 <Button
-                                  variant="ghost"
                                   size="sm"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => setExpandedLoja(isExpanded ? null : loja.id)}
+                                  variant="ghost"
+                                  onClick={() => { setSelectedLoja(loja); setViewMode('historico'); }}
+                                  className="gap-1 h-8"
+                                  title="Ver histórico"
                                 >
-                                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                  <History className="h-3.5 w-3.5" />
+                                  <span className="hidden md:inline">{allVersions.length}v</span>
                                 </Button>
                               )}
-                              <span className="font-medium">{loja.nome}</span>
-                              <Badge variant={cfg.variant} className="flex items-center gap-1 w-fit">
-                                {cfg.icon}
-                                {cfg.label}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm">
-                              <span className="text-muted-foreground">{fechamento?.total_profissionais || '—'} prof.</span>
-                              <span className="font-semibold min-w-[100px] text-right">
-                                {fechamento?.total_valor ? formatCurrency(Number(fechamento.total_valor)) : '—'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {fechamento ? `v${fechamento.versao}` : ''}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                {status === 'fechado' && (
+                              {status === 'fechado' && (
+                                <>
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -488,116 +901,30 @@ export default function Fechamentos() {
                                     <Download className="h-3.5 w-3.5" />
                                     <span className="hidden md:inline">Holerites</span>
                                   </Button>
-                                )}
-                                {status === 'aberto' || status === 'reaberto' ? (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleOpenDialog(loja, 'fechar')}
-                                    className="gap-1 h-8"
-                                  >
-                                    <Lock className="h-3.5 w-3.5" />
-                                    Fechar
-                                  </Button>
-                                ) : (
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => handleOpenDialog(loja, 'reabrir')}
+                                    onClick={() => { setReopenLoja(loja); setObservacoes(''); setReopenDialogOpen(true); }}
                                     className="gap-1 h-8"
                                   >
                                     <Unlock className="h-3.5 w-3.5" />
                                     Reabrir
                                   </Button>
-                                )}
-                              </div>
+                                </>
+                              )}
+                              {(status === 'aberto' || status === 'reaberto') && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOpenPreview(loja)}
+                                  className="gap-1 h-8"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  Visualizar
+                                  <ArrowRight className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                             </div>
                           </div>
-
-                          {/* Detalhes expandidos do snapshot */}
-                          {isExpanded && snapshotResultados.length > 0 && (
-                            <div className="border-t bg-muted/10 p-3">
-                              <ScrollArea className="max-h-[400px]">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow className="text-xs">
-                                      <TableHead className="w-16">Mat.</TableHead>
-                                      <TableHead>Nome</TableHead>
-                                      <TableHead className="text-right">Salário</TableHead>
-                                      {(tipoAtivo === 'dia_20' || tipoAtivo === 'dia_5') && (
-                                        <TableHead className="text-right">Dia 20</TableHead>
-                                      )}
-                                      {tipoAtivo === 'dia_5' && (
-                                        <>
-                                          <TableHead className="text-right">Descontos</TableHead>
-                                          <TableHead className="text-right">Líquido (Dia 5)</TableHead>
-                                        </>
-                                      )}
-                                      {tipoAtivo === 'vt' && (
-                                        <>
-                                          <TableHead className="text-right">Dias Trab.</TableHead>
-                                          <TableHead className="text-right">VT</TableHead>
-                                        </>
-                                      )}
-                                      {tipoAtivo === 'beneficios' && (
-                                        <>
-                                          <TableHead className="text-right">VR</TableHead>
-                                          <TableHead className="text-right">Cesta</TableHead>
-                                        </>
-                                      )}
-                                      <TableHead className="text-right">Total Mês</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {snapshotResultados.map((r: any) => (
-                                      <TableRow key={r.profissionalId} className="text-xs">
-                                        <TableCell className="font-mono">{r.matricula}</TableCell>
-                                        <TableCell className="font-medium">{r.profissionalNome}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(r.salarioBase)}</TableCell>
-                                        {(tipoAtivo === 'dia_20' || tipoAtivo === 'dia_5') && (
-                                          <TableCell className="text-right">
-                                            {r.recebeDia20 ? formatCurrency(r.valorDia20) : (
-                                              <span className="text-destructive text-xs">{r.motivoDia20}</span>
-                                            )}
-                                          </TableCell>
-                                        )}
-                                        {tipoAtivo === 'dia_5' && (
-                                          <>
-                                            <TableCell className="text-right text-destructive">
-                                              {r.totalDescontos > 0 ? `-${formatCurrency(r.totalDescontos)}` : '—'}
-                                            </TableCell>
-                                            <TableCell className="text-right font-bold text-success">
-                                              {formatCurrency(r.salarioLiquido)}
-                                            </TableCell>
-                                          </>
-                                        )}
-                                        {tipoAtivo === 'vt' && (
-                                          <>
-                                            <TableCell className="text-right">{r.diasTrabalhados}</TableCell>
-                                            <TableCell className="text-right font-bold">
-                                              {r.valorVT > 0 ? formatCurrency(r.valorVT) : '—'}
-                                            </TableCell>
-                                          </>
-                                        )}
-                                        {tipoAtivo === 'beneficios' && (
-                                          <>
-                                            <TableCell className="text-right">{r.valorVR > 0 ? formatCurrency(r.valorVR) : '—'}</TableCell>
-                                            <TableCell className="text-right">
-                                              {r.recebeCesta ? formatCurrency(r.valorCesta) : <span className="text-destructive">Perdeu</span>}
-                                            </TableCell>
-                                          </>
-                                        )}
-                                        <TableCell className="text-right font-semibold">{formatCurrency(r.totalMes)}</TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </ScrollArea>
-                              <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
-                                <History className="h-3 w-3" />
-                                Fechado em {fechamento?.fechado_em ? new Date(fechamento.fechado_em).toLocaleString('pt-BR') : '—'} por {fechamento?.fechado_por || '—'}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       );
                     })}
@@ -614,42 +941,36 @@ export default function Fechamentos() {
         ))}
       </Tabs>
 
-      {/* Dialog de Confirmação */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Dialog de Reabertura */}
+      <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {dialogAction === 'fechar' ? <Lock className="h-5 w-5 text-primary" /> : <Unlock className="h-5 w-5 text-destructive" />}
-              {dialogAction === 'fechar' ? 'Confirmar Fechamento' : 'Reabrir Fechamento'}
+              <Unlock className="h-5 w-5 text-destructive" />
+              Reabrir Fechamento
             </DialogTitle>
             <DialogDescription>
-              {dialogAction === 'fechar' 
-                ? `Fechar ${TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} de ${selectedLoja?.nome} para ${formatCompetencia(competencia)}. Os cálculos reais serão processados pelo motor de folha e salvos no snapshot.`
-                : `Reabrir ${TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} de ${selectedLoja?.nome}. Ao fechar novamente, uma nova versão será criada com recalculos.`
-              }
+              Reabrir {TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} de {reopenLoja?.nome}. 
+              Ao fechar novamente, uma nova versão será criada com recálculos.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-3">
-            <Textarea
-              placeholder={dialogAction === 'fechar' ? 'Observações do fechamento (opcional)' : 'Motivo da reabertura (recomendado)'}
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-              rows={3}
-            />
-          </div>
-
+          <Textarea
+            placeholder="Motivo da reabertura (recomendado)"
+            value={observacoes}
+            onChange={(e) => setObservacoes(e.target.value)}
+            rows={3}
+          />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isProcessing}>
+            <Button variant="outline" onClick={() => setReopenDialogOpen(false)} disabled={isProcessing}>
               Cancelar
             </Button>
             <Button 
-              onClick={dialogAction === 'fechar' ? handleFechar : handleReabrir}
-              variant={dialogAction === 'fechar' ? 'default' : 'destructive'}
+              onClick={handleReabrir}
+              variant="destructive"
               disabled={isProcessing}
             >
               {isProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {dialogAction === 'fechar' ? 'Fechar Folha' : 'Reabrir Folha'}
+              Reabrir Folha
             </Button>
           </DialogFooter>
         </DialogContent>
