@@ -10,6 +10,7 @@ import { GlobalSearch } from '@/components/GlobalSearch';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { IconTooltip } from '@/components/ui/contextual-tooltip';
 import { useNavigate } from 'react-router-dom';
+import { useActivityTracker } from '@/hooks/useActivityTracker';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { config } = useAppearance();
+  useActivityTracker(); // Rastreia sessão e páginas automaticamente
   const currentMonth = new Intl.DateTimeFormat('pt-BR', { 
     month: 'long', 
     year: 'numeric' 

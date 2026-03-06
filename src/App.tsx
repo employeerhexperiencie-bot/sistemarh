@@ -52,6 +52,7 @@ import ComoUsar from "@/pages/ComoUsar";
 import Ocorrencias from "@/pages/Ocorrencias";
 import MinhaEquipe from "@/pages/MinhaEquipe";
 import Fechamentos from "@/pages/Fechamentos";
+import PainelUso from "@/pages/PainelUso";
 import CentralImportacao from "@/pages/CentralImportacao";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
@@ -167,6 +168,7 @@ const App = () => (
                   {/* ROTAS EXCLUSIVAS SUPER_ADMIN - Cliente NÃO pode acessar */}
                   <Route path="/gestao-usuarios" element={<SuperAdminLayout><GestaoUsuarios /></SuperAdminLayout>} />
                   <Route path="/audit-log" element={<SuperAdminLayout><AuditLog /></SuperAdminLayout>} />
+                  <Route path="/painel-uso" element={<SuperAdminLayout><PainelUso /></SuperAdminLayout>} />
                   <Route path="/validacao-dados" element={<SuperAdminLayout><ValidacaoDados /></SuperAdminLayout>} />
                   <Route path="/migrar-dados" element={<SuperAdminLayout><MigrarDados /></SuperAdminLayout>} />
                   <Route path="/importar-dados-excel" element={<SuperAdminLayout><ImportarDadosExcel /></SuperAdminLayout>} />
