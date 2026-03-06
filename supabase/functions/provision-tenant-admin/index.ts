@@ -131,10 +131,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 7. Send password recovery so admin can set their own password
-    const { error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: normalizedEmail,
+    // 7. Send password recovery email so admin can set their own password
+    // Use a non-admin client to trigger the actual email hook (generateLink only generates, doesn't send)
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    const { error: resetError } = await supabaseClient.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${req.headers.get('origin') || 'https://eazdev.com'}/redefinir-senha`
     });
 
     if (resetError) {
