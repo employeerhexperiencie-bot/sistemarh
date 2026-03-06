@@ -52,6 +52,7 @@ import ComoUsar from "@/pages/ComoUsar";
 import Ocorrencias from "@/pages/Ocorrencias";
 import MinhaEquipe from "@/pages/MinhaEquipe";
 import Fechamentos from "@/pages/Fechamentos";
+import PainelUso from "@/pages/PainelUso";
 import CentralImportacao from "@/pages/CentralImportacao";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
