@@ -134,6 +134,19 @@ const navSections = [
   },
 ];
 
+// Seção visível para admin de tenant (clientes)
+const clientAdminSections = [
+  {
+    label: 'Acompanhamento',
+    icon: BarChart3,
+    defaultOpen: false,
+    adminOnly: false,
+    items: [
+      { title: 'Painel de Uso', url: '/painel-uso', icon: BarChart3 },
+    ],
+  },
+];
+
 // ADMIN ONLY routes - hidden from regular clients
 const adminSections = [
   {
@@ -143,7 +156,6 @@ const adminSections = [
     adminOnly: true,
     items: [
       { title: 'Gestão Usuários', url: '/gestao-usuarios', icon: Shield },
-      { title: 'Painel de Uso', url: '/painel-uso', icon: BarChart3 },
       { title: 'Migrar Dados', url: '/migrar-dados', icon: Database },
       { title: 'Importar Excel', url: '/importar-dados-excel', icon: FileSpreadsheet },
       { title: 'Validação Dados', url: '/validacao-dados', icon: FileCheck },
