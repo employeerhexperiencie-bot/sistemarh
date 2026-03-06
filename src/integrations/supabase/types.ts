@@ -2371,6 +2371,98 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_events: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          module: string
+          session_id: string | null
+          success: boolean | null
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          module: string
+          session_id?: string | null
+          success?: boolean | null
+          tenant_id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          module?: string
+          session_id?: string | null
+          success?: boolean | null
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "user_activity_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_activity_sessions: {
+        Row: {
+          created_at: string | null
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          last_heartbeat: string
+          pages_visited: number | null
+          started_at: string
+          tenant_id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          last_heartbeat?: string
+          pages_visited?: number | null
+          started_at?: string
+          tenant_id?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          last_heartbeat?: string
+          pages_visited?: number | null
+          started_at?: string
+          tenant_id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_invites: {
         Row: {
           accepted_at: string | null
