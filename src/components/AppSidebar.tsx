@@ -134,6 +134,19 @@ const navSections = [
   },
 ];
 
+// Seção visível para admin de tenant (clientes)
+const clientAdminSections = [
+  {
+    label: 'Acompanhamento',
+    icon: BarChart3,
+    defaultOpen: false,
+    adminOnly: false,
+    items: [
+      { title: 'Painel de Uso', url: '/painel-uso', icon: BarChart3 },
+    ],
+  },
+];
+
 // ADMIN ONLY routes - hidden from regular clients
 const adminSections = [
   {
@@ -143,7 +156,6 @@ const adminSections = [
     adminOnly: true,
     items: [
       { title: 'Gestão Usuários', url: '/gestao-usuarios', icon: Shield },
-      { title: 'Painel de Uso', url: '/painel-uso', icon: BarChart3 },
       { title: 'Migrar Dados', url: '/migrar-dados', icon: Database },
       { title: 'Importar Excel', url: '/importar-dados-excel', icon: FileSpreadsheet },
       { title: 'Validação Dados', url: '/validacao-dados', icon: FileCheck },
@@ -160,11 +172,16 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   
   // IMPORTANTE: Apenas super_admin vê as telas de administração
-  // Admin comum (clientes) NÃO veem essas telas
+  // Admin comum (clientes) veem apenas o Painel de Uso
   const isSuperAdmin = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin';
 
-  // Combine sections based on user role - ONLY super_admin sees admin sections
-  const allSections = isSuperAdmin ? [...navSections, ...adminSections] : navSections;
+  // Combine sections based on user role
+  const allSections = isSuperAdmin 
+    ? [...navSections, ...clientAdminSections, ...adminSections] 
+    : isAdmin 
+      ? [...navSections, ...clientAdminSections] 
+      : navSections;
 
   const isActive = (path: string) => currentPath === path;
   
