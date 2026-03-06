@@ -26,6 +26,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { config } = useAppearance();
+  useActivityTracker(); // Rastreia sessão e páginas automaticamente
   const currentMonth = new Intl.DateTimeFormat('pt-BR', { 
     month: 'long', 
     year: 'numeric' 
