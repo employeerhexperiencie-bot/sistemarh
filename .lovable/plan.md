@@ -1,119 +1,131 @@
+# Analise: Dados Enviados vs. Dados no Sistema
+
+## 1. FOPAG Fev/2026 — Comparação com o Banco de Dados
+
+### Salários e Cargos: Maioria Corretos
+
+Comparei profissional por profissional em cada loja. Os salários e cargos no banco **coincidem** com a FOPAG para a grande maioria dos profissionais. Exemplos verificados:
 
 
-# Estado Real do Sistema — Atualizado 2026-03-03
+| Loja       | Profissional             | FOPAG                             | Banco                             | Status |
+| ---------- | ------------------------ | --------------------------------- | --------------------------------- | ------ |
+| BARCELONA  | EDNALDO PIRES BENTENCURT | R$ 3.800 / AÇOUGUEIRO ENCARREGADO | R$ 3.800 / AÇOUGUEIRO ENCARREGADO | OK     |
+| BARCELONA  | LAYLSON GONCALVES SILVA  | R$ 2.650 / BALCONISTA             | R$ 2.650 / BALCONISTA             | OK     |
+| BIG OSASCO | LAUDO PEREIRA SANTOS     | R$ 5.000 / GERENTE                | R$ 5.000 / GERENTE                | OK     |
+| BROOKLIN   | VALDINEI DE JESUS SANTOS | R$ 5.410 / GERENTE                | R$ 5.410 / GERENTE                | OK     |
+| BROOKLIN   | ERIK GONCALVES ZOLIM     | R$ 4.726 / ENCARREGADO            | R$ 4.726 / ENCARREGADO            | OK     |
 
-## Dados em Producao (Banco de Dados Real)
 
-| Recurso | Quantidade | Status |
-|---------|-----------|--------|
-| Tenant (cliente) | 1 (Tennessee Prime) | Ativo, plano avancado |
-| Usuarios do sistema | 3 | Funcionando |
-| Profissionais ativos | ~450 | Dados carregados |
-| Lojas/Unidades | 34 | Dados carregados |
-| Exames ASO | 2.712 | Dados carregados |
-| Emprestimos | 69 (58 ativos, 11 quitados) | Dados carregados |
-| Ferias | 278+ registros | Dados carregados |
-| Faltas | 11 registros | Dados carregados |
-| Folha de pagamento | 591 registros (3 competencias) | Dados carregados |
-| Holerites | 591 gerados | Dados carregados |
+### Profissionais na FOPAG que NÃO estão no Banco (Novos)
 
----
+Identifiquei profissionais que aparecem na FOPAG mas **não existem** no sistema — são admissões recentes (Jan-Fev 2026):
 
-## Decisoes Arquiteturais Aprovadas (2026-02-24)
 
-### 1. Tabela de Fechamentos
-- **Decisao:** Criar nova tabela `fechamentos_folha` com snapshots JSON
-- **Motivo:** Separar dados calculados em tempo real (folha_pagamento) dos dados congelados no fechamento
+| Loja         | Profissional                          | Salário     | Admissão   |
+| ------------ | ------------------------------------- | ----------- | ---------- |
+| BARCELONA    | ANGEL FELIX MARQUES BORROME           | R$ 2.800    | 01/08/2025 |
+| BARCELONA    | DAYAMY PEREZ HERNANDES                | R$ 2.080    | 11/02/2026 |
+| BARCELONA    | DEBORA REGINA DE OLIVEIRA SUZART      | R$ 2.080    | 01/08/2025 |
+| BARCELONA    | ELDA ALVES SILVA                      | R$ 2.080    | 01/08/2025 |
+| BARCELONA    | ITAMARA SANTOS CARVALHO               | R$ 2.080    | 21/01/2026 |
+| BARCELONA    | JESUS ALEXANDER MARQUEZ BORROME       | R$ 2.700    | 05/02/2026 |
+| BARCELONA    | JOANA CLECIA DE JESUS SOUZA           | R$ 2.300    | 01/08/2025 |
+| BARCELONA    | JOSE FERNANDO DE SOUZA FARIAS         | R$ 5.000    | 01/08/2025 |
+| BARCELONA    | LEIDIANE SILVA SANTOS                 | R$ 2.400    | 06/02/2026 |
+| BARCELONA    | LUIS GERALDO GARCIA GUILLENT          | R$ 2.800    | 01/08/2025 |
+| BARCELONA    | LUIS LEODAN GARCIA TABATA             | R$ 2.200    | 01/08/2025 |
+| BARCELONA    | MARIANA MARCELA FACUNDES DE SOUZA     | R$ 2.080    | 05/02/2026 |
+| BARCELONA    | RODRIGO SANTANA SANTOS                | R$ 2.700    | 05/02/2026 |
+| BARCELONA    | RONIVON TEIXEIRA SANTOS               | R$ 2.800    | 01/08/2025 |
+| BARCELONA    | TATIANA COSTA OLIVEIRA VIANA          | R$ 2.800    | 15/11/2025 |
+| BIG OSASCO   | ANTONIO NETO PEREIRA DA SILVA         | R$ 3.200    | 10/04/2024 |
+| BIG OSASCO   | MARCELO DOS SANTOS BORGES             | R$ 2.300    | 25/02/2026 |
+| BIG OSASCO   | VAGNER RAMOS FERREIRA                 | R$ 3.000    | 28/01/2026 |
+| BROOKLIN     | LUIS VINICIUS SANTOS SILVA            | R$ 2.180    | 20/02/2026 |
+| COMERCIAL    | HELLOISA DO NASCIMENTO AMARAL TANDLER | R$ 1.731,99 | 02/02/2026 |
+| ITAPECERICA  | DANILO PEREIRA BARBOSA                | R$ 3.000    | 19/02/2026 |
+| LAJEADO      | CARLOS AUGUSTO MENDES JUNIOR          | R$ 2.200    | 19/02/2026 |
+| LAJEADO      | JEFFERSON DA SILVA COSTA              | R$ 2.200    | 02/02/2026 |
+| LAJEADO      | KAWANNY CRISTINA DOS SANTOS OLIMPIO   | R$ 2.080    | 09/02/2026 |
+| LAJEADO      | PAULA ANDREA BOSCO                    | R$ 2.100    | 19/02/2026 |
+| LAJEADO      | ROSILENE SOARES DO NASCIMENTO         | R$ 2.080    | 24/02/2026 |
+| LAJEADO      | RYCHARD GABRIEL BARRETO SILVA         | R$ 2.080    | 06/02/2026 |
+| SUPER LAPA   | ARLETE PEREIRA DE ARAUJO              | R$ 2.080    | 04/02/2026 |
+| SUPER LAPA   | DIONE MEDEIROS LIMA                   | R$ 3.100    | 12/11/2025 |
+| SUPER LAPA   | EVERSON JOSÉ DE LIMA                  | R$ 3.200    | 06/02/2026 |
+| SUPER LAPA   | JOILSON JORGE TAVARES                 | R$ 2.800    | 12/02/2026 |
+| MUTINGA      | LUZINETE DOS SANTOS                   | R$ 2.500    | 04/02/2026 |
+| MUTINGA      | MARCOS VENTURA BARBOSA                | R$ 2.400    | 12/02/2026 |
+| MUTINGA      | RITA DE FATIMA DIAS DA SILVA          | R$ 2.600    | 26/02/2026 |
+| REI DO GADO  | JOSE SERRANEGRA FILHO                 | R$ 2.900    | 29/01/2026 |
+| BOSQUE       | CAUA SILVA DE LIMA                    | R$ 2.500    | 20/01/2026 |
+| BOSQUE       | RODRIGO ALMEIDA DA CRUZ               | R$ 3.300    | 29/01/2026 |
+| SÃO BERNARDO | ADILSON LINS DE AGUIAR                | R$ 3.100    | 18/11/2025 |
+| SÃO BERNARDO | GABRIELLY ZAGOTO MOREIRA              | R$ 2.000    | 10/11/2025 |
+| SÃO BERNARDO | MOHAMMED DEBBAB                       | R$ 2.200    | 11/12/2025 |
 
-### 2. Tipo de Fechamento
-- **Decisao:** Fechamentos INDEPENDENTES por tipo (Dia 20, Dia 5, VT, Beneficios)
-- **Motivo:** Permite fechar parcialmente
 
-### 3. Emprestimos
-- **Decisao:** Controle MANUAL pelo cliente
-- **Motivo:** O RH decide quando cobrar a parcela
+### Profissionais no Banco mas NÃO na FOPAG (Possíveis Desligamentos)
 
-### 4. Valores de Beneficios (VA, Dinheiro, Vale Carne, etc.)
-- **Decisao:** Cadastro por profissional, controle total do usuario
+Também existem profissionais no banco que **não aparecem** na FOPAG, indicando possíveis desligamentos ou transferências.
 
-### 5. Recibo de Pagamento
-- **Decisao:** Controle pelo usuario (campo recibo_assinado)
+## 2. Férias — Dados dos PDFs vs. Banco
 
----
+Os 278 registros de férias no banco estão **todos com status "pendente"**, sem detalhes reais dos PDFs. Os PDFs contêm informações ricas:
 
-## Cronograma de Execucao
+- **Status variados**: Vencido, À Vencer, Perdido (por afastamento)
+- **Períodos aquisitivos** com datas exatas de início/fim
+- **Dias de direito** variando (30, 25, 20, 17.5, etc. conforme faltas)
+- **Faltas** e **dias perdidos** por profissional
+- **Múltiplos períodos** por profissional (ex: EDIVAN FERREIRA com 6 períodos, 4 perdidos por afastamento)
 
-### FASE 1 — Fechamento Funcional ✅ CONCLUÍDA
-- [x] Criar tabela `fechamentos_folha`
-- [x] Criar tela /fechamentos com dashboard por loja
-- [x] Implementar fluxo: Aberto → Fechado → Reaberto (com versionamento)
-- [x] Integrar payrollCalculator nos snapshots (valores reais Dia 20/Dia 5)
-- [x] Adicionar campo `recibo_assinado` nos holerites (migration executada)
-- [ ] Gerar relatorios PDF a partir dos snapshots fechados (movido para FASE 2)
+Os dados de férias no banco **NÃO correspondem** aos PDFs reais.
 
-### FASE 2 — Relatorios PDF ✅ CONCLUÍDA
-- [x] Relatorio Adiantamento Dia 20 (por loja) — gerarRelatorioDia20
-- [x] Relatorio Folha Pagamento Dia 5 (por loja) — gerarRelatorioDia5
-- [x] Relatorio Vale Transporte (por loja/periodo) — gerarRelatorioVT
-- [x] Relatorio Cesta Basica (por loja) — gerarRelatorioCesta
-- [x] Relatorio Vale Alimentacao Alelo (por loja) — gerarRelatorioAlelo
-- [x] Recibo de Pagamento (3 por pagina A4) — gerarRecibos3PorPagina
-- [x] Exportacao CSV para todos os tipos
-- [x] Pagina /relatorios integrada com filtros e auditoria
+## 3. Folha de Pagamento e Holerites
 
-### FASE 3 — Integracao EzPointWeb (Semana 3-4)
-- [ ] Configurar secrets (EZPOINT_EMPRESA, EZPOINT_USUARIO, EZPOINT_SENHA)
-- [ ] Edge Function `ezpoint-login` — autenticacao e cache do Bearer token
-- [ ] Edge Function `ezpoint-sync` — consultar /batida por periodo e paginar
-- [ ] Vincular profissionais locais via CPF → id_ezpoint (campo adicionado ✅)
-- [ ] Calcular dias trabalhados reais a partir das batidas
-- [ ] Consultar /espelhoDePontos para detalhamento
-- [ ] Alimentar payrollCalculator automaticamente
-- [ ] Tela de configuracao EzPoint
-- [ ] Sincronizacao bidirecional: ferias e abonos
-- [ ] Cron job para sincronizacao diaria automatica
+Existem 284 registros de `folha_pagamento` e `holerites` para competência 2026-02, **mas foram gerados por fórmula CLT padrão**, não com os dados exatos da FOPAG (faltas específicas, vales carne, empréstimos individuais, complementos).
 
-### FASE 4 — Seguranca e Hardening ✅ CONCLUÍDA
-- [x] Corrigir RLS: TO public → TO authenticated em 50+ tabelas e storage
-- [x] Ativar verify_jwt = true nas edge functions admin
-- [x] Enforcar limites do tenant no codigo (backend + frontend)
-- [x] Desativar cadastros anonimos
-- [x] Auditoria grava no banco via historico_acoes (6 modulos conectados)
+## 4. Dados que Faltam Sincronizar
 
-### FASE 5 — Gaps de Dados ✅ CONCLUÍDA
-- [x] Adicionar campo `nome_mae` em profissionais (migration + formulario)
-- [x] Adicionar campo `id_ezpoint` em profissionais (migration)
-- [x] Campo `recibo_assinado` em holerites e folha_pagamento
-- [ ] Confirmar campos Vale Carne e Dinheiro como lancamentos ou campos dedicados
 
----
+| Dado                              | Fonte | Status no Banco               |
+| --------------------------------- | ----- | ----------------------------- |
+| ~40 profissionais novos           | FOPAG | Não cadastrados               |
+| Faltas injustificadas Fev/26      | FOPAG | Não registradas               |
+| Vales carne individuais           | FOPAG | Não registrados               |
+| Empréstimos específicos           | FOPAG | Parcialmente                  |
+| Pensões alimentícias              | FOPAG | Parcialmente                  |
+| Férias reais (13 lojas)           | PDFs  | Dados genéricos, não reais    |
+| Folha/holerites com valores reais | FOPAG | Valores calculados, não reais |
 
-## Motor de Calculo (Core do Sistema)
 
-| Componente | Status |
-|------------|--------|
-| `payrollCalculator.ts` | Funciona e testado (54+ testes) |
-| Calculo Dia 20 (40%) | ✅ |
-| Calculo Dia 5 (60%) | ✅ |
-| Desconto VT (6%) | ✅ |
-| Desconto VR | ✅ |
-| Desconto Cesta Basica | ✅ |
-| Desconto Emprestimo | ✅ |
-| Desconto Pensao | ✅ |
-| Ferias (1/3 constitucional) | ✅ |
-| 13o Salario (avos) | ✅ |
+## Plano de Correção
 
----
+### Etapa 1: Cadastrar profissionais novos
 
-## Seguranca ✅ HARDENED
+- Inserir ~40 profissionais que estão na FOPAG mas não no banco
+- Associar à loja correta usando o mapeamento de empresas
 
-| Aspecto | Status |
-|---------|--------|
-| Autenticacao | ✅ Funciona |
-| RLS (50+ policies) | ✅ TO authenticated |
-| RBAC 5 niveis | ✅ Funciona DB + UI |
-| Limites do tenant | ✅ Enforced backend + frontend |
-| Edge functions JWT | ✅ Todas protegidas |
-| Audit trail | ✅ 6 modulos gravando no banco |
-| Storage policies | ✅ TO authenticated com role check |
-| Cadastro anonimo | ✅ Desativado |
+### Etapa 2: Registrar descontos e faltas reais da FOPAG
+
+- Inserir faltas injustificadas na tabela `faltas`
+- Inserir/atualizar vales carne na tabela `professional_vales`
+- Validar empréstimos e pensões existentes
+
+### Etapa 3: Substituir férias por dados reais dos PDFs
+
+- Limpar os 278 registros genéricos
+- Inserir dados reais com status correto (vencido/à vencer/perdido), períodos aquisitivos exatos e saldos
+
+### Etapa 4: Recalcular folha e holerites com dados reais
+
+- Usar os dados exatos da FOPAG (faltas, vales, empréstimos, complementos)
+- Regenerar holerites com valores que batem com a planilha do cliente
+
+### Implementação técnica
+
+- Criar/atualizar a edge function `update-tenant-data` para processar todos os dados em batch
+- Usar SQL direto via ferramenta de insert para dados que precisam de tenant_id fixo (bypass RLS)  
+  
+  
+Quero atualize o historico de cada profissional com as informações pertinentes a cda um
