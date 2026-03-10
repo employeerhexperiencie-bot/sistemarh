@@ -10,6 +10,7 @@ export interface DadosCompetencia {
   ferias: Record<string, number>;
   vales: Record<string, number>;
   emprestimos: Record<string, number>;
+  emprestimoCLT: Record<string, number>;
   afastamentos: Record<string, { tipo: string; dias: number }>;
   beneficiosAdicionais: Record<string, { valeCarne: number; valeDinheiro: number; valeAlimentacao: number }>;
   lancamentosFinanceiros: Record<string, number>;
