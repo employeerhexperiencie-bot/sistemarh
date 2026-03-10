@@ -172,7 +172,7 @@ export function getDefaultConfig(competencia: string): ConfiguracaoFolha {
     diasUteis6x1: calcularDiasUteisMes(competencia, '6x1'),
     diasUteis5x2: calcularDiasUteisMes(competencia, '5x2'),
     valorVR: 25,
-    percentualDia20: 40,
+    percentualDia20: 50,
     valorCestaBasica: 180,
     competencia,
   };

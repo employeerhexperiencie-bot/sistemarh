@@ -95,7 +95,14 @@ export default function Fechamentos() {
   const [lojas, setLojas] = useState<Loja[]>([]);
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [competencia, setCompetencia] = useState(getCompetenciaAtual());
+  // Dia 5 paga a competência anterior, então padrão = mês passado se estamos antes do dia 15
+  const [competencia, setCompetencia] = useState(() => {
+    const now = new Date();
+    if (now.getDate() <= 15) {
+      return getCompetenciaAnterior();
+    }
+    return getCompetenciaAtual();
+  });
   const [tipoAtivo, setTipoAtivo] = useState<TipoFechamento>('dia_20');
   const [observacoes, setObservacoes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
