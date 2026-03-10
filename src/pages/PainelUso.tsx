@@ -180,11 +180,6 @@ export default function PainelUso() {
         errors: totalErrors + devLogErrors,
         users: summaries.length,
       });
-        duration: summaries.reduce((s, u) => s + u.total_duration_seconds, 0),
-        events: allEvents.length,
-        errors: totalErrors,
-        users: summaries.length,
-      });
     } catch (err) {
       console.error('Erro ao carregar dados de uso:', err);
     } finally {
