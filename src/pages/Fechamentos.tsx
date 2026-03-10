@@ -587,7 +587,7 @@ export default function Fechamentos() {
           onClick={() => { setLocalVal(String(value)); setEditing(true); }}
           title="Clique para editar"
         >
-          {value > 0 ? formatCurrency(value) : '—'}
+          {value > 0 ? (field === 'faltas' ? `${value} dias` : formatCurrency(value)) : '—'}
         </span>
       );
     }
