@@ -168,11 +168,18 @@ export default function PainelUso() {
       const allEvents = events || [];
       const totalErrors = allEvents.filter((e: any) => !e.success).length;
 
+      const devLogErrors = (devLogs || []).length;
+
       setUserSummaries(summaries);
       setRecentEvents(allEvents.slice(0, 50) as ActivityEvent[]);
       setModuleStats(mStats);
       setTotals({
         sessions: (sessions || []).length,
+        duration: summaries.reduce((s, u) => s + u.total_duration_seconds, 0),
+        events: allEvents.length,
+        errors: totalErrors + devLogErrors,
+        users: summaries.length,
+      });
         duration: summaries.reduce((s, u) => s + u.total_duration_seconds, 0),
         events: allEvents.length,
         errors: totalErrors,
