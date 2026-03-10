@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    if (roleError || !roleData || roleData.role !== 'admin') {
+    if (roleError || !roleData || !['admin', 'super_admin'].includes(roleData.role)) {
       console.error(`Acesso negado para usuário ${user.email}. Role: ${roleData?.role || 'não definido'}`);
       
       // Registrar tentativa de acesso não autorizado
