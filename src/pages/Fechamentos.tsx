@@ -637,8 +637,8 @@ export default function Fechamentos() {
         valorVR: r.valorVR,
         valorCesta: r.valorCesta,
         valorAlelo: inp.valeAlimentacao || 0,
-        diasTrabalhados: r.diasTrabalhados,
-        diasUteis: r.diasUteis,
+        diasTrabalhados: r.diasEfetivos,
+        diasUteis: 30,
         faltas: inp.faltas,
         descontoFaltas: r.descontoFaltas,
         emprestimo: inp.emprestimos,
@@ -851,7 +851,7 @@ export default function Fechamentos() {
                             <TableCell className="font-mono">{r.matricula}</TableCell>
                             <TableCell className="font-medium max-w-[120px] truncate" title={r.profissionalNome}>{r.profissionalNome}</TableCell>
                             <TableCell className="text-right">{formatCurrency(r.salarioBase)}</TableCell>
-                            <TableCell className="text-right">{r.diasTrabalhados}/{r.diasUteis}</TableCell>
+                            <TableCell className="text-right">{r.diasEfetivos}/{30}</TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="faltas" value={inp.faltas} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="vales" value={inp.vales} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimos" value={inp.emprestimos} /></TableCell>

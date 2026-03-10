@@ -90,6 +90,7 @@ export interface ResultadoCalculo {
   diasUteis: number;
   diasTrabalhados: number;
   diasAbatidos: number;
+  diasEfetivos: number;  // Dias calendário efetivos (de 30) - para proration
   
   // Dia 20
   recebeDia20: boolean;
@@ -118,6 +119,9 @@ export interface ResultadoCalculo {
   
   // Insalubridade
   valorInsalubridade: number;
+  
+  // Salário proporcional (salary/30 × diasEfetivos)
+  salarioReceber: number;
   
   // Totais
   salarioLiquido: number;  // Dia 5
@@ -155,13 +159,42 @@ export function calcularFolhaProfissional(
   detalhes.push(`Escala: ${profissional.escala} (${diasUteis} dias úteis)`);
   detalhes.push(`Valor dia: R$ ${valorDia.toFixed(2)}`);
   
-  // 1.1 Insalubridade é apenas informativo no cadastro, NÃO entra no cálculo da folha
+  // 1.1 Calcular diasEfetivos (dias calendário de 30) para proration de mês parcial
+  const temDataAdmissao = profissional.dataAdmissao && profissional.dataAdmissao !== '';
+  const dataAdmissao = temDataAdmissao ? new Date(profissional.dataAdmissao!) : null;
+  const mesCompetencia = new Date(config.competencia + '-01');
+  const [anoComp, mesComp] = config.competencia.split('-').map(Number);
+  const diasNoMesReal = new Date(anoComp, mesComp, 0).getDate();
+  
+  const mesmaCompetencia = dataAdmissao 
+    ? (dataAdmissao.getMonth() === mesCompetencia.getMonth() && 
+       dataAdmissao.getFullYear() === mesCompetencia.getFullYear())
+    : false;
+  
+  // diasEfetivos = dias calendário que o profissional deveria trabalhar no mês (de 30)
+  let diasEfetivos = 30;
+  if (mesmaCompetencia && dataAdmissao) {
+    // Admitido no mês: dias de admissão até fim do mês
+    diasEfetivos = diasNoMesReal - dataAdmissao.getDate() + 1;
+    detalhes.push(`Admissão no mês: ${dataAdmissao.getDate()}/${mesComp} — ${diasEfetivos} dias efetivos de ${diasNoMesReal}`);
+  }
+  
+  // Salário proporcional (salary/30 × diasEfetivos)
+  const salarioReceber = diasEfetivos < 30 
+    ? arredondarValor((profissional.salario / 30) * diasEfetivos)
+    : profissional.salario;
+  
+  if (diasEfetivos < 30) {
+    detalhes.push(`Salário proporcional: R$ ${profissional.salario.toFixed(2)} / 30 × ${diasEfetivos} = R$ ${salarioReceber.toFixed(2)}`);
+  }
+  
+  // 1.2 Insalubridade é apenas informativo no cadastro, NÃO entra no cálculo da folha
   const valorInsalubridade = 0;
   if (profissional.insalubridade && profissional.insalubridade !== 'nao') {
     detalhes.push(`Insalubridade ${profissional.insalubridade}% (informativo - não calculado na folha)`);
   }
   
-  // 2. Calcular dias trabalhados
+  // 2. Calcular dias trabalhados (dias úteis para VT/VR)
   const diasAbatidos = profissional.faltas + profissional.atestados + profissional.diasFerias;
   let diasTrabalhados = Math.max(0, diasUteis - diasAbatidos);
   
@@ -210,14 +243,7 @@ export function calcularFolhaProfissional(
   let recebeDia20 = true;
   let motivoDia20 = '';
   
-  const temDataAdmissao = profissional.dataAdmissao && profissional.dataAdmissao !== '';
-  const dataAdmissao = temDataAdmissao ? new Date(profissional.dataAdmissao!) : null;
-  const mesCompetencia = new Date(config.competencia + '-01');
-  
-  const mesmaCompetencia = dataAdmissao 
-    ? (dataAdmissao.getMonth() === mesCompetencia.getMonth() && 
-       dataAdmissao.getFullYear() === mesCompetencia.getFullYear())
-    : false;
+  // (temDataAdmissao, dataAdmissao, mesCompetencia, mesmaCompetencia already declared above)
   
   // Regras de elegibilidade para Dia 20
   if (profissional.status === 'ferias') {
@@ -317,8 +343,7 @@ export function calcularFolhaProfissional(
   // 9.1 DSR (Descanso Semanal Remunerado) - desconta 1 DSR por falta injustificada
   // Cálculo: para cada falta injustificada, perde o DSR proporcional
   // DSR = (faltas / dias úteis) × domingos no mês × valor do dia
-  const [anoComp, mesComp] = config.competencia.split('-').map(Number);
-  const diasNoMes = new Date(anoComp, mesComp, 0).getDate();
+  const diasNoMes = diasNoMesReal;
   let domingosNoMes = 0;
   for (let d = 1; d <= diasNoMes; d++) {
     if (new Date(anoComp, mesComp - 1, d).getDay() === 0) domingosNoMes++;
@@ -346,10 +371,10 @@ export function calcularFolhaProfissional(
   detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (faltas: ${descontoFaltas}, DSR: ${descontoDSR}, vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, adicionais: ${descontosAdicionais})`);
   
   // 10. Calcular salário líquido (Dia 5)
-  // Fórmula: Salário Base - Dia 20 - Descontos Operacionais
+  // Fórmula: Salário a Receber (proporcional) - Dia 20 - Descontos Operacionais
   // NÃO desconta benefícios (VT, VR, Cesta são PAGOS ao profissional)
   // NÃO desconta encargos (INSS, IRRF calculados pela contabilidade)
-  let salarioBase = profissional.salario + valorInsalubridade;
+  let salarioBase = salarioReceber + valorInsalubridade;
   
   // Se está em afastamento, usar valor do afastamento como base
   if (valorAfastamento > 0 && profissional.status !== 'ativo' && profissional.status !== 'ferias') {
@@ -380,6 +405,7 @@ export function calcularFolhaProfissional(
     diasUteis,
     diasTrabalhados,
     diasAbatidos,
+    diasEfetivos,
     recebeDia20,
     valorDia20: valorDia20Final,
     motivoDia20,
@@ -398,6 +424,7 @@ export function calcularFolhaProfissional(
     valorAfastamento,
     tipoAfastamento,
     valorInsalubridade,
+    salarioReceber,
     salarioLiquido,
     totalMes,
     detalhesCalculo: detalhes,

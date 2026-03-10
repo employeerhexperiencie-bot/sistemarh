@@ -125,8 +125,13 @@ export function buildProfissionalInput(
   }
 
   const faltasProf = dados.faltas[p.id] || { injustificadas: 0, justificadas: 0 };
-  const benefAdicionais = dados.beneficiosAdicionais[p.id] || { valeCarne: 0, valeDinheiro: 0, valeAlimentacao: 0 };
+  const benefAdicionais = dados.beneficiosAdicionais[p.id];
   const lancamentosDesc = dados.lancamentosFinanceiros[p.id] || 0;
+
+  // Vale Carne: usar valor do benefício mensal, senão usar cadastro do profissional
+  const valeCarneFinal = benefAdicionais?.valeCarne || Number(p.valor_vale_carne || 0);
+  const valeDinheiroFinal = benefAdicionais?.valeDinheiro || 0;
+  const valeAlimentacaoFinal = benefAdicionais?.valeAlimentacao || Number(p.valor_vale_alimentacao || 0);
 
   // Calcular valor real da pensão alimentícia a partir da tabela pensoes_alimenticias
   // REGRA: Pensão é SEMPRE calculada sobre o salário da CTPS (primeiro_salario),
@@ -165,9 +170,9 @@ export function buildProfissionalInput(
     vales: dados.vales[p.id] || 0,
     emprestimos: dados.emprestimos[p.id] || 0,
     pensao: valorPensao,
-    valeCarne: benefAdicionais.valeCarne,
-    valeDinheiro: benefAdicionais.valeDinheiro,
-    valeAlimentacao: benefAdicionais.valeAlimentacao,
+    valeCarne: valeCarneFinal,
+    valeDinheiro: valeDinheiroFinal,
+    valeAlimentacao: valeAlimentacaoFinal,
     outrosDescontos: lancamentosDesc,
     insalubridade: (p.insalubridade as 'nao' | '10' | '20') || 'nao',
   };
