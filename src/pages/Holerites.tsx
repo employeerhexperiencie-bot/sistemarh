@@ -24,6 +24,7 @@ import {
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { buscarDescontosProfissional } from '@/hooks/useHoleriteData';
 import { supabase } from '@/integrations/supabase/client';
+import JSZip from 'jszip';
 
 interface HoleriteItem {
   id: string;
@@ -165,6 +166,20 @@ export default function Holerites() {
     window.open(url, '_blank');
   };
 
+  const sanitizeFolderName = (name: string) => name.replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, '').trim() || 'Sem_Loja';
+
+  const downloadZip = async (zip: JSZip, filename: string) => {
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const gerarPDFsDia20EmLote = async () => {
     if (selecionadosDia20.size === 0) {
       toast({
@@ -178,6 +193,7 @@ export default function Holerites() {
     setGerando(true);
     
     try {
+      const zip = new JSZip();
       const selecionadosArray = holeritesFiltrados.filter(h => selecionadosDia20.has(h.id));
       
       for (const holerite of selecionadosArray) {
@@ -196,20 +212,27 @@ export default function Holerites() {
         );
         
         const doc = gerarHoleritePDF(dados);
-        doc.save(`holerite_dia20_${holerite.matricula}_${competencia}.pdf`);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const pdfBlob = doc.output('arraybuffer');
+        const folderName = sanitizeFolderName(holerite.loja);
+        zip.folder(folderName)?.file(
+          `holerite_dia20_${holerite.matricula}_${holerite.nome.replace(/\s/g, '_')}.pdf`,
+          pdfBlob
+        );
       }
       
+      await downloadZip(zip, `holerites_dia20_${competencia}.zip`);
+      
       toast({
-        title: 'PDFs Dia 20 Gerados',
-        description: `${selecionadosDia20.size} holerites gerados com sucesso!`,
+        title: 'ZIP Dia 20 Gerado',
+        description: `${selecionadosDia20.size} holerites organizados por loja em um arquivo ZIP!`,
       });
       
       setSelecionadosDia20(new Set());
     } catch (error) {
+      console.error('Erro ao gerar ZIP:', error);
       toast({
         title: 'Erro',
-        description: 'Erro ao gerar os PDFs.',
+        description: 'Erro ao gerar o arquivo ZIP.',
         variant: 'destructive',
       });
     } finally {
@@ -300,6 +323,7 @@ export default function Holerites() {
     setGerando(true);
     
     try {
+      const zip = new JSZip();
       const selecionadosArray = holeritesFiltrados.filter(h => selecionadosDia5.has(h.id));
       
       for (const holerite of selecionadosArray) {
@@ -330,20 +354,27 @@ export default function Holerites() {
         );
         
         const doc = gerarHoleritePDF(dados);
-        doc.save(`holerite_dia5_${holerite.matricula}_${competencia}.pdf`);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const pdfBlob = doc.output('arraybuffer');
+        const folderName = sanitizeFolderName(holerite.loja);
+        zip.folder(folderName)?.file(
+          `holerite_dia5_${holerite.matricula}_${holerite.nome.replace(/\s/g, '_')}.pdf`,
+          pdfBlob
+        );
       }
       
+      await downloadZip(zip, `holerites_dia5_${competencia}.zip`);
+      
       toast({
-        title: 'PDFs Dia 5 Gerados',
-        description: `${selecionadosDia5.size} holerites gerados com sucesso!`,
+        title: 'ZIP Dia 5 Gerado',
+        description: `${selecionadosDia5.size} holerites organizados por loja em um arquivo ZIP!`,
       });
       
       setSelecionadosDia5(new Set());
     } catch (error) {
+      console.error('Erro ao gerar ZIP:', error);
       toast({
         title: 'Erro',
-        description: 'Erro ao gerar os PDFs.',
+        description: 'Erro ao gerar o arquivo ZIP.',
         variant: 'destructive',
       });
     } finally {
@@ -474,6 +505,7 @@ export default function Holerites() {
     setGerando(true);
     
     try {
+      const zip = new JSZip();
       const diasUteis = calcularDiasUteis();
       const selecionadosArray = holeritesVT.filter(h => selecionadosVT.has(h.id));
       
@@ -501,20 +533,27 @@ export default function Holerites() {
         );
         
         const doc = gerarHoleritePDF(dados);
-        doc.save(`holerite_vt_${holerite.matricula}_${competencia}.pdf`);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const pdfBlob = doc.output('arraybuffer');
+        const folderName = sanitizeFolderName(holerite.loja);
+        zip.folder(folderName)?.file(
+          `holerite_vt_${holerite.matricula}_${holerite.nome.replace(/\s/g, '_')}.pdf`,
+          pdfBlob
+        );
       }
       
+      await downloadZip(zip, `holerites_vt_${competencia}.zip`);
+      
       toast({
-        title: 'PDFs VT Gerados',
-        description: `${selecionadosVT.size} holerites gerados com sucesso!`,
+        title: 'ZIP VT Gerado',
+        description: `${selecionadosVT.size} holerites organizados por loja em um arquivo ZIP!`,
       });
       
       setSelecionadosVT(new Set());
     } catch (error) {
+      console.error('Erro ao gerar ZIP:', error);
       toast({
         title: 'Erro',
-        description: 'Erro ao gerar os PDFs VT.',
+        description: 'Erro ao gerar o arquivo ZIP.',
         variant: 'destructive',
       });
     } finally {
