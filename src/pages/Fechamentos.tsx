@@ -819,9 +819,11 @@ export default function Fechamentos() {
                         <TableHead className="text-right">Faltas</TableHead>
                         <TableHead className="text-right">Vales</TableHead>
                         <TableHead className="text-right">Emprést.</TableHead>
+                        <TableHead className="text-right">Pensão</TableHead>
                         <TableHead className="text-right">V.Carne</TableHead>
                         <TableHead className="text-right">V.Dinh.</TableHead>
                         <TableHead className="text-right">Outros</TableHead>
+                        <TableHead className="text-right">Descontos</TableHead>
                         {tipoAtivo === 'dia_20' && <TableHead className="text-right font-bold">Dia 20</TableHead>}
                         {tipoAtivo === 'dia_5' && (
                           <>
