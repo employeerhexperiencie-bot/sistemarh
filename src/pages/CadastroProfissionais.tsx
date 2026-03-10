@@ -647,6 +647,12 @@ export const CadastroProfissionais: React.FC = () => {
       status: professional.status as 'ativo' | 'demitido' | 'afastado',
       data_admissao: professional.data_admissao || '',
       data_demissao: professional.data_demissao || '',
+      pensao_alimenticia: !!(professional as any).pensao_alimenticia,
+      vale_transporte: !!(professional as any).vale_transporte,
+      vale_refeicao: !!(professional as any).vale_refeicao,
+      recebe_cesta: !!(professional as any).cesta_basica,
+      vale_carne: !!(professional as any).vale_carne,
+      sindicato: (professional as any).sindicato || '',
     });
     setIsDialogOpen(true);
   };

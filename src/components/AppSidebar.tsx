@@ -79,7 +79,7 @@ const navSections = [
       { title: 'Afastamentos', url: '/gestao-afastamentos', icon: UserMinus },
       { title: 'Exames (ASO)', url: '/gestao-aso', icon: Heart },
       { title: 'EPIs', url: '/gestao-epi', icon: Package },
-      { title: 'Benefícios', url: '/gestao-beneficios-detalhado', icon: Gift },
+      { title: 'Benefícios', url: '/gestao-beneficios', icon: Gift },
     ],
   },
   {
