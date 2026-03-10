@@ -129,15 +129,17 @@ export function buildProfissionalInput(
   const lancamentosDesc = dados.lancamentosFinanceiros[p.id] || 0;
 
   // Calcular valor real da pensão alimentícia a partir da tabela pensoes_alimenticias
+  // REGRA: Pensão é SEMPRE calculada sobre o salário da CTPS (primeiro_salario),
+  // mas descontada do valor real pago (salario_nominal/ultimo_salario)
   const pensaoInfo = dados.pensoes[p.id];
   let valorPensao = 0;
   if (pensaoInfo) {
     if (pensaoInfo.tipoCalculo === 'valor_fixo') {
       valorPensao = pensaoInfo.valorFixo;
     } else {
-      // Percentual sobre o salário (base simplificada para evitar circularidade)
-      // A base "líquido" na prática é calculada sobre o salário nominal
-      valorPensao = Math.round(salario * (pensaoInfo.percentual / 100));
+      // Percentual sobre o salário da CTPS (primeiro_salario), NÃO o salário pago
+      const salarioCtps = Number(p.primeiro_salario || 0);
+      valorPensao = Math.round(salarioCtps * (pensaoInfo.percentual / 100));
     }
   }
 
