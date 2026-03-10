@@ -90,6 +90,7 @@ interface EditOverrides {
     outrosDescontos?: number;
     complemento?: number;
     faltas?: number;
+    percentualDia20?: number;
   };
 }
 
@@ -350,7 +351,12 @@ export default function Fechamentos() {
       faltas: overrides.faltas ?? originalInput.faltas,
     };
 
-    const resultado = calcularFolhaProfissional(adjustedInput, config);
+    // Apply per-professional percentualDia20 override
+    const profConfig = overrides.percentualDia20 != null 
+      ? { ...config, percentualDia20: overrides.percentualDia20 } 
+      : config;
+
+    const resultado = calcularFolhaProfissional(adjustedInput, profConfig);
     const newResultado = {
       ...resultado,
       matricula: previewData.resultados[idx].matricula,
@@ -779,7 +785,7 @@ export default function Fechamentos() {
                   {tipoAtivo === 'dia_20' && (
                     <>
                       <div><p className="text-xs text-muted-foreground">Folha Bruta</p><p className="text-lg font-semibold">{formatCurrency(totalSalariosPreview)}</p></div>
-                      <div><p className="text-xs text-muted-foreground">Percentual</p><p className="text-lg font-semibold">40%</p></div>
+                      <div><p className="text-xs text-muted-foreground">Percentual Padrão</p><p className="text-lg font-semibold">{getDefaultConfig(competencia).percentualDia20}%</p></div>
                       <div><p className="text-xs text-muted-foreground">Profissionais</p><p className="text-lg font-semibold">{profCount}</p></div>
                     </>
                   )}
@@ -827,7 +833,7 @@ export default function Fechamentos() {
                         <TableHead className="text-right">Pensão</TableHead>
                         <TableHead className="text-right">Emprést.</TableHead>
                         <TableHead className="text-right">Emp. CLT</TableHead>
-                        {(tipoAtivo === 'dia_5' || tipoAtivo === 'dia_20') && <TableHead className="text-right">ADT. Sal</TableHead>}
+                        {(tipoAtivo === 'dia_5' || tipoAtivo === 'dia_20') && <TableHead className="text-right">ADT. Sal (%)</TableHead>}
                         <TableHead className="text-right">Tot. Desc.</TableHead>
                         {tipoAtivo === 'dia_5' && <TableHead className="text-right">Sal. a Receber</TableHead>}
                         {tipoAtivo === 'dia_5' && <TableHead className="text-right">Compl.</TableHead>}
@@ -889,7 +895,49 @@ export default function Fechamentos() {
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimos" value={inp.emprestimos} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimoCLT" value={inp.emprestimoCLT || 0} /></TableCell>
                             {(tipoAtivo === 'dia_5' || tipoAtivo === 'dia_20') && (
-                              <TableCell className="text-right">{r.valorDia20 > 0 ? formatCurrency(r.valorDia20) : '—'}</TableCell>
+                              <TableCell className="text-right">
+                                {r.recebeDia20 ? (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button className="underline decoration-dotted cursor-pointer hover:text-primary text-xs">
+                                        {formatCurrency(r.valorDia20)}
+                                        <span className="text-muted-foreground ml-1">({r.motivoDia20})</span>
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-48 p-3 text-xs" side="left">
+                                      <p className="font-semibold mb-2">Percentual Adiantamento</p>
+                                      <div className="flex flex-col gap-1.5">
+                                        {[40, 50].map(pct => (
+                                          <button
+                                            key={pct}
+                                            className={`px-3 py-1.5 rounded border text-xs font-medium transition-colors ${
+                                              (editOverrides[r.profissionalId]?.percentualDia20 ?? getDefaultConfig(competencia).percentualDia20) === pct
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-background hover:bg-muted border-border'
+                                            }`}
+                                            onClick={() => handleEditField(r.profissionalId, 'percentualDia20', pct)}
+                                          >
+                                            {pct}%
+                                          </button>
+                                        ))}
+                                        <button
+                                          className="px-3 py-1.5 rounded border text-xs text-muted-foreground hover:bg-muted border-border"
+                                          onClick={() => {
+                                            const val = prompt('Percentual personalizado (ex: 30):', '');
+                                            if (val !== null && !isNaN(Number(val)) && Number(val) > 0 && Number(val) <= 100) {
+                                              handleEditField(r.profissionalId, 'percentualDia20', Number(val));
+                                            }
+                                          }}
+                                        >
+                                          Outro %...
+                                        </button>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
                             )}
                             <TableCell className="text-right">
                               <Popover>
