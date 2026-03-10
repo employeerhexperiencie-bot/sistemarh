@@ -82,11 +82,19 @@ export default function PainelUso() {
         .gte('started_at', since)
         .order('started_at', { ascending: false });
 
-      // Buscar eventos
+      // Buscar eventos de atividade
       const { data: events } = await supabase
         .from('user_activity_events')
         .select('*')
         .gte('created_at', since)
+        .order('created_at', { ascending: false });
+
+      // Buscar logs de erro do sistema (dev_logs)
+      const { data: devLogs } = await supabase
+        .from('dev_logs')
+        .select('*')
+        .gte('created_at', since)
+        .in('tipo', ['erro', 'error', 'critical'])
         .order('created_at', { ascending: false });
 
       // Buscar nomes dos usuários
@@ -160,6 +168,8 @@ export default function PainelUso() {
       const allEvents = events || [];
       const totalErrors = allEvents.filter((e: any) => !e.success).length;
 
+      const devLogErrors = (devLogs || []).length;
+
       setUserSummaries(summaries);
       setRecentEvents(allEvents.slice(0, 50) as ActivityEvent[]);
       setModuleStats(mStats);
@@ -167,7 +177,7 @@ export default function PainelUso() {
         sessions: (sessions || []).length,
         duration: summaries.reduce((s, u) => s + u.total_duration_seconds, 0),
         events: allEvents.length,
-        errors: totalErrors,
+        errors: totalErrors + devLogErrors,
         users: summaries.length,
       });
     } catch (err) {
