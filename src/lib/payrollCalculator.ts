@@ -104,6 +104,7 @@ export interface ResultadoCalculo {
   
   // Descontos
   descontoFaltas: number;
+  descontoDSR: number;
   descontoVT6Porcento: number;
   pensao: number;
   valeCarne: number;
@@ -307,9 +308,26 @@ export function calcularFolhaProfissional(
   
   // 9. Calcular descontos OPERACIONAIS (não inclui benefícios nem encargos)
   // IMPORTANTE: Dia 5 NÃO desconta benefícios (VT, VR, Cesta) nem encargos (INSS, IRRF)
+  // Base de cálculo: salário pago (salario_nominal), NÃO o salário da CTPS
   const descontoFaltas = arredondarValor(profissional.faltas * valorDia);
   if (descontoFaltas > 0) {
     detalhes.push(`Desconto faltas: ${profissional.faltas} × R$ ${valorDia.toFixed(2)} = R$ ${descontoFaltas.toFixed(2)}`);
+  }
+  
+  // 9.1 DSR (Descanso Semanal Remunerado) - desconta 1 DSR por falta injustificada
+  // Cálculo: para cada falta injustificada, perde o DSR proporcional
+  // DSR = (faltas / dias úteis) × domingos no mês × valor do dia
+  const [anoComp, mesComp] = config.competencia.split('-').map(Number);
+  const diasNoMes = new Date(anoComp, mesComp, 0).getDate();
+  let domingosNoMes = 0;
+  for (let d = 1; d <= diasNoMes; d++) {
+    if (new Date(anoComp, mesComp - 1, d).getDay() === 0) domingosNoMes++;
+  }
+  const descontoDSR = profissional.faltas > 0
+    ? arredondarValor(profissional.faltas * valorDia * (domingosNoMes / diasUteis))
+    : 0;
+  if (descontoDSR > 0) {
+    detalhes.push(`Desconto DSR: ${profissional.faltas} faltas × R$ ${valorDia.toFixed(2)} × (${domingosNoMes} dom / ${diasUteis} úteis) = R$ ${descontoDSR.toFixed(2)}`);
   }
   
   // Descontos manuais/adicionais (Vale Carne, Vale Dinheiro - são compras do profissional)
@@ -323,10 +341,9 @@ export function calcularFolhaProfissional(
   if (valeDinheiro > 0) detalhes.push(`Vale Dinheiro (compra): R$ ${valeDinheiro.toFixed(2)}`);
   if (outrosDescontos > 0) detalhes.push(`Outros Descontos: R$ ${outrosDescontos.toFixed(2)}`);
   
-  // Total de descontos OPERACIONAIS (vales comprados + empréstimos + pensão + faltas)
-  // NÃO inclui: VT, VR, Cesta (são pagamentos AO profissional), INSS, IRRF (encargos)
-  const totalDescontos = profissional.vales + profissional.emprestimos + profissional.pensao + descontoFaltas + descontosAdicionais;
-  detalhes.push(`Total descontos operacionais: R$ ${totalDescontos.toFixed(2)} (vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, faltas: ${descontoFaltas}, adicionais: ${descontosAdicionais})`);
+  // Total de descontos OPERACIONAIS (vales + empréstimos + pensão + faltas + DSR + adicionais)
+  const totalDescontos = profissional.vales + profissional.emprestimos + profissional.pensao + descontoFaltas + descontoDSR + descontosAdicionais;
+  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (faltas: ${descontoFaltas}, DSR: ${descontoDSR}, vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, adicionais: ${descontosAdicionais})`);
   
   // 10. Calcular salário líquido (Dia 5)
   // Fórmula: Salário Base - Dia 20 - Descontos Operacionais
@@ -371,6 +388,7 @@ export function calcularFolhaProfissional(
     recebeCesta,
     valorCesta,
     descontoFaltas,
+    descontoDSR,
     descontoVT6Porcento,
     pensao: profissional.pensao,
     valeCarne,

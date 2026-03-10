@@ -869,7 +869,8 @@ export default function Fechamentos() {
                                 <PopoverContent className="w-64 p-3 text-xs" side="left">
                                   <p className="font-semibold mb-2 text-sm">Descontos — {r.profissionalNome.split(' ').slice(0, 2).join(' ')}</p>
                                   <div className="space-y-1">
-                                    {r.descontoFaltas > 0 && <div className="flex justify-between"><span>Faltas ({inp.faltas})</span><span>{formatCurrency(r.descontoFaltas)}</span></div>}
+                                    {r.descontoFaltas > 0 && <div className="flex justify-between"><span>Faltas ({inp.faltas} dias)</span><span>{formatCurrency(r.descontoFaltas)}</span></div>}
+                                    {r.descontoDSR > 0 && <div className="flex justify-between"><span>DSR (desc. repouso)</span><span>{formatCurrency(r.descontoDSR)}</span></div>}
                                     {inp.vales > 0 && <div className="flex justify-between"><span>Vales/Adiant.</span><span>{formatCurrency(inp.vales)}</span></div>}
                                     {inp.emprestimos > 0 && <div className="flex justify-between"><span>Empréstimos</span><span>{formatCurrency(inp.emprestimos)}</span></div>}
                                     {inp.pensao > 0 && <div className="flex justify-between"><span>Pensão Alim.</span><span>{formatCurrency(inp.pensao)}</span></div>}
@@ -912,7 +913,7 @@ export default function Fechamentos() {
                         <TableCell colSpan={2}>TOTAL</TableCell>
                         <TableCell className="text-right">{formatCurrency(totalSalariosPreview)}</TableCell>
                         <TableCell className="text-right">—</TableCell>
-                        <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.faltas, 0))}</TableCell>
+                        <TableCell className="text-right">{previewData.inputs.reduce((s, i) => s + i.faltas, 0)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.vales, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.emprestimos, 0))}</TableCell>
                         <TableCell className="text-right text-destructive">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.pensao, 0))}</TableCell>
