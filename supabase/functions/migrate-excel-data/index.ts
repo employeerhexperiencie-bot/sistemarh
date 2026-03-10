@@ -26,6 +26,7 @@ interface ExcelProfissional {
   telefone?: string;
   celular?: string;
   localTrabalho?: string;
+  localRegistro?: string;
   departamento?: string;
   setor?: string;
   cargo?: string;
@@ -58,6 +59,16 @@ interface ExcelProfissional {
   localHomologacao?: string;
   dataCumprirAviso?: string;
   status?: string;
+  nomeMae?: string;
+  nomePai?: string;
+  banco?: string;
+  agencia?: string;
+  conta?: string;
+  contaPoupanca?: string;
+  pixTelefone?: string;
+  pixCpf?: string;
+  tipoContaDetectado?: string;
+  chavePix?: string;
 }
 
 interface ExcelLoja {
