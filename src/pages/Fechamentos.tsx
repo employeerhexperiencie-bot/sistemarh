@@ -851,6 +851,7 @@ export default function Fechamentos() {
                             <TableCell className="font-mono">{r.matricula}</TableCell>
                             <TableCell className="font-medium max-w-[120px] truncate" title={r.profissionalNome}>{r.profissionalNome}</TableCell>
                             <TableCell className="text-right">{formatCurrency(r.salarioBase)}</TableCell>
+                            <TableCell className="text-right">{r.diasTrabalhados}/{r.diasUteis}</TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="faltas" value={inp.faltas} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="vales" value={inp.vales} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimos" value={inp.emprestimos} /></TableCell>
