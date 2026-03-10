@@ -13,6 +13,7 @@ export interface DadosCompetencia {
   afastamentos: Record<string, { tipo: string; dias: number }>;
   beneficiosAdicionais: Record<string, { valeCarne: number; valeDinheiro: number; valeAlimentacao: number }>;
   lancamentosFinanceiros: Record<string, number>;
+  pensoes: Record<string, { tipoCalculo: string; percentual: number; valorFixo: number; baseCalculo: string }>;
 }
 
 export async function carregarDadosCompetenciaFromDB(competencia: string): Promise<DadosCompetencia> {
@@ -20,7 +21,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   const inicioMes = `${ano}-${String(mes).padStart(2, '0')}-01`;
   const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
 
-  const [faltasRes, feriasRes, valesRes, emprestimosRes, afastamentosRes, beneficiosRes, lancamentosRes] = await Promise.all([
+  const [faltasRes, feriasRes, valesRes, emprestimosRes, afastamentosRes, beneficiosRes, lancamentosRes, pensoesRes] = await Promise.all([
     supabase.from('faltas').select('profissional_id, tipo').gte('data_falta', inicioMes).lte('data_falta', fimMes),
     supabase.from('ferias').select('profissional_id, periodo_gozo_inicio, periodo_gozo_fim, dias_gozados')
       .or(`and(periodo_gozo_inicio.lte.${fimMes},periodo_gozo_fim.gte.${inicioMes})`),
@@ -29,6 +30,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
     supabase.from('afastamentos').select('profissional_id, tipo, data_inicio').eq('status', 'ativo').lte('data_inicio', fimMes).or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`),
     supabase.from('beneficios').select('profissional_id, valor_vale_carne, valor_vale_dinheiro, valor_vale_alimentacao').eq('mes_referencia', inicioMes),
     supabase.from('lancamentos_financeiros').select('profissional_id, tipo, valor').eq('mes_referencia', inicioMes).eq('tipo', 'desconto'),
+    supabase.from('pensoes_alimenticias').select('profissional_id, tipo_calculo, percentual, valor_fixo, base_calculo').eq('ativo', true),
   ]);
 
   const faltasMap: Record<string, { injustificadas: number; justificadas: number }> = {};
@@ -81,6 +83,17 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   const lancamentosMap: Record<string, number> = {};
   lancamentosRes.data?.forEach((l: any) => { if (l.profissional_id) lancamentosMap[l.profissional_id] = (lancamentosMap[l.profissional_id] || 0) + Number(l.valor); });
 
+  const pensoesMap: Record<string, { tipoCalculo: string; percentual: number; valorFixo: number; baseCalculo: string }> = {};
+  pensoesRes.data?.forEach((pe: any) => {
+    if (!pe.profissional_id) return;
+    pensoesMap[pe.profissional_id] = {
+      tipoCalculo: pe.tipo_calculo || 'percentual',
+      percentual: Number(pe.percentual || 0),
+      valorFixo: Number(pe.valor_fixo || 0),
+      baseCalculo: pe.base_calculo || 'liquido',
+    };
+  });
+
   return {
     faltas: faltasMap,
     ferias: feriasMap,
@@ -89,6 +102,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
     afastamentos: afastamentosMap,
     beneficiosAdicionais: beneficiosAdicionaisMap,
     lancamentosFinanceiros: lancamentosMap,
+    pensoes: pensoesMap,
   };
 }
 
@@ -114,6 +128,19 @@ export function buildProfissionalInput(
   const benefAdicionais = dados.beneficiosAdicionais[p.id] || { valeCarne: 0, valeDinheiro: 0, valeAlimentacao: 0 };
   const lancamentosDesc = dados.lancamentosFinanceiros[p.id] || 0;
 
+  // Calcular valor real da pensão alimentícia a partir da tabela pensoes_alimenticias
+  const pensaoInfo = dados.pensoes[p.id];
+  let valorPensao = 0;
+  if (pensaoInfo) {
+    if (pensaoInfo.tipoCalculo === 'valor_fixo') {
+      valorPensao = pensaoInfo.valorFixo;
+    } else {
+      // Percentual sobre o salário (base simplificada para evitar circularidade)
+      // A base "líquido" na prática é calculada sobre o salário nominal
+      valorPensao = Math.round(salario * (pensaoInfo.percentual / 100));
+    }
+  }
+
   return {
     id: p.id,
     nome: p.nome,
@@ -135,7 +162,7 @@ export function buildProfissionalInput(
     diasFerias: dados.ferias[p.id] || 0,
     vales: dados.vales[p.id] || 0,
     emprestimos: dados.emprestimos[p.id] || 0,
-    pensao: p.pensao_alimenticia || 0,
+    pensao: valorPensao,
     valeCarne: benefAdicionais.valeCarne,
     valeDinheiro: benefAdicionais.valeDinheiro,
     valeAlimentacao: benefAdicionais.valeAlimentacao,
