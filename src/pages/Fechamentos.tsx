@@ -909,12 +909,14 @@ export default function Fechamentos() {
                         {isMulti && <TableCell />}
                         <TableCell colSpan={2}>TOTAL</TableCell>
                         <TableCell className="text-right">{formatCurrency(totalSalariosPreview)}</TableCell>
-                        <TableCell className="text-right">{previewData.inputs.reduce((s, i) => s + i.faltas, 0)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.faltas, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.vales, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.emprestimos, 0))}</TableCell>
+                        <TableCell className="text-right text-destructive">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.pensao, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.valeCarne || 0), 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.valeDinheiro || 0), 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.outrosDescontos || 0), 0))}</TableCell>
+                        <TableCell className="text-right font-bold">{formatCurrency(previewData.resultados.reduce((s, r) => s + r.totalDescontos, 0))}</TableCell>
                         {tipoAtivo === 'dia_20' && <TableCell className="text-right text-primary">{formatCurrency(totalDia20Prev)}</TableCell>}
                         {tipoAtivo === 'dia_5' && (
                           <>
