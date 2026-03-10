@@ -159,13 +159,42 @@ export function calcularFolhaProfissional(
   detalhes.push(`Escala: ${profissional.escala} (${diasUteis} dias úteis)`);
   detalhes.push(`Valor dia: R$ ${valorDia.toFixed(2)}`);
   
-  // 1.1 Insalubridade é apenas informativo no cadastro, NÃO entra no cálculo da folha
+  // 1.1 Calcular diasEfetivos (dias calendário de 30) para proration de mês parcial
+  const temDataAdmissao = profissional.dataAdmissao && profissional.dataAdmissao !== '';
+  const dataAdmissao = temDataAdmissao ? new Date(profissional.dataAdmissao!) : null;
+  const mesCompetencia = new Date(config.competencia + '-01');
+  const [anoComp, mesComp] = config.competencia.split('-').map(Number);
+  const diasNoMesReal = new Date(anoComp, mesComp, 0).getDate();
+  
+  const mesmaCompetencia = dataAdmissao 
+    ? (dataAdmissao.getMonth() === mesCompetencia.getMonth() && 
+       dataAdmissao.getFullYear() === mesCompetencia.getFullYear())
+    : false;
+  
+  // diasEfetivos = dias calendário que o profissional deveria trabalhar no mês (de 30)
+  let diasEfetivos = 30;
+  if (mesmaCompetencia && dataAdmissao) {
+    // Admitido no mês: dias de admissão até fim do mês
+    diasEfetivos = diasNoMesReal - dataAdmissao.getDate() + 1;
+    detalhes.push(`Admissão no mês: ${dataAdmissao.getDate()}/${mesComp} — ${diasEfetivos} dias efetivos de ${diasNoMesReal}`);
+  }
+  
+  // Salário proporcional (salary/30 × diasEfetivos)
+  const salarioReceber = diasEfetivos < 30 
+    ? arredondarValor((profissional.salario / 30) * diasEfetivos)
+    : profissional.salario;
+  
+  if (diasEfetivos < 30) {
+    detalhes.push(`Salário proporcional: R$ ${profissional.salario.toFixed(2)} / 30 × ${diasEfetivos} = R$ ${salarioReceber.toFixed(2)}`);
+  }
+  
+  // 1.2 Insalubridade é apenas informativo no cadastro, NÃO entra no cálculo da folha
   const valorInsalubridade = 0;
   if (profissional.insalubridade && profissional.insalubridade !== 'nao') {
     detalhes.push(`Insalubridade ${profissional.insalubridade}% (informativo - não calculado na folha)`);
   }
   
-  // 2. Calcular dias trabalhados
+  // 2. Calcular dias trabalhados (dias úteis para VT/VR)
   const diasAbatidos = profissional.faltas + profissional.atestados + profissional.diasFerias;
   let diasTrabalhados = Math.max(0, diasUteis - diasAbatidos);
   
