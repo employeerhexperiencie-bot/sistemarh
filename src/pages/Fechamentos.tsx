@@ -351,7 +351,12 @@ export default function Fechamentos() {
       faltas: overrides.faltas ?? originalInput.faltas,
     };
 
-    const resultado = calcularFolhaProfissional(adjustedInput, config);
+    // Apply per-professional percentualDia20 override
+    const profConfig = overrides.percentualDia20 != null 
+      ? { ...config, percentualDia20: overrides.percentualDia20 } 
+      : config;
+
+    const resultado = calcularFolhaProfissional(adjustedInput, profConfig);
     const newResultado = {
       ...resultado,
       matricula: previewData.resultados[idx].matricula,
