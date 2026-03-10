@@ -47,6 +47,7 @@ const ImportarDadosExcel = () => {
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
+  const [autoImportTriggered, setAutoImportTriggered] = useState(false);
 
   const parseSalario = (valor: any): number | null => {
     if (!valor) return null;
@@ -518,6 +519,19 @@ const ImportarDadosExcel = () => {
       setLoading(false);
     }
   };
+
+  // Auto-carregar ao montar a página
+  useEffect(() => {
+    carregarArquivos();
+  }, []);
+
+  // Auto-importar quando dados estiverem prontos
+  useEffect(() => {
+    if (processedData && !autoImportTriggered && !importResult && !loading) {
+      setAutoImportTriggered(true);
+      importarParaSupabase();
+    }
+  }, [processedData, autoImportTriggered, importResult, loading]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
