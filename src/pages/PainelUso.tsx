@@ -82,11 +82,19 @@ export default function PainelUso() {
         .gte('started_at', since)
         .order('started_at', { ascending: false });
 
-      // Buscar eventos
+      // Buscar eventos de atividade
       const { data: events } = await supabase
         .from('user_activity_events')
         .select('*')
         .gte('created_at', since)
+        .order('created_at', { ascending: false });
+
+      // Buscar logs de erro do sistema (dev_logs)
+      const { data: devLogs } = await supabase
+        .from('dev_logs')
+        .select('*')
+        .gte('created_at', since)
+        .in('tipo', ['erro', 'error', 'critical'])
         .order('created_at', { ascending: false });
 
       // Buscar nomes dos usuários
