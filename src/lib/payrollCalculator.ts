@@ -90,6 +90,7 @@ export interface ResultadoCalculo {
   diasUteis: number;
   diasTrabalhados: number;
   diasAbatidos: number;
+  diasEfetivos: number;  // Dias calendário efetivos (de 30) - para proration
   
   // Dia 20
   recebeDia20: boolean;
@@ -118,6 +119,9 @@ export interface ResultadoCalculo {
   
   // Insalubridade
   valorInsalubridade: number;
+  
+  // Salário proporcional (salary/30 × diasEfetivos)
+  salarioReceber: number;
   
   // Totais
   salarioLiquido: number;  // Dia 5
