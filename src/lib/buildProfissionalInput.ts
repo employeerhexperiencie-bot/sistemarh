@@ -13,6 +13,7 @@ export interface DadosCompetencia {
   afastamentos: Record<string, { tipo: string; dias: number }>;
   beneficiosAdicionais: Record<string, { valeCarne: number; valeDinheiro: number; valeAlimentacao: number }>;
   lancamentosFinanceiros: Record<string, number>;
+  pensoes: Record<string, { tipoCalculo: string; percentual: number; valorFixo: number; baseCalculo: string }>;
 }
 
 export async function carregarDadosCompetenciaFromDB(competencia: string): Promise<DadosCompetencia> {
