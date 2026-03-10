@@ -10,6 +10,7 @@ export interface DadosCompetencia {
   ferias: Record<string, number>;
   vales: Record<string, number>;
   emprestimos: Record<string, number>;
+  emprestimoCLT: Record<string, number>;
   afastamentos: Record<string, { tipo: string; dias: number }>;
   beneficiosAdicionais: Record<string, { valeCarne: number; valeDinheiro: number; valeAlimentacao: number }>;
   lancamentosFinanceiros: Record<string, number>;
@@ -26,7 +27,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
     supabase.from('ferias').select('profissional_id, periodo_gozo_inicio, periodo_gozo_fim, dias_gozados')
       .or(`and(periodo_gozo_inicio.lte.${fimMes},periodo_gozo_fim.gte.${inicioMes})`),
     supabase.from('professional_vales').select('profissional_id, valor').gte('data_lancamento', inicioMes).lte('data_lancamento', fimMes).eq('status', 'pendente'),
-    supabase.from('emprestimos').select('profissional_id, valor_parcela').eq('status', 'ativo'),
+    supabase.from('emprestimos').select('profissional_id, valor_parcela, tipo').eq('status', 'ativo'),
     supabase.from('afastamentos').select('profissional_id, tipo, data_inicio').eq('status', 'ativo').lte('data_inicio', fimMes).or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`),
     supabase.from('beneficios').select('profissional_id, valor_vale_carne, valor_vale_dinheiro, valor_vale_alimentacao').eq('mes_referencia', inicioMes),
     supabase.from('lancamentos_financeiros').select('profissional_id, tipo, valor').eq('mes_referencia', inicioMes).eq('tipo', 'desconto'),
@@ -59,7 +60,17 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   valesRes.data?.forEach((v: any) => { if (v.profissional_id) valesMap[v.profissional_id] = (valesMap[v.profissional_id] || 0) + Number(v.valor); });
 
   const emprestimosMap: Record<string, number> = {};
-  emprestimosRes.data?.forEach((e: any) => { if (e.profissional_id) emprestimosMap[e.profissional_id] = (emprestimosMap[e.profissional_id] || 0) + Number(e.valor_parcela); });
+  const emprestimoCLTMap: Record<string, number> = {};
+  emprestimosRes.data?.forEach((e: any) => {
+    if (!e.profissional_id) return;
+    const valor = Number(e.valor_parcela);
+    const tipo = (e.tipo || '').toLowerCase();
+    if (tipo === 'ctps' || tipo === 'clt' || tipo === 'consignado') {
+      emprestimoCLTMap[e.profissional_id] = (emprestimoCLTMap[e.profissional_id] || 0) + valor;
+    } else {
+      emprestimosMap[e.profissional_id] = (emprestimosMap[e.profissional_id] || 0) + valor;
+    }
+  });
 
   const hoje = new Date();
   const afastamentosMap: Record<string, { tipo: string; dias: number }> = {};
@@ -99,6 +110,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
     ferias: feriasMap,
     vales: valesMap,
     emprestimos: emprestimosMap,
+    emprestimoCLT: emprestimoCLTMap,
     afastamentos: afastamentosMap,
     beneficiosAdicionais: beneficiosAdicionaisMap,
     lancamentosFinanceiros: lancamentosMap,
@@ -169,11 +181,13 @@ export function buildProfissionalInput(
     diasFerias: dados.ferias[p.id] || 0,
     vales: dados.vales[p.id] || 0,
     emprestimos: dados.emprestimos[p.id] || 0,
+    emprestimoCLT: dados.emprestimoCLT[p.id] || 0,
     pensao: valorPensao,
     valeCarne: valeCarneFinal,
     valeDinheiro: valeDinheiroFinal,
     valeAlimentacao: valeAlimentacaoFinal,
     outrosDescontos: lancamentosDesc,
+    complemento: 0,
     insalubridade: (p.insalubridade as 'nao' | '10' | '20') || 'nao',
   };
 }

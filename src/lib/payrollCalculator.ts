@@ -63,12 +63,14 @@ export interface ProfissionalInput {
   diasFerias: number;
   vales: number;
   emprestimos: number;
+  emprestimoCLT?: number;
   pensao: number;
   // Novos campos de descontos adicionais
   valeCarne?: number;
   valeDinheiro?: number;
   valeAlimentacao?: number;
   outrosDescontos?: number;
+  complemento?: number;
   insalubridade?: 'nao' | '10' | '20';
 }
 
@@ -110,8 +112,11 @@ export interface ResultadoCalculo {
   pensao: number;
   valeCarne: number;
   valeDinheiro: number;
+  emprestimoCLT: number;
   outrosDescontos: number;
+  complemento: number;
   totalDescontos: number;
+  totalDescontosComADT: number;
   
   // Afastamento
   valorAfastamento: number;
@@ -125,6 +130,8 @@ export interface ResultadoCalculo {
   
   // Totais
   salarioLiquido: number;  // Dia 5
+  totalAReceber: number;   // Sal a Receber - Total Descontos (com ADT) + Complemento
+  arredondamento: number;  // totalAReceber arredondado
   totalMes: number;
   
   // Debug/Auditoria
@@ -343,33 +350,28 @@ export function calcularFolhaProfissional(
   // 9.1 DSR (Descanso Semanal Remunerado) - desconta 1 DSR por falta injustificada
   // Cálculo: para cada falta injustificada, perde o DSR proporcional
   // DSR = (faltas / dias úteis) × domingos no mês × valor do dia
-  const diasNoMes = diasNoMesReal;
-  let domingosNoMes = 0;
-  for (let d = 1; d <= diasNoMes; d++) {
-    if (new Date(anoComp, mesComp - 1, d).getDay() === 0) domingosNoMes++;
-  }
-  const descontoDSR = profissional.faltas > 0
-    ? arredondarValor(profissional.faltas * valorDia * (domingosNoMes / diasUteis))
-    : 0;
-  if (descontoDSR > 0) {
-    detalhes.push(`Desconto DSR: ${profissional.faltas} faltas × R$ ${valorDia.toFixed(2)} × (${domingosNoMes} dom / ${diasUteis} úteis) = R$ ${descontoDSR.toFixed(2)}`);
-  }
+  // DSR removido - planilha de referência não calcula DSR
+  const descontoDSR = 0;
   
   // Descontos manuais/adicionais (Vale Carne, Vale Dinheiro - são compras do profissional)
   const valeCarne = profissional.valeCarne || 0;
   const valeDinheiro = profissional.valeDinheiro || 0;
+  const emprestimoCLT = profissional.emprestimoCLT || 0;
   const outrosDescontos = profissional.outrosDescontos || 0;
-  // Nota: valeAlimentacao (Alelo) é benefício pago ao profissional, não desconto
+  const complemento = profissional.complemento || 0;
   const descontosAdicionais = valeCarne + valeDinheiro + outrosDescontos;
   
   if (valeCarne > 0) detalhes.push(`Vale Carne (compra): R$ ${valeCarne.toFixed(2)}`);
   if (valeDinheiro > 0) detalhes.push(`Vale Dinheiro (compra): R$ ${valeDinheiro.toFixed(2)}`);
+  if (emprestimoCLT > 0) detalhes.push(`Empréstimo CLT: R$ ${emprestimoCLT.toFixed(2)}`);
   if (outrosDescontos > 0) detalhes.push(`Outros Descontos: R$ ${outrosDescontos.toFixed(2)}`);
+  if (complemento > 0) detalhes.push(`Complemento: + R$ ${complemento.toFixed(2)}`);
   
-  // Total de descontos OPERACIONAIS (vales + empréstimos + pensão + faltas + DSR + adicionais)
-  const totalDescontos = profissional.vales + profissional.emprestimos + profissional.pensao + descontoFaltas + descontoDSR + descontosAdicionais;
-  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (faltas: ${descontoFaltas}, DSR: ${descontoDSR}, vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, adicionais: ${descontosAdicionais})`);
-  
+  // Total de descontos OPERACIONAIS (vales + empréstimos + pensão + faltas + adicionais + empréstimo CLT)
+  // NÃO inclui DSR (planilha de referência não calcula DSR)
+  const totalDescontos = profissional.vales + profissional.emprestimos + emprestimoCLT + profissional.pensao + descontoFaltas + descontosAdicionais;
+  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (faltas: ${descontoFaltas}, vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, emprést.CLT: ${emprestimoCLT}, pensão: ${profissional.pensao}, adicionais: ${descontosAdicionais})`);
+
   // 10. Calcular salário líquido (Dia 5)
   // Fórmula: Salário a Receber (proporcional) - Dia 20 - Descontos Operacionais
   // NÃO desconta benefícios (VT, VR, Cesta são PAGOS ao profissional)
@@ -383,10 +385,20 @@ export function calcularFolhaProfissional(
   }
   
   const valorDia20Final = recebeDia20 ? valorDia20 : 0;
-  // Salário líquido = Base - Dia 20 - Descontos operacionais (faltas já estão em totalDescontos)
-  const salarioLiquido = arredondarValor(Math.max(0, salarioBase - valorDia20Final - totalDescontos));
+  // Salário líquido = Base - Dia 20 - Descontos operacionais (faltas já estão em totalDescontos) + Complemento
+  const salarioLiquido = Math.max(0, salarioBase - valorDia20Final - totalDescontos + complemento);
   
-  detalhes.push(`Salário líquido (Dia 5): R$ ${salarioLiquido.toFixed(2)} = Base(${salarioBase.toFixed(2)}) - Dia20(${valorDia20Final.toFixed(2)}) - Descontos(${totalDescontos.toFixed(2)})`);
+  // Total descontos COM adiantamento (para exibição conforme planilha)
+  const totalDescontosComADT = totalDescontos + valorDia20Final;
+  
+  // Total a Receber = Salário a Receber - Total Descontos (com ADT) + Complemento
+  const totalAReceber = salarioBase - totalDescontosComADT + complemento;
+  const arredondamentoVal = arredondarValor(totalAReceber);
+  
+  detalhes.push(`Total Descontos (com ADT): R$ ${totalDescontosComADT.toFixed(2)}`);
+  detalhes.push(`Salário a Receber: R$ ${salarioBase.toFixed(2)}`);
+  detalhes.push(`Total a Receber: R$ ${totalAReceber.toFixed(2)} = Sal(${salarioBase.toFixed(2)}) - Desc(${totalDescontosComADT.toFixed(2)}) + Compl(${complemento.toFixed(2)})`);
+  detalhes.push(`Arredondamento: R$ ${arredondamentoVal.toFixed(2)}`);
   
   // 11. Calcular total do mês
   const totalMes = arredondarValor(
@@ -419,13 +431,18 @@ export function calcularFolhaProfissional(
     pensao: profissional.pensao,
     valeCarne,
     valeDinheiro,
+    emprestimoCLT,
     outrosDescontos,
+    complemento,
     totalDescontos,
+    totalDescontosComADT,
     valorAfastamento,
     tipoAfastamento,
     valorInsalubridade,
     salarioReceber,
     salarioLiquido,
+    totalAReceber,
+    arredondamento: arredondamentoVal,
     totalMes,
     detalhesCalculo: detalhes,
   };
