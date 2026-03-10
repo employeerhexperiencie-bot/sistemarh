@@ -785,7 +785,7 @@ export default function Fechamentos() {
                   {tipoAtivo === 'dia_20' && (
                     <>
                       <div><p className="text-xs text-muted-foreground">Folha Bruta</p><p className="text-lg font-semibold">{formatCurrency(totalSalariosPreview)}</p></div>
-                      <div><p className="text-xs text-muted-foreground">Percentual</p><p className="text-lg font-semibold">40%</p></div>
+                      <div><p className="text-xs text-muted-foreground">Percentual Padrão</p><p className="text-lg font-semibold">{getDefaultConfig(competencia).percentualDia20}%</p></div>
                       <div><p className="text-xs text-muted-foreground">Profissionais</p><p className="text-lg font-semibold">{profCount}</p></div>
                     </>
                   )}
