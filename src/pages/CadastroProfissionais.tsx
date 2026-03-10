@@ -262,6 +262,12 @@ const initialFormData: FormDataCompleto = {
   alta_medica: '',
   observacoes: '',
   valor_rota_diaria: '',
+  banco: '',
+  agencia: '',
+  conta: '',
+  tipo_conta: 'corrente',
+  chave_pix: '',
+  operacao: '',
 };
 
 // Componente para aba ASO usando dados do Supabase
