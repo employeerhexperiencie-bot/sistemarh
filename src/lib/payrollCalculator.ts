@@ -112,8 +112,11 @@ export interface ResultadoCalculo {
   pensao: number;
   valeCarne: number;
   valeDinheiro: number;
+  emprestimoCLT: number;
   outrosDescontos: number;
+  complemento: number;
   totalDescontos: number;
+  totalDescontosComADT: number;
   
   // Afastamento
   valorAfastamento: number;
@@ -127,6 +130,8 @@ export interface ResultadoCalculo {
   
   // Totais
   salarioLiquido: number;  // Dia 5
+  totalAReceber: number;   // Sal a Receber - Total Descontos (com ADT) + Complemento
+  arredondamento: number;  // totalAReceber arredondado
   totalMes: number;
   
   // Debug/Auditoria
