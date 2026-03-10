@@ -546,6 +546,12 @@ export const CadastroProfissionais: React.FC = () => {
         data_admissao: formData.data_admissao || null,
         data_demissao: formData.data_demissao || null,
         nome_mae: (formData as any).nome_mae || null,
+        pensao_alimenticia: formData.pensao_alimenticia ? 1 : null,
+        vale_transporte: formData.vale_transporte,
+        vale_refeicao: formData.vale_refeicao,
+        cesta_basica: formData.recebe_cesta,
+        vale_carne: formData.vale_carne,
+        sindicato: formData.sindicato || null,
       };
 
       if (editingProfessional) {
