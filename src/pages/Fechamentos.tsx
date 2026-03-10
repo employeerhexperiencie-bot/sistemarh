@@ -904,7 +904,7 @@ export default function Fechamentos() {
                       </TableRow>
                     </TableBody>
                   </Table>
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </>
