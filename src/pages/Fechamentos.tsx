@@ -807,7 +807,7 @@ export default function Fechamentos() {
                 </p>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="max-h-[60vh]">
+                <div className="max-h-[60vh] overflow-auto border rounded-md">
                   <Table>
                     <TableHeader>
                       <TableRow className="text-xs">
@@ -904,7 +904,7 @@ export default function Fechamentos() {
                       </TableRow>
                     </TableBody>
                   </Table>
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </>
