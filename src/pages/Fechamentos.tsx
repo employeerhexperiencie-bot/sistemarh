@@ -815,7 +815,8 @@ export default function Fechamentos() {
                         {isMulti && <TableHead>Loja</TableHead>}
                         <TableHead className="w-14">Mat.</TableHead>
                         <TableHead>Nome</TableHead>
-                        <TableHead className="text-right">Salário</TableHead>
+                        <TableHead className="text-right">Sal. Base</TableHead>
+                        <TableHead className="text-right w-12">D.Trab.</TableHead>
                         <TableHead className="text-right">Faltas</TableHead>
                         <TableHead className="text-right">Vales</TableHead>
                         <TableHead className="text-right">Emprést.</TableHead>
@@ -850,6 +851,7 @@ export default function Fechamentos() {
                             <TableCell className="font-mono">{r.matricula}</TableCell>
                             <TableCell className="font-medium max-w-[120px] truncate" title={r.profissionalNome}>{r.profissionalNome}</TableCell>
                             <TableCell className="text-right">{formatCurrency(r.salarioBase)}</TableCell>
+                            <TableCell className="text-right">{r.diasTrabalhados}/{r.diasUteis}</TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="faltas" value={inp.faltas} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="vales" value={inp.vales} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimos" value={inp.emprestimos} /></TableCell>
@@ -909,6 +911,7 @@ export default function Fechamentos() {
                         {isMulti && <TableCell />}
                         <TableCell colSpan={2}>TOTAL</TableCell>
                         <TableCell className="text-right">{formatCurrency(totalSalariosPreview)}</TableCell>
+                        <TableCell className="text-right">—</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.faltas, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.vales, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.emprestimos, 0))}</TableCell>
