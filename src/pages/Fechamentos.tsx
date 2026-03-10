@@ -225,7 +225,7 @@ export default function Fechamentos() {
         .from('profissionais')
         .select('*')
         .eq('loja_id', loja.id)
-        .in('status', ['ativo', 'afastado_acidente', 'afastado_doenca', 'licenca_maternidade']);
+        .not('status', 'in', '("demitido","inativo")');
 
       const profs = profissionais || [];
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
