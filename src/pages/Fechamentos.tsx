@@ -815,7 +815,8 @@ export default function Fechamentos() {
                         {isMulti && <TableHead>Loja</TableHead>}
                         <TableHead className="w-14">Mat.</TableHead>
                         <TableHead>Nome</TableHead>
-                        <TableHead className="text-right">Salário</TableHead>
+                        <TableHead className="text-right">Sal. Base</TableHead>
+                        <TableHead className="text-right w-12">D.Trab.</TableHead>
                         <TableHead className="text-right">Faltas</TableHead>
                         <TableHead className="text-right">Vales</TableHead>
                         <TableHead className="text-right">Emprést.</TableHead>
