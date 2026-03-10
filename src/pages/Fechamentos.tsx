@@ -84,9 +84,11 @@ interface EditOverrides {
   [profissionalId: string]: {
     vales?: number;
     emprestimos?: number;
+    emprestimoCLT?: number;
     valeCarne?: number;
     valeDinheiro?: number;
     outrosDescontos?: number;
+    complemento?: number;
     faltas?: number;
   };
 }
