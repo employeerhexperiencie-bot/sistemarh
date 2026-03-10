@@ -343,8 +343,7 @@ export function calcularFolhaProfissional(
   // 9.1 DSR (Descanso Semanal Remunerado) - desconta 1 DSR por falta injustificada
   // Cálculo: para cada falta injustificada, perde o DSR proporcional
   // DSR = (faltas / dias úteis) × domingos no mês × valor do dia
-  const [anoComp, mesComp] = config.competencia.split('-').map(Number);
-  const diasNoMes = new Date(anoComp, mesComp, 0).getDate();
+  const diasNoMes = diasNoMesReal;
   let domingosNoMes = 0;
   for (let d = 1; d <= diasNoMes; d++) {
     if (new Date(anoComp, mesComp - 1, d).getDay() === 0) domingosNoMes++;
