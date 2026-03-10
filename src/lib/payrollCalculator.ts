@@ -388,6 +388,7 @@ export function calcularFolhaProfissional(
     recebeCesta,
     valorCesta,
     descontoFaltas,
+    descontoDSR,
     descontoVT6Porcento,
     pensao: profissional.pensao,
     valeCarne,
