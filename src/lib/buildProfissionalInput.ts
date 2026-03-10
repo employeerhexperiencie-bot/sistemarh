@@ -170,9 +170,9 @@ export function buildProfissionalInput(
     vales: dados.vales[p.id] || 0,
     emprestimos: dados.emprestimos[p.id] || 0,
     pensao: valorPensao,
-    valeCarne: benefAdicionais.valeCarne,
-    valeDinheiro: benefAdicionais.valeDinheiro,
-    valeAlimentacao: benefAdicionais.valeAlimentacao,
+    valeCarne: valeCarneFinal,
+    valeDinheiro: valeDinheiroFinal,
+    valeAlimentacao: valeAlimentacaoFinal,
     outrosDescontos: lancamentosDesc,
     insalubridade: (p.insalubridade as 'nao' | '10' | '20') || 'nao',
   };
