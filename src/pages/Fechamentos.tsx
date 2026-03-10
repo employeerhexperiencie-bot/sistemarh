@@ -808,7 +808,7 @@ export default function Fechamentos() {
                   <CardTitle className="text-base">{profCount} Profissionais</CardTitle>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  💡 Clique nos valores de <strong>Vales</strong>, <strong>Empréstimos</strong>, <strong>V. Carne</strong>, <strong>V. Dinheiro</strong>, <strong>Outros Desc.</strong> ou <strong>Faltas</strong> para editar diretamente.
+                  💡 Clique nos valores de <strong>Vales</strong>, <strong>Empréstimos</strong>, <strong>Emprést. CLT</strong>, <strong>V. Carne</strong>, <strong>V. Dinheiro</strong>, <strong>Outros Desc.</strong>, <strong>Complemento</strong> ou <strong>Faltas</strong> para editar diretamente.
                 </p>
               </CardHeader>
               <CardContent>
@@ -821,21 +821,19 @@ export default function Fechamentos() {
                         <TableHead>Nome</TableHead>
                         <TableHead className="text-right">Sal. Base</TableHead>
                         <TableHead className="text-right w-12">D.Trab.</TableHead>
-                        <TableHead className="text-right">Faltas</TableHead>
-                        <TableHead className="text-right">Vales</TableHead>
-                        <TableHead className="text-right">Emprést.</TableHead>
-                        <TableHead className="text-right">Pensão</TableHead>
+                        <TableHead className="text-right">Falta Inj.</TableHead>
                         <TableHead className="text-right">V.Carne</TableHead>
-                        <TableHead className="text-right">V.Dinh.</TableHead>
-                        <TableHead className="text-right">Outros</TableHead>
-                        <TableHead className="text-right">Descontos</TableHead>
+                        {tipoAtivo === 'dia_5' && <TableHead className="text-right">V.Dinh.</TableHead>}
+                        <TableHead className="text-right">Pensão</TableHead>
+                        <TableHead className="text-right">Emprést.</TableHead>
+                        <TableHead className="text-right">Emp. CLT</TableHead>
+                        {(tipoAtivo === 'dia_5' || tipoAtivo === 'dia_20') && <TableHead className="text-right">ADT. Sal</TableHead>}
+                        <TableHead className="text-right">Tot. Desc.</TableHead>
+                        {tipoAtivo === 'dia_5' && <TableHead className="text-right">Sal. a Receber</TableHead>}
+                        {tipoAtivo === 'dia_5' && <TableHead className="text-right">Compl.</TableHead>}
+                        {tipoAtivo === 'dia_5' && <TableHead className="text-right font-bold">Total a Receber</TableHead>}
+                        {tipoAtivo === 'dia_5' && <TableHead className="text-right">Arred.</TableHead>}
                         {tipoAtivo === 'dia_20' && <TableHead className="text-right font-bold">Dia 20</TableHead>}
-                        {tipoAtivo === 'dia_5' && (
-                          <>
-                            <TableHead className="text-right">Dia 20</TableHead>
-                            <TableHead className="text-right font-bold">Líquido</TableHead>
-                          </>
-                        )}
                         {tipoAtivo === 'vt' && <TableHead className="text-right font-bold">VT</TableHead>}
                         {tipoAtivo === 'beneficios' && (
                           <>
