@@ -166,9 +166,9 @@ export default function Fechamentos() {
       for (const loja of openLojas) {
         const { data: profs } = await supabase
           .from('profissionais')
-          .select('id, nome, matricula, cargo, salario_nominal, ultimo_salario, primeiro_salario, loja_id, data_admissao, vale_transporte, valor_diario_rota, vale_refeicao, cesta_basica, pensao_alimenticia, status, insalubridade')
+          .select('id, nome, matricula, cargo, salario_nominal, ultimo_salario, primeiro_salario, loja_id, data_admissao, vale_transporte, valor_diario_rota, vale_refeicao, cesta_basica, pensao_alimenticia, status, insalubridade, escala')
           .eq('loja_id', loja.id)
-          .in('status', ['ativo', 'afastado_acidente', 'afastado_doenca', 'licenca_maternidade']);
+          .not('status', 'in', '("demitido","inativo")');
 
         if (!profs || profs.length === 0) {
           summaries[loja.id] = { totalProf: 0, totalValor: 0, loading: false };
