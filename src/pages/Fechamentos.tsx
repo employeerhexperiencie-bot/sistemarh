@@ -21,7 +21,7 @@ import {
   History, ChevronLeft, Edit3, FileText, ArrowRight, FileDown
 } from 'lucide-react';
 import { formatCurrency, calcularFolhaProfissional, type ResultadoCalculo, type ProfissionalInput } from '@/lib/payrollCalculator';
-import { getCompetenciaAtual, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
+import { getCompetenciaAtual, getCompetenciaAnterior, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
 import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, type DadosCompetencia } from '@/lib/buildProfissionalInput';
 import { gerarHoleritePDF, gerarHoleriteDia20, gerarHoleriteDia5, gerarHoleriteVT } from '@/components/folha/HoleritePDF';
 import { 
@@ -95,7 +95,14 @@ export default function Fechamentos() {
   const [lojas, setLojas] = useState<Loja[]>([]);
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [competencia, setCompetencia] = useState(getCompetenciaAtual());
+  // Dia 5 paga a competência anterior, então padrão = mês passado se estamos antes do dia 15
+  const [competencia, setCompetencia] = useState(() => {
+    const now = new Date();
+    if (now.getDate() <= 15) {
+      return getCompetenciaAnterior();
+    }
+    return getCompetenciaAtual();
+  });
   const [tipoAtivo, setTipoAtivo] = useState<TipoFechamento>('dia_20');
   const [observacoes, setObservacoes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
