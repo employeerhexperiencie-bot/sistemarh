@@ -895,7 +895,49 @@ export default function Fechamentos() {
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimos" value={inp.emprestimos} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimoCLT" value={inp.emprestimoCLT || 0} /></TableCell>
                             {(tipoAtivo === 'dia_5' || tipoAtivo === 'dia_20') && (
-                              <TableCell className="text-right">{r.valorDia20 > 0 ? formatCurrency(r.valorDia20) : '—'}</TableCell>
+                              <TableCell className="text-right">
+                                {r.recebeDia20 ? (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button className="underline decoration-dotted cursor-pointer hover:text-primary text-xs">
+                                        {formatCurrency(r.valorDia20)}
+                                        <span className="text-muted-foreground ml-1">({r.motivoDia20})</span>
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-48 p-3 text-xs" side="left">
+                                      <p className="font-semibold mb-2">Percentual Adiantamento</p>
+                                      <div className="flex flex-col gap-1.5">
+                                        {[40, 50].map(pct => (
+                                          <button
+                                            key={pct}
+                                            className={`px-3 py-1.5 rounded border text-xs font-medium transition-colors ${
+                                              (editOverrides[r.profissionalId]?.percentualDia20 ?? getDefaultConfig(competencia).percentualDia20) === pct
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-background hover:bg-muted border-border'
+                                            }`}
+                                            onClick={() => handleEditField(r.profissionalId, 'percentualDia20', pct)}
+                                          >
+                                            {pct}%
+                                          </button>
+                                        ))}
+                                        <button
+                                          className="px-3 py-1.5 rounded border text-xs text-muted-foreground hover:bg-muted border-border"
+                                          onClick={() => {
+                                            const val = prompt('Percentual personalizado (ex: 30):', '');
+                                            if (val !== null && !isNaN(Number(val)) && Number(val) > 0 && Number(val) <= 100) {
+                                              handleEditField(r.profissionalId, 'percentualDia20', Number(val));
+                                            }
+                                          }}
+                                        >
+                                          Outro %...
+                                        </button>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
                             )}
                             <TableCell className="text-right">
                               <Popover>
