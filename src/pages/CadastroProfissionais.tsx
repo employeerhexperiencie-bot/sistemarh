@@ -1179,13 +1179,14 @@ export const CadastroProfissionais: React.FC = () => {
             
             <ScrollArea className="max-h-[calc(95vh-180px)]">
               <div className="p-6 pt-4">
-                <Tabs defaultValue="pessoais" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto mb-4">
+                  <Tabs defaultValue="pessoais" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto mb-4">
                     <TabsTrigger value="pessoais" className="text-xs py-2">Pessoais</TabsTrigger>
                     <TabsTrigger value="endereco" className="text-xs py-2">Endereço</TabsTrigger>
                     <TabsTrigger value="profissionais" className="text-xs py-2">Profissional</TabsTrigger>
                     <TabsTrigger value="salarios" className="text-xs py-2">Salários</TabsTrigger>
                     <TabsTrigger value="beneficios" className="text-xs py-2">Benefícios</TabsTrigger>
+                    <TabsTrigger value="bancario" className="text-xs py-2">Bancário</TabsTrigger>
                     <TabsTrigger value="cnh" className="text-xs py-2">CNH</TabsTrigger>
                     <TabsTrigger value="demissao" className="text-xs py-2">Demissão</TabsTrigger>
                   </TabsList>
