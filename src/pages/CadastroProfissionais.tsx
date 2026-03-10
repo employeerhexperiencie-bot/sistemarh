@@ -566,6 +566,21 @@ export const CadastroProfissionais: React.FC = () => {
         cesta_basica: formData.recebe_cesta,
         vale_carne: formData.vale_carne,
         sindicato: formData.sindicato || null,
+        // Endereço e Contato
+        endereco: formData.endereco || null,
+        bairro: formData.bairro || null,
+        cidade: formData.cidade || null,
+        estado: formData.estado || null,
+        cep: formData.cep || null,
+        telefone: formData.telefone || null,
+        celular: formData.celular || null,
+        // Dados Bancários
+        banco: formData.banco || null,
+        agencia: formData.agencia || null,
+        conta: formData.conta || null,
+        tipo_conta: formData.tipo_conta || 'corrente',
+        chave_pix: formData.chave_pix || null,
+        operacao: formData.operacao || null,
       };
 
       if (editingProfessional) {
