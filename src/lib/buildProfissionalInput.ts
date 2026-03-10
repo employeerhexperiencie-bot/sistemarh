@@ -128,6 +128,19 @@ export function buildProfissionalInput(
   const benefAdicionais = dados.beneficiosAdicionais[p.id] || { valeCarne: 0, valeDinheiro: 0, valeAlimentacao: 0 };
   const lancamentosDesc = dados.lancamentosFinanceiros[p.id] || 0;
 
+  // Calcular valor real da pensão alimentícia a partir da tabela pensoes_alimenticias
+  const pensaoInfo = dados.pensoes[p.id];
+  let valorPensao = 0;
+  if (pensaoInfo) {
+    if (pensaoInfo.tipoCalculo === 'valor_fixo') {
+      valorPensao = pensaoInfo.valorFixo;
+    } else {
+      // Percentual sobre o salário (base simplificada para evitar circularidade)
+      // A base "líquido" na prática é calculada sobre o salário nominal
+      valorPensao = Math.round(salario * (pensaoInfo.percentual / 100));
+    }
+  }
+
   return {
     id: p.id,
     nome: p.nome,
@@ -149,7 +162,7 @@ export function buildProfissionalInput(
     diasFerias: dados.ferias[p.id] || 0,
     vales: dados.vales[p.id] || 0,
     emprestimos: dados.emprestimos[p.id] || 0,
-    pensao: p.pensao_alimenticia || 0,
+    pensao: valorPensao,
     valeCarne: benefAdicionais.valeCarne,
     valeDinheiro: benefAdicionais.valeDinheiro,
     valeAlimentacao: benefAdicionais.valeAlimentacao,
