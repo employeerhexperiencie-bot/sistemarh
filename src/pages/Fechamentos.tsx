@@ -342,9 +342,11 @@ export default function Fechamentos() {
       ...originalInput,
       vales: overrides.vales ?? originalInput.vales,
       emprestimos: overrides.emprestimos ?? originalInput.emprestimos,
+      emprestimoCLT: overrides.emprestimoCLT ?? originalInput.emprestimoCLT,
       valeCarne: overrides.valeCarne ?? originalInput.valeCarne,
       valeDinheiro: overrides.valeDinheiro ?? originalInput.valeDinheiro,
       outrosDescontos: overrides.outrosDescontos ?? originalInput.outrosDescontos,
+      complemento: overrides.complemento ?? originalInput.complemento,
       faltas: overrides.faltas ?? originalInput.faltas,
     };
 
