@@ -117,12 +117,19 @@ const ImportarDadosExcel = () => {
   const carregarArquivos = async () => {
     setLoading(true);
     setProgress(0);
-    setStep('Carregando arquivo ATIVOS.xlsx...');
+    setStep('Carregando arquivo ATIVOS_4.xlsx...');
     
     try {
-      // 1. Carregar ATIVOS.xlsx
-      const ativosResponse = await fetch('/data/ATIVOS.xlsx');
-      const ativosBuffer = await ativosResponse.arrayBuffer();
+      // 1. Carregar ATIVOS_4.xlsx (prioritário) ou ATIVOS.xlsx como fallback
+      let ativosBuffer: ArrayBuffer;
+      try {
+        const ativosResponse = await fetch('/data/ATIVOS_4.xlsx');
+        if (!ativosResponse.ok) throw new Error('ATIVOS_4 not found');
+        ativosBuffer = await ativosResponse.arrayBuffer();
+      } catch {
+        const ativosResponse = await fetch('/data/ATIVOS.xlsx');
+        ativosBuffer = await ativosResponse.arrayBuffer();
+      }
       const ativosWorkbook = XLSX.read(ativosBuffer, { type: 'array' });
       const ativosSheet = ativosWorkbook.Sheets[ativosWorkbook.SheetNames[0]];
       const ativosData = XLSX.utils.sheet_to_json(ativosSheet, { header: 1 }) as any[][];
@@ -150,24 +157,53 @@ const ImportarDadosExcel = () => {
       setProgress(60);
       setStep('Processando dados...');
       
+      // Detect header row (find the row containing "MATRICULA" or "Nº MATRICULA")
+      let headerRowIdx = 3;
+      for (let i = 0; i < Math.min(10, ativosData.length); i++) {
+        const row = ativosData[i];
+        if (row && row.some((cell: any) => String(cell || '').toUpperCase().includes('MATRICULA'))) {
+          headerRowIdx = i;
+          break;
+        }
+      }
+
       // Processar ATIVOS
-      const ativosHeaders = ativosData[3] as string[]; // Linha 4 tem os headers
       const profissionais: any[] = [];
       const lojasSet = new Set<string>();
       
-      for (let i = 4; i < ativosData.length; i++) {
+      for (let i = headerRowIdx + 1; i < ativosData.length; i++) {
         const row = ativosData[i] as any[];
         if (!row || !row[0] || String(row[0]).trim() === '') continue;
         
         const matricula = String(row[0]).trim();
         const nome = String(row[1] || '').trim();
         const localTrabalho = String(row[9] || '').trim();
+        const localRegistro = String(row[10] || '').trim();
         
         if (!nome) continue;
         
-        if (localTrabalho) {
-          lojasSet.add(localTrabalho);
-        }
+        if (localTrabalho) lojasSet.add(localTrabalho);
+        if (localRegistro) lojasSet.add(localRegistro);
+        
+        // Merge endereço + número
+        const enderecoBase = String(row[25] || '').trim();
+        const numero = String(row[26] || '').trim();
+        const enderecoCompleto = numero ? `${enderecoBase}, ${numero}` : enderecoBase;
+        
+        // CNH - columns shifted in ATIVOS_4
+        const cnhVal = String(row[37] || '').trim();
+        const cnh = cnhVal && cnhVal !== 'NA' ? cnhVal : undefined;
+        const dataVlCNH = row[38];
+        const categoriaCnh = String(row[39] || '').trim();
+        const categoria = categoriaCnh && categoriaCnh !== 'NA' ? categoriaCnh : undefined;
+        
+        // Bank data - columns 42-47
+        const banco = String(row[42] || '').trim();
+        const agencia = String(row[43] || '').trim();
+        const contaCorrente = String(row[44] || '').trim();
+        const contaPoupanca = String(row[45] || '').trim();
+        const pixTelefone = String(row[46] || '').trim();
+        const pixCpf = String(row[47] || '').trim();
         
         profissionais.push({
           matricula,
@@ -180,7 +216,7 @@ const ImportarDadosExcel = () => {
           cbo: String(row[7] || ''),
           cargo: String(row[8] || ''),
           localTrabalho,
-          localRegistro: row[10],
+          localRegistro,
           numeroLojaContab: row[11],
           salarioCTPS: row[12],
           salarioReceber: row[13],
@@ -190,23 +226,29 @@ const ImportarDadosExcel = () => {
           pis: String(row[17] || ''),
           nascimento: row[18],
           idade: row[19],
-          nomeMae: row[20],
-          nomePai: row[21],
+          nomeMae: String(row[20] || ''),
+          nomePai: String(row[21] || ''),
           genero: row[22],
           estadoCivil: row[23],
           dependente: row[24],
-          endereco: row[25],
-          numero: row[26],
+          endereco: enderecoCompleto,
           bairro: row[27],
           cidade: row[28],
-          cep: row[29],
+          cep: String(row[29] || ''),
           corEtnia: row[30],
           telefone: String(row[31] || ''),
           escala: row[32],
           horario: row[33],
-          cnh: row[34],
-          dataVlCNH: row[35],
-          categoria: row[36],
+          cnh,
+          dataVlCNH,
+          categoria,
+          // Bank data
+          banco: banco && banco !== '' ? banco : undefined,
+          agencia: agencia && agencia !== '' ? agencia : undefined,
+          conta: contaCorrente && contaCorrente !== 'N/A' && contaCorrente !== '' ? contaCorrente : undefined,
+          contaPoupanca: contaPoupanca && contaPoupanca !== 'N/A' && contaPoupanca !== '' ? contaPoupanca : undefined,
+          pixTelefone: pixTelefone && pixTelefone !== 'N/A' && pixTelefone !== '' ? pixTelefone : undefined,
+          pixCpf: pixCpf && pixCpf !== 'N/A' && pixCpf !== '' ? pixCpf : undefined,
         });
       }
       
