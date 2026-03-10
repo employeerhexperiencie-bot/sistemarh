@@ -104,6 +104,7 @@ export interface ResultadoCalculo {
   
   // Descontos
   descontoFaltas: number;
+  descontoDSR: number;
   descontoVT6Porcento: number;
   pensao: number;
   valeCarne: number;
