@@ -164,6 +164,14 @@ interface FormDataCompleto {
   
   // Campo legado
   valor_rota_diaria: string;
+  
+  // Dados Bancários
+  banco: string;
+  agencia: string;
+  conta: string;
+  tipo_conta: string;
+  chave_pix: string;
+  operacao: string;
 }
 
 const initialFormData: FormDataCompleto = {
@@ -254,6 +262,12 @@ const initialFormData: FormDataCompleto = {
   alta_medica: '',
   observacoes: '',
   valor_rota_diaria: '',
+  banco: '',
+  agencia: '',
+  conta: '',
+  tipo_conta: 'corrente',
+  chave_pix: '',
+  operacao: '',
 };
 
 // Componente para aba ASO usando dados do Supabase
@@ -552,6 +566,21 @@ export const CadastroProfissionais: React.FC = () => {
         cesta_basica: formData.recebe_cesta,
         vale_carne: formData.vale_carne,
         sindicato: formData.sindicato || null,
+        // Endereço e Contato
+        endereco: formData.endereco || null,
+        bairro: formData.bairro || null,
+        cidade: formData.cidade || null,
+        estado: formData.estado || null,
+        cep: formData.cep || null,
+        telefone: formData.telefone || null,
+        celular: formData.celular || null,
+        // Dados Bancários
+        banco: formData.banco || null,
+        agencia: formData.agencia || null,
+        conta: formData.conta || null,
+        tipo_conta: formData.tipo_conta || 'corrente',
+        chave_pix: formData.chave_pix || null,
+        operacao: formData.operacao || null,
       };
 
       if (editingProfessional) {
@@ -653,6 +682,21 @@ export const CadastroProfissionais: React.FC = () => {
       recebe_cesta: !!(professional as any).cesta_basica,
       vale_carne: !!(professional as any).vale_carne,
       sindicato: (professional as any).sindicato || '',
+      // Endereço e Contato
+      endereco: (professional as any).endereco || '',
+      bairro: (professional as any).bairro || '',
+      cidade: (professional as any).cidade || '',
+      estado: (professional as any).estado || '',
+      cep: (professional as any).cep || '',
+      telefone: (professional as any).telefone || '',
+      celular: (professional as any).celular || '',
+      // Dados Bancários
+      banco: (professional as any).banco || '',
+      agencia: (professional as any).agencia || '',
+      conta: (professional as any).conta || '',
+      tipo_conta: (professional as any).tipo_conta || 'corrente',
+      chave_pix: (professional as any).chave_pix || '',
+      operacao: (professional as any).operacao || '',
     });
     setIsDialogOpen(true);
   };
@@ -1135,13 +1179,14 @@ export const CadastroProfissionais: React.FC = () => {
             
             <ScrollArea className="max-h-[calc(95vh-180px)]">
               <div className="p-6 pt-4">
-                <Tabs defaultValue="pessoais" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto mb-4">
+                  <Tabs defaultValue="pessoais" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto mb-4">
                     <TabsTrigger value="pessoais" className="text-xs py-2">Pessoais</TabsTrigger>
                     <TabsTrigger value="endereco" className="text-xs py-2">Endereço</TabsTrigger>
                     <TabsTrigger value="profissionais" className="text-xs py-2">Profissional</TabsTrigger>
                     <TabsTrigger value="salarios" className="text-xs py-2">Salários</TabsTrigger>
                     <TabsTrigger value="beneficios" className="text-xs py-2">Benefícios</TabsTrigger>
+                    <TabsTrigger value="bancario" className="text-xs py-2">Bancário</TabsTrigger>
                     <TabsTrigger value="cnh" className="text-xs py-2">CNH</TabsTrigger>
                     <TabsTrigger value="demissao" className="text-xs py-2">Demissão</TabsTrigger>
                   </TabsList>
@@ -1756,6 +1801,70 @@ export const CadastroProfissionais: React.FC = () => {
                         className="max-w-xs"
                       />
                       <p className="text-xs text-muted-foreground">Valor da passagem ida + volta para cálculo de VT</p>
+                    </div>
+                  </TabsContent>
+
+                  {/* DADOS BANCÁRIOS */}
+                  <TabsContent value="bancario" className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="banco">Banco</Label>
+                        <Input
+                          id="banco"
+                          value={formData.banco}
+                          onChange={(e) => setFormData({ ...formData, banco: e.target.value })}
+                          placeholder="Ex: Bradesco, Itaú, Caixa..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="agencia">Agência</Label>
+                        <Input
+                          id="agencia"
+                          value={formData.agencia}
+                          onChange={(e) => setFormData({ ...formData, agencia: e.target.value })}
+                          placeholder="0000"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="conta">Conta</Label>
+                        <Input
+                          id="conta"
+                          value={formData.conta}
+                          onChange={(e) => setFormData({ ...formData, conta: e.target.value })}
+                          placeholder="00000-0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="tipo_conta">Tipo de Conta</Label>
+                        <Select value={formData.tipo_conta} onValueChange={(value) => setFormData({ ...formData, tipo_conta: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="corrente">Corrente</SelectItem>
+                            <SelectItem value="poupanca">Poupança</SelectItem>
+                            <SelectItem value="salario">Salário</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="operacao">Operação</Label>
+                        <Input
+                          id="operacao"
+                          value={formData.operacao}
+                          onChange={(e) => setFormData({ ...formData, operacao: e.target.value })}
+                          placeholder="001, 013..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="chave_pix">Chave PIX</Label>
+                        <Input
+                          id="chave_pix"
+                          value={formData.chave_pix}
+                          onChange={(e) => setFormData({ ...formData, chave_pix: e.target.value })}
+                          placeholder="CPF, e-mail, telefone ou chave aleatória"
+                        />
+                      </div>
                     </div>
                   </TabsContent>
 

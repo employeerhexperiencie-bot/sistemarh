@@ -1978,8 +1978,10 @@ export type Database = {
       }
       profissionais: {
         Row: {
+          agencia: string | null
           aviso_trabalhado: boolean | null
           bairro: string | null
+          banco: string | null
           bem_mais: boolean | null
           cargo: string | null
           categoria_cnh: string | null
@@ -1987,8 +1989,10 @@ export type Database = {
           celular: string | null
           cep: string | null
           cesta_basica: boolean | null
+          chave_pix: string | null
           cidade: string | null
           cnh: string | null
+          conta: string | null
           cpf: string | null
           cracha: string | null
           created_at: string | null
@@ -2014,6 +2018,7 @@ export type Database = {
           nome: string
           nome_mae: string | null
           odonto: boolean | null
+          operacao: string | null
           pensao_alimenticia: number | null
           pis: string | null
           primeiro_salario: number | null
@@ -2026,6 +2031,7 @@ export type Database = {
           status: string | null
           telefone: string | null
           tenant_id: string
+          tipo_conta: string | null
           ultimo_salario: number | null
           updated_at: string | null
           vale_alimentacao: boolean | null
@@ -2041,8 +2047,10 @@ export type Database = {
           valor_vale_carne: number | null
         }
         Insert: {
+          agencia?: string | null
           aviso_trabalhado?: boolean | null
           bairro?: string | null
+          banco?: string | null
           bem_mais?: boolean | null
           cargo?: string | null
           categoria_cnh?: string | null
@@ -2050,8 +2058,10 @@ export type Database = {
           celular?: string | null
           cep?: string | null
           cesta_basica?: boolean | null
+          chave_pix?: string | null
           cidade?: string | null
           cnh?: string | null
+          conta?: string | null
           cpf?: string | null
           cracha?: string | null
           created_at?: string | null
@@ -2077,6 +2087,7 @@ export type Database = {
           nome: string
           nome_mae?: string | null
           odonto?: boolean | null
+          operacao?: string | null
           pensao_alimenticia?: number | null
           pis?: string | null
           primeiro_salario?: number | null
@@ -2089,6 +2100,7 @@ export type Database = {
           status?: string | null
           telefone?: string | null
           tenant_id?: string
+          tipo_conta?: string | null
           ultimo_salario?: number | null
           updated_at?: string | null
           vale_alimentacao?: boolean | null
@@ -2104,8 +2116,10 @@ export type Database = {
           valor_vale_carne?: number | null
         }
         Update: {
+          agencia?: string | null
           aviso_trabalhado?: boolean | null
           bairro?: string | null
+          banco?: string | null
           bem_mais?: boolean | null
           cargo?: string | null
           categoria_cnh?: string | null
@@ -2113,8 +2127,10 @@ export type Database = {
           celular?: string | null
           cep?: string | null
           cesta_basica?: boolean | null
+          chave_pix?: string | null
           cidade?: string | null
           cnh?: string | null
+          conta?: string | null
           cpf?: string | null
           cracha?: string | null
           created_at?: string | null
@@ -2140,6 +2156,7 @@ export type Database = {
           nome?: string
           nome_mae?: string | null
           odonto?: boolean | null
+          operacao?: string | null
           pensao_alimenticia?: number | null
           pis?: string | null
           primeiro_salario?: number | null
@@ -2152,6 +2169,7 @@ export type Database = {
           status?: string | null
           telefone?: string | null
           tenant_id?: string
+          tipo_conta?: string | null
           ultimo_salario?: number | null
           updated_at?: string | null
           vale_alimentacao?: boolean | null
