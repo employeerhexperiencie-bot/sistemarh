@@ -520,6 +520,19 @@ const ImportarDadosExcel = () => {
     }
   };
 
+  // Auto-carregar ao montar a página
+  useEffect(() => {
+    carregarArquivos();
+  }, []);
+
+  // Auto-importar quando dados estiverem prontos
+  useEffect(() => {
+    if (processedData && !autoImportTriggered && !importResult && !loading) {
+      setAutoImportTriggered(true);
+      importarParaSupabase();
+    }
+  }, [processedData, autoImportTriggered, importResult, loading]);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
