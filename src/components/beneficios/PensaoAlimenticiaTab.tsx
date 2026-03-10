@@ -168,6 +168,13 @@ export function PensaoAlimenticiaTab() {
         toast.success('Pensão cadastrada com sucesso!');
       }
 
+      // Sincronizar campo pensao_alimenticia no cadastro do profissional
+      const valorPensao = formData.tipo_calculo === 'percentual' ? formData.percentual : formData.valor_fixo;
+      await supabase
+        .from('profissionais')
+        .update({ pensao_alimenticia: valorPensao })
+        .eq('id', formData.profissional_id);
+
       setIsDialogOpen(false);
       setEditingPensao(null);
       resetForm();
