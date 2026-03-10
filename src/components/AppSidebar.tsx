@@ -145,6 +145,7 @@ const adminSections = [
     defaultOpen: false,
     adminOnly: true,
     items: [
+      { title: 'Painel de Uso', url: '/painel-uso', icon: BarChart3 },
       { title: 'Gestão Usuários', url: '/gestao-usuarios', icon: Shield },
       { title: 'Migrar Dados', url: '/migrar-dados', icon: Database },
       { title: 'Importar Excel', url: '/importar-dados-excel', icon: FileSpreadsheet },

@@ -165,7 +165,7 @@ const App = () => (
                   <Route path="/simulador-folha" element={<ProtectedLayout><Fechamentos /></ProtectedLayout>} />
                   <Route path="/fechamentos" element={<ProtectedLayout><Fechamentos /></ProtectedLayout>} />
                   <Route path="/configuracoes" element={<ProtectedLayout><Configuracoes /></ProtectedLayout>} />
-                  <Route path="/painel-uso" element={<ProtectedLayout><PainelUso /></ProtectedLayout>} />
+                  <Route path="/painel-uso" element={<SuperAdminLayout><PainelUso /></SuperAdminLayout>} />
                   {/* ROTAS EXCLUSIVAS SUPER_ADMIN - Cliente NÃO pode acessar */}
                   <Route path="/gestao-usuarios" element={<SuperAdminLayout><GestaoUsuarios /></SuperAdminLayout>} />
                   <Route path="/audit-log" element={<SuperAdminLayout><AuditLog /></SuperAdminLayout>} />
