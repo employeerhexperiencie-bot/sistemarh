@@ -243,14 +243,7 @@ export function calcularFolhaProfissional(
   let recebeDia20 = true;
   let motivoDia20 = '';
   
-  const temDataAdmissao = profissional.dataAdmissao && profissional.dataAdmissao !== '';
-  const dataAdmissao = temDataAdmissao ? new Date(profissional.dataAdmissao!) : null;
-  const mesCompetencia = new Date(config.competencia + '-01');
-  
-  const mesmaCompetencia = dataAdmissao 
-    ? (dataAdmissao.getMonth() === mesCompetencia.getMonth() && 
-       dataAdmissao.getFullYear() === mesCompetencia.getFullYear())
-    : false;
+  // (temDataAdmissao, dataAdmissao, mesCompetencia, mesmaCompetencia already declared above)
   
   // Regras de elegibilidade para Dia 20
   if (profissional.status === 'ferias') {
