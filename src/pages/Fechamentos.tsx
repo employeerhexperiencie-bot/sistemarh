@@ -90,6 +90,7 @@ interface EditOverrides {
     outrosDescontos?: number;
     complemento?: number;
     faltas?: number;
+    percentualDia20?: number;
   };
 }
 
