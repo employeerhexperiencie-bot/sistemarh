@@ -20,7 +20,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   const inicioMes = `${ano}-${String(mes).padStart(2, '0')}-01`;
   const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
 
-  const [faltasRes, feriasRes, valesRes, emprestimosRes, afastamentosRes, beneficiosRes, lancamentosRes] = await Promise.all([
+  const [faltasRes, feriasRes, valesRes, emprestimosRes, afastamentosRes, beneficiosRes, lancamentosRes, pensoesRes] = await Promise.all([
     supabase.from('faltas').select('profissional_id, tipo').gte('data_falta', inicioMes).lte('data_falta', fimMes),
     supabase.from('ferias').select('profissional_id, periodo_gozo_inicio, periodo_gozo_fim, dias_gozados')
       .or(`and(periodo_gozo_inicio.lte.${fimMes},periodo_gozo_fim.gte.${inicioMes})`),
@@ -29,6 +29,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
     supabase.from('afastamentos').select('profissional_id, tipo, data_inicio').eq('status', 'ativo').lte('data_inicio', fimMes).or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`),
     supabase.from('beneficios').select('profissional_id, valor_vale_carne, valor_vale_dinheiro, valor_vale_alimentacao').eq('mes_referencia', inicioMes),
     supabase.from('lancamentos_financeiros').select('profissional_id, tipo, valor').eq('mes_referencia', inicioMes).eq('tipo', 'desconto'),
+    supabase.from('pensoes_alimenticias').select('profissional_id, tipo_calculo, percentual, valor_fixo, base_calculo').eq('ativo', true),
   ]);
 
   const faltasMap: Record<string, { injustificadas: number; justificadas: number }> = {};
