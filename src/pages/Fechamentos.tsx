@@ -21,7 +21,7 @@ import {
   History, ChevronLeft, Edit3, FileText, ArrowRight, FileDown
 } from 'lucide-react';
 import { formatCurrency, calcularFolhaProfissional, type ResultadoCalculo, type ProfissionalInput } from '@/lib/payrollCalculator';
-import { getCompetenciaAtual, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
+import { getCompetenciaAtual, getCompetenciaAnterior, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
 import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, type DadosCompetencia } from '@/lib/buildProfissionalInput';
 import { gerarHoleritePDF, gerarHoleriteDia20, gerarHoleriteDia5, gerarHoleriteVT } from '@/components/folha/HoleritePDF';
 import { 
