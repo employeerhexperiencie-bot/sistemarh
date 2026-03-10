@@ -350,33 +350,28 @@ export function calcularFolhaProfissional(
   // 9.1 DSR (Descanso Semanal Remunerado) - desconta 1 DSR por falta injustificada
   // Cálculo: para cada falta injustificada, perde o DSR proporcional
   // DSR = (faltas / dias úteis) × domingos no mês × valor do dia
-  const diasNoMes = diasNoMesReal;
-  let domingosNoMes = 0;
-  for (let d = 1; d <= diasNoMes; d++) {
-    if (new Date(anoComp, mesComp - 1, d).getDay() === 0) domingosNoMes++;
-  }
-  const descontoDSR = profissional.faltas > 0
-    ? arredondarValor(profissional.faltas * valorDia * (domingosNoMes / diasUteis))
-    : 0;
-  if (descontoDSR > 0) {
-    detalhes.push(`Desconto DSR: ${profissional.faltas} faltas × R$ ${valorDia.toFixed(2)} × (${domingosNoMes} dom / ${diasUteis} úteis) = R$ ${descontoDSR.toFixed(2)}`);
-  }
+  // DSR removido - planilha de referência não calcula DSR
+  const descontoDSR = 0;
   
   // Descontos manuais/adicionais (Vale Carne, Vale Dinheiro - são compras do profissional)
   const valeCarne = profissional.valeCarne || 0;
   const valeDinheiro = profissional.valeDinheiro || 0;
+  const emprestimoCLT = profissional.emprestimoCLT || 0;
   const outrosDescontos = profissional.outrosDescontos || 0;
-  // Nota: valeAlimentacao (Alelo) é benefício pago ao profissional, não desconto
+  const complemento = profissional.complemento || 0;
   const descontosAdicionais = valeCarne + valeDinheiro + outrosDescontos;
   
   if (valeCarne > 0) detalhes.push(`Vale Carne (compra): R$ ${valeCarne.toFixed(2)}`);
   if (valeDinheiro > 0) detalhes.push(`Vale Dinheiro (compra): R$ ${valeDinheiro.toFixed(2)}`);
+  if (emprestimoCLT > 0) detalhes.push(`Empréstimo CLT: R$ ${emprestimoCLT.toFixed(2)}`);
   if (outrosDescontos > 0) detalhes.push(`Outros Descontos: R$ ${outrosDescontos.toFixed(2)}`);
+  if (complemento > 0) detalhes.push(`Complemento: + R$ ${complemento.toFixed(2)}`);
   
-  // Total de descontos OPERACIONAIS (vales + empréstimos + pensão + faltas + DSR + adicionais)
-  const totalDescontos = profissional.vales + profissional.emprestimos + profissional.pensao + descontoFaltas + descontoDSR + descontosAdicionais;
-  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (faltas: ${descontoFaltas}, DSR: ${descontoDSR}, vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, adicionais: ${descontosAdicionais})`);
-  
+  // Total de descontos OPERACIONAIS (vales + empréstimos + pensão + faltas + adicionais + empréstimo CLT)
+  // NÃO inclui DSR (planilha de referência não calcula DSR)
+  const totalDescontos = profissional.vales + profissional.emprestimos + emprestimoCLT + profissional.pensao + descontoFaltas + descontosAdicionais;
+  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (faltas: ${descontoFaltas}, vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, emprést.CLT: ${emprestimoCLT}, pensão: ${profissional.pensao}, adicionais: ${descontosAdicionais})`);
+
   // 10. Calcular salário líquido (Dia 5)
   // Fórmula: Salário a Receber (proporcional) - Dia 20 - Descontos Operacionais
   // NÃO desconta benefícios (VT, VR, Cesta são PAGOS ao profissional)
