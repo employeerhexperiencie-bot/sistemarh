@@ -450,6 +450,7 @@ Deno.serve(async (req) => {
             telefone: prof.telefone || null,
             celular: prof.celular || null,
             loja_id: lojaId || null,
+            loja_registro_id: lojaRegistroId || null,
             departamento: prof.departamento || null,
             setor: prof.setor || null,
             cargo: prof.cargo || null,
