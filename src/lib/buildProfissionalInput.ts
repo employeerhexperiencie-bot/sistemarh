@@ -83,6 +83,17 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   const lancamentosMap: Record<string, number> = {};
   lancamentosRes.data?.forEach((l: any) => { if (l.profissional_id) lancamentosMap[l.profissional_id] = (lancamentosMap[l.profissional_id] || 0) + Number(l.valor); });
 
+  const pensoesMap: Record<string, { tipoCalculo: string; percentual: number; valorFixo: number; baseCalculo: string }> = {};
+  pensoesRes.data?.forEach((pe: any) => {
+    if (!pe.profissional_id) return;
+    pensoesMap[pe.profissional_id] = {
+      tipoCalculo: pe.tipo_calculo || 'percentual',
+      percentual: Number(pe.percentual || 0),
+      valorFixo: Number(pe.valor_fixo || 0),
+      baseCalculo: pe.base_calculo || 'liquido',
+    };
+  });
+
   return {
     faltas: faltasMap,
     ferias: feriasMap,
@@ -91,6 +102,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
     afastamentos: afastamentosMap,
     beneficiosAdicionais: beneficiosAdicionaisMap,
     lancamentosFinanceiros: lancamentosMap,
+    pensoes: pensoesMap,
   };
 }
 
