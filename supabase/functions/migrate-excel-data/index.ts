@@ -278,6 +278,9 @@ Deno.serve(async (req) => {
         if (prof.localTrabalho && prof.localTrabalho.trim()) {
           lojasUnicas.add(prof.localTrabalho.trim());
         }
+        if (prof.localRegistro && prof.localRegistro.trim()) {
+          lojasUnicas.add(prof.localRegistro.trim());
+        }
       }
     }
 
