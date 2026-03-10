@@ -1804,6 +1804,70 @@ export const CadastroProfissionais: React.FC = () => {
                     </div>
                   </TabsContent>
 
+                  {/* DADOS BANCÁRIOS */}
+                  <TabsContent value="bancario" className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="banco">Banco</Label>
+                        <Input
+                          id="banco"
+                          value={formData.banco}
+                          onChange={(e) => setFormData({ ...formData, banco: e.target.value })}
+                          placeholder="Ex: Bradesco, Itaú, Caixa..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="agencia">Agência</Label>
+                        <Input
+                          id="agencia"
+                          value={formData.agencia}
+                          onChange={(e) => setFormData({ ...formData, agencia: e.target.value })}
+                          placeholder="0000"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="conta">Conta</Label>
+                        <Input
+                          id="conta"
+                          value={formData.conta}
+                          onChange={(e) => setFormData({ ...formData, conta: e.target.value })}
+                          placeholder="00000-0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="tipo_conta">Tipo de Conta</Label>
+                        <Select value={formData.tipo_conta} onValueChange={(value) => setFormData({ ...formData, tipo_conta: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="corrente">Corrente</SelectItem>
+                            <SelectItem value="poupanca">Poupança</SelectItem>
+                            <SelectItem value="salario">Salário</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="operacao">Operação</Label>
+                        <Input
+                          id="operacao"
+                          value={formData.operacao}
+                          onChange={(e) => setFormData({ ...formData, operacao: e.target.value })}
+                          placeholder="001, 013..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="chave_pix">Chave PIX</Label>
+                        <Input
+                          id="chave_pix"
+                          value={formData.chave_pix}
+                          onChange={(e) => setFormData({ ...formData, chave_pix: e.target.value })}
+                          placeholder="CPF, e-mail, telefone ou chave aleatória"
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+
                   {/* CNH */}
                   <TabsContent value="cnh" className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
