@@ -24,6 +24,7 @@ import {
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { buscarDescontosProfissional } from '@/hooks/useHoleriteData';
 import { supabase } from '@/integrations/supabase/client';
+import JSZip from 'jszip';
 
 interface HoleriteItem {
   id: string;
