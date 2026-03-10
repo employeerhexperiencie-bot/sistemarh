@@ -911,6 +911,7 @@ export default function Fechamentos() {
                         {isMulti && <TableCell />}
                         <TableCell colSpan={2}>TOTAL</TableCell>
                         <TableCell className="text-right">{formatCurrency(totalSalariosPreview)}</TableCell>
+                        <TableCell className="text-right">—</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.faltas, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.vales, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.emprestimos, 0))}</TableCell>
