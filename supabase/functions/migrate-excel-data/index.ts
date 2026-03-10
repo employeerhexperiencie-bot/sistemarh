@@ -405,6 +405,19 @@ Deno.serve(async (req) => {
 
         const pensao = parseSalario(prof.pensaoAlimenticia) || parseSalario(prof.pensao) || null;
 
+        // Determine bank account info
+        const bancoVal = prof.banco && String(prof.banco).trim() !== '' && String(prof.banco).trim() !== 'NA' ? String(prof.banco).trim() : null;
+        const agenciaVal = prof.agencia && String(prof.agencia).trim() !== '' ? String(prof.agencia).trim() : null;
+        const contaCorrente = prof.conta && String(prof.conta).trim() !== '' && String(prof.conta).trim() !== 'N/A' ? String(prof.conta).trim() : null;
+        const contaPoupanca = prof.contaPoupanca && String(prof.contaPoupanca).trim() !== '' && String(prof.contaPoupanca).trim() !== 'N/A' ? String(prof.contaPoupanca).trim() : null;
+        const contaFinal = contaCorrente || contaPoupanca || null;
+        const tipoContaFinal = contaPoupanca && !contaCorrente ? 'poupanca' : contaFinal ? 'corrente' : 'corrente';
+        
+        // PIX: use pixTelefone or pixCpf, whichever is available
+        const pixTel = prof.pixTelefone && String(prof.pixTelefone).trim() !== '' && String(prof.pixTelefone).trim() !== 'N/A' ? String(prof.pixTelefone).trim() : null;
+        const pixCpfVal = prof.pixCpf && String(prof.pixCpf).trim() !== '' && String(prof.pixCpf).trim() !== 'N/A' ? String(prof.pixCpf).trim() : null;
+        const chavePix = prof.chavePix || pixTel || pixCpfVal || null;
+
         const { error } = await supabase
           .from('profissionais')
           .upsert({
@@ -451,6 +464,12 @@ Deno.serve(async (req) => {
             local_homologacao: prof.localHomologacao || null,
             data_cumprir_aviso: parseExcelDate(prof.dataCumprirAviso),
             status: prof.status || 'ativo',
+            nome_mae: prof.nomeMae || null,
+            banco: bancoVal,
+            agencia: agenciaVal,
+            conta: contaFinal,
+            tipo_conta: tipoContaFinal,
+            chave_pix: chavePix,
           }, {
             onConflict: 'matricula',
             ignoreDuplicates: false
