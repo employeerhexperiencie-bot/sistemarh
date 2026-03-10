@@ -63,12 +63,14 @@ export interface ProfissionalInput {
   diasFerias: number;
   vales: number;
   emprestimos: number;
+  emprestimoCLT?: number;
   pensao: number;
   // Novos campos de descontos adicionais
   valeCarne?: number;
   valeDinheiro?: number;
   valeAlimentacao?: number;
   outrosDescontos?: number;
+  complemento?: number;
   insalubridade?: 'nao' | '10' | '20';
 }
 
