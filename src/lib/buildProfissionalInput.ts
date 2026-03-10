@@ -60,7 +60,17 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   valesRes.data?.forEach((v: any) => { if (v.profissional_id) valesMap[v.profissional_id] = (valesMap[v.profissional_id] || 0) + Number(v.valor); });
 
   const emprestimosMap: Record<string, number> = {};
-  emprestimosRes.data?.forEach((e: any) => { if (e.profissional_id) emprestimosMap[e.profissional_id] = (emprestimosMap[e.profissional_id] || 0) + Number(e.valor_parcela); });
+  const emprestimoCLTMap: Record<string, number> = {};
+  emprestimosRes.data?.forEach((e: any) => {
+    if (!e.profissional_id) return;
+    const valor = Number(e.valor_parcela);
+    const tipo = (e.tipo || '').toLowerCase();
+    if (tipo === 'ctps' || tipo === 'clt' || tipo === 'consignado') {
+      emprestimoCLTMap[e.profissional_id] = (emprestimoCLTMap[e.profissional_id] || 0) + valor;
+    } else {
+      emprestimosMap[e.profissional_id] = (emprestimosMap[e.profissional_id] || 0) + valor;
+    }
+  });
 
   const hoje = new Date();
   const afastamentosMap: Record<string, { tipo: string; dias: number }> = {};
