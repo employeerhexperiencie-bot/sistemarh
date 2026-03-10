@@ -47,6 +47,7 @@ const ImportarDadosExcel = () => {
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
+  const [autoImportTriggered, setAutoImportTriggered] = useState(false);
 
   const parseSalario = (valor: any): number | null => {
     if (!valor) return null;
