@@ -1,237 +1,232 @@
-# Análise de Jornadas: Gerenciamento, Cadastro e Descontos de Benefícios
-
-> **Data da Análise:** 28/01/2026  
-> **Atualizado em:** 28/01/2026  
-> **Objetivo:** Mapear as jornadas atuais de cada benefício
+# Jornada de Benefícios - Regras de Desconto e Gerenciamento
+> **Atualizado em:** 10/03/2026  
+> **Regras validadas com:** Tennessee Prime
 
 ---
 
 ## 📊 Resumo Executivo
 
-### ✅ Benefícios COM Desconto Automático em Folha
+### Política de Descontos da Tennessee Prime
 
-| Benefício | Cadastro | Gestão | Regra de Desconto | Status |
-|-----------|----------|--------|-------------------|--------|
-| Vale Transporte | Flag + valor diário | Tab VT | 6% do salário (limitado ao VT) | ✅ Completo |
-| Vale Refeição | Flag | Tab Alimentação | dias × R$25 | ✅ Completo |
-| Cesta Básica | Flag | Tab Alimentação | Perde se falta injustificada | ✅ Completo |
-| Empréstimo CLT | Completo | GestaoEmprestimos | Parcela mensal | ✅ Completo |
-| Empréstimo Loja | Completo | GestaoEmprestimos | Parcela mensal | ✅ Completo |
-
-### ✅ Benefícios SEM Desconto (100% Empresa - Apenas Gerenciamento)
-
-| Benefício | Cadastro | Gestão | Desconto | Status |
-|-----------|----------|--------|----------|--------|
-| Odonto | Flag | Tab Saúde | ❌ Não desconta | ✅ Correto |
-| Seguro Vida | Flag | Tab Saúde | ❌ Não desconta | ✅ Correto |
-| Bem Mais | Flag | Tab Saúde | ❌ Não desconta | ✅ Correto |
-| Vale Alimentação (Alelo) | Flag | Tab Alimentação | ❌ Não desconta | ✅ Correto |
-
-### ✅ Benefícios com Desconto MANUAL (RH Define Quando)
-
-| Benefício | Cadastro | Gestão | Desconto | Status |
-|-----------|----------|--------|----------|--------|
-| Vale Carne | Flag | Tab Alimentação | Profissional paga (RH define quando) | ✅ Confirmado |
-| Vale Dinheiro | Lançamento | Tab Alimentação | Profissional paga (RH define quando) | ✅ Confirmado |
+> **Regra principal:** A empresa NÃO desconta do profissional os encargos trabalhistas (INSS, IRRF),
+> nem benefícios (VT, VR, Cesta). O profissional só tem descontado no Dia 5 aquilo que ele
+> efetivamente **comprou ou tomou emprestado**.
 
 ---
 
-## Detalhamento por Categoria
+### ✅ Descontos NO DIA 5 (O que SAI do salário do profissional)
+
+| Desconto | Tipo | Regra | Automático? |
+|----------|------|-------|-------------|
+| Empréstimo CLT | Parcela fixa | Valor da parcela mensal até quitar | ✅ Automático |
+| Empréstimo Loja | Parcela fixa | Valor da parcela mensal até quitar | ✅ Automático |
+| Vale Carne | Compra na loja | Valor da compra feita pelo profissional | ⚠️ RH lança |
+| Vale Dinheiro | Adiantamento avulso | Valor solicitado pelo profissional | ⚠️ RH lança |
+| Faltas injustificadas | Desconto legal | (salário ÷ 30) × dias de falta | ✅ Automático |
+| Pensão alimentícia | Judicial | Percentual sobre líquido ou valor fixo | ✅ Automático |
+
+### ❌ O que NÃO desconta do profissional
+
+| Item | Motivo | Tratamento no sistema |
+|------|--------|-----------------------|
+| INSS | Empresa calcula separadamente via contabilidade | Não entra no motor de cálculo |
+| IRRF | Idem | Não entra no motor de cálculo |
+| VT (6%) | Empresa paga 100% do transporte | `descontoVT6Porcento = 0` |
+| VR | É pago AO profissional, não cobrado dele | Valor aparece como provento |
+| Cesta Básica | É pago AO profissional | Valor aparece como provento |
 
 ---
 
-## 🏥 BENEFÍCIOS DE SAÚDE (Não Descontam)
-
-### 1. Odonto ✅
-**Tipo:** Gerenciamento apenas (empresa paga 100%)
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
-| Visualização | ✅ | `BeneficiosSaudeTab.tsx` |
-| Contagem resumo | ✅ | `GestaoBeneficios.tsx` |
-| Desconto folha | ❌ N/A | **Confirmado: não desconta** |
+## Detalhamento por Benefício
 
 ---
 
-### 2. Seguro Vida ✅
-**Tipo:** Gerenciamento apenas (empresa paga 100%)
+## 🚌 VALE TRANSPORTE (VT)
 
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
-| Visualização | ✅ | `BeneficiosSaudeTab.tsx` |
-| Contagem resumo | ✅ | `GestaoBeneficios.tsx` |
-| Desconto folha | ❌ N/A | **Confirmado: não desconta** |
+**Política:** Empresa paga 100% — SEM desconto de 6% do profissional
 
----
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Flag `vale_transporte` + campo `valor_diario_rota` em `profissionais` |
+| **Cálculo** | `dias trabalhados × valor_diario_rota` |
+| **Finalidade** | Controle de quanto a empresa PAGA ao profissional |
+| **Desconto 6%** | ❌ **DESATIVADO** — empresa arca com 100% |
+| **Não paga se** | Afastado, férias, sem dias trabalhados |
 
-### 3. Bem Mais (Saúde Mental Sindicato) ✅
-**Tipo:** Gerenciamento apenas (empresa paga 100%)
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
-| Visualização | ✅ | `BeneficiosSaudeTab.tsx` |
-| Contagem resumo | ✅ | `GestaoBeneficios.tsx` |
-| Desconto folha | ❌ N/A | **Confirmado: não desconta** |
-
----
-
-## 🍽️ BENEFÍCIOS DE ALIMENTAÇÃO
-
-### 4. Vale Alimentação (Alelo) ✅
-**Tipo:** Gerenciamento apenas (empresa paga 100%)
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
-| Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
-| Contagem resumo | ✅ | `GestaoBeneficios.tsx` |
-| Desconto folha | ❌ N/A | **Confirmado: não desconta** |
-
----
-
-### 5. Vale Refeição ✅
-**Tipo:** Gerenciamento + Cálculo automático
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
-| Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
-| Cálculo valor | ✅ | `payrollCalculator.ts` |
-| Regra | ✅ | dias trabalhados × R$25,00 |
-
-**Regra implementada:**
 ```typescript
-valorVR = arredondarValor(diasTrabalhados * config.valorVR); // R$25/dia
-```
-
----
-
-### 6. Cesta Básica ✅
-**Tipo:** Gerenciamento + Elegibilidade automática
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
-| Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
-| Valor fixo | ✅ | R$180,00 |
-| Regra perda | ✅ | Falta injustificada OU admissão após dia 15 |
-
-**Regra implementada:**
-```typescript
-// Perde se falta INJUSTIFICADA (atestado mantém)
-if (profissional.faltas > 0) {
-  recebeCesta = false;
-}
-// Perde se admitido após dia 15
-if (mesmaCompetencia && dataAdmissao.getDate() > 15) {
-  recebeCesta = false;
-}
-```
-
----
-
-### 7. Vale Carne ✅
-**Tipo:** Desconto manual (RH define quando descontar)
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` - campo `vale_carne` |
-| Visualização | ✅ | `BeneficiosAlimentacaoTab.tsx` |
-| Desconto | ✅ | Via lançamento manual em `lancamentos_financeiros` |
-| Regra | ✅ | **Profissional paga - RH define quando descontar** |
-
----
-
-### 8. Vale Dinheiro ✅
-**Tipo:** Desconto manual (RH define quando descontar)
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ❌ | Não precisa - lançamento avulso |
-| Lançamento | ✅ | Via `lancamentos_financeiros` |
-| Desconto | ✅ | Profissional paga quando HR registra |
-| Regra | ✅ | **Profissional paga - RH define quando descontar** |
-
----
-
-## 🚌 TRANSPORTE
-
-### 9. Vale Transporte ✅
-**Tipo:** Gerenciamento + Desconto automático
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Flag no cadastro | ✅ | `CadastroProfissionais.tsx` |
-| Valor diário rota | ✅ | Campo `valor_diario_rota` |
-| Visualização | ✅ | `BeneficiosVTTab.tsx` com drill-down |
-| Cálculo valor | ✅ | dias trabalhados × valor_diário |
-| Desconto 6% | ✅ | 6% do salário (máximo = valor VT) |
-
-**Regra implementada:**
-```typescript
-// VT = dias × valor diário da rota
+// payrollCalculator.ts — Linhas 258-271
 valorVT = arredondarValor(diasTrabalhados * profissional.valorPassagem);
-
-// Desconto VT 6% (limitado ao valor do VT)
-descontoVT6Porcento = Math.min(
-  arredondarValor(profissional.salario * 0.06),
-  valorVT
-);
+descontoVT6Porcento = 0; // Empresa paga integral
 ```
+
+**Gestão:** Tab VT em Gestão de Benefícios com drill-down por loja e profissional.
+
+---
+
+## 🍽️ VALE REFEIÇÃO (VR)
+
+**Política:** Empresa paga — valor é CRÉDITO para o profissional
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Flag `vale_refeicao` em `profissionais` |
+| **Cálculo** | `dias trabalhados × R$25,00 (configurável)` |
+| **Finalidade** | Controle de quanto PAGAR ao profissional |
+| **Desconta do salário?** | ❌ **NÃO** — é provento, não desconto |
+| **Não paga se** | Afastado, férias, sem dias trabalhados |
+
+```typescript
+// payrollCalculator.ts — Linhas 274-280
+valorVR = arredondarValor(diasTrabalhados * config.valorVR);
+```
+
+---
+
+## 🧺 CESTA BÁSICA
+
+**Política:** Empresa paga — benefício mensal com regras de elegibilidade
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Flag `cesta_basica` em `profissionais` |
+| **Valor** | R$180,00 (configurável via `configuracoes_sistema`) |
+| **Desconta do salário?** | ❌ **NÃO** — é provento pago ao profissional |
+| **Perde se** | Qualquer falta INJUSTIFICADA no mês |
+| **Perde se** | Admitido após dia 15 do mês |
+| **Mantém se** | Atestado (falta justificada) |
+
+```typescript
+// payrollCalculator.ts — Linhas 283-302
+if (profissional.faltas > 0) { recebeCesta = false; }
+if (mesmaCompetencia && dataAdmissao.getDate() > 15) { recebeCesta = false; }
+```
+
+---
+
+## 🥩 VALE CARNE
+
+**Política:** Profissional compra na loja — RH lança o desconto
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Flag `vale_carne` em `profissionais` |
+| **Lançamento** | RH registra valor em `lancamentos_financeiros` |
+| **Desconta do salário?** | ✅ **SIM** — é compra do profissional |
+| **Quando desconta** | No Dia 5, junto com outros descontos operacionais |
+| **Automático?** | ⚠️ Não — RH precisa lançar manualmente |
+
+---
+
+## 💵 VALE DINHEIRO
+
+**Política:** Adiantamento avulso solicitado pelo profissional
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Não precisa de flag — lançamento avulso |
+| **Lançamento** | RH registra em `lancamentos_financeiros` |
+| **Desconta do salário?** | ✅ **SIM** — é adiantamento ao profissional |
+| **Quando desconta** | No Dia 5 |
+
+---
+
+## 🏪 VALE ALIMENTAÇÃO (ALELO)
+
+**Política:** Empresa paga 100% — apenas gerenciamento
+
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Flag `vale_alimentacao` + `valor_vale_alimentacao` |
+| **Desconta do salário?** | ❌ **NÃO** |
+| **Gestão** | Tab Alimentação em Gestão de Benefícios |
+
+---
+
+## 🏥 BENEFÍCIOS DE SAÚDE (Todos 100% Empresa)
+
+### Odonto
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Flag `odonto` + `valor_odonto` |
+| **Desconta?** | ❌ Não |
+
+### Seguro Vida
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Flag `seguro_vida` + `valor_seguro_vida` |
+| **Desconta?** | ❌ Não |
+
+### Bem Mais (Saúde Mental - Sindicato)
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Flag `bem_mais` + `valor_bem_mais` |
+| **Desconta?** | ❌ Não |
 
 ---
 
 ## 💰 EMPRÉSTIMOS
 
-### 10. Empréstimo CLT (Consignado) ✅
-**Tipo:** Gerenciamento completo + Desconto automático
+### Empréstimo CLT (Consignado)
 
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Cadastro | ✅ | `GestaoEmprestimos.tsx` |
-| Histórico | ✅ | `HistoricoEmprestimos.tsx` |
-| Visualização | ✅ | `EmprestimosResumoTab.tsx` |
-| Desconto folha | ✅ | Valor da parcela no Dia 5 |
-| Timeline | ✅ | `EmprestimosTimeline.tsx` |
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | `GestaoEmprestimos.tsx` — valor total, parcelas, taxa |
+| **Desconta?** | ✅ **SIM** — parcela mensal fixa |
+| **Automático?** | ✅ Sim — motor inclui no Dia 5 |
+| **Controles** | Parcelas pagas, saldo devedor, histórico de alterações |
+| **Visualização** | Timeline visual + tab Empréstimos no painel do profissional |
 
----
+### Empréstimo Loja/Empresa
 
-### 11. Empréstimo Loja/Empresa ✅
-**Tipo:** Gerenciamento completo + Desconto automático
-
-| Aspecto | Status | Localização |
-|---------|--------|-------------|
-| Cadastro | ✅ | `GestaoEmprestimos.tsx` |
-| Controle parcelas | ✅ | Pagas vs pendentes |
-| Saldo devedor | ✅ | Atualização automática |
-| Histórico | ✅ | Auditoria de alterações |
-| Desconto folha | ✅ | Valor da parcela no Dia 5 |
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | Mesmo módulo, tipo = "empresa" |
+| **Desconta?** | ✅ **SIM** — parcela mensal fixa |
+| **Automático?** | ✅ Sim |
 
 ---
 
-## ✅ Conclusão
+## 👶 PENSÃO ALIMENTÍCIA
 
-### Implementação Completa (11/11 benefícios mapeados)
-
-**COM desconto AUTOMÁTICO (5):**
-- ✅ Vale Transporte (6% limitado)
-- ✅ Vale Refeição (dias × R$25)
-- ✅ Cesta Básica (perde por falta)
-- ✅ Empréstimo CLT
-- ✅ Empréstimo Loja
-
-**COM desconto MANUAL - RH define quando (2):**
-- ✅ Vale Carne (profissional paga)
-- ✅ Vale Dinheiro (profissional paga)
-
-**SEM desconto - só gerenciamento (4):**
-- ✅ Odonto (empresa paga)
-- ✅ Seguro Vida (empresa paga)
-- ✅ Bem Mais (empresa paga)
-- ✅ Vale Alimentação/Alelo (empresa paga)
+| Aspecto | Detalhe |
+|---------|---------|
+| **Cadastro** | `pensoes_alimenticias` — beneficiário, dados bancários, percentual |
+| **Tipo cálculo** | Percentual sobre líquido OU valor fixo |
+| **Desconta?** | ✅ **SIM** — obrigação judicial |
+| **Automático?** | ✅ Sim — motor inclui no Dia 5 |
+| **Dados bancários** | Banco, agência, conta, Pix do beneficiário |
 
 ---
-*Documento atualizado em: 28/01/2026*
+
+## 📊 Resumo Final: Composição do Dia 5
+
+```
+SALÁRIO LÍQUIDO (Dia 5) = Salário Base
+                          - Adiantamento (Dia 20 = 40%)
+                          - Empréstimos (CLT + Loja)
+                          - Compras (Vale Carne + Vale Dinheiro)
+                          - Faltas injustificadas
+                          - Pensão alimentícia
+                          - Outros descontos manuais
+```
+
+**NÃO ENTRA na fórmula:** INSS, IRRF, VT, VR, Cesta, Alelo, Odonto, Seguro, Bem Mais.
+
+Esses valores são **pagos separadamente ao profissional** ou **calculados pela contabilidade externa**.
+
+---
+
+## 🔧 Arquivos de Referência no Código
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `src/lib/payrollCalculator.ts` | Motor de cálculo (Dia 20/5) |
+| `src/lib/buildProfissionalInput.ts` | Mapeamento dados Supabase → motor |
+| `src/hooks/useHoleriteData.ts` | Busca descontos para holerite |
+| `src/components/folha/RelatorioFolha.tsx` | Geração de relatórios PDF |
+| `src/pages/Fechamentos.tsx` | Central de fechamentos |
+| `src/pages/GestaoBeneficios.tsx` | Gestão de benefícios |
+
+---
+
+*Documento atualizado em: 10/03/2026*
