@@ -110,6 +110,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
     ferias: feriasMap,
     vales: valesMap,
     emprestimos: emprestimosMap,
+    emprestimoCLT: emprestimoCLTMap,
     afastamentos: afastamentosMap,
     beneficiosAdicionais: beneficiosAdicionaisMap,
     lancamentosFinanceiros: lancamentosMap,
