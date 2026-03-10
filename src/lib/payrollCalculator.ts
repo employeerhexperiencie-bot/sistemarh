@@ -371,10 +371,10 @@ export function calcularFolhaProfissional(
   detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (faltas: ${descontoFaltas}, DSR: ${descontoDSR}, vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, pensão: ${profissional.pensao}, adicionais: ${descontosAdicionais})`);
   
   // 10. Calcular salário líquido (Dia 5)
-  // Fórmula: Salário Base - Dia 20 - Descontos Operacionais
+  // Fórmula: Salário a Receber (proporcional) - Dia 20 - Descontos Operacionais
   // NÃO desconta benefícios (VT, VR, Cesta são PAGOS ao profissional)
   // NÃO desconta encargos (INSS, IRRF calculados pela contabilidade)
-  let salarioBase = profissional.salario + valorInsalubridade;
+  let salarioBase = salarioReceber + valorInsalubridade;
   
   // Se está em afastamento, usar valor do afastamento como base
   if (valorAfastamento > 0 && profissional.status !== 'ativo' && profissional.status !== 'ferias') {
