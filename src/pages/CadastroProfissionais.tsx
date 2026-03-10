@@ -164,6 +164,14 @@ interface FormDataCompleto {
   
   // Campo legado
   valor_rota_diaria: string;
+  
+  // Dados Bancários
+  banco: string;
+  agencia: string;
+  conta: string;
+  tipo_conta: string;
+  chave_pix: string;
+  operacao: string;
 }
 
 const initialFormData: FormDataCompleto = {
