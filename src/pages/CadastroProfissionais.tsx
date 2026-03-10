@@ -546,6 +546,12 @@ export const CadastroProfissionais: React.FC = () => {
         data_admissao: formData.data_admissao || null,
         data_demissao: formData.data_demissao || null,
         nome_mae: (formData as any).nome_mae || null,
+        pensao_alimenticia: formData.pensao_alimenticia ? 1 : null,
+        vale_transporte: formData.vale_transporte,
+        vale_refeicao: formData.vale_refeicao,
+        cesta_basica: formData.recebe_cesta,
+        vale_carne: formData.vale_carne,
+        sindicato: formData.sindicato || null,
       };
 
       if (editingProfessional) {
@@ -641,6 +647,12 @@ export const CadastroProfissionais: React.FC = () => {
       status: professional.status as 'ativo' | 'demitido' | 'afastado',
       data_admissao: professional.data_admissao || '',
       data_demissao: professional.data_demissao || '',
+      pensao_alimenticia: !!(professional as any).pensao_alimenticia,
+      vale_transporte: !!(professional as any).vale_transporte,
+      vale_refeicao: !!(professional as any).vale_refeicao,
+      recebe_cesta: !!(professional as any).cesta_basica,
+      vale_carne: !!(professional as any).vale_carne,
+      sindicato: (professional as any).sindicato || '',
     });
     setIsDialogOpen(true);
   };
