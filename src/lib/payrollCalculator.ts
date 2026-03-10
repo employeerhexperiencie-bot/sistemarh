@@ -105,6 +105,10 @@ export interface ResultadoCalculo {
   // Descontos
   descontoFaltas: number;
   descontoVT6Porcento: number;
+  pensao: number;
+  valeCarne: number;
+  valeDinheiro: number;
+  outrosDescontos: number;
   totalDescontos: number;
   
   // Afastamento
@@ -368,6 +372,10 @@ export function calcularFolhaProfissional(
     valorCesta,
     descontoFaltas,
     descontoVT6Porcento,
+    pensao: profissional.pensao,
+    valeCarne,
+    valeDinheiro,
+    outrosDescontos,
     totalDescontos,
     valorAfastamento,
     tipoAfastamento,

@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { 
@@ -818,9 +819,11 @@ export default function Fechamentos() {
                         <TableHead className="text-right">Faltas</TableHead>
                         <TableHead className="text-right">Vales</TableHead>
                         <TableHead className="text-right">Emprést.</TableHead>
+                        <TableHead className="text-right">Pensão</TableHead>
                         <TableHead className="text-right">V.Carne</TableHead>
                         <TableHead className="text-right">V.Dinh.</TableHead>
                         <TableHead className="text-right">Outros</TableHead>
+                        <TableHead className="text-right">Descontos</TableHead>
                         {tipoAtivo === 'dia_20' && <TableHead className="text-right font-bold">Dia 20</TableHead>}
                         {tipoAtivo === 'dia_5' && (
                           <>
@@ -850,9 +853,34 @@ export default function Fechamentos() {
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="faltas" value={inp.faltas} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="vales" value={inp.vales} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="emprestimos" value={inp.emprestimos} /></TableCell>
+                            <TableCell className="text-right">{inp.pensao > 0 ? <span className="text-destructive">{formatCurrency(inp.pensao)}</span> : '—'}</TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="valeCarne" value={inp.valeCarne || 0} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="valeDinheiro" value={inp.valeDinheiro || 0} /></TableCell>
                             <TableCell className="text-right"><EditableCell profId={r.profissionalId} field="outrosDescontos" value={inp.outrosDescontos || 0} /></TableCell>
+                            <TableCell className="text-right">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="text-right underline decoration-dotted cursor-pointer hover:text-primary font-medium">
+                                    {formatCurrency(r.totalDescontos)}
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64 p-3 text-xs" side="left">
+                                  <p className="font-semibold mb-2 text-sm">Descontos — {r.profissionalNome.split(' ').slice(0, 2).join(' ')}</p>
+                                  <div className="space-y-1">
+                                    {r.descontoFaltas > 0 && <div className="flex justify-between"><span>Faltas ({inp.faltas})</span><span>{formatCurrency(r.descontoFaltas)}</span></div>}
+                                    {inp.vales > 0 && <div className="flex justify-between"><span>Vales/Adiant.</span><span>{formatCurrency(inp.vales)}</span></div>}
+                                    {inp.emprestimos > 0 && <div className="flex justify-between"><span>Empréstimos</span><span>{formatCurrency(inp.emprestimos)}</span></div>}
+                                    {inp.pensao > 0 && <div className="flex justify-between"><span>Pensão Alim.</span><span>{formatCurrency(inp.pensao)}</span></div>}
+                                    {(inp.valeCarne || 0) > 0 && <div className="flex justify-between"><span>Vale Carne</span><span>{formatCurrency(inp.valeCarne || 0)}</span></div>}
+                                    {(inp.valeDinheiro || 0) > 0 && <div className="flex justify-between"><span>Vale Dinheiro</span><span>{formatCurrency(inp.valeDinheiro || 0)}</span></div>}
+                                    {(inp.outrosDescontos || 0) > 0 && <div className="flex justify-between"><span>Outros</span><span>{formatCurrency(inp.outrosDescontos || 0)}</span></div>}
+                                    {r.totalDescontos === 0 && <p className="text-muted-foreground">Nenhum desconto</p>}
+                                    <Separator className="my-1" />
+                                    <div className="flex justify-between font-semibold"><span>Total</span><span>{formatCurrency(r.totalDescontos)}</span></div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </TableCell>
                             {tipoAtivo === 'dia_20' && (
                               <TableCell className="text-right font-semibold">
                                 {r.recebeDia20 ? formatCurrency(r.valorDia20) : <span className="text-destructive">{r.motivoDia20}</span>}
@@ -881,12 +909,14 @@ export default function Fechamentos() {
                         {isMulti && <TableCell />}
                         <TableCell colSpan={2}>TOTAL</TableCell>
                         <TableCell className="text-right">{formatCurrency(totalSalariosPreview)}</TableCell>
-                        <TableCell className="text-right">{previewData.inputs.reduce((s, i) => s + i.faltas, 0)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.faltas, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.vales, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.emprestimos, 0))}</TableCell>
+                        <TableCell className="text-right text-destructive">{formatCurrency(previewData.inputs.reduce((s, i) => s + i.pensao, 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.valeCarne || 0), 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.valeDinheiro || 0), 0))}</TableCell>
                         <TableCell className="text-right">{formatCurrency(previewData.inputs.reduce((s, i) => s + (i.outrosDescontos || 0), 0))}</TableCell>
+                        <TableCell className="text-right font-bold">{formatCurrency(previewData.resultados.reduce((s, r) => s + r.totalDescontos, 0))}</TableCell>
                         {tipoAtivo === 'dia_20' && <TableCell className="text-right text-primary">{formatCurrency(totalDia20Prev)}</TableCell>}
                         {tipoAtivo === 'dia_5' && (
                           <>
