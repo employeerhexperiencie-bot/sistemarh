@@ -869,7 +869,8 @@ export default function Fechamentos() {
                                 <PopoverContent className="w-64 p-3 text-xs" side="left">
                                   <p className="font-semibold mb-2 text-sm">Descontos — {r.profissionalNome.split(' ').slice(0, 2).join(' ')}</p>
                                   <div className="space-y-1">
-                                    {r.descontoFaltas > 0 && <div className="flex justify-between"><span>Faltas ({inp.faltas})</span><span>{formatCurrency(r.descontoFaltas)}</span></div>}
+                                    {r.descontoFaltas > 0 && <div className="flex justify-between"><span>Faltas ({inp.faltas} dias)</span><span>{formatCurrency(r.descontoFaltas)}</span></div>}
+                                    {r.descontoDSR > 0 && <div className="flex justify-between"><span>DSR (desc. repouso)</span><span>{formatCurrency(r.descontoDSR)}</span></div>}
                                     {inp.vales > 0 && <div className="flex justify-between"><span>Vales/Adiant.</span><span>{formatCurrency(inp.vales)}</span></div>}
                                     {inp.emprestimos > 0 && <div className="flex justify-between"><span>Empréstimos</span><span>{formatCurrency(inp.emprestimos)}</span></div>}
                                     {inp.pensao > 0 && <div className="flex justify-between"><span>Pensão Alim.</span><span>{formatCurrency(inp.pensao)}</span></div>}
