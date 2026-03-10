@@ -134,18 +134,8 @@ const navSections = [
   },
 ];
 
-// Seção visível para admin de tenant (clientes)
-const clientAdminSections = [
-  {
-    label: 'Acompanhamento',
-    icon: BarChart3,
-    defaultOpen: false,
-    adminOnly: false,
-    items: [
-      { title: 'Painel de Uso', url: '/painel-uso', icon: BarChart3 },
-    ],
-  },
-];
+// Seção visível apenas para super_admin (desenvolvedor)
+const clientAdminSections: typeof adminSections = [];
 
 // ADMIN ONLY routes - hidden from regular clients
 const adminSections = [
