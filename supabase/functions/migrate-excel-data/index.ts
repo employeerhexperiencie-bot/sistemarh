@@ -351,6 +351,14 @@ Deno.serve(async (req) => {
           results.profissionais.warnings.push(`${prof.nome} (${matricula}): sem loja definida`);
         }
 
+        // Resolve loja_registro_id
+        let lojaRegistroId = null;
+        if (prof.localRegistro && prof.localRegistro.trim()) {
+          const regNorm = normalizarNome(prof.localRegistro);
+          const nomeRegOriginal = lojaNomeNormalizado.get(regNorm);
+          lojaRegistroId = nomeRegOriginal ? lojaIdMap.get(nomeRegOriginal) : lojaIdMap.get(prof.localRegistro.trim());
+        }
+
         const parseSalario = (valor: any): number | null => {
           if (!valor) return null;
           if (typeof valor === 'number') return valor;
