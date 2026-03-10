@@ -105,6 +105,10 @@ export interface ResultadoCalculo {
   // Descontos
   descontoFaltas: number;
   descontoVT6Porcento: number;
+  pensao: number;
+  valeCarne: number;
+  valeDinheiro: number;
+  outrosDescontos: number;
   totalDescontos: number;
   
   // Afastamento
