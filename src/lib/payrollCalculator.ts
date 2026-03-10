@@ -385,10 +385,20 @@ export function calcularFolhaProfissional(
   }
   
   const valorDia20Final = recebeDia20 ? valorDia20 : 0;
-  // Salário líquido = Base - Dia 20 - Descontos operacionais (faltas já estão em totalDescontos)
-  const salarioLiquido = arredondarValor(Math.max(0, salarioBase - valorDia20Final - totalDescontos));
+  // Salário líquido = Base - Dia 20 - Descontos operacionais (faltas já estão em totalDescontos) + Complemento
+  const salarioLiquido = Math.max(0, salarioBase - valorDia20Final - totalDescontos + complemento);
   
-  detalhes.push(`Salário líquido (Dia 5): R$ ${salarioLiquido.toFixed(2)} = Base(${salarioBase.toFixed(2)}) - Dia20(${valorDia20Final.toFixed(2)}) - Descontos(${totalDescontos.toFixed(2)})`);
+  // Total descontos COM adiantamento (para exibição conforme planilha)
+  const totalDescontosComADT = totalDescontos + valorDia20Final;
+  
+  // Total a Receber = Salário a Receber - Total Descontos (com ADT) + Complemento
+  const totalAReceber = salarioBase - totalDescontosComADT + complemento;
+  const arredondamentoVal = arredondarValor(totalAReceber);
+  
+  detalhes.push(`Total Descontos (com ADT): R$ ${totalDescontosComADT.toFixed(2)}`);
+  detalhes.push(`Salário a Receber: R$ ${salarioBase.toFixed(2)}`);
+  detalhes.push(`Total a Receber: R$ ${totalAReceber.toFixed(2)} = Sal(${salarioBase.toFixed(2)}) - Desc(${totalDescontosComADT.toFixed(2)}) + Compl(${complemento.toFixed(2)})`);
+  detalhes.push(`Arredondamento: R$ ${arredondamentoVal.toFixed(2)}`);
   
   // 11. Calcular total do mês
   const totalMes = arredondarValor(
@@ -421,13 +431,18 @@ export function calcularFolhaProfissional(
     pensao: profissional.pensao,
     valeCarne,
     valeDinheiro,
+    emprestimoCLT,
     outrosDescontos,
+    complemento,
     totalDescontos,
+    totalDescontosComADT,
     valorAfastamento,
     tipoAfastamento,
     valorInsalubridade,
     salarioReceber,
     salarioLiquido,
+    totalAReceber,
+    arredondamento: arredondamentoVal,
     totalMes,
     detalhesCalculo: detalhes,
   };

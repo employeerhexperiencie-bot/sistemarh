@@ -181,11 +181,13 @@ export function buildProfissionalInput(
     diasFerias: dados.ferias[p.id] || 0,
     vales: dados.vales[p.id] || 0,
     emprestimos: dados.emprestimos[p.id] || 0,
+    emprestimoCLT: dados.emprestimoCLT[p.id] || 0,
     pensao: valorPensao,
     valeCarne: valeCarneFinal,
     valeDinheiro: valeDinheiroFinal,
     valeAlimentacao: valeAlimentacaoFinal,
     outrosDescontos: lancamentosDesc,
+    complemento: 0,
     insalubridade: (p.insalubridade as 'nao' | '10' | '20') || 'nao',
   };
 }
