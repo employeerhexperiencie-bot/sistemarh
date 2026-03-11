@@ -11,6 +11,9 @@ import { generateErrorCode } from "@/lib/errorCode"
 import { Copy } from "lucide-react"
 import React from "react"
 
+// Stable error code cache — avoids hooks inside .map()
+const errorCodeCache = new Map<string, string>();
+
 function ErrorCodeBadge({ code }: { code: string }) {
   const [copied, setCopied] = React.useState(false);
   
@@ -35,25 +38,32 @@ function ErrorCodeBadge({ code }: { code: string }) {
 export function Toaster() {
   const { toasts } = useToast()
 
+  // Clean up cache for removed toasts
+  const currentIds = new Set(toasts.map(t => t.id));
+  errorCodeCache.forEach((_, key) => {
+    if (!currentIds.has(key)) errorCodeCache.delete(key);
+  });
+
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, variant, ...props }) {
         const isError = variant === 'destructive';
-        const errorCode = React.useMemo(
-          () => isError ? generateErrorCode() : null,
-          [id, isError]
-        );
-
-        if (isError && errorCode) {
+        
+        let errorCode: string | null = null;
+        if (isError) {
+          if (!errorCodeCache.has(id)) {
+            errorCodeCache.set(id, generateErrorCode());
+          }
+          errorCode = errorCodeCache.get(id)!;
           console.error(`[${errorCode}] Toast Error: ${typeof title === 'string' ? title : 'Erro'} - ${typeof description === 'string' ? description : ''}`);
         }
 
         return (
           <Toast key={id} variant={variant} {...props}>
             <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
+              {title && <ToastTitle>{String(title)}</ToastTitle>}
               {description && (
-                <ToastDescription>{description}</ToastDescription>
+                <ToastDescription>{String(description)}</ToastDescription>
               )}
               {isError && errorCode && (
                 <ErrorCodeBadge code={errorCode} />
