@@ -83,37 +83,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setSession(currentSession);
 
-    // Buscar papel do usuário
-    const roleData = await fetchUserRole(currentSession.user.id);
+    try {
+      // Buscar papel do usuário
+      const roleData = await fetchUserRole(currentSession.user.id);
 
-    if (roleData) {
+      if (roleData) {
+        setUser({
+          id: currentSession.user.id,
+          email: currentSession.user.email || '',
+          name: roleData.nome || currentSession.user.email?.split('@')[0] || 'Usuário',
+          role: roleData.role,
+          loja_id: roleData.loja_id || undefined
+        });
+      } else {
+        // Usuário autenticado mas sem papel - verificar se é primeiro usuário
+        const isFirst = await checkIsFirstUser();
+        if (isFirst) {
+          setUser({
+            id: currentSession.user.id,
+            email: currentSession.user.email || '',
+            name: currentSession.user.email?.split('@')[0] || 'Administrador',
+            role: 'admin'
+          });
+        } else {
+          setUser({
+            id: currentSession.user.id,
+            email: currentSession.user.email || '',
+            name: currentSession.user.email?.split('@')[0] || 'Usuário',
+            role: 'operador'
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao processar sessão:', err);
+      // Fallback - setar usuário básico para não travar
       setUser({
         id: currentSession.user.id,
         email: currentSession.user.email || '',
-        name: roleData.nome || currentSession.user.email?.split('@')[0] || 'Usuário',
-        role: roleData.role,
-        loja_id: roleData.loja_id || undefined
+        name: currentSession.user.email?.split('@')[0] || 'Usuário',
+        role: 'operador'
       });
-    } else {
-      // Usuário autenticado mas sem papel - verificar se é primeiro usuário
-      const isFirst = await checkIsFirstUser();
-      if (isFirst) {
-        // Primeiro usuário - será configurado como admin
-        setUser({
-          id: currentSession.user.id,
-          email: currentSession.user.email || '',
-          name: currentSession.user.email?.split('@')[0] || 'Administrador',
-          role: 'admin'
-        });
-      } else {
-        // Usuário sem papel e não é primeiro - aguardando convite/configuração
-        setUser({
-          id: currentSession.user.id,
-          email: currentSession.user.email || '',
-          name: currentSession.user.email?.split('@')[0] || 'Usuário',
-          role: 'operador' // Default temporário
-        });
-      }
     }
   }, [fetchUserRole, checkIsFirstUser]);
 
