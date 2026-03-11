@@ -165,10 +165,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
+        console.error('Login error details:', JSON.stringify(error));
         if (error.message.includes('Invalid login credentials')) {
           return { success: false, error: 'Email ou senha incorretos' };
         }
-        return { success: false, error: error.message };
+        if (error.message.includes('Email not confirmed')) {
+          return { success: false, error: 'Email não confirmado. Verifique sua caixa de entrada.' };
+        }
+        return { success: false, error: String(error.message || 'Erro ao fazer login') };
       }
 
       if (!data.session) {
