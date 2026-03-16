@@ -439,6 +439,9 @@ export const CadastroProfissionais: React.FC = () => {
   const { toast } = useToast();
   const { addLog } = useAuditLog();
   const { canAddProfissional, limits } = useTenantLimits();
+  const { user } = useAuth();
+  
+  const canEditProfessionals = user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'gerente';
   
   // 🔍 FILTROS RÁPIDOS
   const [searchTerm, setSearchTerm] = useState('');
