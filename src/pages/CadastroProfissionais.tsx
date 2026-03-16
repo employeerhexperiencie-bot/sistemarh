@@ -529,6 +529,15 @@ export const CadastroProfissionais: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!canEditProfessionals) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para cadastrar ou editar profissionais. Solicite acesso ao administrador.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (usingImportedData) {
       toast({
         title: "Aviso",
