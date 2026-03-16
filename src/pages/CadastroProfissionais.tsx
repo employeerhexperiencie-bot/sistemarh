@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -438,6 +439,9 @@ export const CadastroProfissionais: React.FC = () => {
   const { toast } = useToast();
   const { addLog } = useAuditLog();
   const { canAddProfissional, limits } = useTenantLimits();
+  const { user } = useAuth();
+  
+  const canEditProfessionals = user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'gerente';
   
   // 🔍 FILTROS RÁPIDOS
   const [searchTerm, setSearchTerm] = useState('');
@@ -525,6 +529,15 @@ export const CadastroProfissionais: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!canEditProfessionals) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para cadastrar ou editar profissionais. Solicite acesso ao administrador.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (usingImportedData) {
       toast({
         title: "Aviso",
@@ -639,11 +652,14 @@ export const CadastroProfissionais: React.FC = () => {
 
       handleCloseDialog();
       loadProfessionals();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save professional error:', error);
+      const isRLS = error?.message?.includes('row-level security') || error?.code === '42501';
       toast({
         title: "Erro",
-        description: "Erro ao salvar profissional",
+        description: isRLS 
+          ? "Você não tem permissão para realizar esta ação. Solicite acesso ao administrador."
+          : String(error?.message || "Erro ao salvar profissional"),
         variant: "destructive"
       });
     } finally {
