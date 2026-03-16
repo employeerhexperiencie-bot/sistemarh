@@ -652,11 +652,14 @@ export const CadastroProfissionais: React.FC = () => {
 
       handleCloseDialog();
       loadProfessionals();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save professional error:', error);
+      const isRLS = error?.message?.includes('row-level security') || error?.code === '42501';
       toast({
         title: "Erro",
-        description: "Erro ao salvar profissional",
+        description: isRLS 
+          ? "Você não tem permissão para realizar esta ação. Solicite acesso ao administrador."
+          : String(error?.message || "Erro ao salvar profissional"),
         variant: "destructive"
       });
     } finally {
