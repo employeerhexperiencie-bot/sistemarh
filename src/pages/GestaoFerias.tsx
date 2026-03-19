@@ -257,12 +257,14 @@ export default function GestaoFerias() {
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="matricula">Matrícula</Label>
-                <Input
-                  id="matricula"
-                  placeholder="001"
+                <ProfissionalAutocomplete
                   value={formData.matricula || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, matricula: e.target.value }))}
+                  onChange={(matricula, profissionalId) => {
+                    setFormData(prev => ({ ...prev, matricula }));
+                    if (profissionalId) setSelectedProfissionalId(profissionalId);
+                  }}
+                  label="Profissional"
+                  placeholder="Digite nome ou matrícula"
                   disabled={!!editingVacation}
                 />
               </div>
