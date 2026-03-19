@@ -186,6 +186,7 @@ export default function GestaoFerias() {
   const handleEdit = (vacation: Vacation) => {
     setEditingVacation(vacation);
     setFormData(vacation);
+    if (vacation.profissionalId) setSelectedProfissionalId(vacation.profissionalId);
     setIsDialogOpen(true);
   };
 
