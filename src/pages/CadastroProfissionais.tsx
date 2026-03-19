@@ -441,7 +441,7 @@ export const CadastroProfissionais: React.FC = () => {
   const { canAddProfissional, limits } = useTenantLimits();
   const { user } = useAuth();
   
-  const canEditProfessionals = user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'gerente';
+  const canEditProfessionals = user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'gerente' || user?.role === 'executor';
   
   // 🔍 FILTROS RÁPIDOS
   const [searchTerm, setSearchTerm] = useState('');
