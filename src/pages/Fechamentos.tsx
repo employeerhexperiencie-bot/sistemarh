@@ -786,7 +786,56 @@ export default function Fechamentos() {
                   {tipoAtivo === 'dia_20' && (
                     <>
                       <div><p className="text-xs text-muted-foreground">Folha Bruta</p><p className="text-lg font-semibold">{formatCurrency(totalSalariosPreview)}</p></div>
-                      <div><p className="text-xs text-muted-foreground">Percentual Padrão</p><p className="text-lg font-semibold">{getDefaultConfig(competencia).percentualDia20}%</p></div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Percentual Padrão</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          {[40, 50].map(pct => (
+                            <button
+                              key={pct}
+                              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                                globalPercentualDia20 === pct
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80 text-foreground'
+                              }`}
+                              onClick={() => {
+                                setGlobalPercentualDia20(pct);
+                                // Recalculate all professionals with new default
+                                if (previewData) {
+                                  const newConfig = { ...getDefaultConfig(competencia), percentualDia20: pct };
+                                  const newResultados = previewData.inputs.map((inp, i) => {
+                                    const overrides = editOverrides[inp.id] || {};
+                                    const adjustedInput = {
+                                      ...inp,
+                                      vales: overrides.vales ?? inp.vales,
+                                      emprestimos: overrides.emprestimos ?? inp.emprestimos,
+                                      emprestimoCLT: overrides.emprestimoCLT ?? inp.emprestimoCLT,
+                                      valeCarne: overrides.valeCarne ?? inp.valeCarne,
+                                      valeDinheiro: overrides.valeDinheiro ?? inp.valeDinheiro,
+                                      outrosDescontos: overrides.outrosDescontos ?? inp.outrosDescontos,
+                                      complemento: overrides.complemento ?? inp.complemento,
+                                      faltas: overrides.faltas ?? inp.faltas,
+                                    };
+                                    const profConfig = overrides.percentualDia20 != null
+                                      ? { ...newConfig, percentualDia20: overrides.percentualDia20 }
+                                      : newConfig;
+                                    const resultado = calcularFolhaProfissional(adjustedInput, profConfig);
+                                    return {
+                                      ...resultado,
+                                      matricula: previewData.resultados[i].matricula,
+                                      cargo: previewData.resultados[i].cargo,
+                                      salarioBase: previewData.resultados[i].salarioBase,
+                                      lojaNome: previewData.resultados[i].lojaNome,
+                                    };
+                                  });
+                                  setPreviewData({ ...previewData, resultados: newResultados });
+                                }
+                              }}
+                            >
+                              {pct}%
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <div><p className="text-xs text-muted-foreground">Profissionais</p><p className="text-lg font-semibold">{profCount}</p></div>
                     </>
                   )}
