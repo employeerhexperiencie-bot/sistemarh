@@ -334,7 +334,7 @@ export default function Fechamentos() {
 
     // Recalculate
     if (!previewData) return;
-    const config = getDefaultConfig(competencia);
+    const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
     const idx = previewData.inputs.findIndex(inp => inp.id === profissionalId);
     if (idx === -1) return;
 
