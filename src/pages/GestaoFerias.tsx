@@ -120,7 +120,7 @@ export default function GestaoFerias() {
       };
 
       const feriasData = {
-        profissional_id: prof.id,
+        profissional_id: profId,
         periodo_aquisitivo_inicio: formData.periodoAquisitivo.inicio,
         periodo_aquisitivo_fim: formData.periodoAquisitivo.fim,
         periodo_gozo_inicio: formData.dataInicioFerias || null,
