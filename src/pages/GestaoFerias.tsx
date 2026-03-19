@@ -10,6 +10,7 @@ import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2 } from 'luci
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
+import { ProfissionalAutocomplete } from '@/components/ProfissionalAutocomplete';
 
 interface Vacation {
   id: string;
