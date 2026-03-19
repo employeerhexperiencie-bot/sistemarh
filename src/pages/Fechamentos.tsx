@@ -119,6 +119,7 @@ export default function Fechamentos() {
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [editOverrides, setEditOverrides] = useState<EditOverrides>({});
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [globalPercentualDia20, setGlobalPercentualDia20] = useState(50);
   
   // Dialog for reopen
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
