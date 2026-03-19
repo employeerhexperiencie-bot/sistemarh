@@ -233,7 +233,7 @@ export default function Fechamentos() {
 
       const profs = profissionais || [];
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = getDefaultConfig(competencia);
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
 
       const inputs = profs.map(p => buildProfissionalInput(p, dadosComp));
       const resultados = profs.map((p, i) => {
@@ -265,7 +265,7 @@ export default function Fechamentos() {
 
     try {
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = getDefaultConfig(competencia);
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
 
       let allProfs: any[] = [];
       let allInputs: ProfissionalInput[] = [];
