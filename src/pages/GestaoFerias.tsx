@@ -40,6 +40,7 @@ export default function GestaoFerias() {
     status: 'PENDENTE'
   });
   const [saving, setSaving] = useState(false);
+  const [selectedProfissionalId, setSelectedProfissionalId] = useState<string | undefined>(undefined);
   const { addLog } = useAuditLog();
 
   useEffect(() => {
