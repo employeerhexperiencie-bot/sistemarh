@@ -164,7 +164,7 @@ export default function Fechamentos() {
 
     try {
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = getDefaultConfig(competencia);
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
       const summaries: Record<string, { totalProf: number; totalValor: number; loading: boolean }> = {};
 
       for (const loja of openLojas) {
