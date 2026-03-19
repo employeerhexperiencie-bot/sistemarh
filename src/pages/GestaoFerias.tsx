@@ -190,6 +190,7 @@ export default function GestaoFerias() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingVacation(null);
+    setSelectedProfissionalId(undefined);
     setFormData({ diasDisponiveis: 30, diasUsados: 0, status: 'PENDENTE' });
   };
 
