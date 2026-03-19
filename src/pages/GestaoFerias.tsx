@@ -78,6 +78,7 @@ export default function GestaoFerias() {
         
         return {
           id: f.id,
+          profissionalId: f.profissional_id || undefined,
           matricula: f.profissionais?.matricula || '',
           nome: f.profissionais?.nome || 'Profissional não encontrado',
           loja: f.profissionais?.lojas?.nome || 'Loja não definida',
