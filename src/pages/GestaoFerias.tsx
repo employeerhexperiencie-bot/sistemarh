@@ -10,9 +10,11 @@ import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2 } from 'luci
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
+import { ProfissionalAutocomplete } from '@/components/ProfissionalAutocomplete';
 
 interface Vacation {
   id: string;
+  profissionalId?: string;
   matricula: string;
   nome: string;
   loja: string;
@@ -39,6 +41,7 @@ export default function GestaoFerias() {
     status: 'PENDENTE'
   });
   const [saving, setSaving] = useState(false);
+  const [selectedProfissionalId, setSelectedProfissionalId] = useState<string | undefined>(undefined);
   const { addLog } = useAuditLog();
 
   useEffect(() => {
@@ -75,6 +78,7 @@ export default function GestaoFerias() {
         
         return {
           id: f.id,
+          profissionalId: f.profissional_id || undefined,
           matricula: f.profissionais?.matricula || '',
           nome: f.profissionais?.nome || 'Profissional não encontrado',
           loja: f.profissionais?.lojas?.nome || 'Loja não definida',
@@ -100,25 +104,14 @@ export default function GestaoFerias() {
   };
 
   const handleSave = async () => {
-    if (!formData.matricula || !formData.periodoAquisitivo?.inicio || !formData.periodoAquisitivo?.fim) {
-      toast.error('Preencha todos os campos obrigatórios');
+    if (!selectedProfissionalId || !formData.periodoAquisitivo?.inicio || !formData.periodoAquisitivo?.fim) {
+      toast.error('Selecione um profissional e preencha todos os campos obrigatórios');
       return;
     }
 
     setSaving(true);
     try {
-      // Buscar profissional pela matrícula
-      const { data: prof } = await supabase
-        .from('profissionais')
-        .select('id')
-        .eq('matricula', formData.matricula)
-        .maybeSingle();
-
-      if (!prof) {
-        toast.error('Profissional não encontrado com essa matrícula');
-        setSaving(false);
-        return;
-      }
+      const profId = selectedProfissionalId;
 
       const statusMap: Record<string, string> = {
         'PENDENTE': 'pendente',
@@ -129,7 +122,7 @@ export default function GestaoFerias() {
       };
 
       const feriasData = {
-        profissional_id: prof.id,
+        profissional_id: profId,
         periodo_aquisitivo_inicio: formData.periodoAquisitivo.inicio,
         periodo_aquisitivo_fim: formData.periodoAquisitivo.fim,
         periodo_gozo_inicio: formData.dataInicioFerias || null,
@@ -193,12 +186,14 @@ export default function GestaoFerias() {
   const handleEdit = (vacation: Vacation) => {
     setEditingVacation(vacation);
     setFormData(vacation);
+    if (vacation.profissionalId) setSelectedProfissionalId(vacation.profissionalId);
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingVacation(null);
+    setSelectedProfissionalId(undefined);
     setFormData({ diasDisponiveis: 30, diasUsados: 0, status: 'PENDENTE' });
   };
 
@@ -265,12 +260,14 @@ export default function GestaoFerias() {
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="matricula">Matrícula</Label>
-                <Input
-                  id="matricula"
-                  placeholder="001"
+                <ProfissionalAutocomplete
                   value={formData.matricula || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, matricula: e.target.value }))}
+                  onChange={(matricula, profissionalId) => {
+                    setFormData(prev => ({ ...prev, matricula }));
+                    if (profissionalId) setSelectedProfissionalId(profissionalId);
+                  }}
+                  label="Profissional"
+                  placeholder="Digite nome ou matrícula"
                   disabled={!!editingVacation}
                 />
               </div>
