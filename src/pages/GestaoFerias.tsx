@@ -102,25 +102,14 @@ export default function GestaoFerias() {
   };
 
   const handleSave = async () => {
-    if (!formData.matricula || !formData.periodoAquisitivo?.inicio || !formData.periodoAquisitivo?.fim) {
-      toast.error('Preencha todos os campos obrigatórios');
+    if (!selectedProfissionalId || !formData.periodoAquisitivo?.inicio || !formData.periodoAquisitivo?.fim) {
+      toast.error('Selecione um profissional e preencha todos os campos obrigatórios');
       return;
     }
 
     setSaving(true);
     try {
-      // Buscar profissional pela matrícula
-      const { data: prof } = await supabase
-        .from('profissionais')
-        .select('id')
-        .eq('matricula', formData.matricula)
-        .maybeSingle();
-
-      if (!prof) {
-        toast.error('Profissional não encontrado com essa matrícula');
-        setSaving(false);
-        return;
-      }
+      const profId = selectedProfissionalId;
 
       const statusMap: Record<string, string> = {
         'PENDENTE': 'pendente',
