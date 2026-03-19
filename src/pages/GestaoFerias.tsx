@@ -14,6 +14,7 @@ import { ProfissionalAutocomplete } from '@/components/ProfissionalAutocomplete'
 
 interface Vacation {
   id: string;
+  profissionalId?: string;
   matricula: string;
   nome: string;
   loja: string;
