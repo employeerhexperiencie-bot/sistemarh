@@ -11,6 +11,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { IconTooltip } from '@/components/ui/contextual-tooltip';
 import { useNavigate } from 'react-router-dom';
 import { useActivityTracker } from '@/hooks/useActivityTracker';
+import { useErrorLogger } from '@/hooks/useErrorLogger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { config } = useAppearance();
   useActivityTracker(); // Rastreia sessão e páginas automaticamente
+  useErrorLogger(); // Captura erros globais e registra no dev_logs
   const currentMonth = new Intl.DateTimeFormat('pt-BR', { 
     month: 'long', 
     year: 'numeric' 
