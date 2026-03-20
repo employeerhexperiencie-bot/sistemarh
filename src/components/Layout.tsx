@@ -11,6 +11,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { IconTooltip } from '@/components/ui/contextual-tooltip';
 import { useNavigate } from 'react-router-dom';
 import { useActivityTracker } from '@/hooks/useActivityTracker';
+import { useErrorLogger } from '@/hooks/useErrorLogger';
 import {
   DropdownMenu,
   DropdownMenuContent,
