@@ -276,14 +276,14 @@ export function calcularFolhaProfissional(
     motivoDia20 = '+10 faltas';
     detalhes.push('Dia 20: BLOQUEADO - Mais de 10 faltas no mês');
   } else if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() > 10) {
-    // Admitido após dia 10 do mês de competência - recebe 40% normal
-    valorDia20 = arredondarValor(profissional.salario * 0.40);
-    motivoDia20 = 'Admitido após dia 10 (40%)';
-    detalhes.push(`Dia 20: Admitido após dia 10 - R$ ${valorDia20.toFixed(2)}`);
+    // Admitido após dia 10 do mês de competência - recebe percentual configurado
+    valorDia20 = arredondarValor(profissional.salario * (config.percentualDia20 / 100));
+    motivoDia20 = `Admitido após dia 10 (${config.percentualDia20}%)`;
+    detalhes.push(`Dia 20: Admitido após dia 10 - ${config.percentualDia20}% = R$ ${valorDia20.toFixed(2)}`);
   } else if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() <= 10) {
-    valorDia20 = arredondarValor(profissional.salario * 0.40);
-    motivoDia20 = 'Admitido no mês (40%)';
-    detalhes.push(`Dia 20: Admitido até dia 10 - R$ ${valorDia20.toFixed(2)}`);
+    valorDia20 = arredondarValor(profissional.salario * (config.percentualDia20 / 100));
+    motivoDia20 = `Admitido no mês (${config.percentualDia20}%)`;
+    detalhes.push(`Dia 20: Admitido até dia 10 - ${config.percentualDia20}% = R$ ${valorDia20.toFixed(2)}`);
   } else {
     // Caso padrão - usar percentual configurado
     valorDia20 = arredondarValor(profissional.salario * (config.percentualDia20 / 100));

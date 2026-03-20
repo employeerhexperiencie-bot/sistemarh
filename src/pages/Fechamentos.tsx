@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -120,6 +120,7 @@ export default function Fechamentos() {
   const [editOverrides, setEditOverrides] = useState<EditOverrides>({});
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [globalPercentualDia20, setGlobalPercentualDia20] = useState(50);
+  const [sortBy, setSortBy] = useState<'nome' | 'matricula' | 'salario' | 'dia20'>('nome');
   
   // Dialog for reopen
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
@@ -860,8 +861,22 @@ export default function Fechamentos() {
             {/* Tabela de profissionais */}
             <Card>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-base">{profCount} Profissionais</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Ordenar:</span>
+                    <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+                      <SelectTrigger className="h-7 w-36 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nome">Nome (A-Z)</SelectItem>
+                        <SelectItem value="matricula">Matrícula</SelectItem>
+                        <SelectItem value="salario">Salário</SelectItem>
+                        <SelectItem value="dia20">Valor Dia 20</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   💡 Clique nos valores de <strong>Vales</strong>, <strong>Empréstimos</strong>, <strong>Emprést. CLT</strong>, <strong>V. Carne</strong>, <strong>V. Dinheiro</strong>, <strong>Outros Desc.</strong>, <strong>Complemento</strong> ou <strong>Faltas</strong> para editar diretamente.
@@ -900,7 +915,22 @@ export default function Fechamentos() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {previewData.resultados.map((r, idx) => {
+                      {(() => {
+                        // Create sorted indices
+                        const indices = previewData.resultados.map((_, i) => i);
+                        indices.sort((a, b) => {
+                          const ra = previewData.resultados[a];
+                          const rb = previewData.resultados[b];
+                          switch (sortBy) {
+                            case 'nome': return ra.profissionalNome.localeCompare(rb.profissionalNome, 'pt-BR');
+                            case 'matricula': return ra.matricula.localeCompare(rb.matricula, 'pt-BR', { numeric: true });
+                            case 'salario': return rb.salarioBase - ra.salarioBase;
+                            case 'dia20': return rb.valorDia20 - ra.valorDia20;
+                            default: return 0;
+                          }
+                        });
+                        return indices.map(idx => {
+                        const r = previewData.resultados[idx];
                         const inp = previewData.inputs[idx];
                         const isEdited = !!editOverrides[r.profissionalId];
                         return (
@@ -1039,7 +1069,8 @@ export default function Fechamentos() {
                             )}
                           </TableRow>
                         );
-                      })}
+                      });
+                      })()}
                       {/* Linha de totais */}
                       <TableRow className="bg-muted/50 font-semibold text-xs border-t-2">
                         {isMulti && <TableCell />}
