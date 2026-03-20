@@ -558,6 +558,9 @@ export const CadastroProfissionais: React.FC = () => {
 
     setLoading(true);
     try {
+      // Auto-definir status como demitido se data_demissao preenchida
+      const computedStatus = formData.data_demissao ? 'demitido' : formData.status;
+
       // Dados principais para salvar no banco
       const professionalData = {
         matricula: formData.matricula,
@@ -569,9 +572,14 @@ export const CadastroProfissionais: React.FC = () => {
         cargo: formData.cargo || null,
         salario_nominal: parseCurrencyToCentavos(formData.salario_nominal || formData.primeiro_salario),
         insalubridade: formData.insalubridade,
-        status: formData.status,
+        status: computedStatus,
         data_admissao: formData.data_admissao || null,
         data_demissao: formData.data_demissao || null,
+        motivo_demissao: formData.motivo_demissao || null,
+        aviso_trabalhado: formData.aviso_trabalhado || null,
+        data_homologacao: formData.data_homologacao || null,
+        local_homologacao: formData.local_homologacao || null,
+        data_cumprir_aviso: (formData as any).data_cumprir_aviso || null,
         nome_mae: (formData as any).nome_mae || null,
         pensao_alimenticia: formData.pensao_alimenticia ? 1 : null,
         vale_transporte: formData.vale_transporte,
