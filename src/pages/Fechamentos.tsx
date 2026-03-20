@@ -1069,7 +1069,8 @@ export default function Fechamentos() {
                             )}
                           </TableRow>
                         );
-                      })}
+                      });
+                      })()}
                       {/* Linha de totais */}
                       <TableRow className="bg-muted/50 font-semibold text-xs border-t-2">
                         {isMulti && <TableCell />}
