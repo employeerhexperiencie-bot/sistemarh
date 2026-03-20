@@ -915,7 +915,22 @@ export default function Fechamentos() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {previewData.resultados.map((r, idx) => {
+                      {(() => {
+                        // Create sorted indices
+                        const indices = previewData.resultados.map((_, i) => i);
+                        indices.sort((a, b) => {
+                          const ra = previewData.resultados[a];
+                          const rb = previewData.resultados[b];
+                          switch (sortBy) {
+                            case 'nome': return ra.profissionalNome.localeCompare(rb.profissionalNome, 'pt-BR');
+                            case 'matricula': return ra.matricula.localeCompare(rb.matricula, 'pt-BR', { numeric: true });
+                            case 'salario': return rb.salarioBase - ra.salarioBase;
+                            case 'dia20': return rb.valorDia20 - ra.valorDia20;
+                            default: return 0;
+                          }
+                        });
+                        return indices.map(idx => {
+                        const r = previewData.resultados[idx];
                         const inp = previewData.inputs[idx];
                         const isEdited = !!editOverrides[r.profissionalId];
                         return (
