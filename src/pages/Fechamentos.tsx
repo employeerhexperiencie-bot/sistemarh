@@ -861,8 +861,22 @@ export default function Fechamentos() {
             {/* Tabela de profissionais */}
             <Card>
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-base">{profCount} Profissionais</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Ordenar:</span>
+                    <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+                      <SelectTrigger className="h-7 w-36 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nome">Nome (A-Z)</SelectItem>
+                        <SelectItem value="matricula">Matrícula</SelectItem>
+                        <SelectItem value="salario">Salário</SelectItem>
+                        <SelectItem value="dia20">Valor Dia 20</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   💡 Clique nos valores de <strong>Vales</strong>, <strong>Empréstimos</strong>, <strong>Emprést. CLT</strong>, <strong>V. Carne</strong>, <strong>V. Dinheiro</strong>, <strong>Outros Desc.</strong>, <strong>Complemento</strong> ou <strong>Faltas</strong> para editar diretamente.
