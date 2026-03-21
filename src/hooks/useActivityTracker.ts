@@ -117,13 +117,25 @@ export function useActivityTracker() {
 
       const handleBeforeUnload = () => {
         if (sessionIdRef.current) {
-          // Usar sendBeacon para garantir envio
+          // Usar sendBeacon para garantir envio com headers de autenticação
           const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_activity_sessions?id=eq.${sessionIdRef.current}`;
           const body = JSON.stringify({
             ended_at: new Date().toISOString(),
             pages_visited: pagesRef.current,
           });
-          navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+          const headers = {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${session?.access_token}`,
+            'Prefer': 'return=minimal',
+          };
+          // sendBeacon não suporta headers customizados, usar fetch keepalive
+          fetch(url, {
+            method: 'PATCH',
+            headers,
+            body,
+            keepalive: true,
+          }).catch(() => {});
         }
       };
 
