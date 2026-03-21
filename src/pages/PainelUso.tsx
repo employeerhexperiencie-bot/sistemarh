@@ -354,11 +354,16 @@ export default function PainelUso() {
                         <TableCell>
                           <div>
                             <p className="font-medium text-sm">{u.user_name}</p>
+                            {u.user_email && (
+                              <p className="text-xs text-muted-foreground capitalize">{u.user_email}</p>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
                           {u.is_online ? (
                             <Badge className="bg-success/10 text-success border-success/20">Online</Badge>
+                          ) : u.total_sessions === 0 ? (
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Nunca acessou</Badge>
                           ) : (
                             <Badge variant="outline">Offline</Badge>
                           )}
@@ -367,7 +372,10 @@ export default function PainelUso() {
                         <TableCell className="text-right font-mono">{formatDuration(u.total_duration_seconds)}</TableCell>
                         <TableCell className="text-right font-mono">{u.total_pages}</TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(u.last_active), { addSuffix: true, locale: ptBR })}
+                          {u.last_active 
+                            ? formatDistanceToNow(new Date(u.last_active), { addSuffix: true, locale: ptBR })
+                            : '—'
+                          }
                         </TableCell>
                       </TableRow>
                     ))
