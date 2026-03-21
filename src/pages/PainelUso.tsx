@@ -102,33 +102,49 @@ export default function PainelUso() {
         .from('user_roles')
         .select('user_id, nome, role');
 
-      const userMap = new Map<string, { nome: string; email: string }>();
+      const userMap = new Map<string, { nome: string; role: string }>();
       (userRoles || []).forEach((ur: any) => {
-        userMap.set(ur.user_id, { nome: ur.nome || 'Sem nome', email: '' });
+        userMap.set(ur.user_id, { nome: ur.nome || 'Sem nome', role: ur.role || '' });
       });
 
-      // Agregar sessões por usuário
+      // Inicializar TODOS os usuários registrados no mapa de sessões
       const userSessionMap = new Map<string, UserSessionSummary>();
       const onlineThreshold = Date.now() - 5 * 60 * 1000; // 5 min
 
+      // Primeiro: criar entrada para TODOS os usuários do user_roles
+      (userRoles || []).forEach((ur: any) => {
+        userSessionMap.set(ur.user_id, {
+          user_id: ur.user_id,
+          user_name: ur.nome || 'Sem nome',
+          user_email: ur.role || '',
+          total_sessions: 0,
+          total_duration_seconds: 0,
+          total_pages: 0,
+          last_active: '',
+          is_online: false,
+        });
+      });
+
+      // Depois: agregar dados de sessão para quem tem
       (sessions || []).forEach((s: any) => {
         const existing = userSessionMap.get(s.user_id);
-        const userData = userMap.get(s.user_id);
-        const isOnline = !s.ended_at && new Date(s.last_heartbeat).getTime() > onlineThreshold;
+        const isOnline = !s.ended_at && s.last_heartbeat && new Date(s.last_heartbeat).getTime() > onlineThreshold;
 
         if (existing) {
           existing.total_sessions += 1;
           existing.total_duration_seconds += s.duration_seconds || 0;
           existing.total_pages += s.pages_visited || 0;
-          if (new Date(s.started_at) > new Date(existing.last_active)) {
+          if (!existing.last_active || new Date(s.started_at) > new Date(existing.last_active)) {
             existing.last_active = s.started_at;
           }
           if (isOnline) existing.is_online = true;
         } else {
+          // Usuário com sessão mas sem role (caso raro)
+          const userData = userMap.get(s.user_id);
           userSessionMap.set(s.user_id, {
             user_id: s.user_id,
             user_name: userData?.nome || s.user_id.slice(0, 8),
-            user_email: userData?.email || '',
+            user_email: userData?.role || '',
             total_sessions: 1,
             total_duration_seconds: s.duration_seconds || 0,
             total_pages: s.pages_visited || 0,
@@ -338,11 +354,16 @@ export default function PainelUso() {
                         <TableCell>
                           <div>
                             <p className="font-medium text-sm">{u.user_name}</p>
+                            {u.user_email && (
+                              <p className="text-xs text-muted-foreground capitalize">{u.user_email}</p>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
                           {u.is_online ? (
                             <Badge className="bg-success/10 text-success border-success/20">Online</Badge>
+                          ) : u.total_sessions === 0 ? (
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Nunca acessou</Badge>
                           ) : (
                             <Badge variant="outline">Offline</Badge>
                           )}
@@ -351,7 +372,10 @@ export default function PainelUso() {
                         <TableCell className="text-right font-mono">{formatDuration(u.total_duration_seconds)}</TableCell>
                         <TableCell className="text-right font-mono">{u.total_pages}</TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(u.last_active), { addSuffix: true, locale: ptBR })}
+                          {u.last_active 
+                            ? formatDistanceToNow(new Date(u.last_active), { addSuffix: true, locale: ptBR })
+                            : '—'
+                          }
                         </TableCell>
                       </TableRow>
                     ))
