@@ -697,7 +697,7 @@ export function GestaoEmprestimos() {
       });
 
       const profissionaisMap: Record<string, { nome: string; matricula: string; loja: string; lojaId: string }> = {};
-      (profResult.data || []).forEach((p: any) => {
+      (profData || []).forEach((p: any) => {
         profissionaisMap[p.id] = {
           nome: p.nome,
           matricula: p.matricula,
