@@ -24,8 +24,8 @@ export async function fetchAllRows<T = any>(
   let hasMore = true;
 
   while (hasMore) {
-    let query = supabase
-      .from(tableName)
+    let query = (supabase
+      .from(tableName) as any)
       .select(options?.select || '*')
       .range(from, from + PAGE_SIZE - 1);
 
