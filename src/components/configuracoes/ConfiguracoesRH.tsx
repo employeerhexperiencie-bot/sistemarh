@@ -56,6 +56,15 @@ const defaultConfigs: ConfiguracaoItem[] = [
   
   // ASO
   { chave: 'aso_alerta_dias', valor: '30', tipo: 'number', descricao: 'Dias antes do vencimento para alertar', categoria: 'politicas', editavel: true },
+  
+  // Tributos CLT - Descontos do Funcionário
+  { chave: 'desconto_inss', valor: 'false', tipo: 'boolean', descricao: 'Descontar INSS do funcionário', categoria: 'tributos', editavel: true },
+  { chave: 'desconto_irrf', valor: 'false', tipo: 'boolean', descricao: 'Descontar IRRF do funcionário', categoria: 'tributos', editavel: true },
+  { chave: 'desconto_vt_6pct', valor: 'false', tipo: 'boolean', descricao: 'Descontar 6% de VT do funcionário', categoria: 'tributos', editavel: true },
+  { chave: 'desconto_vr_funcionario', valor: 'false', tipo: 'boolean', descricao: 'Descontar VR do funcionário', categoria: 'tributos', editavel: true },
+  { chave: 'desconto_cesta_funcionario', valor: 'false', tipo: 'boolean', descricao: 'Descontar Cesta Básica do funcionário', categoria: 'tributos', editavel: true },
+  { chave: 'desconto_sindicato', valor: 'false', tipo: 'boolean', descricao: 'Descontar contribuição sindical', categoria: 'tributos', editavel: true },
+  { chave: 'desconto_fgts_info', valor: 'false', tipo: 'boolean', descricao: 'Exibir FGTS informativo no holerite', categoria: 'tributos', editavel: true },
 ];
 
 export function ConfiguracoesRH() {
