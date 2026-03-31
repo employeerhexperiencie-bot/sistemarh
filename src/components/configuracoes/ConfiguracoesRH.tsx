@@ -180,6 +180,15 @@ export function ConfiguracoesRH() {
       );
     }
     
+    if (config.tipo === 'boolean') {
+      return (
+        <Switch
+          checked={value === 'true'}
+          onCheckedChange={(checked) => handleChange(config.chave, checked ? 'true' : 'false')}
+        />
+      );
+    }
+    
     if (config.tipo === 'number') {
       return (
         <Input
