@@ -331,10 +331,15 @@ export function calcularFolhaProfissional(
     detalhes.push(`VT: R$ 0,00 (${profissional.status !== 'ativo' ? 'status não-ativo' : 'sem dias trabalhados'})`);
   }
   
-  // 6. Desconto VT 6% - REMOVIDO conforme regra de negócio
-  // VT é 100% custeado pela empresa, sem desconto do profissional
-  const descontoVT6Porcento = 0;
-  if (valorVT > 0) {
+  // 6. Desconto VT 6% - Condicional conforme configuração do tenant
+  const tributos = config.tributosCLT || TRIBUTOS_CLT_PADRAO;
+  let descontoVT6Porcento = 0;
+  if (tributos.descontarVT6Pct && valorVT > 0) {
+    descontoVT6Porcento = arredondarValor(profissional.salario * 0.06);
+    // VT 6% não pode ultrapassar o valor do VT
+    descontoVT6Porcento = Math.min(descontoVT6Porcento, valorVT);
+    detalhes.push(`Desconto VT 6%: R$ ${descontoVT6Porcento.toFixed(2)}`);
+  } else if (valorVT > 0) {
     detalhes.push(`VT: Sem desconto do profissional (empresa paga integral)`);
   }
   
