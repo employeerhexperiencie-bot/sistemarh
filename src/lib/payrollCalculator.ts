@@ -149,6 +149,12 @@ export interface ResultadoCalculo {
   // Salário proporcional (salary/30 × diasEfetivos)
   salarioReceber: number;
   
+  // Tributos CLT (opcionais por tenant)
+  descontoINSS: number;
+  descontoIRRF: number;
+  descontoSindicato: number;
+  fgtsInformativo: number;
+  
   // Totais
   salarioLiquido: number;  // Dia 5
   totalAReceber: number;   // Sal a Receber - Total Descontos (com ADT) + Complemento
