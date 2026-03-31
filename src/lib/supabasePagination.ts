@@ -1,51 +1,39 @@
 /**
- * Utilitário para paginação de queries Supabase
+ * Utilitário para paginação de queries Supabase.
  * O Supabase tem limite padrão de 1000 linhas por query.
- * Para tabelas com +1000 registros, usar fetchAll.
+ * Use fetchAllPaginated() para tabelas que podem exceder esse limite.
  */
 import { supabase } from '@/integrations/supabase/client';
 
 const PAGE_SIZE = 1000;
 
 /**
- * Busca TODOS os registros de uma tabela, paginando automaticamente.
- * Evita o limite silencioso de 1000 linhas do Supabase.
+ * Busca TODOS os registros usando paginação automática.
+ * Recebe uma função que retorna o query builder (sem .range()).
+ * 
+ * Exemplo:
+ * ```ts
+ * const data = await fetchAllPaginated(() =>
+ *   supabase.from('profissionais')
+ *     .select('*, lojas(nome)')
+ *     .eq('status', 'ativo')
+ * );
+ * ```
  */
-export async function fetchAllRows<T = any>(
-  tableName: string,
-  options?: {
-    select?: string;
-    filters?: Array<{ column: string; operator: string; value: any }>;
-    order?: { column: string; ascending?: boolean };
-  }
-): Promise<{ data: T[]; error: any }> {
+export async function fetchAllPaginated<T = any>(
+  queryBuilderFn: () => any
+): Promise<T[]> {
   const allData: T[] = [];
   let from = 0;
   let hasMore = true;
 
   while (hasMore) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fromTable = (supabase as any).from(tableName);
-    let query = fromTable
-      .select(options?.select || '*')
+    const { data, error } = await queryBuilderFn()
       .range(from, from + PAGE_SIZE - 1);
 
-    // Aplicar filtros
-    if (options?.filters) {
-      for (const f of options.filters) {
-        query = query.filter(f.column, f.operator as any, f.value);
-      }
-    }
-
-    // Aplicar ordenação
-    if (options?.order) {
-      query = query.order(options.order.column, { ascending: options.order.ascending ?? true });
-    }
-
-    const { data, error } = await query;
-
     if (error) {
-      return { data: allData, error };
+      console.error('Erro na paginação:', error);
+      break;
     }
 
     if (data && data.length > 0) {
@@ -57,5 +45,5 @@ export async function fetchAllRows<T = any>(
     }
   }
 
-  return { data: allData, error: null };
+  return allData;
 }
