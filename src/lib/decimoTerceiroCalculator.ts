@@ -83,7 +83,7 @@ export function calcularAvosTrabalhados(
     return { avos: 12, detalhes: 'Sem data admissão - assumindo 12 avos' };
   }
   
-  const data = new Date(dataAdmissao);
+  const data = new Date(dataAdmissao + 'T12:00:00');
   const anoAdmissao = data.getFullYear();
   const mesAdmissao = data.getMonth() + 1; // 1-12
   const diaAdmissao = data.getDate();

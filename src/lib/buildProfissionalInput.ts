@@ -46,9 +46,10 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   feriasRes.data?.forEach((f: any) => {
     if (!f.profissional_id || !f.periodo_gozo_inicio || !f.periodo_gozo_fim) return;
     const [ano2, mes2] = competencia.split('-').map(Number);
-    const inicioGozo = new Date(f.periodo_gozo_inicio);
-    const fimGozo = new Date(f.periodo_gozo_fim);
-    const inicioComp = new Date(`${ano2}-${String(mes2).padStart(2, '0')}-01`);
+    // Normalizar datas com T12:00:00 para evitar shift de fuso horário UTC→BRT
+    const inicioGozo = new Date(f.periodo_gozo_inicio + 'T12:00:00');
+    const fimGozo = new Date(f.periodo_gozo_fim + 'T12:00:00');
+    const inicioComp = new Date(ano2, mes2 - 1, 1);
     const fimComp = new Date(ano2, mes2, 0);
     const inicioEf = inicioGozo > inicioComp ? inicioGozo : inicioComp;
     const fimEf = fimGozo < fimComp ? fimGozo : fimComp;
@@ -76,7 +77,8 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   const afastamentosMap: Record<string, { tipo: string; dias: number }> = {};
   afastamentosRes.data?.forEach((a: any) => {
     if (!a.profissional_id) return;
-    const dataInicio = a.data_inicio ? new Date(a.data_inicio) : hoje;
+    // Normalizar data de início do afastamento
+    const dataInicio = a.data_inicio ? new Date(a.data_inicio + 'T12:00:00') : hoje;
     const diasAfastamento = Math.max(0, Math.ceil((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24)));
     afastamentosMap[a.profissional_id] = { tipo: a.tipo, dias: diasAfastamento };
   });

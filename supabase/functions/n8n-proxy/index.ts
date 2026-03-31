@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const supabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? supabaseAnonKey)
 
     // Verify user authentication
     const authHeader = req.headers.get('Authorization')
