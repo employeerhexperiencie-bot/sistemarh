@@ -3,7 +3,8 @@
  * Reutilizado por SimuladorFolha e Fechamentos
  */
 import { supabase } from '@/integrations/supabase/client';
-import type { ProfissionalInput, ConfiguracaoFolha } from './payrollCalculator';
+import type { ProfissionalInput, ConfiguracaoFolha, TributosCLT } from './payrollCalculator';
+import { TRIBUTOS_CLT_PADRAO } from './payrollCalculator';
 
 export interface DadosCompetencia {
   faltas: Record<string, { injustificadas: number; justificadas: number }>;
