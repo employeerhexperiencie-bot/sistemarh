@@ -103,12 +103,10 @@ describe('Décimo Terceiro Salário - Cálculo de Avos', () => {
       expect(calcularINSS(5000)).toBe(519);
     });
 
-    it('deve respeitar o teto de R$7.786,02', () => {
-      // Acima do teto: contribuição = mesma que no teto
+    it('deve respeitar o teto (valor acima de R$7.786,02 resulta no mesmo INSS)', () => {
       const noTeto = calcularINSS(7786.02);
       const acimaDoTeto = calcularINSS(10000);
-      // Acima do teto não deve pagar mais (base restante se esgota na faixa 4)
-      expect(acimaDoTeto).toBeGreaterThan(noTeto); // Acima do teto ultrapassa, mas é cortado pela lógica de faixas
+      expect(acimaDoTeto).toBe(noTeto);
     });
   });
 
