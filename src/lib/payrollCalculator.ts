@@ -74,6 +74,26 @@ export interface ProfissionalInput {
   insalubridade?: 'nao' | '10' | '20';
 }
 
+export interface TributosCLT {
+  descontarINSS: boolean;
+  descontarIRRF: boolean;
+  descontarVT6Pct: boolean;
+  descontarVR: boolean;
+  descontarCesta: boolean;
+  descontarSindicato: boolean;
+  exibirFGTS: boolean;
+}
+
+export const TRIBUTOS_CLT_PADRAO: TributosCLT = {
+  descontarINSS: false,
+  descontarIRRF: false,
+  descontarVT6Pct: false,
+  descontarVR: false,
+  descontarCesta: false,
+  descontarSindicato: false,
+  exibirFGTS: false,
+};
+
 export interface ConfiguracaoFolha {
   diasUteis6x1: number;
   diasUteis5x2: number;
@@ -81,6 +101,7 @@ export interface ConfiguracaoFolha {
   percentualDia20: number;
   valorCestaBasica: number;
   competencia: string;
+  tributosCLT?: TributosCLT;
 }
 
 export interface ResultadoCalculo {
