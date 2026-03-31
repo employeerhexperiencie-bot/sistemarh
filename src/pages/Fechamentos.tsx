@@ -23,7 +23,9 @@ import {
 } from 'lucide-react';
 import { formatCurrency, calcularFolhaProfissional, type ResultadoCalculo, type ProfissionalInput } from '@/lib/payrollCalculator';
 import { getCompetenciaAtual, getCompetenciaAnterior, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
-import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, type DadosCompetencia } from '@/lib/buildProfissionalInput';
+import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, carregarTributosCLT, type DadosCompetencia } from '@/lib/buildProfissionalInput';
+import type { TributosCLT } from '@/lib/payrollCalculator';
+import { TRIBUTOS_CLT_PADRAO } from '@/lib/payrollCalculator';
 import { gerarHoleritePDF, gerarHoleriteDia20, gerarHoleriteDia5, gerarHoleriteVT } from '@/components/folha/HoleritePDF';
 import { 
   gerarRelatorioDia20, gerarRelatorioDia5, gerarRelatorioVT, 
