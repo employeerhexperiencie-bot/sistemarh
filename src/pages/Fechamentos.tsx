@@ -123,6 +123,7 @@ export default function Fechamentos() {
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [globalPercentualDia20, setGlobalPercentualDia20] = useState(50);
   const [sortBy, setSortBy] = useState<'nome' | 'matricula' | 'salario' | 'dia20'>('nome');
+  const [tributosCLT, setTributosCLT] = useState<TributosCLT>(TRIBUTOS_CLT_PADRAO);
   
   // Dialog for reopen
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
