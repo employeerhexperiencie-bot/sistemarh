@@ -1,6 +1,35 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Busca paginada para tabelas com potencial de +1000 registros.
+ * Evita o limite silencioso de 1000 linhas do Supabase.
+ */
+async function fetchAllPaginated(
+  queryBuilder: () => any,
+  pageSize = 1000
+): Promise<any[]> {
+  const allData: any[] = [];
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await queryBuilder()
+      .range(from, from + pageSize - 1);
+
+    if (error || !data || data.length === 0) {
+      hasMore = false;
+      if (data && data.length > 0) allData.push(...data);
+    } else {
+      allData.push(...data);
+      from += pageSize;
+      hasMore = data.length === pageSize;
+    }
+  }
+
+  return allData;
+}
+
 interface Profissional {
   id: string;
   matricula: string;
