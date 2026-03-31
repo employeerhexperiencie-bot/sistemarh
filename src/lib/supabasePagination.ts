@@ -24,8 +24,9 @@ export async function fetchAllRows<T = any>(
   let hasMore = true;
 
   while (hasMore) {
-    let query = (supabase
-      .from(tableName) as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fromTable = (supabase as any).from(tableName);
+    let query = fromTable
       .select(options?.select || '*')
       .range(from, from + PAGE_SIZE - 1);
 
