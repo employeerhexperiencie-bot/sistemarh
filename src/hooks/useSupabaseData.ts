@@ -109,17 +109,20 @@ export const useSupabaseData = () => {
       setIsLoading(true);
       try {
         // Carregar todos os dados em paralelo
+        // Profissionais usa paginação (pode ter +1000 registros)
         const [
-          profissionaisResult,
+          profissionaisData,
           lojasResult,
           afastamentosResult,
           faltasResult,
           examesResult,
           feriasResult
         ] = await Promise.all([
-          supabase.from('profissionais')
-            .select('*, lojas:lojas!profissionais_loja_id_fkey(nome)')
-            .eq('status', 'ativo'),
+          fetchAllPaginated(() =>
+            supabase.from('profissionais')
+              .select('*, lojas:lojas!profissionais_loja_id_fkey(nome)')
+              .eq('status', 'ativo')
+          ),
           supabase.from('lojas').select('*'),
           supabase.from('afastamentos')
             .select('*, profissionais(nome, matricula)')
@@ -133,7 +136,7 @@ export const useSupabaseData = () => {
             .select('*, profissionais(nome, matricula, data_admissao)')
         ]);
 
-        if (profissionaisResult.data) setProfissionais(profissionaisResult.data);
+        if (profissionaisData) setProfissionais(profissionaisData);
         if (lojasResult.data) setLojas(lojasResult.data);
         if (afastamentosResult.data) setAfastamentos(afastamentosResult.data);
         if (faltasResult.data) setFaltas(faltasResult.data);
