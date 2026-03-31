@@ -3,7 +3,8 @@
  * Reutilizado por SimuladorFolha e Fechamentos
  */
 import { supabase } from '@/integrations/supabase/client';
-import type { ProfissionalInput, ConfiguracaoFolha } from './payrollCalculator';
+import type { ProfissionalInput, ConfiguracaoFolha, TributosCLT } from './payrollCalculator';
+import { TRIBUTOS_CLT_PADRAO } from './payrollCalculator';
 
 export interface DadosCompetencia {
   faltas: Record<string, { injustificadas: number; justificadas: number }>;
@@ -215,6 +216,30 @@ function calcularDiasUteisMes(competencia: string, escala: '6x1' | '5x2'): numbe
   }
 
   return diasUteis;
+}
+
+export async function carregarTributosCLT(): Promise<TributosCLT> {
+  const { data } = await supabase
+    .from('configuracoes_sistema')
+    .select('chave, valor')
+    .in('chave', [
+      'desconto_inss', 'desconto_irrf', 'desconto_vt_6pct',
+      'desconto_vr_funcionario', 'desconto_cesta_funcionario',
+      'desconto_sindicato', 'desconto_fgts_info'
+    ]);
+
+  const configMap: Record<string, string> = {};
+  data?.forEach((c: any) => { configMap[c.chave] = c.valor; });
+
+  return {
+    descontarINSS: configMap['desconto_inss'] === 'true',
+    descontarIRRF: configMap['desconto_irrf'] === 'true',
+    descontarVT6Pct: configMap['desconto_vt_6pct'] === 'true',
+    descontarVR: configMap['desconto_vr_funcionario'] === 'true',
+    descontarCesta: configMap['desconto_cesta_funcionario'] === 'true',
+    descontarSindicato: configMap['desconto_sindicato'] === 'true',
+    exibirFGTS: configMap['desconto_fgts_info'] === 'true',
+  };
 }
 
 export function getDefaultConfig(competencia: string): ConfiguracaoFolha {

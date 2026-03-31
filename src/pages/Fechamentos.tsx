@@ -23,7 +23,9 @@ import {
 } from 'lucide-react';
 import { formatCurrency, calcularFolhaProfissional, type ResultadoCalculo, type ProfissionalInput } from '@/lib/payrollCalculator';
 import { getCompetenciaAtual, getCompetenciaAnterior, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
-import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, type DadosCompetencia } from '@/lib/buildProfissionalInput';
+import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, carregarTributosCLT, type DadosCompetencia } from '@/lib/buildProfissionalInput';
+import type { TributosCLT } from '@/lib/payrollCalculator';
+import { TRIBUTOS_CLT_PADRAO } from '@/lib/payrollCalculator';
 import { gerarHoleritePDF, gerarHoleriteDia20, gerarHoleriteDia5, gerarHoleriteVT } from '@/components/folha/HoleritePDF';
 import { 
   gerarRelatorioDia20, gerarRelatorioDia5, gerarRelatorioVT, 
@@ -121,6 +123,7 @@ export default function Fechamentos() {
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [globalPercentualDia20, setGlobalPercentualDia20] = useState(50);
   const [sortBy, setSortBy] = useState<'nome' | 'matricula' | 'salario' | 'dia20'>('nome');
+  const [tributosCLT, setTributosCLT] = useState<TributosCLT>(TRIBUTOS_CLT_PADRAO);
   
   // Dialog for reopen
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
@@ -165,7 +168,7 @@ export default function Fechamentos() {
 
     try {
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
       const summaries: Record<string, { totalProf: number; totalValor: number; loading: boolean }> = {};
 
       for (const loja of openLojas) {
@@ -203,6 +206,7 @@ export default function Fechamentos() {
   }, [lojas, fechamentos, competencia, tipoAtivo]);
 
   useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { carregarTributosCLT().then(setTributosCLT); }, []);
   useEffect(() => { if (!isLoading && lojas.length > 0) loadLojaSummaries(); }, [isLoading, lojas, loadLojaSummaries]);
 
   const getFechamentoLoja = (lojaId: string): Fechamento | undefined => {
@@ -234,7 +238,7 @@ export default function Fechamentos() {
 
       const profs = profissionais || [];
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
 
       const inputs = profs.map(p => buildProfissionalInput(p, dadosComp));
       const resultados = profs.map((p, i) => {
@@ -266,7 +270,7 @@ export default function Fechamentos() {
 
     try {
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
 
       let allProfs: any[] = [];
       let allInputs: ProfissionalInput[] = [];
@@ -335,7 +339,7 @@ export default function Fechamentos() {
 
     // Recalculate
     if (!previewData) return;
-    const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
+    const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
     const idx = previewData.inputs.findIndex(inp => inp.id === profissionalId);
     if (idx === -1) return;
 
@@ -388,7 +392,7 @@ export default function Fechamentos() {
 
     try {
       const existing = getFechamentoLoja(selectedLoja.id);
-      const config = getDefaultConfig(competencia);
+      const config = { ...getDefaultConfig(competencia), tributosCLT };
 
       let totalValor = 0;
       switch (tipoAtivo) {
@@ -802,7 +806,7 @@ export default function Fechamentos() {
                                 setGlobalPercentualDia20(pct);
                                 // Recalculate all professionals with new default
                                 if (previewData) {
-                                  const newConfig = { ...getDefaultConfig(competencia), percentualDia20: pct };
+                                  const newConfig = { ...getDefaultConfig(competencia), percentualDia20: pct, tributosCLT };
                                   const newResultados = previewData.inputs.map((inp, i) => {
                                     const overrides = editOverrides[inp.id] || {};
                                     const adjustedInput = {

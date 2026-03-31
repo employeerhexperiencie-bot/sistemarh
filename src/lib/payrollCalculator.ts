@@ -74,6 +74,26 @@ export interface ProfissionalInput {
   insalubridade?: 'nao' | '10' | '20';
 }
 
+export interface TributosCLT {
+  descontarINSS: boolean;
+  descontarIRRF: boolean;
+  descontarVT6Pct: boolean;
+  descontarVR: boolean;
+  descontarCesta: boolean;
+  descontarSindicato: boolean;
+  exibirFGTS: boolean;
+}
+
+export const TRIBUTOS_CLT_PADRAO: TributosCLT = {
+  descontarINSS: false,
+  descontarIRRF: false,
+  descontarVT6Pct: false,
+  descontarVR: false,
+  descontarCesta: false,
+  descontarSindicato: false,
+  exibirFGTS: false,
+};
+
 export interface ConfiguracaoFolha {
   diasUteis6x1: number;
   diasUteis5x2: number;
@@ -81,6 +101,7 @@ export interface ConfiguracaoFolha {
   percentualDia20: number;
   valorCestaBasica: number;
   competencia: string;
+  tributosCLT?: TributosCLT;
 }
 
 export interface ResultadoCalculo {
@@ -127,6 +148,12 @@ export interface ResultadoCalculo {
   
   // Salário proporcional (salary/30 × diasEfetivos)
   salarioReceber: number;
+  
+  // Tributos CLT (opcionais por tenant)
+  descontoINSS: number;
+  descontoIRRF: number;
+  descontoSindicato: number;
+  fgtsInformativo: number;
   
   // Totais
   salarioLiquido: number;  // Dia 5
@@ -304,10 +331,15 @@ export function calcularFolhaProfissional(
     detalhes.push(`VT: R$ 0,00 (${profissional.status !== 'ativo' ? 'status não-ativo' : 'sem dias trabalhados'})`);
   }
   
-  // 6. Desconto VT 6% - REMOVIDO conforme regra de negócio
-  // VT é 100% custeado pela empresa, sem desconto do profissional
-  const descontoVT6Porcento = 0;
-  if (valorVT > 0) {
+  // 6. Desconto VT 6% - Condicional conforme configuração do tenant
+  const tributos = config.tributosCLT || TRIBUTOS_CLT_PADRAO;
+  let descontoVT6Porcento = 0;
+  if (tributos.descontarVT6Pct && valorVT > 0) {
+    descontoVT6Porcento = arredondarValor(profissional.salario * 0.06);
+    // VT 6% não pode ultrapassar o valor do VT
+    descontoVT6Porcento = Math.min(descontoVT6Porcento, valorVT);
+    detalhes.push(`Desconto VT 6%: R$ ${descontoVT6Porcento.toFixed(2)}`);
+  } else if (valorVT > 0) {
     detalhes.push(`VT: Sem desconto do profissional (empresa paga integral)`);
   }
   
@@ -370,37 +402,83 @@ export function calcularFolhaProfissional(
   if (outrosDescontos > 0) detalhes.push(`Outros Descontos: R$ ${outrosDescontos.toFixed(2)}`);
   if (complemento > 0) detalhes.push(`Complemento: + R$ ${complemento.toFixed(2)}`);
   
-  // Total de descontos OPERACIONAIS (vales + empréstimos + pensão + faltas + adicionais + empréstimo CLT)
-  // NÃO inclui DSR (planilha de referência não calcula DSR)
-  const totalDescontos = profissional.vales + profissional.emprestimos + emprestimoCLT + profissional.pensao + descontoFaltas + descontosAdicionais;
-  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)} (faltas: ${descontoFaltas}, vales: ${profissional.vales}, empréstimos: ${profissional.emprestimos}, emprést.CLT: ${emprestimoCLT}, pensão: ${profissional.pensao}, adicionais: ${descontosAdicionais})`);
+  // 9.2 Tributos CLT condicionais
+  let descontoINSS = 0;
+  let descontoIRRF = 0;
+  let descontoSindicato = 0;
+  let fgtsInformativo = 0;
+  
+  if (tributos.descontarINSS) {
+    // Tabela progressiva INSS 2024
+    const faixasINSS = [
+      { teto: 1412.00, aliquota: 0.075 },
+      { teto: 2666.68, aliquota: 0.09 },
+      { teto: 4000.03, aliquota: 0.12 },
+      { teto: 7786.02, aliquota: 0.14 },
+    ];
+    let baseINSS = salarioReceber;
+    let restante = baseINSS;
+    for (let i = 0; i < faixasINSS.length; i++) {
+      const limInf = i === 0 ? 0 : faixasINSS[i - 1].teto;
+      const faixa = Math.min(restante, faixasINSS[i].teto - limInf);
+      if (faixa <= 0) break;
+      descontoINSS += faixa * faixasINSS[i].aliquota;
+      restante -= faixa;
+    }
+    descontoINSS = arredondarValor(descontoINSS);
+    detalhes.push(`INSS (progressivo): R$ ${descontoINSS.toFixed(2)}`);
+  }
+  
+  if (tributos.descontarIRRF && salarioReceber > 0) {
+    const baseIRRF = salarioReceber - descontoINSS;
+    // Tabela IRRF 2024
+    if (baseIRRF > 4664.68) {
+      descontoIRRF = arredondarValor(baseIRRF * 0.275 - 896.00);
+    } else if (baseIRRF > 3751.06) {
+      descontoIRRF = arredondarValor(baseIRRF * 0.225 - 662.77);
+    } else if (baseIRRF > 2826.66) {
+      descontoIRRF = arredondarValor(baseIRRF * 0.15 - 381.44);
+    } else if (baseIRRF > 2259.21) {
+      descontoIRRF = arredondarValor(baseIRRF * 0.075 - 169.44);
+    }
+    if (descontoIRRF > 0) {
+      detalhes.push(`IRRF: R$ ${descontoIRRF.toFixed(2)} (base: R$ ${baseIRRF.toFixed(2)})`);
+    }
+  }
+  
+  if (tributos.descontarSindicato) {
+    descontoSindicato = arredondarValor(salarioReceber / 30); // 1 dia de trabalho/ano - simplificado mensal
+    detalhes.push(`Contribuição sindical: R$ ${descontoSindicato.toFixed(2)}`);
+  }
+  
+  if (tributos.exibirFGTS) {
+    fgtsInformativo = arredondarValor(salarioReceber * 0.08);
+    detalhes.push(`FGTS (informativo): R$ ${fgtsInformativo.toFixed(2)}`);
+  }
+
+  // Total de descontos OPERACIONAIS + tributos CLT condicionais
+  const totalDescontos = profissional.vales + profissional.emprestimos + emprestimoCLT + profissional.pensao + descontoFaltas + descontosAdicionais + descontoVT6Porcento + descontoINSS + descontoIRRF + descontoSindicato;
+  detalhes.push(`Total descontos: R$ ${totalDescontos.toFixed(2)}`);
 
   // 10. Calcular salário líquido (Dia 5)
-  // Fórmula: Salário a Receber (proporcional) - Dia 20 - Descontos Operacionais
-  // NÃO desconta benefícios (VT, VR, Cesta são PAGOS ao profissional)
-  // NÃO desconta encargos (INSS, IRRF calculados pela contabilidade)
   let salarioBase = salarioReceber + valorInsalubridade;
   
-  // Se está em afastamento, usar valor do afastamento como base
   if (valorAfastamento > 0 && profissional.status !== 'ativo' && profissional.status !== 'ferias') {
     salarioBase = valorAfastamento;
     detalhes.push(`Base cálculo ajustada para afastamento: R$ ${salarioBase.toFixed(2)}`);
   }
   
   const valorDia20Final = recebeDia20 ? valorDia20 : 0;
-  // Salário líquido = Base - Dia 20 - Descontos operacionais (faltas já estão em totalDescontos) + Complemento
   const salarioLiquido = Math.max(0, salarioBase - valorDia20Final - totalDescontos + complemento);
   
-  // Total descontos COM adiantamento (para exibição conforme planilha)
   const totalDescontosComADT = totalDescontos + valorDia20Final;
   
-  // Total a Receber = Salário a Receber - Total Descontos (com ADT) + Complemento
   const totalAReceber = salarioBase - totalDescontosComADT + complemento;
   const arredondamentoVal = arredondarValor(totalAReceber);
   
   detalhes.push(`Total Descontos (com ADT): R$ ${totalDescontosComADT.toFixed(2)}`);
   detalhes.push(`Salário a Receber: R$ ${salarioBase.toFixed(2)}`);
-  detalhes.push(`Total a Receber: R$ ${totalAReceber.toFixed(2)} = Sal(${salarioBase.toFixed(2)}) - Desc(${totalDescontosComADT.toFixed(2)}) + Compl(${complemento.toFixed(2)})`);
+  detalhes.push(`Total a Receber: R$ ${totalAReceber.toFixed(2)}`);
   detalhes.push(`Arredondamento: R$ ${arredondamentoVal.toFixed(2)}`);
   
   // 11. Calcular total do mês
@@ -442,6 +520,10 @@ export function calcularFolhaProfissional(
     valorAfastamento,
     tipoAfastamento,
     valorInsalubridade,
+    descontoINSS,
+    descontoIRRF,
+    descontoSindicato,
+    fgtsInformativo,
     salarioReceber,
     salarioLiquido,
     totalAReceber,
