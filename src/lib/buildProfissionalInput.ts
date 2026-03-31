@@ -77,7 +77,8 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
   const afastamentosMap: Record<string, { tipo: string; dias: number }> = {};
   afastamentosRes.data?.forEach((a: any) => {
     if (!a.profissional_id) return;
-    const dataInicio = a.data_inicio ? new Date(a.data_inicio) : hoje;
+    // Normalizar data de início do afastamento
+    const dataInicio = a.data_inicio ? new Date(a.data_inicio + 'T12:00:00') : hoje;
     const diasAfastamento = Math.max(0, Math.ceil((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24)));
     afastamentosMap[a.profissional_id] = { tipo: a.tipo, dias: diasAfastamento };
   });
