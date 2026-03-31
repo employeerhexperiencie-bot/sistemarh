@@ -167,9 +167,12 @@ export function calcularFolhaProfissional(
   detalhes.push(`Valor dia: R$ ${valorDia.toFixed(2)}`);
   
   // 1.1 Calcular diasEfetivos (dias calendário de 30) para proration de mês parcial
+  // Normalizar datas com T12:00:00 para evitar shift de fuso horário UTC→BRT
+  const normalizarData = (dateStr: string): Date => new Date(dateStr + 'T12:00:00');
+  
   const temDataAdmissao = profissional.dataAdmissao && profissional.dataAdmissao !== '';
-  const dataAdmissao = temDataAdmissao ? new Date(profissional.dataAdmissao!) : null;
-  const mesCompetencia = new Date(config.competencia + '-01');
+  const dataAdmissao = temDataAdmissao ? normalizarData(profissional.dataAdmissao!) : null;
+  const mesCompetencia = normalizarData(config.competencia + '-01');
   const [anoComp, mesComp] = config.competencia.split('-').map(Number);
   const diasNoMesReal = new Date(anoComp, mesComp, 0).getDate();
   
