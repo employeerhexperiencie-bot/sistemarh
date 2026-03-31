@@ -168,7 +168,7 @@ export default function Fechamentos() {
 
     try {
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
       const summaries: Record<string, { totalProf: number; totalValor: number; loading: boolean }> = {};
 
       for (const loja of openLojas) {
@@ -238,7 +238,7 @@ export default function Fechamentos() {
 
       const profs = profissionais || [];
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
 
       const inputs = profs.map(p => buildProfissionalInput(p, dadosComp));
       const resultados = profs.map((p, i) => {
@@ -270,7 +270,7 @@ export default function Fechamentos() {
 
     try {
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
-      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
 
       let allProfs: any[] = [];
       let allInputs: ProfissionalInput[] = [];
@@ -339,7 +339,7 @@ export default function Fechamentos() {
 
     // Recalculate
     if (!previewData) return;
-    const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20 };
+    const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
     const idx = previewData.inputs.findIndex(inp => inp.id === profissionalId);
     if (idx === -1) return;
 
@@ -392,7 +392,7 @@ export default function Fechamentos() {
 
     try {
       const existing = getFechamentoLoja(selectedLoja.id);
-      const config = getDefaultConfig(competencia);
+      const config = { ...getDefaultConfig(competencia), tributosCLT };
 
       let totalValor = 0;
       switch (tipoAtivo) {
@@ -806,7 +806,7 @@ export default function Fechamentos() {
                                 setGlobalPercentualDia20(pct);
                                 // Recalculate all professionals with new default
                                 if (previewData) {
-                                  const newConfig = { ...getDefaultConfig(competencia), percentualDia20: pct };
+                                  const newConfig = { ...getDefaultConfig(competencia), percentualDia20: pct, tributosCLT };
                                   const newResultados = previewData.inputs.map((inp, i) => {
                                     const overrides = editOverrides[inp.id] || {};
                                     const adjustedInput = {
