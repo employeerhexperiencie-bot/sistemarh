@@ -224,6 +224,7 @@ export function ConfiguracoesRH() {
     { id: 'escala', title: 'Escalas de Trabalho', icon: Clock, description: 'Defina a escala padrão e dias úteis' },
     { id: 'beneficios', title: 'Benefícios', icon: DollarSign, description: 'Configure VT, VR e Cesta Básica' },
     { id: 'politicas', title: 'Políticas', icon: Banknote, description: 'Regras de férias, empréstimos e ASO' },
+    { id: 'tributos', title: 'Tributos CLT (Descontos)', icon: DollarSign, description: 'Escolha quais tributos e descontos CLT aplicar na folha' },
   ];
 
   return (
