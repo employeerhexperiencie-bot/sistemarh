@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { fetchAllPaginated } from '@/lib/supabasePagination';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -75,13 +76,16 @@ export default function Relatorios() {
   };
 
   const carregarDadosRelatorio = useCallback(async (): Promise<ProfissionalRelatorio[]> => {
-    // Buscar profissionais
-    let query = supabase.from('profissionais').select('*, lojas!profissionais_loja_id_fkey(nome, cnpj)').eq('status', 'ativo');
-    if (loja !== 'TODAS') {
-      const lojaObj = lojas.find(l => l.nome === loja);
-      if (lojaObj) query = query.eq('loja_id', lojaObj.id);
-    }
-    const { data: profissionais } = await query;
+    // Buscar profissionais (paginado para +1000)
+    const buildQuery = () => {
+      let q = supabase.from('profissionais').select('*, lojas!profissionais_loja_id_fkey(nome, cnpj)').eq('status', 'ativo');
+      if (loja !== 'TODAS') {
+        const lojaObj = lojas.find(l => l.nome === loja);
+        if (lojaObj) q = q.eq('loja_id', lojaObj.id);
+      }
+      return q;
+    };
+    const profissionais = await fetchAllPaginated(buildQuery);
     if (!profissionais?.length) return [];
 
     // Carregar dados da competência e calcular

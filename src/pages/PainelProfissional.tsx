@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllPaginated } from '@/lib/supabasePagination';
 import { getCompetenciaAtual } from '@/lib/competencia';
 
 interface ProfissionalData {
@@ -119,16 +120,18 @@ export default function PainelProfissional() {
       setLoading(true);
       
       // Carregar lojas e profissionais em paralelo
-      const [lojasResult, profissionaisResult] = await Promise.all([
+      const [lojasResult, profissionaisData] = await Promise.all([
         supabase.from('lojas').select('id, nome').order('nome'),
-        supabase.from('profissionais').select(`
-          id,
-          matricula,
-          nome,
-          salario_nominal,
-          loja_id,
-          lojas:lojas!profissionais_loja_id_fkey (nome)
-        `).eq('status', 'ativo')
+        fetchAllPaginated(() =>
+          supabase.from('profissionais').select(`
+            id,
+            matricula,
+            nome,
+            salario_nominal,
+            loja_id,
+            lojas:lojas!profissionais_loja_id_fkey (nome)
+          `).eq('status', 'ativo')
+        )
       ]);
 
       setLojas(lojasResult.data || []);
@@ -139,7 +142,7 @@ export default function PainelProfissional() {
         .select('profissional_id, tipo');
 
       // Processar dados
-      const profissionais = profissionaisResult.data || [];
+      const profissionais = profissionaisData || [];
       const profData: ProfissionalData[] = profissionais.map((p: any) => {
         const salario = p.salario_nominal || 0;
         // Apenas faltas injustificadas contam para desconto

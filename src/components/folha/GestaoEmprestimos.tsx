@@ -17,6 +17,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllPaginated } from '@/lib/supabasePagination';
 import { toast } from 'sonner';
 import { HistoricoEmprestimos, registrarHistoricoEmprestimo } from './HistoricoEmprestimos';
 import { NovoEmprestimoForm } from './NovoEmprestimoForm';
@@ -680,9 +681,11 @@ export function GestaoEmprestimos() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [empResult, profResult, lojasResult] = await Promise.all([
+      const [empResult, profData, lojasResult] = await Promise.all([
         supabase.from('emprestimos').select('*'),
-        supabase.from('profissionais').select('id, nome, matricula, loja_id'),
+        fetchAllPaginated(() =>
+          supabase.from('profissionais').select('id, nome, matricula, loja_id')
+        ),
         supabase.from('lojas').select('id, nome')
       ]);
 
@@ -694,7 +697,7 @@ export function GestaoEmprestimos() {
       });
 
       const profissionaisMap: Record<string, { nome: string; matricula: string; loja: string; lojaId: string }> = {};
-      (profResult.data || []).forEach((p: any) => {
+      (profData || []).forEach((p: any) => {
         profissionaisMap[p.id] = {
           nome: p.nome,
           matricula: p.matricula,

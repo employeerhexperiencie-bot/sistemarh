@@ -124,47 +124,59 @@ export function calcularAvosTrabalhados(
 }
 
 /**
- * Calcular INSS sobre 13º salário
- * Tabela simplificada:
- * - Até R$ 1.320,00: 7,5%
- * - R$ 1.320,01 a R$ 2.571,29: 9%
- * - R$ 2.571,30 a R$ 3.856,94: 12%
- * - Acima de R$ 3.856,94: 14%
+ * Calcular INSS sobre 13º salário — TABELA PROGRESSIVA 2024
+ * Cada faixa aplica-se apenas à parcela do salário dentro dela:
+ * - Até R$ 1.412,00: 7,5%
+ * - R$ 1.412,01 a R$ 2.666,68: 9%
+ * - R$ 2.666,69 a R$ 4.000,03: 12%
+ * - R$ 4.000,04 a R$ 7.786,02: 14%
+ * Teto de contribuição: R$ 908,85
  */
 export function calcularINSS(valorBruto: number): number {
-  if (valorBruto <= 1320) {
-    return arredondarValor(valorBruto * 0.075);
-  } else if (valorBruto <= 2571.29) {
-    return arredondarValor(valorBruto * 0.09);
-  } else if (valorBruto <= 3856.94) {
-    return arredondarValor(valorBruto * 0.12);
-  } else {
-    return arredondarValor(valorBruto * 0.14);
+  const faixas = [
+    { teto: 1412.00, aliquota: 0.075 },
+    { teto: 2666.68, aliquota: 0.09 },
+    { teto: 4000.03, aliquota: 0.12 },
+    { teto: 7786.02, aliquota: 0.14 },
+  ];
+
+  let inss = 0;
+  let baseRestante = valorBruto;
+
+  for (let i = 0; i < faixas.length; i++) {
+    const limiteInferior = i === 0 ? 0 : faixas[i - 1].teto;
+    const faixa = Math.min(baseRestante, faixas[i].teto - limiteInferior);
+    if (faixa <= 0) break;
+    inss += faixa * faixas[i].aliquota;
+    baseRestante -= faixa;
   }
+
+  return arredondarValor(inss);
 }
 
 /**
- * Calcular IRRF sobre 13º salário
- * Tabela simplificada:
- * - Até R$ 2.112,00: Isento
- * - R$ 2.112,01 a R$ 2.826,65: 7,5%
- * - R$ 2.826,66 a R$ 3.751,05: 15%
- * - R$ 3.751,06 a R$ 4.664,68: 22,5%
- * - Acima de R$ 4.664,68: 27,5%
+ * Calcular IRRF sobre 13º salário — TABELA PROGRESSIVA 2024
+ * Base = valorBruto - INSS
+ * Faixas com parcela a deduzir:
+ * - Até R$ 2.259,20: Isento
+ * - R$ 2.259,21 a R$ 2.826,65: 7,5% − R$ 169,44
+ * - R$ 2.826,66 a R$ 3.751,05: 15% − R$ 381,44
+ * - R$ 3.751,06 a R$ 4.664,68: 22,5% − R$ 662,77
+ * - Acima de R$ 4.664,68: 27,5% − R$ 896,00
  */
 export function calcularIRRF(valorBruto: number, inss: number): number {
   const baseCalculo = valorBruto - inss;
-  
-  if (baseCalculo <= 2112) {
+
+  if (baseCalculo <= 2259.20) {
     return 0;
   } else if (baseCalculo <= 2826.65) {
-    return arredondarValor(baseCalculo * 0.075);
+    return arredondarValor(baseCalculo * 0.075 - 169.44);
   } else if (baseCalculo <= 3751.05) {
-    return arredondarValor(baseCalculo * 0.15);
+    return arredondarValor(baseCalculo * 0.15 - 381.44);
   } else if (baseCalculo <= 4664.68) {
-    return arredondarValor(baseCalculo * 0.225);
+    return arredondarValor(baseCalculo * 0.225 - 662.77);
   } else {
-    return arredondarValor(baseCalculo * 0.275);
+    return arredondarValor(baseCalculo * 0.275 - 896.00);
   }
 }
 

@@ -1,6 +1,35 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Busca paginada para tabelas com potencial de +1000 registros.
+ * Evita o limite silencioso de 1000 linhas do Supabase.
+ */
+async function fetchAllPaginated(
+  queryBuilder: () => any,
+  pageSize = 1000
+): Promise<any[]> {
+  const allData: any[] = [];
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await queryBuilder()
+      .range(from, from + pageSize - 1);
+
+    if (error || !data || data.length === 0) {
+      hasMore = false;
+      if (data && data.length > 0) allData.push(...data);
+    } else {
+      allData.push(...data);
+      from += pageSize;
+      hasMore = data.length === pageSize;
+    }
+  }
+
+  return allData;
+}
+
 interface Profissional {
   id: string;
   matricula: string;
@@ -80,17 +109,20 @@ export const useSupabaseData = () => {
       setIsLoading(true);
       try {
         // Carregar todos os dados em paralelo
+        // Profissionais usa paginação (pode ter +1000 registros)
         const [
-          profissionaisResult,
+          profissionaisData,
           lojasResult,
           afastamentosResult,
           faltasResult,
           examesResult,
           feriasResult
         ] = await Promise.all([
-          supabase.from('profissionais')
-            .select('*, lojas:lojas!profissionais_loja_id_fkey(nome)')
-            .eq('status', 'ativo'),
+          fetchAllPaginated(() =>
+            supabase.from('profissionais')
+              .select('*, lojas:lojas!profissionais_loja_id_fkey(nome)')
+              .eq('status', 'ativo')
+          ),
           supabase.from('lojas').select('*'),
           supabase.from('afastamentos')
             .select('*, profissionais(nome, matricula)')
@@ -104,7 +136,7 @@ export const useSupabaseData = () => {
             .select('*, profissionais(nome, matricula, data_admissao)')
         ]);
 
-        if (profissionaisResult.data) setProfissionais(profissionaisResult.data);
+        if (profissionaisData) setProfissionais(profissionaisData);
         if (lojasResult.data) setLojas(lojasResult.data);
         if (afastamentosResult.data) setAfastamentos(afastamentosResult.data);
         if (faltasResult.data) setFaltas(faltasResult.data);
