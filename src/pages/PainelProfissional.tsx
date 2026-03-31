@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllPaginated } from '@/lib/supabasePagination';
 import { getCompetenciaAtual } from '@/lib/competencia';
 
 interface ProfissionalData {

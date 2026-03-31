@@ -17,6 +17,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllPaginated } from '@/lib/supabasePagination';
 import { toast } from 'sonner';
 import { HistoricoEmprestimos, registrarHistoricoEmprestimo } from './HistoricoEmprestimos';
 import { NovoEmprestimoForm } from './NovoEmprestimoForm';
