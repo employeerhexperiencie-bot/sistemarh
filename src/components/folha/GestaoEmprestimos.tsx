@@ -680,9 +680,11 @@ export function GestaoEmprestimos() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [empResult, profResult, lojasResult] = await Promise.all([
+      const [empResult, profData, lojasResult] = await Promise.all([
         supabase.from('emprestimos').select('*'),
-        supabase.from('profissionais').select('id, nome, matricula, loja_id'),
+        fetchAllPaginated(() =>
+          supabase.from('profissionais').select('id, nome, matricula, loja_id')
+        ),
         supabase.from('lojas').select('id, nome')
       ]);
 
