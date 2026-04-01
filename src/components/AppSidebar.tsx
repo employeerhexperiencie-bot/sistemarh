@@ -30,7 +30,8 @@ import {
   Database,
   FileCheck,
   ScrollText,
-  ClipboardList
+  ClipboardList,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -80,6 +81,7 @@ const navSections = [
       { title: 'Exames (ASO)', url: '/gestao-aso', icon: Heart },
       { title: 'EPIs', url: '/gestao-epi', icon: Package },
       { title: 'Benefícios', url: '/gestao-beneficios', icon: Gift },
+      { title: 'Ponto', url: '/gestao-ponto', icon: Clock },
     ],
   },
   {
