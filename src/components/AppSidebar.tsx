@@ -81,6 +81,7 @@ const navSections = [
       { title: 'Exames (ASO)', url: '/gestao-aso', icon: Heart },
       { title: 'EPIs', url: '/gestao-epi', icon: Package },
       { title: 'Benefícios', url: '/gestao-beneficios', icon: Gift },
+      { title: 'Ponto', url: '/gestao-ponto', icon: Clock },
     ],
   },
   {
