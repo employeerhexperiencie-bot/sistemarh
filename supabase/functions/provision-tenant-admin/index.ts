@@ -71,8 +71,9 @@ Deno.serve(async (req) => {
 
     // 5. Create or find user in auth
     const normalizedEmail = email.toLowerCase().trim();
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === normalizedEmail);
+    // Using RPC instead of listUsers() to avoid pagination limit of 1000 users
+    const { data: existingUserId } = await supabaseAdmin.rpc('get_auth_user_id_by_email', { _email: normalizedEmail });
+    const existingUser = existingUserId ? { id: existingUserId } : null;
 
     let userId: string;
 
