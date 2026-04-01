@@ -345,7 +345,7 @@ export default function GestaoPonto() {
                             </TableCell>
                             <TableCell>
                               {dia.extraDiurna && dia.extraDiurna !== "00:00" ? (
-                                <Badge className="bg-green-500/20 text-green-700 text-xs">{dia.extraDiurna}</Badge>
+                                <Badge variant="secondary" className="text-xs">{dia.extraDiurna}</Badge>
                               ) : (
                                 <span className="text-muted-foreground text-xs">—</span>
                               )}
