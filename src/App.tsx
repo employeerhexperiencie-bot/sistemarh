@@ -186,6 +186,7 @@ const App = () => (
                   <Route path="/como-usar" element={<ProtectedLayout><ComoUsar /></ProtectedLayout>} />
                   <Route path="/minha-equipe" element={<ProtectedLayout><MinhaEquipe /></ProtectedLayout>} />
                   <Route path="/central-importacao" element={<ProtectedLayout><CentralImportacao /></ProtectedLayout>} />
+                  <Route path="/gestao-ponto" element={<ProtectedLayout><GestaoPonto /></ProtectedLayout>} />
                   
                   {/* Catch-all - Redireciona para 404 */}
                   <Route path="*" element={<NotFound />} />
