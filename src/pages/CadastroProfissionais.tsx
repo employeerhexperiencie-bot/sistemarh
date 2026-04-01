@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -774,6 +774,51 @@ export const CadastroProfissionais: React.FC = () => {
       });
     }
   };
+
+  const handleReverterDemissao = async (professional: any) => {
+    if (!confirm(`Tem certeza que deseja reverter a demissão de ${professional.nome}? O status voltará para "Ativo".`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('profissionais')
+        .update({
+          status: 'ativo',
+          data_demissao: null,
+          motivo_demissao: null,
+          aviso_trabalhado: null,
+          data_homologacao: null,
+          local_homologacao: null,
+          data_cumprir_aviso: null,
+        })
+        .eq('id', professional.id);
+
+      if (error) throw error;
+
+      addLog({
+        usuario: 'Sistema',
+        acao: 'EDITAR',
+        modulo: 'PROFISSIONAIS',
+        entidade: professional.nome,
+        detalhes: `Demissão de ${professional.matricula} - ${professional.nome} revertida. Status restaurado para Ativo.`,
+        metadata: { profissionalId: professional.id, data_demissao_anterior: professional.data_demissao }
+      });
+
+      toast({
+        title: "Demissão revertida",
+        description: `${professional.nome} voltou ao status Ativo com sucesso.`
+      });
+
+      loadProfessionals();
+    } catch (error) {
+      console.error('Reverter demissão error:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao reverter demissão",
+        variant: "destructive"
+      });
+    }
+  };
+
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
@@ -2276,6 +2321,15 @@ export const CadastroProfissionais: React.FC = () => {
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </DropdownMenuItem>
+                        {professional.status === 'demitido' && (
+                          <DropdownMenuItem 
+                            onClick={() => handleReverterDemissao(professional)}
+                            className="text-green-600 focus:text-green-600"
+                          >
+                            <Undo2 className="h-4 w-4 mr-2" />
+                            Reverter Demissão
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem 
                           onClick={() => handleDelete(professional.id)}
                           className="text-destructive focus:text-destructive"
