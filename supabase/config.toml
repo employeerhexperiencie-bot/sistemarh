@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.update-tenant-data]
 verify_jwt = false
+
+[functions.ezpoint-proxy]
+verify_jwt = false
