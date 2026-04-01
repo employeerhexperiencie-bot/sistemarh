@@ -820,6 +820,7 @@ export const CadastroProfissionais: React.FC = () => {
   };
 
 
+  const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingProfessional(null);
     setFormData(initialFormData);
