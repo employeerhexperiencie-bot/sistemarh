@@ -2725,6 +2725,7 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      get_auth_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       has_min_role: {
         Args: {
