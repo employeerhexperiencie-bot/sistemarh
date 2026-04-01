@@ -81,9 +81,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check if user already exists in auth
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === email.toLowerCase().trim());
+    // Check if user already exists in auth (using RPC instead of listUsers to avoid pagination issues)
+    const normalizedEmail = email.toLowerCase().trim();
+    const { data: existingUserId } = await supabaseAdmin.rpc('get_auth_user_id_by_email', { _email: normalizedEmail });
+    const existingUser = existingUserId ? { id: existingUserId } : null;
 
     let userId: string;
 
