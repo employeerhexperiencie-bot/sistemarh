@@ -796,7 +796,7 @@ export const CadastroProfissionais: React.FC = () => {
 
       addLog({
         usuario: 'Sistema',
-        acao: 'REVERTER_DEMISSAO',
+        acao: 'EDITAR',
         modulo: 'PROFISSIONAIS',
         entidade: professional.nome,
         detalhes: `Demissão de ${professional.matricula} - ${professional.nome} revertida. Status restaurado para Ativo.`,
