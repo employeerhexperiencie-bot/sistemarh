@@ -338,7 +338,7 @@ export default function GestaoPonto() {
                             </TableCell>
                             <TableCell>
                               {dia.atraso && dia.atraso !== "00:00" ? (
-                                <Badge className="bg-amber-500/20 text-amber-700 text-xs">{dia.atraso}</Badge>
+                                <Badge variant="outline" className="text-xs border-accent">{dia.atraso}</Badge>
                               ) : (
                                 <span className="text-muted-foreground text-xs">—</span>
                               )}
