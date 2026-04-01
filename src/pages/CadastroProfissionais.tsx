@@ -775,7 +775,51 @@ export const CadastroProfissionais: React.FC = () => {
     }
   };
 
-  const handleCloseDialog = () => {
+  const handleReverterDemissao = async (professional: any) => {
+    if (!confirm(`Tem certeza que deseja reverter a demissão de ${professional.nome}? O status voltará para "Ativo".`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('profissionais')
+        .update({
+          status: 'ativo',
+          data_demissao: null,
+          motivo_demissao: null,
+          aviso_trabalhado: null,
+          data_homologacao: null,
+          local_homologacao: null,
+          data_cumprir_aviso: null,
+        })
+        .eq('id', professional.id);
+
+      if (error) throw error;
+
+      addLog({
+        usuario: 'Sistema',
+        acao: 'REVERTER_DEMISSAO',
+        modulo: 'PROFISSIONAIS',
+        entidade: professional.nome,
+        detalhes: `Demissão de ${professional.matricula} - ${professional.nome} revertida. Status restaurado para Ativo.`,
+        metadata: { profissionalId: professional.id, data_demissao_anterior: professional.data_demissao }
+      });
+
+      toast({
+        title: "Demissão revertida",
+        description: `${professional.nome} voltou ao status Ativo com sucesso.`
+      });
+
+      loadProfessionals();
+    } catch (error) {
+      console.error('Reverter demissão error:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao reverter demissão",
+        variant: "destructive"
+      });
+    }
+  };
+
+
     setIsDialogOpen(false);
     setEditingProfessional(null);
     setFormData(initialFormData);
