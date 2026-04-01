@@ -54,6 +54,7 @@ import MinhaEquipe from "@/pages/MinhaEquipe";
 import Fechamentos from "@/pages/Fechamentos";
 import PainelUso from "@/pages/PainelUso";
 import CentralImportacao from "@/pages/CentralImportacao";
+import GestaoPonto from "@/pages/GestaoPonto";
 import NotFound from "./pages/NotFound";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Loader2 } from "lucide-react";
