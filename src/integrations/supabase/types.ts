@@ -1584,6 +1584,7 @@ export type Database = {
           gerente: string | null
           id: string
           nome: string
+          numero_contabil: string | null
           telefone: string | null
           tenant_id: string
           updated_at: string | null
@@ -1596,6 +1597,7 @@ export type Database = {
           gerente?: string | null
           id?: string
           nome: string
+          numero_contabil?: string | null
           telefone?: string | null
           tenant_id?: string
           updated_at?: string | null
@@ -1608,6 +1610,7 @@ export type Database = {
           gerente?: string | null
           id?: string
           nome?: string
+          numero_contabil?: string | null
           telefone?: string | null
           tenant_id?: string
           updated_at?: string | null
@@ -1993,6 +1996,7 @@ export type Database = {
           cidade: string | null
           cnh: string | null
           conta: string | null
+          cor_etnia: string | null
           cpf: string | null
           cracha: string | null
           created_at: string | null
@@ -2001,12 +2005,19 @@ export type Database = {
           data_cumprir_aviso: string | null
           data_demissao: string | null
           data_homologacao: string | null
+          data_inicio_loja: string | null
           data_nascimento: string | null
           departamento: string | null
+          dia_folga: string | null
           endereco: string | null
+          escala_trabalho: string | null
           escolaridade: string | null
           estado: string | null
           estado_civil: string | null
+          gestor: string | null
+          horario_entrada: string | null
+          horario_intervalo: string | null
+          horario_saida: string | null
           id: string
           id_ezpoint: string | null
           insalubridade: string | null
@@ -2017,6 +2028,7 @@ export type Database = {
           motivo_demissao: string | null
           nome: string
           nome_mae: string | null
+          nome_pai: string | null
           odonto: boolean | null
           operacao: string | null
           pensao_alimenticia: number | null
@@ -2030,6 +2042,7 @@ export type Database = {
           sindicato: string | null
           status: string | null
           telefone: string | null
+          tem_dependentes: boolean | null
           tenant_id: string
           tipo_conta: string | null
           ultimo_salario: number | null
@@ -2062,6 +2075,7 @@ export type Database = {
           cidade?: string | null
           cnh?: string | null
           conta?: string | null
+          cor_etnia?: string | null
           cpf?: string | null
           cracha?: string | null
           created_at?: string | null
@@ -2070,12 +2084,19 @@ export type Database = {
           data_cumprir_aviso?: string | null
           data_demissao?: string | null
           data_homologacao?: string | null
+          data_inicio_loja?: string | null
           data_nascimento?: string | null
           departamento?: string | null
+          dia_folga?: string | null
           endereco?: string | null
+          escala_trabalho?: string | null
           escolaridade?: string | null
           estado?: string | null
           estado_civil?: string | null
+          gestor?: string | null
+          horario_entrada?: string | null
+          horario_intervalo?: string | null
+          horario_saida?: string | null
           id?: string
           id_ezpoint?: string | null
           insalubridade?: string | null
@@ -2086,6 +2107,7 @@ export type Database = {
           motivo_demissao?: string | null
           nome: string
           nome_mae?: string | null
+          nome_pai?: string | null
           odonto?: boolean | null
           operacao?: string | null
           pensao_alimenticia?: number | null
@@ -2099,6 +2121,7 @@ export type Database = {
           sindicato?: string | null
           status?: string | null
           telefone?: string | null
+          tem_dependentes?: boolean | null
           tenant_id?: string
           tipo_conta?: string | null
           ultimo_salario?: number | null
@@ -2131,6 +2154,7 @@ export type Database = {
           cidade?: string | null
           cnh?: string | null
           conta?: string | null
+          cor_etnia?: string | null
           cpf?: string | null
           cracha?: string | null
           created_at?: string | null
@@ -2139,12 +2163,19 @@ export type Database = {
           data_cumprir_aviso?: string | null
           data_demissao?: string | null
           data_homologacao?: string | null
+          data_inicio_loja?: string | null
           data_nascimento?: string | null
           departamento?: string | null
+          dia_folga?: string | null
           endereco?: string | null
+          escala_trabalho?: string | null
           escolaridade?: string | null
           estado?: string | null
           estado_civil?: string | null
+          gestor?: string | null
+          horario_entrada?: string | null
+          horario_intervalo?: string | null
+          horario_saida?: string | null
           id?: string
           id_ezpoint?: string | null
           insalubridade?: string | null
@@ -2155,6 +2186,7 @@ export type Database = {
           motivo_demissao?: string | null
           nome?: string
           nome_mae?: string | null
+          nome_pai?: string | null
           odonto?: boolean | null
           operacao?: string | null
           pensao_alimenticia?: number | null
@@ -2168,6 +2200,7 @@ export type Database = {
           sindicato?: string | null
           status?: string | null
           telefone?: string | null
+          tem_dependentes?: boolean | null
           tenant_id?: string
           tipo_conta?: string | null
           ultimo_salario?: number | null
