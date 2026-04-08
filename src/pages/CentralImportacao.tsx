@@ -25,21 +25,164 @@ const importModules: ImportModuleConfig[] = [
     icon: <Users className="h-5 w-5" />,
     tableName: "profissionais",
     requiredColumns: ["matricula", "nome"],
-    optionalColumns: ["cpf", "rg", "cargo", "data_admissao", "salario_nominal", "status"],
+    optionalColumns: ["cpf", "rg", "cargo", "data_admissao", "salario_nominal", "status", "nome_mae", "nome_pai", "sexo", "estado_civil", "data_nascimento", "pis", "cbo", "endereco", "bairro", "cidade", "cep", "telefone", "banco", "agencia", "conta", "chave_pix", "escala_trabalho", "horario_entrada", "horario_intervalo", "horario_saida", "dia_folga", "gestor", "cnh", "validade_cnh", "categoria_cnh"],
+    columnAliases: {
+      matricula: ["Nº MATRICULA", "MATRICULA", "matricula", "Matrícula", "Nº Matrícula", "N MATRICULA"],
+      nome: ["NOME", "nome", "NOME COMPLETO", "Nome Completo"],
+      cpf: ["CPF", "cpf"],
+      rg: ["RG", "rg"],
+      cargo: ["CARGO", "cargo", "Cargo"],
+      data_admissao: ["ADMISSÃO CTPS", "DATA ADMISSÃO", "data_admissao", "ADMISSAO", "Data Admissão"],
+      salario_nominal: ["SALARIO CTPS", "SALÁRIO CTPS", "salario_nominal", "SALARIO", "Salário"],
+      ultimo_salario: ["SALARIO Á RECEBER", "SALÁRIO A RECEBER", "ultimo_salario"],
+      status: ["STATUS", "status", "OBS"],
+      nome_mae: ["NOME DA MÃE", "NOME MAE", "nome_mae", "Mãe"],
+      nome_pai: ["NOME DO PAI", "NOME PAI", "nome_pai", "Pai"],
+      sexo: ["GENERO", "GÊNERO", "SEXO", "sexo"],
+      estado_civil: ["ESTADO CIVIL", "estado_civil"],
+      data_nascimento: ["NASCIMENTO", "DATA NASCIMENTO", "data_nascimento"],
+      pis: ["PIS / CNPJ", "PIS", "pis", "PIS/CNPJ"],
+      cbo: ["CBO", "cbo"],
+      endereco: ["ENDEREÇO", "endereco", "ENDERECO"],
+      numero_endereco: ["NÚMERO", "NUMERO", "Nº"],
+      bairro: ["BAIRRO", "bairro"],
+      cidade: ["CIDADE", "cidade"],
+      cep: ["CEP", "cep"],
+      cor_etnia: ["COR/ETNIA", "COR", "cor_etnia"],
+      telefone: ["TELEFONE", "telefone", "CELULAR"],
+      escala_trabalho: ["ESCALA", "escala_trabalho"],
+      horario_entrada: ["HORARIO ENTRADA", "HORÁRIO ENTRADA", "horario_entrada"],
+      horario_intervalo: ["HORARIO INTERVALO/PAUSA", "HORÁRIO INTERVALO", "horario_intervalo"],
+      horario_saida: ["HORARIO SAÍDA", "HORÁRIO SAÍDA", "horario_saida", "HORARIO SAIDA"],
+      dia_folga: ["DIA FOLGA FIXA", "DIA FOLGA", "dia_folga"],
+      gestor: ["GESTOR", "gestor"],
+      cnh: ["CNH", "cnh"],
+      validade_cnh: ["DATA VL CNH", "VALIDADE CNH", "validade_cnh"],
+      categoria_cnh: ["CATEGORIA", "categoria_cnh"],
+      banco: ["BANCO", "banco"],
+      agencia: ["AGÊNCIA", "AGENCIA", "agencia"],
+      conta: ["CONTA CORRENTE", "CONTA", "conta"],
+      conta_poupanca: ["CONTA POUPANÇA", "CONTA POUPANCA"],
+      pix_telefone: ["PIX TELEFONE"],
+      pix_email: ["PIX EMAIL"],
+      pix_cpf: ["PIX CPF"],
+      tem_dependentes: ["DEPENDENTE", "DEPENDENTES", "tem_dependentes"],
+      pensao_alimenticia: ["PENSÃO", "PENSAO", "pensao_alimenticia"],
+      loja_atuacao: ["LOCAL TRABALHO", "LOJA ATUAÇÃO"],
+      loja_registro: ["LOCAL REGISTRO", "LOJA REGISTRO"],
+      numero_contabil: ["Nº LOJA CONTAB", "NUMERO CONTABIL", "numero_contabil"],
+    },
+    upsertConflict: "matricula",
     templateData: [
       { matricula: "MAT001", nome: "Profissional 1", cpf: "000.000.000-00", rg: "00.000.000-0", cargo: "Vendedor", data_admissao: "2024-01-01", salario_nominal: "3000.00", status: "ativo" },
       { matricula: "MAT002", nome: "Profissional 2", cpf: "000.000.000-01", rg: "00.000.000-1", cargo: "Gerente", data_admissao: "2024-01-01", salario_nominal: "5000.00", status: "ativo" },
     ],
-    mapRow: (row) => ({
-      matricula: String(row.matricula),
-      nome: row.nome,
-      cpf: row.cpf || null,
-      rg: row.rg || null,
-      cargo: row.cargo || null,
-      data_admissao: row.data_admissao || null,
-      salario_nominal: row.salario_nominal ? parseFloat(row.salario_nominal) : null,
-      status: row.status || "ativo",
-    }),
+    mapRow: (row: any) => {
+      const cleanCurrency = (val: any): number | null => {
+        if (val === null || val === undefined || val === '') return null;
+        if (typeof val === 'number') return val;
+        const s = String(val).replace(/R\$\s*/g, '').replace(/\s/g, '').trim();
+        // Handle BR format (1.234,56) and US format (1,234.56)
+        if (s.includes(',') && s.indexOf(',') > s.lastIndexOf('.')) {
+          return parseFloat(s.replace(/\./g, '').replace(',', '.')) || null;
+        }
+        return parseFloat(s.replace(/,/g, '')) || null;
+      };
+
+      const formatDate = (val: any): string | null => {
+        if (!val) return null;
+        if (val instanceof Date || (typeof val === 'object' && val.getTime)) {
+          const d = new Date(val);
+          return d.toISOString().split('T')[0];
+        }
+        const s = String(val).trim();
+        // dd/mm/yyyy
+        const brMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (brMatch) return `${brMatch[3]}-${brMatch[2].padStart(2,'0')}-${brMatch[1].padStart(2,'0')}`;
+        // Already yyyy-mm-dd
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        try { return new Date(s).toISOString().split('T')[0]; } catch { return null; }
+      };
+
+      // Resolve PIX - pick first available
+      const chave_pix = row.pix_cpf || row.pix_telefone || row.pix_email || row.chave_pix || null;
+      
+      // Build address from parts
+      let endereco = row.endereco || null;
+      if (endereco && row.numero_endereco) {
+        endereco = `${endereco}, ${row.numero_endereco}`;
+      }
+
+      // Map pensao
+      const pensaoVal = row.pensao_alimenticia;
+      let pensao: number | null = null;
+      if (pensaoVal && String(pensaoVal).toUpperCase() !== 'NÃO' && String(pensaoVal).toUpperCase() !== 'NAO') {
+        pensao = cleanCurrency(pensaoVal);
+      }
+
+      // Map dependentes
+      let temDependentes = false;
+      if (row.tem_dependentes) {
+        const dep = String(row.tem_dependentes).toUpperCase().trim();
+        temDependentes = dep === 'SIM' || dep === 'S' || dep === 'TRUE' || dep === '1';
+      }
+
+      // Map status from OBS
+      let status = 'ativo';
+      if (row.status) {
+        const s = String(row.status).toLowerCase().trim();
+        if (['ativo', 'inativo', 'afastado', 'ferias', 'demitido'].includes(s)) status = s;
+      }
+
+      // Map gender
+      let sexo = row.sexo || null;
+      if (sexo) {
+        const s = String(sexo).toUpperCase().trim();
+        if (s === 'M' || s.startsWith('MASC')) sexo = 'masculino';
+        else if (s === 'F' || s.startsWith('FEM')) sexo = 'feminino';
+      }
+
+      return {
+        matricula: String(row.matricula).trim(),
+        nome: String(row.nome).trim(),
+        cpf: row.cpf ? String(row.cpf).trim() : null,
+        rg: row.rg ? String(row.rg).trim() : null,
+        cargo: row.cargo || null,
+        data_admissao: formatDate(row.data_admissao),
+        salario_nominal: cleanCurrency(row.salario_nominal),
+        ultimo_salario: cleanCurrency(row.ultimo_salario),
+        status,
+        nome_mae: row.nome_mae ? String(row.nome_mae).trim() : null,
+        nome_pai: row.nome_pai ? String(row.nome_pai).trim() : null,
+        sexo,
+        estado_civil: row.estado_civil || null,
+        data_nascimento: formatDate(row.data_nascimento),
+        pis: row.pis ? String(row.pis).trim() : null,
+        cbo: row.cbo ? String(row.cbo).trim() : null,
+        endereco,
+        bairro: row.bairro ? String(row.bairro).trim() : null,
+        cidade: row.cidade ? String(row.cidade).trim() : null,
+        cep: row.cep ? String(row.cep).trim() : null,
+        cor_etnia: row.cor_etnia || null,
+        telefone: row.telefone ? String(row.telefone).trim() : null,
+        escala_trabalho: row.escala_trabalho || null,
+        horario_entrada: row.horario_entrada ? String(row.horario_entrada).trim() : null,
+        horario_intervalo: row.horario_intervalo ? String(row.horario_intervalo).trim() : null,
+        horario_saida: row.horario_saida ? String(row.horario_saida).trim() : null,
+        dia_folga: row.dia_folga || null,
+        gestor: row.gestor || null,
+        cnh: row.cnh ? String(row.cnh).trim() : null,
+        validade_cnh: formatDate(row.validade_cnh),
+        categoria_cnh: row.categoria_cnh || null,
+        banco: row.banco || null,
+        agencia: row.agencia ? String(row.agencia).trim() : null,
+        conta: row.conta || row.conta_poupanca ? String(row.conta || row.conta_poupanca).trim() : null,
+        tipo_conta: row.conta_poupanca && !row.conta ? 'poupanca' : 'corrente',
+        chave_pix,
+        tem_dependentes: temDependentes,
+        pensao_alimenticia: pensao,
+      };
+    },
   },
   {
     id: "faltas",
