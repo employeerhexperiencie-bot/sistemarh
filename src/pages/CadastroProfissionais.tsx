@@ -204,6 +204,7 @@ const initialFormData: FormDataCompleto = {
   nome_pai: '',
   titulo_eleitoral: '',
   apelido: '',
+  tem_dependentes: false,
   endereco: '',
   bairro: '',
   cidade: '',
