@@ -562,7 +562,7 @@ export const CadastroProfissionais: React.FC = () => {
       const computedStatus = formData.data_demissao ? 'demitido' : formData.status;
 
       // Dados principais para salvar no banco
-      const professionalData: Record<string, any> = {
+      const professionalData = {
         matricula: formData.matricula,
         nome: formData.nome,
         cpf: formData.cpf || null,
