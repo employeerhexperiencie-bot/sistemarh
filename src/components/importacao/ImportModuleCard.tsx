@@ -65,6 +65,58 @@ export function ImportModuleCard({ config, history, onImportComplete }: ImportMo
     toast({ title: "Template baixado", description: "Preencha o arquivo e faça o upload." });
   };
 
+  /** Normalize column names using aliases */
+  const normalizeRow = (row: Record<string, any>): Record<string, any> => {
+    if (!config.columnAliases) return row;
+    const normalized: Record<string, any> = {};
+    const allExpectedCols = [...config.requiredColumns, ...(config.optionalColumns || [])];
+
+    for (const [rawKey, rawVal] of Object.entries(row)) {
+      const trimmedKey = String(rawKey).trim();
+      let mapped = false;
+      for (const [targetCol, aliases] of Object.entries(config.columnAliases)) {
+        if (aliases.some(a => a.toLowerCase() === trimmedKey.toLowerCase())) {
+          normalized[targetCol] = rawVal;
+          mapped = true;
+          break;
+        }
+      }
+      if (!mapped) {
+        // Try direct match (case-insensitive)
+        const directMatch = allExpectedCols.find(c => c.toLowerCase() === trimmedKey.toLowerCase());
+        if (directMatch) {
+          normalized[directMatch] = rawVal;
+        } else {
+          normalized[trimmedKey] = rawVal;
+        }
+      }
+    }
+    return normalized;
+  };
+
+  /** Find the header row in spreadsheet (skips title/empty rows) */
+  const findHeaderRow = (worksheet: XLSX.WorkSheet): number => {
+    if (!config.columnAliases) return 0; // default: row 1 is header
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    const allAliases = Object.values(config.columnAliases).flat().map(a => a.toLowerCase());
+    const requiredAliases = config.requiredColumns.flatMap(col => 
+      (config.columnAliases?.[col] || [col]).map(a => a.toLowerCase())
+    );
+    
+    for (let r = range.s.r; r <= Math.min(range.s.r + 10, range.e.r); r++) {
+      let matchCount = 0;
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const cell = worksheet[XLSX.utils.encode_cell({ r, c })];
+        if (cell && cell.v) {
+          const val = String(cell.v).trim().toLowerCase();
+          if (allAliases.includes(val) || requiredAliases.includes(val)) matchCount++;
+        }
+      }
+      if (matchCount >= config.requiredColumns.length) return r;
+    }
+    return 0;
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -77,23 +129,29 @@ export function ImportModuleCard({ config, history, onImportComplete }: ImportMo
     const data = await file.arrayBuffer();
     const workbook = XLSX.read(data);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+    
+    // Auto-detect header row
+    const headerRowIdx = findHeaderRow(worksheet);
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: headerRowIdx }) as any[];
+    
+    // Normalize column names via aliases
+    const normalizedData = jsonData.map(row => normalizeRow(row));
 
     // Validate
     const errors: string[] = [];
-    jsonData.forEach((row, idx) => {
+    normalizedData.forEach((row, idx) => {
       for (const col of config.requiredColumns) {
         if (!row[col] && row[col] !== 0) {
-          errors.push(`Linha ${idx + 2}: campo "${col}" obrigatório está vazio`);
+          errors.push(`Linha ${idx + 2 + headerRowIdx}: campo "${col}" obrigatório está vazio`);
         }
       }
       if (config.validateRow) {
         const err = config.validateRow(row);
-        if (err) errors.push(`Linha ${idx + 2}: ${err}`);
+        if (err) errors.push(`Linha ${idx + 2 + headerRowIdx}: ${err}`);
       }
     });
 
-    setPreviewData(jsonData);
+    setPreviewData(normalizedData);
     setPreviewErrors(errors);
     setPreviewOpen(true);
     e.target.value = "";
