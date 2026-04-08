@@ -33,6 +33,7 @@ const importModules: ImportModuleConfig[] = [
       rg: ["RG", "rg"],
       cargo: ["CARGO", "cargo", "Cargo"],
       data_admissao: ["ADMISSÃO CTPS", "DATA ADMISSÃO", "data_admissao", "ADMISSAO", "Data Admissão"],
+      data_inicio_loja: ["INICIO LOJA", "DATA INICIO LOJA", "data_inicio_loja"],
       salario_nominal: ["SALARIO CTPS", "SALÁRIO CTPS", "salario_nominal", "SALARIO", "Salário"],
       ultimo_salario: ["SALARIO Á RECEBER", "SALÁRIO A RECEBER", "ultimo_salario"],
       status: ["STATUS", "status", "OBS"],
