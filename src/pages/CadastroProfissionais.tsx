@@ -74,6 +74,7 @@ interface FormDataCompleto {
   nome_pai: string;
   titulo_eleitoral: string;
   apelido: string;
+  tem_dependentes: boolean;
   
   // Endereço
   endereco: string;
@@ -106,6 +107,15 @@ interface FormDataCompleto {
   registrado_em: string;
   cracha_numero: string;
   condutor: boolean;
+  gestor: string;
+  data_inicio_loja: string;
+  
+  // Jornada
+  escala_trabalho: string;
+  horario_entrada: string;
+  horario_intervalo: string;
+  horario_saida: string;
+  dia_folga: string;
   
   // Benefícios
   recebe_cesta: boolean;
