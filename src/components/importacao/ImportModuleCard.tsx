@@ -241,8 +241,8 @@ export function ImportModuleCard({ config, history, onImportComplete }: ImportMo
       const withLojas = await resolveLojaIds(resolved);
 
       const BATCH_SIZE = 50;
-      for (let i = 0; i < resolved.length; i += BATCH_SIZE) {
-        const batch = resolved.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < withLojas.length; i += BATCH_SIZE) {
+        const batch = withLojas.slice(i, i + BATCH_SIZE);
 
         if (batch.length > 0) {
           const query = config.upsertConflict
