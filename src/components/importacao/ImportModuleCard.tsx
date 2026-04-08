@@ -24,6 +24,10 @@ export interface ImportModuleConfig {
   tableName: string;
   mapRow: (row: any) => Record<string, any>;
   validateRow?: (row: any) => string | null;
+  /** Maps alternative column names from uploaded spreadsheets to the expected field names */
+  columnAliases?: Record<string, string[]>;
+  /** If true, use upsert with onConflict instead of insert */
+  upsertConflict?: string;
 }
 
 interface ImportHistory {
