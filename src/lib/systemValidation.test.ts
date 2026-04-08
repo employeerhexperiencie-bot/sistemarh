@@ -284,7 +284,7 @@ describe('Regras de Faltas', () => {
   });
 
   it('atestado não gera desconto', () => {
-    const tipo = 'atestado';
+    const tipo: string = 'atestado';
     const geraDesconto = tipo === 'injustificada';
     expect(geraDesconto).toBe(false);
   });
