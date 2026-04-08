@@ -215,10 +215,10 @@ export function ImportModuleCard({ config, history, onImportComplete }: ImportMo
         const batch = resolved.slice(i, i + BATCH_SIZE);
 
         if (batch.length > 0) {
-          const { error, data } = await supabase
-            .from(config.tableName as any)
-            .insert(batch as any)
-            .select();
+          const query = config.upsertConflict
+            ? supabase.from(config.tableName as any).upsert(batch as any, { onConflict: config.upsertConflict }).select()
+            : supabase.from(config.tableName as any).insert(batch as any).select();
+          const { error, data } = await query;
 
           if (error) {
             importErrors.push(`Lote ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`);
