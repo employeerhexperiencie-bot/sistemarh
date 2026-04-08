@@ -187,6 +187,33 @@ export function ImportModuleCard({ config, history, onImportComplete }: ImportMo
     return { resolved, errors };
   };
 
+  /** Resolve _loja_atuacao / _loja_registro names to loja_id / loja_registro_id */
+  const resolveLojaIds = async (rows: any[]): Promise<any[]> => {
+    const lojaNames = new Set<string>();
+    rows.forEach(r => {
+      if (r._loja_atuacao) lojaNames.add(r._loja_atuacao.toUpperCase().trim());
+      if (r._loja_registro) lojaNames.add(r._loja_registro.toUpperCase().trim());
+    });
+    if (lojaNames.size === 0) return rows;
+
+    const { data: lojas } = await supabase.from("lojas").select("id, nome");
+    const lojaMap = new Map<string, string>();
+    (lojas || []).forEach(l => lojaMap.set(l.nome.toUpperCase().trim(), l.id));
+
+    return rows.map(row => {
+      const { _loja_atuacao, _loja_registro, ...rest } = row;
+      if (_loja_atuacao) {
+        const id = lojaMap.get(_loja_atuacao.toUpperCase().trim());
+        if (id) rest.loja_id = id;
+      }
+      if (_loja_registro) {
+        const id = lojaMap.get(_loja_registro.toUpperCase().trim());
+        if (id) rest.loja_registro_id = id;
+      }
+      return rest;
+    });
+  };
+
   const confirmImport = async () => {
     if (!selectedFile || previewData.length === 0) return;
     setPreviewOpen(false);
@@ -210,9 +237,12 @@ export function ImportModuleCard({ config, history, onImportComplete }: ImportMo
       const { resolved, errors: resolveErrors } = await resolveProfissionalIds(allMapped);
       importErrors.push(...resolveErrors);
 
+      // Resolve _loja_atuacao / _loja_registro -> loja_id / loja_registro_id
+      const withLojas = await resolveLojaIds(resolved);
+
       const BATCH_SIZE = 50;
-      for (let i = 0; i < resolved.length; i += BATCH_SIZE) {
-        const batch = resolved.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < withLojas.length; i += BATCH_SIZE) {
+        const batch = withLojas.slice(i, i + BATCH_SIZE);
 
         if (batch.length > 0) {
           const query = config.upsertConflict

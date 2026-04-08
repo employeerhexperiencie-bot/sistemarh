@@ -33,6 +33,7 @@ const importModules: ImportModuleConfig[] = [
       rg: ["RG", "rg"],
       cargo: ["CARGO", "cargo", "Cargo"],
       data_admissao: ["ADMISSÃO CTPS", "DATA ADMISSÃO", "data_admissao", "ADMISSAO", "Data Admissão"],
+      data_inicio_loja: ["INICIO LOJA", "DATA INICIO LOJA", "data_inicio_loja"],
       salario_nominal: ["SALARIO CTPS", "SALÁRIO CTPS", "salario_nominal", "SALARIO", "Salário"],
       ultimo_salario: ["SALARIO Á RECEBER", "SALÁRIO A RECEBER", "ultimo_salario"],
       status: ["STATUS", "status", "OBS"],
@@ -142,13 +143,15 @@ const importModules: ImportModuleConfig[] = [
         else if (s === 'F' || s.startsWith('FEM')) sexo = 'feminino';
       }
 
-      return {
+      // These are intermediate fields - will be resolved before insert
+      const result: Record<string, any> = {
         matricula: String(row.matricula).trim(),
         nome: String(row.nome).trim(),
         cpf: row.cpf ? String(row.cpf).trim() : null,
         rg: row.rg ? String(row.rg).trim() : null,
         cargo: row.cargo || null,
         data_admissao: formatDate(row.data_admissao),
+        data_inicio_loja: formatDate(row.data_inicio_loja),
         salario_nominal: cleanCurrency(row.salario_nominal),
         ultimo_salario: cleanCurrency(row.ultimo_salario),
         status,
@@ -182,6 +185,12 @@ const importModules: ImportModuleConfig[] = [
         tem_dependentes: temDependentes,
         pensao_alimenticia: pensao,
       };
+
+      // Store loja names for resolution (prefixed with _ to be removed before insert)
+      if (row.loja_atuacao) result._loja_atuacao = String(row.loja_atuacao).trim();
+      if (row.loja_registro) result._loja_registro = String(row.loja_registro).trim();
+
+      return result;
     },
   },
   {
