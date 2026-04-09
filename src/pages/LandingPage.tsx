@@ -223,6 +223,21 @@ function Problems() {
             Você se reconhece em alguma dessas situações?
           </h2>
         </div>
+        
+        {/* Image + text block */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <div className="rounded-2xl overflow-hidden shadow-xl">
+            <img src={problemStress} alt="Profissional estressada com planilhas" className="w-full h-auto object-cover" loading="lazy" width={1280} height={800} />
+          </div>
+          <div>
+            <h3 className="text-2xl font-bold text-foreground mb-4">O RH não precisa ser assim</h3>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              Muitos profissionais de RH passam noites e finais de semana lutando com planilhas, 
+              com medo de errar um cálculo que pode custar caro. Isso acaba hoje.
+            </p>
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-3 gap-8">
           {problems.map((problem, i) => (
             <div key={i} className="p-8 rounded-2xl bg-background border border-border hover:border-destructive/30 transition-colors">
