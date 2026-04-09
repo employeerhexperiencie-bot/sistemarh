@@ -56,6 +56,7 @@ import PainelUso from "@/pages/PainelUso";
 import CentralImportacao from "@/pages/CentralImportacao";
 import GestaoPonto from "@/pages/GestaoPonto";
 import NotFound from "./pages/NotFound";
+import LandingPage from "@/pages/LandingPage";
 import { OnboardingWrapper } from "@/components/onboarding/OnboardingWrapper";
 import { Loader2 } from "lucide-react";
 
@@ -134,6 +135,9 @@ const App = () => (
               <BrowserRouter>
                 <OnboardingWrapper />
                 <Routes>
+                  {/* Rota Pública - Landing Page */}
+                  <Route path="/site" element={<LandingPage />} />
+                  
                   {/* Rotas Públicas */}
                   <Route path="/login" element={<LoginRoute />} />
                   <Route path="/setup" element={<SetupRoute />} />
