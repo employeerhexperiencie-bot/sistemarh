@@ -487,11 +487,19 @@ function HowItWorks() {
   return (
     <section id="como-funciona" className="py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Simples assim</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Três passos e pronto
-          </h2>
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <div>
+            <span className="text-sm text-primary font-medium uppercase tracking-wider">Simples assim</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
+              Três passos e pronto
+            </h2>
+            <p className="mt-4 text-muted-foreground leading-relaxed">
+              Sem complicação, sem dor de cabeça. A gente cuida de tudo pra você começar.
+            </p>
+          </div>
+          <div className="rounded-2xl overflow-hidden shadow-xl">
+            <img src={supportCall} alt="Suporte dedicado" className="w-full h-auto object-cover" loading="lazy" width={1280} height={800} />
+          </div>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {steps.map((s, i) => (
