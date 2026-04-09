@@ -135,6 +135,9 @@ const App = () => (
               <BrowserRouter>
                 <OnboardingWrapper />
                 <Routes>
+                  {/* Rota Pública - Landing Page */}
+                  <Route path="/site" element={<LandingPage />} />
+                  
                   {/* Rotas Públicas */}
                   <Route path="/login" element={<LoginRoute />} />
                   <Route path="/setup" element={<SetupRoute />} />
