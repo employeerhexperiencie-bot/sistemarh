@@ -11,6 +11,14 @@ import screenshotDashboard from '@/assets/landing/screenshot-dashboard.jpg';
 import screenshotCadastro from '@/assets/landing/screenshot-cadastro.jpg';
 import screenshotFolha from '@/assets/landing/screenshot-folha.jpg';
 import screenshotBeneficios from '@/assets/landing/screenshot-beneficios.jpg';
+import heroTeam from '@/assets/landing/hero-team.jpg';
+import problemStress from '@/assets/landing/problem-stress.jpg';
+import solutionEasy from '@/assets/landing/solution-easy.jpg';
+import supportCall from '@/assets/landing/support-call.jpg';
+import testimonial1 from '@/assets/landing/testimonial-1.jpg';
+import testimonial2 from '@/assets/landing/testimonial-2.jpg';
+import testimonial3 from '@/assets/landing/testimonial-3.jpg';
+import teamSuccess from '@/assets/landing/team-success.jpg';
 
 // ============ HEADER ============
 function LandingHeader() {
