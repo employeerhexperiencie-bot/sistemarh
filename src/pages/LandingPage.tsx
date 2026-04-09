@@ -262,8 +262,11 @@ function StatsImpact() {
   ];
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-primary text-white">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-primary text-white relative overflow-hidden">
+      <div className="absolute inset-0">
+        <img src={heroTeam} alt="" className="w-full h-full object-cover opacity-10" />
+      </div>
+      <div className="max-w-7xl mx-auto relative">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat, i) => (
             <div key={i} className="text-center">
