@@ -462,9 +462,7 @@ function Testimonials() {
               </div>
               <p className="text-foreground leading-relaxed mb-6">"{t.text}"</p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-semibold text-sm">{t.name.charAt(0)}</span>
-                </div>
+                <img src={t.photo} alt={t.name} className="w-12 h-12 rounded-full object-cover" loading="lazy" width={48} height={48} />
                 <div>
                   <p className="font-medium text-foreground text-sm">{t.name}</p>
                   <p className="text-xs text-muted-foreground">{t.role} · {t.company}</p>
