@@ -422,14 +422,26 @@ function Testimonials() {
       role: "Coordenadora de RH",
       company: "Rede de Lojas",
       text: "Antes eu passava 3 dias fazendo a folha. Agora faço em 30 minutos. Mudou minha vida profissional.",
-      rating: 5
+      rating: 5,
+      photo: testimonial1
     },
     {
       name: "Carlos Santos",
       role: "Gerente Administrativo",
       company: "Grupo Empresarial",
       text: "O sistema de alertas é incrível. Nunca mais perdi um prazo de ASO ou férias. Recomendo demais.",
-      rating: 5
+      rating: 5,
+      photo: testimonial2
+    },
+    {
+      name: "Ana Costa",
+      role: "Proprietária",
+      company: "Rede de Franquias",
+      text: "Tenho 14 lojas e consigo gerenciar tudo de um lugar só. O investimento se pagou no primeiro mês.",
+      rating: 5,
+      photo: testimonial3
+    }
+  ];
     },
     {
       name: "Ana Costa",
