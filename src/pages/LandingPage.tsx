@@ -11,6 +11,14 @@ import screenshotDashboard from '@/assets/landing/screenshot-dashboard.jpg';
 import screenshotCadastro from '@/assets/landing/screenshot-cadastro.jpg';
 import screenshotFolha from '@/assets/landing/screenshot-folha.jpg';
 import screenshotBeneficios from '@/assets/landing/screenshot-beneficios.jpg';
+import heroTeam from '@/assets/landing/hero-team.jpg';
+import problemStress from '@/assets/landing/problem-stress.jpg';
+import solutionEasy from '@/assets/landing/solution-easy.jpg';
+import supportCall from '@/assets/landing/support-call.jpg';
+import testimonial1 from '@/assets/landing/testimonial-1.jpg';
+import testimonial2 from '@/assets/landing/testimonial-2.jpg';
+import testimonial3 from '@/assets/landing/testimonial-3.jpg';
+import teamSuccess from '@/assets/landing/team-success.jpg';
 
 // ============ HEADER ============
 function LandingHeader() {
@@ -215,6 +223,21 @@ function Problems() {
             Você se reconhece em alguma dessas situações?
           </h2>
         </div>
+        
+        {/* Image + text block */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <div className="rounded-2xl overflow-hidden shadow-xl">
+            <img src={problemStress} alt="Profissional estressada com planilhas" className="w-full h-auto object-cover" loading="lazy" width={1280} height={800} />
+          </div>
+          <div>
+            <h3 className="text-2xl font-bold text-foreground mb-4">O RH não precisa ser assim</h3>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              Muitos profissionais de RH passam noites e finais de semana lutando com planilhas, 
+              com medo de errar um cálculo que pode custar caro. Isso acaba hoje.
+            </p>
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-3 gap-8">
           {problems.map((problem, i) => (
             <div key={i} className="p-8 rounded-2xl bg-background border border-border hover:border-destructive/30 transition-colors">
@@ -239,8 +262,11 @@ function StatsImpact() {
   ];
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-primary text-white">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-primary text-white relative overflow-hidden">
+      <div className="absolute inset-0">
+        <img src={heroTeam} alt="" className="w-full h-full object-cover opacity-10" />
+      </div>
+      <div className="max-w-7xl mx-auto relative">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat, i) => (
             <div key={i} className="text-center">
@@ -281,7 +307,7 @@ function Features() {
             </div>
           </div>
 
-          <div>
+           <div>
             <span className="text-sm text-primary font-medium uppercase tracking-wider">A solução</span>
             <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
               Imagine seu RH funcionando no automático
@@ -289,6 +315,18 @@ function Features() {
             <p className="mt-4 text-muted-foreground leading-relaxed">
               O Sistema RH faz o trabalho pesado para você. Menos estresse, menos erros, mais tempo para o que importa.
             </p>
+            
+            <div className="flex items-center gap-4 mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
+              <img src={solutionEasy} alt="Profissional satisfeita" className="w-14 h-14 rounded-full object-cover" loading="lazy" width={56} height={56} />
+              <div>
+                <p className="text-sm text-foreground font-medium">
+                  "Agora saio no horário e ainda sobra tempo"
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Maria Silva, Coordenadora de RH
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -387,21 +425,24 @@ function Testimonials() {
       role: "Coordenadora de RH",
       company: "Rede de Lojas",
       text: "Antes eu passava 3 dias fazendo a folha. Agora faço em 30 minutos. Mudou minha vida profissional.",
-      rating: 5
+      rating: 5,
+      photo: testimonial1
     },
     {
       name: "Carlos Santos",
       role: "Gerente Administrativo",
       company: "Grupo Empresarial",
       text: "O sistema de alertas é incrível. Nunca mais perdi um prazo de ASO ou férias. Recomendo demais.",
-      rating: 5
+      rating: 5,
+      photo: testimonial2
     },
     {
       name: "Ana Costa",
       role: "Proprietária",
       company: "Rede de Franquias",
       text: "Tenho 14 lojas e consigo gerenciar tudo de um lugar só. O investimento se pagou no primeiro mês.",
-      rating: 5
+      rating: 5,
+      photo: testimonial3
     }
   ];
 
@@ -424,9 +465,7 @@ function Testimonials() {
               </div>
               <p className="text-foreground leading-relaxed mb-6">"{t.text}"</p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-semibold text-sm">{t.name.charAt(0)}</span>
-                </div>
+                <img src={t.photo} alt={t.name} className="w-12 h-12 rounded-full object-cover" loading="lazy" width={48} height={48} />
                 <div>
                   <p className="font-medium text-foreground text-sm">{t.name}</p>
                   <p className="text-xs text-muted-foreground">{t.role} · {t.company}</p>
@@ -451,11 +490,19 @@ function HowItWorks() {
   return (
     <section id="como-funciona" className="py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Simples assim</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Três passos e pronto
-          </h2>
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <div>
+            <span className="text-sm text-primary font-medium uppercase tracking-wider">Simples assim</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
+              Três passos e pronto
+            </h2>
+            <p className="mt-4 text-muted-foreground leading-relaxed">
+              Sem complicação, sem dor de cabeça. A gente cuida de tudo pra você começar.
+            </p>
+          </div>
+          <div className="rounded-2xl overflow-hidden shadow-xl">
+            <img src={supportCall} alt="Suporte dedicado" className="w-full h-auto object-cover" loading="lazy" width={1280} height={800} />
+          </div>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {steps.map((s, i) => (
@@ -600,8 +647,12 @@ function FAQ() {
 // ============ CTA ============
 function CTA() {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary">
-      <div className="max-w-3xl mx-auto text-center">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary relative overflow-hidden">
+      {/* Background image with overlay */}
+      <div className="absolute inset-0">
+        <img src={teamSuccess} alt="" className="w-full h-full object-cover opacity-15" />
+      </div>
+      <div className="max-w-3xl mx-auto text-center relative">
         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
           Pronto para simplificar seu RH?
         </h2>
