@@ -644,8 +644,12 @@ function FAQ() {
 // ============ CTA ============
 function CTA() {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary">
-      <div className="max-w-3xl mx-auto text-center">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary relative overflow-hidden">
+      {/* Background image with overlay */}
+      <div className="absolute inset-0">
+        <img src={teamSuccess} alt="" className="w-full h-full object-cover opacity-15" />
+      </div>
+      <div className="max-w-3xl mx-auto text-center relative">
         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
           Pronto para simplificar seu RH?
         </h2>
