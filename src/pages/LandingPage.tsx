@@ -304,7 +304,7 @@ function Features() {
             </div>
           </div>
 
-          <div>
+           <div>
             <span className="text-sm text-primary font-medium uppercase tracking-wider">A solução</span>
             <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
               Imagine seu RH funcionando no automático
@@ -312,6 +312,18 @@ function Features() {
             <p className="mt-4 text-muted-foreground leading-relaxed">
               O Sistema RH faz o trabalho pesado para você. Menos estresse, menos erros, mais tempo para o que importa.
             </p>
+            
+            <div className="flex items-center gap-4 mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
+              <img src={solutionEasy} alt="Profissional satisfeita" className="w-14 h-14 rounded-full object-cover" loading="lazy" width={56} height={56} />
+              <div>
+                <p className="text-sm text-foreground font-medium">
+                  "Agora saio no horário e ainda sobra tempo"
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Maria Silva, Coordenadora de RH
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
