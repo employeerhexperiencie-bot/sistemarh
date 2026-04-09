@@ -442,15 +442,6 @@ function Testimonials() {
       photo: testimonial3
     }
   ];
-    },
-    {
-      name: "Ana Costa",
-      role: "Proprietária",
-      company: "Rede de Franquias",
-      text: "Tenho 14 lojas e consigo gerenciar tudo de um lugar só. O investimento se pagou no primeiro mês.",
-      rating: 5
-    }
-  ];
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
