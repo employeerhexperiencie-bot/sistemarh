@@ -102,6 +102,20 @@ export default function PainelUso() {
         .from('user_roles')
         .select('user_id, nome, role');
 
+      // Buscar TODAS as sessões históricas (sem filtro de período) para saber se o usuário já acessou alguma vez
+      const { data: allTimeSessions } = await supabase
+        .from('user_activity_sessions')
+        .select('user_id, started_at')
+        .order('started_at', { ascending: false });
+
+      // Mapa de primeiro acesso por usuário (qualquer período)
+      const everAccessedMap = new Map<string, string>();
+      (allTimeSessions || []).forEach((s: any) => {
+        if (!everAccessedMap.has(s.user_id)) {
+          everAccessedMap.set(s.user_id, s.started_at);
+        }
+      });
+
       const userMap = new Map<string, { nome: string; role: string }>();
       (userRoles || []).forEach((ur: any) => {
         userMap.set(ur.user_id, { nome: ur.nome || 'Sem nome', role: ur.role || '' });
@@ -113,6 +127,7 @@ export default function PainelUso() {
 
       // Primeiro: criar entrada para TODOS os usuários do user_roles
       (userRoles || []).forEach((ur: any) => {
+        const lastAccess = everAccessedMap.get(ur.user_id) || '';
         userSessionMap.set(ur.user_id, {
           user_id: ur.user_id,
           user_name: ur.nome || 'Sem nome',
@@ -120,12 +135,12 @@ export default function PainelUso() {
           total_sessions: 0,
           total_duration_seconds: 0,
           total_pages: 0,
-          last_active: '',
+          last_active: lastAccess, // Usar dado histórico completo
           is_online: false,
         });
       });
 
-      // Depois: agregar dados de sessão para quem tem
+      // Depois: agregar dados de sessão do período selecionado
       (sessions || []).forEach((s: any) => {
         const existing = userSessionMap.get(s.user_id);
         const isOnline = !s.ended_at && s.last_heartbeat && new Date(s.last_heartbeat).getTime() > onlineThreshold;
@@ -362,8 +377,10 @@ export default function PainelUso() {
                         <TableCell className="text-center">
                           {u.is_online ? (
                             <Badge className="bg-success/10 text-success border-success/20">Online</Badge>
+                          ) : !u.last_active ? (
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Nunca acessou</Badge>
                           ) : u.total_sessions === 0 ? (
-                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Nunca acessou</Badge>
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Inativo no período</Badge>
                           ) : (
                             <Badge variant="outline">Offline</Badge>
                           )}
