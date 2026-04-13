@@ -11,11 +11,17 @@ export function useActivityTracker() {
   const sessionIdRef = useRef<string | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pagesRef = useRef(0);
+  const startedAtRef = useRef<number>(0);
+  const prevUserIdRef = useRef<string | null>(null);
+  const isCreatingRef = useRef(false);
 
   // Criar sessão
   const startSession = useCallback(async () => {
-    if (!user?.id || !session) return;
+    if (!user?.id || !session || isCreatingRef.current) return;
+    // Evitar duplicação: se já tem sessão ativa, não criar outra
+    if (sessionIdRef.current) return;
 
+    isCreatingRef.current = true;
     try {
       const { data, error } = await supabase
         .from('user_activity_sessions')
@@ -28,10 +34,13 @@ export function useActivityTracker() {
 
       if (!error && data) {
         sessionIdRef.current = data.id;
+        startedAtRef.current = Date.now();
         pagesRef.current = 1;
       }
     } catch (err) {
       console.error('Erro ao iniciar sessão de atividade:', err);
+    } finally {
+      isCreatingRef.current = false;
     }
   }, [user?.id, session]);
 
@@ -40,11 +49,13 @@ export function useActivityTracker() {
     if (!sessionIdRef.current) return;
 
     try {
+      const duration = Math.round((Date.now() - startedAtRef.current) / 1000);
       await supabase
         .from('user_activity_sessions')
         .update({
           last_heartbeat: new Date().toISOString(),
           pages_visited: pagesRef.current,
+          duration_seconds: duration,
         })
         .eq('id', sessionIdRef.current);
     } catch (err) {
@@ -59,15 +70,8 @@ export function useActivityTracker() {
     sessionIdRef.current = null;
 
     try {
-      // Calcular duração
-      const { data } = await supabase
-        .from('user_activity_sessions')
-        .select('started_at')
-        .eq('id', sid)
-        .single();
-
-      const duration = data
-        ? Math.round((Date.now() - new Date(data.started_at).getTime()) / 1000)
+      const duration = startedAtRef.current
+        ? Math.round((Date.now() - startedAtRef.current) / 1000)
         : 0;
 
       await supabase
@@ -108,20 +112,31 @@ export function useActivityTracker() {
     }
   }, [user?.id]);
 
-  // Iniciar/encerrar sessão com auth
+  // Iniciar/encerrar sessão APENAS quando o user_id muda (não quando o token renova)
   useEffect(() => {
-    if (user?.id && session) {
+    const currentUserId = user?.id || null;
+    const previousUserId = prevUserIdRef.current;
+
+    // Se o user_id não mudou, não fazer nada (token refresh não deve criar nova sessão)
+    if (currentUserId === previousUserId) return;
+
+    prevUserIdRef.current = currentUserId;
+
+    if (currentUserId && session) {
       startSession();
 
       heartbeatRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
 
       const handleBeforeUnload = () => {
         if (sessionIdRef.current) {
-          // Usar sendBeacon para garantir envio com headers de autenticação
           const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_activity_sessions?id=eq.${sessionIdRef.current}`;
+          const duration = startedAtRef.current
+            ? Math.round((Date.now() - startedAtRef.current) / 1000)
+            : 0;
           const body = JSON.stringify({
             ended_at: new Date().toISOString(),
             pages_visited: pagesRef.current,
+            duration_seconds: duration,
           });
           const headers = {
             'Content-Type': 'application/json',
@@ -129,7 +144,6 @@ export function useActivityTracker() {
             'Authorization': `Bearer ${session?.access_token}`,
             'Prefer': 'return=minimal',
           };
-          // sendBeacon não suporta headers customizados, usar fetch keepalive
           fetch(url, {
             method: 'PATCH',
             headers,
@@ -150,7 +164,8 @@ export function useActivityTracker() {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       endSession();
     }
-  }, [user?.id, session, startSession, sendHeartbeat, endSession]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Contar páginas visitadas
   useEffect(() => {
