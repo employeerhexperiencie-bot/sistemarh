@@ -377,9 +377,13 @@ export default function PainelUso() {
                         <TableCell className="text-center">
                           {u.is_online ? (
                             <Badge className="bg-success/10 text-success border-success/20">Online</Badge>
+                          ) : !u.last_active ? (
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Nunca acessou</Badge>
                           ) : u.total_sessions === 0 ? (
-                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Nunca acessou</Badge>
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Inativo no período</Badge>
                           ) : (
+                            <Badge variant="outline">Offline</Badge>
+                          )}
                             <Badge variant="outline">Offline</Badge>
                           )}
                         </TableCell>
