@@ -384,8 +384,6 @@ export default function PainelUso() {
                           ) : (
                             <Badge variant="outline">Offline</Badge>
                           )}
-                            <Badge variant="outline">Offline</Badge>
-                          )}
                         </TableCell>
                         <TableCell className="text-right font-mono">{u.total_sessions}</TableCell>
                         <TableCell className="text-right font-mono">{formatDuration(u.total_duration_seconds)}</TableCell>
