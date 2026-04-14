@@ -2448,7 +2448,10 @@ export const CadastroProfissionais: React.FC = () => {
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </DropdownMenuItem>
-                        {professional.status === 'demitido' && (
+                        <DropdownMenuItem onClick={() => setReajusteTarget(professional)}>
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          Reajuste Salarial
+                        </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleReverterDemissao(professional)}
                             className="text-green-600 focus:text-green-600"
