@@ -652,10 +652,15 @@ export const CadastroProfissionais: React.FC = () => {
       };
 
       if (editingProfessional) {
-        // Detectar alteração salarial antes de salvar
-        const salarioAnterior = editingProfessional.salario_nominal || 0;
-        const salarioNovo = professionalData.salario_nominal || 0;
-        const houveMudancaSalarial = salarioAnterior > 0 && salarioNovo > 0 && salarioAnterior !== salarioNovo;
+        const p = editingProfessional as any;
+        // Detectar alterações salariais separadamente
+        const combinadoAnterior = editingProfessional.salario_nominal || 0;
+        const combinadoNovo = professionalData.salario_nominal || 0;
+        const mudouCombinado = combinadoAnterior > 0 && combinadoNovo > 0 && combinadoAnterior !== combinadoNovo;
+
+        const ctpsAnterior = p.primeiro_salario || 0;
+        const ctpsNovo = professionalData.primeiro_salario || 0;
+        const mudouCtps = ctpsAnterior > 0 && ctpsNovo > 0 && ctpsAnterior !== ctpsNovo;
 
         const { error } = await supabase
           .from('profissionais')
@@ -664,32 +669,54 @@ export const CadastroProfissionais: React.FC = () => {
 
         if (error) throw error;
 
-        // Registrar alteração salarial no histórico
-        if (houveMudancaSalarial) {
-          const percentual = ((salarioNovo - salarioAnterior) / salarioAnterior) * 100;
-          await supabase.from('historico_salarios').insert({
+        // Registrar alterações salariais no histórico
+        const registros: any[] = [];
+        if (mudouCombinado) {
+          const pct = ((combinadoNovo - combinadoAnterior) / combinadoAnterior) * 100;
+          registros.push({
             profissional_id: editingProfessional.id,
-            salario_anterior: salarioAnterior,
-            salario_novo: salarioNovo,
+            salario_anterior: combinadoAnterior,
+            salario_novo: combinadoNovo,
             data_alteracao: new Date().toISOString().split('T')[0],
-            tipo_alteracao: 'ajuste_cadastro',
-            percentual_alteracao: Math.round(percentual * 100) / 100,
-            motivo: 'Alteração via cadastro de profissionais',
+            tipo_alteracao: 'ajuste_combinado',
+            percentual_alteracao: Math.round(pct * 100) / 100,
+            motivo: 'Alteração do Salário Combinado via cadastro',
           });
         }
+        if (mudouCtps) {
+          const pct = ((ctpsNovo - ctpsAnterior) / ctpsAnterior) * 100;
+          registros.push({
+            profissional_id: editingProfessional.id,
+            salario_anterior: ctpsAnterior,
+            salario_novo: ctpsNovo,
+            data_alteracao: new Date().toISOString().split('T')[0],
+            tipo_alteracao: 'ajuste_ctps',
+            percentual_alteracao: Math.round(pct * 100) / 100,
+            motivo: 'Alteração do Salário CTPS via cadastro',
+          });
+        }
+        if (registros.length > 0) {
+          await supabase.from('historico_salarios').insert(registros);
+        }
+
+        const detalhes: string[] = [];
+        if (mudouCombinado) detalhes.push(`Combinado: R$ ${combinadoAnterior} → R$ ${combinadoNovo}`);
+        if (mudouCtps) detalhes.push(`CTPS: R$ ${ctpsAnterior} → R$ ${ctpsNovo}`);
         
         addLog({
           usuario: 'Sistema',
           acao: 'EDITAR',
           modulo: 'PROFISSIONAIS',
           entidade: formData.nome,
-          detalhes: `Profissional ${formData.matricula} - ${formData.nome} atualizado${houveMudancaSalarial ? ` (salário: R$ ${salarioAnterior} → R$ ${salarioNovo})` : ''}`,
+          detalhes: `Profissional ${formData.matricula} - ${formData.nome} atualizado${detalhes.length > 0 ? ` (${detalhes.join(', ')})` : ''}`,
           metadata: { profissionalId: editingProfessional.id }
         });
         
         toast({
           title: "Sucesso",
-          description: "Profissional atualizado com sucesso"
+          description: detalhes.length > 0 
+            ? `Profissional atualizado. Alteração salarial registrada: ${detalhes.join('; ')}`
+            : "Profissional atualizado com sucesso"
         });
       } else {
         // Verificar limite do tenant antes de inserir
