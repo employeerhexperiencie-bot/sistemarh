@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, TrendingUp, FileText, Filter, ArrowLeft, Loader2, History, DollarSign, Bus, Package } from 'lucide-react';
+import { Calendar, TrendingUp, FileText, Filter, ArrowLeft, Loader2, History, DollarSign, Bus, Package, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ export default function HistoricoProfissional() {
   const [vales, setVales] = useState<any[]>([]);
   const [emprestimos, setEmprestimos] = useState<any[]>([]);
   const [faltas, setFaltas] = useState<any[]>([]);
+  const [historicoSalarios, setHistoricoSalarios] = useState<any[]>([]);
   
   const matricula = searchParams.get('matricula') || '';
   const profissional = searchParams.get('profissional') || '';
@@ -112,15 +113,17 @@ export default function HistoricoProfissional() {
       setFechamentosHistorico(historicoFechamentos);
 
       // Buscar vales, empréstimos e faltas
-      const [valesRes, empRes, faltasRes] = await Promise.all([
+      const [valesRes, empRes, faltasRes, salarioRes] = await Promise.all([
         supabase.from('professional_vales').select('*').eq('profissional_id', prof.id).order('data_lancamento', { ascending: false }).limit(20),
         supabase.from('emprestimos').select('*').eq('profissional_id', prof.id).order('data_inicio', { ascending: false }),
         supabase.from('faltas').select('*').eq('profissional_id', prof.id).order('data_falta', { ascending: false }).limit(30),
+        supabase.from('historico_salarios').select('*').eq('profissional_id', prof.id).order('data_alteracao', { ascending: true }),
       ]);
 
       setVales(valesRes.data || []);
       setEmprestimos(empRes.data || []);
       setFaltas(faltasRes.data || []);
+      setHistoricoSalarios(salarioRes.data || []);
     } catch (error) {
       console.error('Erro ao carregar histórico:', error);
       toast.error('Erro ao carregar histórico');
