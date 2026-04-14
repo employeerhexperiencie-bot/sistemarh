@@ -2487,6 +2487,18 @@ export const CadastroProfissionais: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+      <ReajusteSalarialModal
+        open={!!reajusteTarget}
+        onOpenChange={(open) => !open && setReajusteTarget(null)}
+        profissional={reajusteTarget ? {
+          id: reajusteTarget.id,
+          nome: reajusteTarget.nome,
+          matricula: reajusteTarget.matricula,
+          salario_nominal: reajusteTarget.salario_nominal || 0,
+          primeiro_salario: (reajusteTarget as any).primeiro_salario || 0,
+        } : null}
+        onSuccess={loadProfessionals}
+      />
     </div>
   );
 };
