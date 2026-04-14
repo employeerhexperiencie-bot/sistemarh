@@ -399,6 +399,85 @@ export default function HistoricoProfissional() {
         </Card>
       </div>
 
+      {/* Evolução Salarial */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Evolução Salarial
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {historicoSalarios.length === 0 ? (
+            <p className="text-center py-4 text-muted-foreground text-sm">Nenhuma alteração salarial registrada</p>
+          ) : (
+            <>
+              {/* Mini gráfico visual de evolução */}
+              <div className="flex items-end gap-1 mb-4 h-20 px-2">
+                {historicoSalarios.map((h, i) => {
+                  const maxVal = Math.max(...historicoSalarios.map(s => Number(s.salario_novo)));
+                  const height = maxVal > 0 ? (Number(h.salario_novo) / maxVal) * 100 : 50;
+                  return (
+                    <div key={h.id} className="flex-1 flex flex-col items-center gap-1" title={`${formatDate(h.data_alteracao)}: ${formatCurrency(h.salario_novo)}`}>
+                      <div
+                        className="w-full rounded-t bg-primary/70 min-h-[4px] transition-all"
+                        style={{ height: `${height}%` }}
+                      />
+                      <span className="text-[9px] text-muted-foreground truncate w-full text-center">
+                        {new Date(h.data_alteracao).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Anterior</TableHead>
+                    <TableHead className="text-right">Novo</TableHead>
+                    <TableHead className="text-right">Variação</TableHead>
+                    <TableHead>Motivo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...historicoSalarios].reverse().map((h: any) => {
+                    const pct = h.percentual_alteracao || 0;
+                    const tipoLabel: Record<string, string> = {
+                      ajuste_combinado: 'Combinado',
+                      ajuste_ctps: 'CTPS',
+                      ajuste_cadastro: 'Cadastro',
+                      reajuste: 'Reajuste',
+                      dissidio: 'Dissídio',
+                      promocao: 'Promoção',
+                      merito: 'Mérito',
+                    };
+                    return (
+                      <TableRow key={h.id}>
+                        <TableCell className="text-sm">{formatDate(h.data_alteracao)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{tipoLabel[h.tipo_alteracao] || h.tipo_alteracao}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-sm">{formatCurrency(h.salario_anterior)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(h.salario_novo)}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={`flex items-center justify-end gap-1 text-sm font-medium ${pct > 0 ? 'text-green-600' : pct < 0 ? 'text-destructive' : ''}`}>
+                            {pct > 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : pct < 0 ? <ArrowDownRight className="h-3.5 w-3.5" /> : null}
+                            {pct > 0 ? '+' : ''}{pct.toFixed(2)}%
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{h.motivo || '—'}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Faltas */}
       <Card>
         <CardHeader>
