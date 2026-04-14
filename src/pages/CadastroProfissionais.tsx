@@ -652,19 +652,38 @@ export const CadastroProfissionais: React.FC = () => {
       };
 
       if (editingProfessional) {
+        // Detectar alteração salarial antes de salvar
+        const salarioAnterior = editingProfessional.salario_nominal || 0;
+        const salarioNovo = professionalData.salario_nominal || 0;
+        const houveMudancaSalarial = salarioAnterior > 0 && salarioNovo > 0 && salarioAnterior !== salarioNovo;
+
         const { error } = await supabase
           .from('profissionais')
           .update(professionalData)
           .eq('id', editingProfessional.id);
 
         if (error) throw error;
+
+        // Registrar alteração salarial no histórico
+        if (houveMudancaSalarial) {
+          const percentual = ((salarioNovo - salarioAnterior) / salarioAnterior) * 100;
+          await supabase.from('historico_salarios').insert({
+            profissional_id: editingProfessional.id,
+            salario_anterior: salarioAnterior,
+            salario_novo: salarioNovo,
+            data_alteracao: new Date().toISOString().split('T')[0],
+            tipo_alteracao: 'ajuste_cadastro',
+            percentual_alteracao: Math.round(percentual * 100) / 100,
+            motivo: 'Alteração via cadastro de profissionais',
+          });
+        }
         
         addLog({
           usuario: 'Sistema',
           acao: 'EDITAR',
           modulo: 'PROFISSIONAIS',
           entidade: formData.nome,
-          detalhes: `Profissional ${formData.matricula} - ${formData.nome} atualizado`,
+          detalhes: `Profissional ${formData.matricula} - ${formData.nome} atualizado${houveMudancaSalarial ? ` (salário: R$ ${salarioAnterior} → R$ ${salarioNovo})` : ''}`,
           metadata: { profissionalId: editingProfessional.id }
         });
         
