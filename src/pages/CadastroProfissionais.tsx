@@ -466,6 +466,7 @@ export const CadastroProfissionais: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
+  const [reajusteTarget, setReajusteTarget] = useState<Professional | null>(null);
   
   // Verificar se veio matrícula via URL
   const searchParams = new URLSearchParams(window.location.search);
