@@ -148,12 +148,23 @@ export function ProfissionalTimeline({ profissionalId, profissionalNome, dataAdm
       });
 
       // Histórico de salários
+      const tipoLabel: Record<string, string> = {
+        ajuste_combinado: 'Salário Combinado',
+        ajuste_ctps: 'Salário CTPS',
+        ajuste_cadastro: 'Ajuste Cadastro',
+        reajuste: 'Reajuste',
+        dissidio: 'Dissídio',
+        promocao: 'Promoção',
+        merito: 'Mérito',
+      };
       (historicoRes.data || []).forEach(hist => {
+        const label = tipoLabel[hist.tipo_alteracao] || hist.tipo_alteracao;
+        const pct = hist.percentual_alteracao ? ` (${hist.percentual_alteracao > 0 ? '+' : ''}${hist.percentual_alteracao}%)` : '';
         eventosTemp.push({
           id: `sal-${hist.id}`,
           tipo: 'salario',
-          titulo: `Alteração Salarial: ${hist.tipo_alteracao}`,
-          descricao: `R$ ${Number(hist.salario_anterior || 0).toLocaleString('pt-BR')} → R$ ${Number(hist.salario_novo).toLocaleString('pt-BR')}`,
+          titulo: `${label}${pct}`,
+          descricao: `R$ ${Number(hist.salario_anterior || 0).toLocaleString('pt-BR')} → R$ ${Number(hist.salario_novo).toLocaleString('pt-BR')}${hist.motivo ? ` — ${hist.motivo}` : ''}`,
           data: hist.data_alteracao,
           icone: Briefcase,
           cor: tipoConfig.salario.cor
