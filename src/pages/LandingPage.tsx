@@ -538,38 +538,20 @@ function Commitments() {
     {
       icon: Shield,
       title: "Seus dados, blindados",
-      description: "Cada empresa tem seu ambiente isolado no banco de dados. Ninguém vê o que é seu — nem nossa equipe, sem sua autorização expressa.",
-      proof: "Isolamento por RLS em 38 tabelas",
+      description: "Cada empresa em ambiente isolado. Ninguém vê o que é seu — nem nossa equipe.",
+      proof: "Isolamento RLS em 38 tabelas",
     },
     {
       icon: CheckCircle2,
       title: "Cálculo conferido",
-      description: "Motor de folha CLT auditado com 145 testes automatizados rodando a cada atualização. INSS, IRRF, FGTS, 13º e férias dentro da legislação.",
+      description: "Motor CLT auditado: INSS, IRRF, FGTS, 13º e férias dentro da legislação.",
       proof: "145/145 testes aprovados",
     },
     {
       icon: MessageCircle,
-      title: "Gente de verdade no atendimento",
-      description: "Você fala com uma pessoa que entende de RH, não com bot. WhatsApp direto, resposta em minutos no horário comercial.",
-      proof: "Atendimento humano · Sem fila",
-    },
-    {
-      icon: TrendingUp,
-      title: "Evoluímos com você",
-      description: "O sistema melhora toda semana com base no que clientes reais pedem. Sua sugestão pode virar funcionalidade na próxima atualização.",
-      proof: "Atualizações contínuas",
-    },
-    {
-      icon: Database,
-      title: "Sem amarras",
-      description: "Seus dados são seus. Exportação completa em Excel a qualquer momento, sem custo, sem burocracia, sem perguntas.",
-      proof: "Exportação livre · 100% transparente",
-    },
-    {
-      icon: Award,
-      title: "Conformidade trabalhista",
-      description: "Acompanhamos as mudanças da legislação CLT e atualizamos as regras de cálculo automaticamente para você não ficar para trás.",
-      proof: "Aderência à legislação vigente",
+      title: "Atendimento humano",
+      description: "Você fala com gente que entende de RH. WhatsApp direto, resposta em minutos.",
+      proof: "Sem bot · Sem fila",
     },
   ];
 
@@ -582,7 +564,7 @@ function Commitments() {
             Confiança não se promete. Se entrega.
           </h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">
-            Em vez de depoimentos, preferimos mostrar o que você pode esperar de nós — e cobrar quando algo sair do combinado.
+            Em vez de depoimentos, mostramos o que você pode esperar — e cobrar.
           </p>
         </div>
 
@@ -604,7 +586,7 @@ function Commitments() {
 
         <div className="mt-16 max-w-3xl mx-auto p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 text-center">
           <p className="text-lg text-foreground leading-relaxed">
-            <strong className="text-primary">Nosso compromisso:</strong> se em 30 dias o sistema não fizer sentido para a sua operação, devolvemos seu investimento sem perguntas. Simples assim.
+            <strong className="text-primary">Garantia de 30 dias:</strong> se não fizer sentido pra sua operação, devolvemos seu investimento. Simples assim.
           </p>
           <Button size="lg" className="mt-6 gap-2 bg-primary hover:bg-primary/90" onClick={openWhatsApp}>
             <MessageCircle className="w-5 h-5" />
