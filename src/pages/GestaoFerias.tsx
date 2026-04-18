@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
@@ -42,6 +43,7 @@ export default function GestaoFerias() {
   });
   const [saving, setSaving] = useState(false);
   const [selectedProfissionalId, setSelectedProfissionalId] = useState<string | undefined>(undefined);
+  const [filterLoja, setFilterLoja] = useState<string>('todas');
   const { addLog } = useAuditLog();
 
   useEffect(() => {
@@ -222,10 +224,20 @@ export default function GestaoFerias() {
     return Math.max(0, diffDays);
   };
 
-  const pendentes = vacations.filter(v => v.status === 'PENDENTE').length;
-  const agendados = vacations.filter(v => v.status === 'AGENDADO').length;
-  const emFerias = vacations.filter(v => v.status === 'EM_FERIAS').length;
-  const vencendo = vacations.filter(v => v.status === 'VENCENDO').length;
+  // Lista única de lojas presentes nos registros (para o filtro)
+  const lojasDisponiveis = Array.from(
+    new Set(vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'))
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+  // Aplicar filtro de loja na listagem e nos contadores
+  const filteredVacations = filterLoja === 'todas'
+    ? vacations
+    : vacations.filter(v => v.loja === filterLoja);
+
+  const pendentes = filteredVacations.filter(v => v.status === 'PENDENTE').length;
+  const agendados = filteredVacations.filter(v => v.status === 'AGENDADO').length;
+  const emFerias = filteredVacations.filter(v => v.status === 'EM_FERIAS').length;
+  const vencendo = filteredVacations.filter(v => v.status === 'VENCENDO').length;
 
   if (loading) {
     return (
@@ -420,7 +432,26 @@ export default function GestaoFerias() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Controle de Férias</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle>Controle de Férias</CardTitle>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={filterLoja} onValueChange={setFilterLoja}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <SelectValue placeholder="Filtrar por loja" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as lojas</SelectItem>
+                  {lojasDisponiveis.map(loja => (
+                    <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {filteredVacations.length} de {vacations.length}
+              </span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -437,14 +468,16 @@ export default function GestaoFerias() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vacations.length === 0 ? (
+              {filteredVacations.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Nenhum registro de férias encontrado
+                    {vacations.length === 0
+                      ? 'Nenhum registro de férias encontrado'
+                      : `Nenhum registro encontrado para a loja "${filterLoja}"`}
                   </TableCell>
                 </TableRow>
               ) : (
-                vacations.map((vacation) => (
+                filteredVacations.map((vacation) => (
                   <TableRow key={vacation.id}>
                     <TableCell className="font-mono">{vacation.matricula}</TableCell>
                     <TableCell className="font-medium">{vacation.nome}</TableCell>

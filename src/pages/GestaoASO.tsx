@@ -53,6 +53,7 @@ export default function GestaoASO() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [filterTipoExame, setFilterTipoExame] = useState<string>('todos');
+  const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
   const [showSemASO, setShowSemASO] = useState(false);
   const [formData, setFormData] = useState({
@@ -178,15 +179,21 @@ export default function GestaoASO() {
       .join(' ');
   };
 
+  // Lista única de lojas presentes nos exames carregados (para o filtro)
+  const lojasDisponiveis = Array.from(
+    new Set(exams.map(e => e.loja).filter(l => l && l !== '-'))
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
   // Filtrar exames
   const filteredExams = exams.filter(exam => {
     const matchesStatus = filterStatus === 'todos' || exam.status === filterStatus;
     const matchesTipo = filterTipoExame === 'todos' || exam.tipoExame === filterTipoExame;
+    const matchesLoja = filterLoja === 'todas' || exam.loja === filterLoja;
     const matchesSearch = searchTerm === '' || 
       exam.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.loja.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesTipo && matchesSearch;
+    return matchesStatus && matchesTipo && matchesLoja && matchesSearch;
   });
 
   // Função para obter a cor de risco baseada nos dias de atraso
@@ -660,8 +667,21 @@ export default function GestaoASO() {
                 <SelectItem value="Retorno ao Trabalho">Retorno ao Trabalho</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Filtro por Loja */}
+            <Select value={filterLoja} onValueChange={setFilterLoja}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Loja" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as lojas</SelectItem>
+                {lojasDisponiveis.map(loja => (
+                  <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
-            {(filterStatus !== 'todos' || filterTipoExame !== 'todos' || searchTerm) && (
+            {(filterStatus !== 'todos' || filterTipoExame !== 'todos' || filterLoja !== 'todas' || searchTerm) && (
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -669,6 +689,7 @@ export default function GestaoASO() {
                   setSearchTerm('');
                   setFilterStatus('todos');
                   setFilterTipoExame('todos');
+                  setFilterLoja('todas');
                 }}
                 className="text-muted-foreground"
               >
