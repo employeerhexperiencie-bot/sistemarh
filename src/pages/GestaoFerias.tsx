@@ -488,6 +488,17 @@ export default function GestaoFerias() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="incluirDesligadosLista"
+                  checked={incluirDesligados}
+                  onCheckedChange={setIncluirDesligados}
+                />
+                <Label htmlFor="incluirDesligadosLista" className="text-xs cursor-pointer flex items-center gap-1">
+                  <UserX className="h-3 w-3" />
+                  Incluir desligados
+                </Label>
+              </div>
               <span className="text-xs text-muted-foreground whitespace-nowrap">
                 {filteredVacations.length} de {vacations.length}
               </span>
@@ -519,9 +530,18 @@ export default function GestaoFerias() {
                 </TableRow>
               ) : (
                 filteredVacations.map((vacation) => (
-                  <TableRow key={vacation.id}>
+                  <TableRow key={vacation.id} className={vacation.desligado ? 'opacity-70' : ''}>
                     <TableCell className="font-mono">{vacation.matricula}</TableCell>
-                    <TableCell className="font-medium">{vacation.nome}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {vacation.nome}
+                        {vacation.desligado && (
+                          <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/20">
+                            Desligado
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{vacation.loja}</TableCell>
                     <TableCell className="text-sm">
                       {new Date(vacation.periodoAquisitivo.inicio).toLocaleDateString('pt-BR')} até{' '}
