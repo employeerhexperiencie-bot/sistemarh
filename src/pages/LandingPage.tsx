@@ -815,11 +815,13 @@ function LandingFooter() {
             <ul className="space-y-3 text-sm">
               <li>
                 <button onClick={openWhatsApp} className="flex items-center gap-2 hover:text-white transition-colors">
-                  <MessageCircle className="w-4 h-4" /> WhatsApp {WHATSAPP_DISPLAY}
+                  <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
                 </button>
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4" /> {WHATSAPP_DISPLAY}
+              <li>
+                <button onClick={openWhatsApp} className="flex items-center gap-2 hover:text-white transition-colors">
+                  <Phone className="w-4 h-4" /> Solicitar contato
+                </button>
               </li>
               <li className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" /> Atendimento em todo o Brasil
