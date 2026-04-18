@@ -165,11 +165,11 @@ export function DashboardMockup() {
 // ============ FOLHA MOCKUP ============
 export function FolhaMockup() {
   const rows = [
-    { nome: 'Maria Silva', salario: '3.500,00', liquido: '3.180,45', status: 'ok' },
-    { nome: 'João Santos', salario: '4.200,00', liquido: '3.890,12', status: 'ok' },
-    { nome: 'Ana Costa', salario: '3.200,00', liquido: '2.950,30', status: 'ok' },
-    { nome: 'Pedro Lima', salario: '5.100,00', liquido: '4.620,88', status: 'warn' },
-    { nome: 'Carla Souza', salario: '3.800,00', liquido: '3.480,15', status: 'ok' },
+    { nome: 'Maria S.', salario: '3.500,00', liquido: '3.180,45', status: 'ok' },
+    { nome: 'João S.', salario: '4.200,00', liquido: '3.890,12', status: 'ok' },
+    { nome: 'Ana C.', salario: '3.200,00', liquido: '2.950,30', status: 'ok' },
+    { nome: 'Pedro L.', salario: '5.100,00', liquido: '4.620,88', status: 'warn' },
+    { nome: 'Carla S.', salario: '3.800,00', liquido: '3.480,15', status: 'ok' },
   ];
   return (
     <div className="mockup-host w-full h-full relative">
