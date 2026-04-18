@@ -624,7 +624,7 @@ export const CadastroProfissionais: React.FC = () => {
         nome_mae: formData.nome_mae || null,
         nome_pai: formData.nome_pai || null,
         cor_etnia: formData.cor || null,
-        data_nascimento: formData.data_nascimento || null,
+        data_nascimento: toDateOnly(formData.data_nascimento),
         sexo: formData.sexo || null,
         estado_civil: formData.estado_civil || null,
         escolaridade: formData.escolaridade || null,
@@ -634,7 +634,7 @@ export const CadastroProfissionais: React.FC = () => {
         cracha: formData.cracha_numero || null,
         cnh: formData.cnh_numero || null,
         categoria_cnh: formData.cnh_categoria || null,
-        validade_cnh: formData.cnh_validade || null,
+        validade_cnh: toDateOnly(formData.cnh_validade),
         departamento: formData.departamento || null,
         setor: formData.setor || null,
         // Jornada
@@ -644,7 +644,7 @@ export const CadastroProfissionais: React.FC = () => {
         horario_saida: (formData as any).horario_saida || null,
         dia_folga: (formData as any).dia_folga || null,
         gestor: (formData as any).gestor || null,
-        data_inicio_loja: (formData as any).data_inicio_loja || null,
+        data_inicio_loja: toDateOnly((formData as any).data_inicio_loja),
         tem_dependentes: !!(formData as any).tem_dependentes,
         // Benefícios
         pensao_alimenticia: formData.pensao_alimenticia ? 1 : null,
