@@ -1111,22 +1111,24 @@ export const CadastroProfissionais: React.FC = () => {
   const dismissedProfessionals = professionals.filter(p => p.status === 'demitido');
   const uniqueStores = new Set(professionals.map(p => p.loja?.nome).filter(Boolean)).size;
 
-  // 🔍 PROFISSIONAIS FILTRADOS
+  // 🔍 PROFISSIONAIS FILTRADOS (ordenação alfabética por nome)
   const filteredProfessionals = useMemo(() => {
-    return professionals.filter(p => {
-      // Filtro por busca (nome ou matrícula)
-      const matchesSearch = searchTerm === '' || 
-        p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.matricula.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // Filtro por loja
-      const matchesLoja = filterLoja === 'todas' || p.loja_id === filterLoja;
-      
-      // Filtro por status
-      const matchesStatus = filterStatus === 'todos' || p.status === filterStatus;
-      
-      return matchesSearch && matchesLoja && matchesStatus;
-    });
+    return professionals
+      .filter(p => {
+        // Filtro por busca (nome ou matrícula)
+        const matchesSearch = searchTerm === '' || 
+          p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.matricula.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // Filtro por loja
+        const matchesLoja = filterLoja === 'todas' || p.loja_id === filterLoja;
+        
+        // Filtro por status
+        const matchesStatus = filterStatus === 'todos' || p.status === filterStatus;
+        
+        return matchesSearch && matchesLoja && matchesStatus;
+      })
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
   }, [professionals, searchTerm, filterLoja, filterStatus]);
 
   // Função para capitalizar nomes (Primeira Letra Maiúscula)
