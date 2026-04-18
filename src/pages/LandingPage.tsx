@@ -964,7 +964,12 @@ function SectionHeader({
 // ============ MAIN ============
 export default function LandingPage() {
   return (
-    <div className="landing-theme min-h-screen">
+    <div className="landing-theme min-h-screen relative">
+      <div className="landing-animated-bg" aria-hidden="true">
+        <div className="orb-3" />
+        <div className="grid-overlay" />
+        <div className="vignette" />
+      </div>
       <LandingHeader />
       <main>
         <Hero />
