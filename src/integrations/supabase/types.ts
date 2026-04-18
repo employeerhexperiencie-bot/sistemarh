@@ -2014,6 +2014,9 @@ export type Database = {
           escolaridade: string | null
           estado: string | null
           estado_civil: string | null
+          foto_atualizada_em: string | null
+          foto_ezpoint_url: string | null
+          foto_url: string | null
           gestor: string | null
           horario_entrada: string | null
           horario_intervalo: string | null
@@ -2093,6 +2096,9 @@ export type Database = {
           escolaridade?: string | null
           estado?: string | null
           estado_civil?: string | null
+          foto_atualizada_em?: string | null
+          foto_ezpoint_url?: string | null
+          foto_url?: string | null
           gestor?: string | null
           horario_entrada?: string | null
           horario_intervalo?: string | null
@@ -2172,6 +2178,9 @@ export type Database = {
           escolaridade?: string | null
           estado?: string | null
           estado_civil?: string | null
+          foto_atualizada_em?: string | null
+          foto_ezpoint_url?: string | null
+          foto_url?: string | null
           gestor?: string | null
           horario_entrada?: string | null
           horario_intervalo?: string | null

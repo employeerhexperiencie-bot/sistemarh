@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, AlertCircle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, AlertCircle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp, Camera, Images } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -28,6 +28,9 @@ import { formatCurrency, formatCurrencyFromNumber, parseCurrencyToCentavos } fro
 import { useAuditLog } from '@/contexts/AuditLogContext';
 import { useTenantLimits } from '@/hooks/useTenantLimits';
 import { ReajusteSalarialModal } from '@/components/folha/ReajusteSalarialModal';
+import { PhotoUploader } from '@/components/profissional/PhotoUploader';
+import { ProfissionalNomeAvatar } from '@/components/profissional/ProfissionalAvatar';
+import { Link } from 'react-router-dom';
 
 interface Professional {
   id: string;
@@ -1523,6 +1526,33 @@ export const CadastroProfissionais: React.FC = () => {
 
                   {/* DADOS PESSOAIS */}
                   <TabsContent value="pessoais" className="space-y-4">
+                    {editingProfessional && (
+                      <Card className="bg-muted/30">
+                        <CardContent className="pt-6">
+                          <PhotoUploader
+                            profissionalId={editingProfessional.id}
+                            profissionalNome={formData.nome || editingProfessional.nome}
+                            fotoUrl={(editingProfessional as any).foto_url}
+                            onUploaded={({ fotoUrl }) => {
+                              setEditingProfessional({ ...editingProfessional, foto_url: fotoUrl } as any);
+                              loadProfessionals();
+                            }}
+                            onRemoved={() => {
+                              setEditingProfessional({ ...editingProfessional, foto_url: null } as any);
+                              loadProfessionals();
+                            }}
+                          />
+                        </CardContent>
+                      </Card>
+                    )}
+                    {!editingProfessional && (
+                      <Alert>
+                        <Camera className="h-4 w-4" />
+                        <AlertDescription>
+                          Salve o profissional primeiro. Em seguida você poderá enviar a foto, que será exibida em todas as telas e otimizada para o ponto facial Ezpoint.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="matricula">Matrícula *</Label>
@@ -2554,7 +2584,13 @@ export const CadastroProfissionais: React.FC = () => {
               {filteredProfessionals.map((professional) => (
                 <TableRow key={professional.id}>
                   <TableCell className="font-mono text-xs">{professional.matricula}</TableCell>
-                  <TableCell className="font-medium">{capitalizeWords(professional.nome)}</TableCell>
+                  <TableCell className="font-medium">
+                    <ProfissionalNomeAvatar
+                      nome={capitalizeWords(professional.nome)}
+                      fotoUrl={(professional as any).foto_url}
+                      size="sm"
+                    />
+                  </TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">{professional.cpf || '-'}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="flex flex-col">
