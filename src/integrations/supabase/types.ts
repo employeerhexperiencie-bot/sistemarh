@@ -2763,6 +2763,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      atualizar_tenant_metrics: {
+        Args: { _tenant_id: string }
+        Returns: undefined
+      }
+      atualizar_todas_tenant_metrics: { Args: never; Returns: number }
       can_access_sensitive_hr_data: {
         Args: { user_uuid: string }
         Returns: boolean

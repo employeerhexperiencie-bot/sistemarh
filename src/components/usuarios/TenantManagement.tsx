@@ -19,6 +19,21 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Formata limite (NULL ou 0 = ilimitado)
+const formatLimite = (valor: number | null | undefined): string => {
+  if (valor === null || valor === undefined || valor === 0) return 'Ilimitado';
+  return valor.toLocaleString('pt-BR');
+};
+
+// Cor do uso vs limite: cinza=ilimitado, verde<70%, amarelo 70-90%, vermelho>=90%
+const usoColorClass = (uso: number, limite: number | null | undefined): string => {
+  if (!limite || limite === 0) return 'text-muted-foreground';
+  const pct = (uso / limite) * 100;
+  if (pct >= 90) return 'text-destructive font-semibold';
+  if (pct >= 70) return 'text-warning font-medium';
+  return 'text-success';
+};
+
 interface Tenant {
   id: string;
   nome: string;
@@ -49,6 +64,8 @@ interface TenantMetrics {
   lojas: number;
   folhas: number;
   emprestimos: number;
+  alertas_pendentes: number;
+  ocorrencias_abertas: number;
 }
 
 interface Pagamento {
@@ -96,7 +113,24 @@ export function TenantManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editTenant, setEditTenant] = useState<Tenant | null>(null);
 
+  const [recalculando, setRecalculando] = useState(false);
+
   useEffect(() => { loadTenants(); }, []);
+
+  const recalcularMetricas = async () => {
+    setRecalculando(true);
+    try {
+      const { error } = await supabase.rpc('atualizar_todas_tenant_metrics' as any);
+      if (error) throw error;
+      toast.success('Métricas mensais recalculadas e salvas');
+      await loadTenants();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao recalcular métricas');
+    } finally {
+      setRecalculando(false);
+    }
+  };
 
   const loadTenants = async () => {
     setIsLoading(true);
@@ -111,12 +145,14 @@ export function TenantManagement() {
         const metricsMap: Record<string, TenantMetrics> = {};
 
         for (const tid of tenantIds) {
-          const [uRes, pRes, lRes, fRes, eRes] = await Promise.all([
+          const [uRes, pRes, lRes, fRes, eRes, aRes, oRes] = await Promise.all([
             supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).neq('role', 'super_admin'),
             supabase.from('profissionais').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).eq('status', 'ativo'),
             supabase.from('lojas').select('id', { count: 'exact', head: true }).eq('tenant_id', tid),
             supabase.from('folha_pagamento').select('id', { count: 'exact', head: true }).eq('tenant_id', tid),
             supabase.from('emprestimos').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).eq('status', 'ativo'),
+            supabase.from('alertas_sistema').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).eq('lido', false),
+            supabase.from('pendencias').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).neq('status', 'concluida'),
           ]);
           metricsMap[tid] = {
             tenant_id: tid,
@@ -125,6 +161,8 @@ export function TenantManagement() {
             lojas: lRes.count || 0,
             folhas: fRes.count || 0,
             emprestimos: eRes.count || 0,
+            alertas_pendentes: aRes.count || 0,
+            ocorrencias_abertas: oRes.count || 0,
           };
         }
         setMetrics(metricsMap);
@@ -381,6 +419,9 @@ export function TenantManagement() {
               <CardDescription>Gerencie clientes, limites e pagamentos</CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={recalcularMetricas} disabled={recalculando}>
+                <BarChart3 className={`h-4 w-4 mr-2 ${recalculando ? 'animate-spin' : ''}`} />Recalcular Métricas
+              </Button>
               <Button variant="outline" size="sm" onClick={loadTenants} disabled={isLoading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />Atualizar
               </Button>
@@ -410,6 +451,11 @@ export function TenantManagement() {
                             <Badge className="bg-success text-success-foreground" variant="outline"><Power className="h-3 w-3 mr-1" />Ativo</Badge>
                           ) : (
                             <Badge variant="destructive"><PowerOff className="h-3 w-3 mr-1" />Bloqueado</Badge>
+                          )}
+                          {(m?.alertas_pendentes || 0) > 0 && (
+                            <Badge variant="outline" className="border-warning text-warning" title="Alertas não lidos">
+                              <AlertTriangle className="h-3 w-3 mr-1" />{m.alertas_pendentes}
+                            </Badge>
                           )}
                         </div>
                         {tenant.email && <p className="text-xs text-muted-foreground mt-0.5">{tenant.email}</p>}
@@ -479,15 +525,34 @@ export function TenantManagement() {
                           </div>
                         <div>
                             <p className="text-muted-foreground">Limites</p>
-                            <p className="font-medium">{tenant.limite_usuarios ?? '∞'} users / {tenant.limite_profissionais ?? '∞'} profs</p>
+                            <p className="font-medium">{formatLimite(tenant.limite_usuarios)} users / {formatLimite(tenant.limite_profissionais)} profs</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Uso Atual</p>
-                            <p className="font-medium">{m?.usuarios || 0} users / {m?.profissionais || 0} profs</p>
+                            <p className="font-medium">
+                              <span className={usoColorClass(m?.usuarios || 0, tenant.limite_usuarios)}>{m?.usuarios || 0}</span>
+                              {' users / '}
+                              <span className={usoColorClass(m?.profissionais || 0, tenant.limite_profissionais)}>{m?.profissionais || 0}</span>
+                              {' profs'}
+                            </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Folhas Geradas</p>
                             <p className="font-medium">{m?.folhas || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Alertas Pendentes</p>
+                            <p className={`font-medium ${(m?.alertas_pendentes || 0) > 50 ? 'text-warning' : ''}`}>
+                              {m?.alertas_pendentes || 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Ocorrências Abertas</p>
+                            <p className="font-medium">{m?.ocorrencias_abertas || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Empréstimos Ativos</p>
+                            <p className="font-medium">{m?.emprestimos || 0}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Cliente Desde</p>
