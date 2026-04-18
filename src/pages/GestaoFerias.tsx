@@ -438,19 +438,30 @@ export default function GestaoFerias() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle>Controle de Férias</CardTitle>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={filterLoja} onValueChange={setFilterLoja}>
-                <SelectTrigger className="w-full sm:w-[220px]">
-                  <SelectValue placeholder="Filtrar por loja" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as lojas</SelectItem>
-                  {lojasDisponiveis.map(loja => (
-                    <SelectItem key={loja} value={loja}>{loja}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative w-full sm:w-[260px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={filterLoja} onValueChange={setFilterLoja}>
+                  <SelectTrigger className="w-full sm:w-[220px]">
+                    <SelectValue placeholder="Filtrar por loja" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as lojas</SelectItem>
+                    {lojasDisponiveis.map(loja => (
+                      <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <span className="text-xs text-muted-foreground whitespace-nowrap">
                 {filteredVacations.length} de {vacations.length}
               </span>
