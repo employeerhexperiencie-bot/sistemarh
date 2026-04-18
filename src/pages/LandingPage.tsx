@@ -8,7 +8,7 @@ import {
   AlertTriangle, Calculator, Database, ScanFace, BookOpen, Minus
 } from 'lucide-react';
 
-import screenshotDashboard from '@/assets/landing/screenshot-dashboard.jpg';
+import screenshotDashboard from '@/assets/landing/screenshot-dashboard-real.jpg';
 import screenshotCadastro from '@/assets/landing/screenshot-cadastro.jpg';
 import screenshotFolha from '@/assets/landing/screenshot-folha.jpg';
 import screenshotBeneficios from '@/assets/landing/screenshot-beneficios.jpg';
