@@ -354,6 +354,9 @@ export default function PainelProfissional() {
         {/* Empréstimos - Timeline Específica */}
         <EmprestimosTimeline profissionalId={p.id} profissionalNome={p.nome} />
 
+        {/* Férias - Períodos do profissional */}
+        <FeriasProfissional profissionalId={p.id} />
+
         {/* Informações de Contato */}
         <Card>
           <CardHeader>
