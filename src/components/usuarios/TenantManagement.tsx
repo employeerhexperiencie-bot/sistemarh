@@ -19,6 +19,21 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Formata limite (NULL ou 0 = ilimitado)
+const formatLimite = (valor: number | null | undefined): string => {
+  if (valor === null || valor === undefined || valor === 0) return 'Ilimitado';
+  return valor.toLocaleString('pt-BR');
+};
+
+// Cor do uso vs limite: cinza=ilimitado, verde<70%, amarelo 70-90%, vermelho>=90%
+const usoColorClass = (uso: number, limite: number | null | undefined): string => {
+  if (!limite || limite === 0) return 'text-muted-foreground';
+  const pct = (uso / limite) * 100;
+  if (pct >= 90) return 'text-destructive font-semibold';
+  if (pct >= 70) return 'text-warning font-medium';
+  return 'text-success';
+};
+
 interface Tenant {
   id: string;
   nome: string;
@@ -479,11 +494,16 @@ export function TenantManagement() {
                           </div>
                         <div>
                             <p className="text-muted-foreground">Limites</p>
-                            <p className="font-medium">{tenant.limite_usuarios ?? '∞'} users / {tenant.limite_profissionais ?? '∞'} profs</p>
+                            <p className="font-medium">{formatLimite(tenant.limite_usuarios)} users / {formatLimite(tenant.limite_profissionais)} profs</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Uso Atual</p>
-                            <p className="font-medium">{m?.usuarios || 0} users / {m?.profissionais || 0} profs</p>
+                            <p className="font-medium">
+                              <span className={usoColorClass(m?.usuarios || 0, tenant.limite_usuarios)}>{m?.usuarios || 0}</span>
+                              {' users / '}
+                              <span className={usoColorClass(m?.profissionais || 0, tenant.limite_profissionais)}>{m?.profissionais || 0}</span>
+                              {' profs'}
+                            </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Folhas Geradas</p>
