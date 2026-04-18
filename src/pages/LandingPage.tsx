@@ -256,17 +256,16 @@ function Problems() {
           <div>
             <h3 className="text-2xl font-bold text-foreground mb-4">A conta que ninguém faz</h3>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Se o seu RH gasta 60 horas por mês com planilhas, isso são <strong className="text-foreground">720 horas por ano</strong> que 
-              poderiam estar gerando resultado para a empresa. Sem contar o risco de multa, o stress da equipe e a falta de visibilidade.
+              60 horas por mês em planilhas = <strong className="text-foreground">720 horas perdidas por ano</strong>. Sem contar o risco de multa.
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
                 <p className="text-2xl font-bold text-destructive">R$ 38mil</p>
-                <p className="text-xs text-muted-foreground mt-1">multa média do eSocial por erro de folha</p>
+                <p className="text-xs text-muted-foreground mt-1">multa média do eSocial por erro</p>
               </div>
               <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
                 <p className="text-2xl font-bold text-destructive">72%</p>
-                <p className="text-xs text-muted-foreground mt-1">das empresas têm erro recorrente em planilhas</p>
+                <p className="text-xs text-muted-foreground mt-1">das empresas erram em planilhas</p>
               </div>
             </div>
           </div>
