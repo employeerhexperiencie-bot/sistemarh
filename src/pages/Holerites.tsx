@@ -120,6 +120,49 @@ export default function Holerites() {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  const exportarGerencialCSV = () => {
+    if (holeritesFiltrados.length === 0) {
+      toast({
+        title: 'Sem dados',
+        description: 'Nenhum profissional para exportar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const headers = ['Matrícula', 'Nome', 'Loja', 'Salário Base', 'Dia 20', 'Dia 5', 'Total do Mês'];
+    const linhas = holeritesFiltrados.map(h => {
+      const dia20 = Math.round(h.salario * 0.4);
+      const dia5 = h.salario - dia20;
+      const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+      return [
+        escape(h.matricula),
+        escape(h.nome),
+        escape(h.loja),
+        h.salario.toFixed(2).replace('.', ','),
+        dia20.toFixed(2).replace('.', ','),
+        dia5.toFixed(2).replace('.', ','),
+        h.salario.toFixed(2).replace('.', ','),
+      ].join(';');
+    });
+
+    const csv = '\uFEFF' + [headers.join(';'), ...linhas].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `holerite_gerencial_${competencia}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'CSV exportado',
+      description: `${holeritesFiltrados.length} registros exportados.`,
+    });
+  };
+
   // ========== FUNÇÕES DIA 20 (Adiantamento 40%) ==========
   const gerarPDFDia20Individual = async (holerite: HoleriteItem) => {
     const dadosDia20: DadosHoleriteDia20 = {
