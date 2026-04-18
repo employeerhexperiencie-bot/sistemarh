@@ -667,8 +667,21 @@ export default function GestaoASO() {
                 <SelectItem value="Retorno ao Trabalho">Retorno ao Trabalho</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Filtro por Loja */}
+            <Select value={filterLoja} onValueChange={setFilterLoja}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Loja" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as lojas</SelectItem>
+                {lojasDisponiveis.map(loja => (
+                  <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
-            {(filterStatus !== 'todos' || filterTipoExame !== 'todos' || searchTerm) && (
+            {(filterStatus !== 'todos' || filterTipoExame !== 'todos' || filterLoja !== 'todas' || searchTerm) && (
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -676,6 +689,7 @@ export default function GestaoASO() {
                   setSearchTerm('');
                   setFilterStatus('todos');
                   setFilterTipoExame('todos');
+                  setFilterLoja('todas');
                 }}
                 className="text-muted-foreground"
               >
