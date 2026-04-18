@@ -235,7 +235,7 @@ function LiveMockupCarousel() {
         </div>
 
         {/* Stack of mockups, cross-fading */}
-        <div className="relative aspect-[16/10] bg-slate-50">
+        <div className="relative aspect-[16/10]" style={{ background: 'hsl(220 16% 96%)' }}>
           {screens.map((Screen, i) => (
             <div
               key={i}
@@ -422,7 +422,7 @@ function PillarCard({
       <p className="text-[11px] uppercase tracking-[0.16em] text-primary mb-3">{eyebrow}</p>
       <h3 className="text-xl sm:text-2xl font-semibold tracking-tight">{title}</h3>
       <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-xl">{description}</p>
-      <div className="mt-6 rounded-xl overflow-hidden border border-border bg-slate-50">
+      <div className="mt-6 rounded-xl overflow-hidden border border-border" style={{ background: 'hsl(220 16% 96%)' }}>
         <div className="aspect-[16/10] relative">
           <div className="absolute inset-0">{mockup}</div>
         </div>
