@@ -707,9 +707,9 @@ export const CadastroProfissionais: React.FC = () => {
         setor: formData.setor || null,
         // Jornada
         escala_trabalho: (formData as any).escala_trabalho || null,
-        horario_entrada: (formData as any).horario_entrada || null,
-        horario_intervalo: (formData as any).horario_intervalo || null,
-        horario_saida: (formData as any).horario_saida || null,
+        horario_entrada: horarioEntradaNorm,
+        horario_intervalo: horarioIntervaloNorm,
+        horario_saida: horarioSaidaNorm,
         dia_folga: (formData as any).dia_folga || null,
         gestor: (formData as any).gestor || null,
         data_inicio_loja: toDateOnly((formData as any).data_inicio_loja),
