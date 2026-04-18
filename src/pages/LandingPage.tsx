@@ -23,7 +23,39 @@ const WHATSAPP_MESSAGE = encodeURIComponent(
   'Olá! 👋 Vim pelo site do Sistema RH (eazdev.com) e quero saber como pode ajudar minha empresa.'
 );
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
-const openWhatsApp = () => window.open(WHATSAPP_URL, '_blank');
+
+// Dispara conversão no Google Ads + evento no GA4 antes de abrir o WhatsApp.
+// IMPORTANTE: substitua 'REPLACE_WITH_CONVERSION_LABEL' pelo label da ação de
+// conversão criada no painel do Google Ads (Ferramentas > Conversões > Nova).
+const GOOGLE_ADS_ID = 'AW-18100687003';
+const WHATSAPP_CONVERSION_LABEL = 'REPLACE_WITH_CONVERSION_LABEL';
+
+const trackWhatsAppConversion = () => {
+  try {
+    const w = window as unknown as { gtag?: (...args: unknown[]) => void };
+    if (typeof w.gtag === 'function') {
+      // Conversão Google Ads
+      if (WHATSAPP_CONVERSION_LABEL && WHATSAPP_CONVERSION_LABEL !== 'REPLACE_WITH_CONVERSION_LABEL') {
+        w.gtag('event', 'conversion', {
+          send_to: `${GOOGLE_ADS_ID}/${WHATSAPP_CONVERSION_LABEL}`,
+        });
+      }
+      // Evento genérico (útil para GA4 / debugging)
+      w.gtag('event', 'whatsapp_click', {
+        event_category: 'engagement',
+        event_label: 'landing_page',
+        value: 1,
+      });
+    }
+  } catch {
+    // Falha silenciosa: nunca bloquear o clique do usuário
+  }
+};
+
+const openWhatsApp = () => {
+  trackWhatsAppConversion();
+  window.open(WHATSAPP_URL, '_blank');
+};
 
 const NAV_LINKS = [
   { href: '#plataforma', label: 'Plataforma' },
