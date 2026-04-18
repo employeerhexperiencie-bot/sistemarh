@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, TrendingUp, FileText, Filter, ArrowLeft, Loader2, History, DollarSign, Bus, Package, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Calendar, TrendingUp, FileText, Filter, ArrowLeft, Loader2, History, DollarSign, Bus, Package, ArrowUpRight, ArrowDownRight, Plane } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ export default function HistoricoProfissional() {
   const [emprestimos, setEmprestimos] = useState<any[]>([]);
   const [faltas, setFaltas] = useState<any[]>([]);
   const [historicoSalarios, setHistoricoSalarios] = useState<any[]>([]);
+  const [ferias, setFerias] = useState<any[]>([]);
   
   const matricula = searchParams.get('matricula') || '';
   const profissional = searchParams.get('profissional') || '';
@@ -113,17 +114,19 @@ export default function HistoricoProfissional() {
       setFechamentosHistorico(historicoFechamentos);
 
       // Buscar vales, empréstimos e faltas
-      const [valesRes, empRes, faltasRes, salarioRes] = await Promise.all([
+      const [valesRes, empRes, faltasRes, salarioRes, feriasRes] = await Promise.all([
         supabase.from('professional_vales').select('*').eq('profissional_id', prof.id).order('data_lancamento', { ascending: false }).limit(20),
         supabase.from('emprestimos').select('*').eq('profissional_id', prof.id).order('data_inicio', { ascending: false }),
         supabase.from('faltas').select('*').eq('profissional_id', prof.id).order('data_falta', { ascending: false }).limit(30),
         supabase.from('historico_salarios').select('*').eq('profissional_id', prof.id).order('data_alteracao', { ascending: true }),
+        supabase.from('ferias').select('*').eq('profissional_id', prof.id).order('periodo_aquisitivo_inicio', { ascending: false }),
       ]);
 
       setVales(valesRes.data || []);
       setEmprestimos(empRes.data || []);
       setFaltas(faltasRes.data || []);
       setHistoricoSalarios(salarioRes.data || []);
+      setFerias(feriasRes.data || []);
     } catch (error) {
       console.error('Erro ao carregar histórico:', error);
       toast.error('Erro ao carregar histórico');
@@ -474,6 +477,93 @@ export default function HistoricoProfissional() {
                 </TableBody>
               </Table>
             </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Férias - Períodos Aquisitivos */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Plane className="h-4 w-4" />
+            Férias - Períodos Aquisitivos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {ferias.length === 0 ? (
+            <p className="text-center py-4 text-muted-foreground text-sm">Nenhum período de férias registrado</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Período Aquisitivo</TableHead>
+                  <TableHead>Gozo</TableHead>
+                  <TableHead className="text-right">Direito</TableHead>
+                  <TableHead className="text-right">Gozados</TableHead>
+                  <TableHead className="text-right">Vendidos</TableHead>
+                  <TableHead className="text-right">Saldo</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ferias.map((f: any) => {
+                  const direito = Number(f.dias_direito || 30);
+                  const gozados = Number(f.dias_gozados || 0);
+                  const vendidos = Number(f.dias_vendidos || 0);
+                  const saldo = Math.max(0, direito - gozados - vendidos);
+
+                  // Calcular status visual
+                  const hoje = new Date();
+                  const fimAquisitivo = new Date(f.periodo_aquisitivo_fim);
+                  const diasParaVencer = Math.ceil((fimAquisitivo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+
+                  let statusLabel = 'Pendente';
+                  let statusVariant: 'default' | 'secondary' | 'destructive' | 'outline' = 'secondary';
+                  let statusClass = '';
+
+                  if (f.status === 'finalizada' || (saldo === 0 && (gozados > 0 || vendidos > 0))) {
+                    statusLabel = 'Concluído';
+                    statusVariant = 'outline';
+                  } else if (f.status === 'em_gozo') {
+                    statusLabel = 'Em Gozo';
+                    statusClass = 'bg-success/10 text-success border-success/20';
+                  } else if (f.status === 'agendada') {
+                    statusLabel = 'Agendada';
+                    statusClass = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                  } else if (diasParaVencer <= 0) {
+                    statusLabel = 'Vencido';
+                    statusVariant = 'destructive';
+                  } else if (diasParaVencer <= 30) {
+                    statusLabel = 'Vencendo';
+                    statusClass = 'bg-warning/10 text-warning border-warning/20';
+                  }
+
+                  return (
+                    <TableRow key={f.id}>
+                      <TableCell className="text-sm">
+                        {formatDate(f.periodo_aquisitivo_inicio)} até {formatDate(f.periodo_aquisitivo_fim)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {f.periodo_gozo_inicio && f.periodo_gozo_fim
+                          ? `${formatDate(f.periodo_gozo_inicio)} até ${formatDate(f.periodo_gozo_fim)}`
+                          : <span className="text-muted-foreground">Não agendado</span>}
+                      </TableCell>
+                      <TableCell className="text-right">{direito}</TableCell>
+                      <TableCell className="text-right">{gozados}</TableCell>
+                      <TableCell className="text-right">{vendidos}</TableCell>
+                      <TableCell className="text-right font-bold text-success">{saldo}</TableCell>
+                      <TableCell>
+                        {statusClass ? (
+                          <Badge className={`text-xs ${statusClass}`}>{statusLabel}</Badge>
+                        ) : (
+                          <Badge variant={statusVariant} className="text-xs">{statusLabel}</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
