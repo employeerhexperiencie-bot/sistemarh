@@ -1163,6 +1163,21 @@ export const CadastroProfissionais: React.FC = () => {
           </Button>
         </div>
 
+        {/* Header com foto e ação rápida de upload */}
+        {selectedProfessional && (
+          <Card>
+            <CardContent className="pt-6">
+              <PhotoUploader
+                profissionalId={selectedProfessional.id}
+                profissionalNome={selectedProfessional.nome}
+                fotoUrl={(selectedProfessional as any).foto_url}
+                onUploaded={() => loadProfessionals()}
+                onRemoved={() => loadProfessionals()}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 h-auto">
             <TabsTrigger value="dados" className="text-xs sm:text-sm py-2">Dados</TabsTrigger>
