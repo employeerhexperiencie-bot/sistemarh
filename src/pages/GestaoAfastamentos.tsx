@@ -509,7 +509,9 @@ export default function GestaoAfastamentos() {
                   </TableCell>
                 </TableRow>
               ) : (
-                afastamentos.map((afastamento) => (
+                [...afastamentos]
+                  .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
+                  .map((afastamento) => (
                   <TableRow key={afastamento.id}>
                     <TableCell className="font-mono">{afastamento.matricula}</TableCell>
                     <TableCell className="font-medium">{afastamento.nome}</TableCell>
