@@ -407,4 +407,91 @@ describe('Motor de Cálculo de Folha', () => {
       expect(totais.totalCesta).toBe(360);
     });
   });
+
+  // ============================================================
+  // BLOCO ADICIONAL — Casos obrigatórios (competência 2026-04)
+  // ============================================================
+  describe('Casos obrigatórios v2', () => {
+    const config2026: ConfiguracaoFolha = {
+      diasUteis6x1: 26,
+      diasUteis5x2: 22,
+      valorVR: 25,
+      percentualDia20: 40,
+      valorCestaBasica: 180,
+      competencia: '2026-04',
+    };
+
+    const profBase = (overrides: Partial<ProfissionalInput> = {}): ProfissionalInput => ({
+      id: 'p-test',
+      nome: 'TESTE',
+      matricula: 'T-001',
+      cargo: 'Operador',
+      lojaId: 'loja-1',
+      salario: 2000,
+      escala: '6x1',
+      valorPassagem: 0,
+      dataAdmissao: '2020-01-01',
+      status: 'ativo',
+      recebeCesta: false,
+      recebeVT: false,
+      recebeVR: false,
+      faltas: 0,
+      atestados: 0,
+      diasFerias: 0,
+      vales: 0,
+      emprestimos: 0,
+      pensao: 0,
+      ...overrides,
+    });
+
+    it('1. Ativo R$2.000 sem faltas: Dia 20 = R$800 (40%) e líquido = R$1.200 (60%)', () => {
+      const r = calcularFolhaProfissional(profBase(), config2026);
+      expect(r.valorDia20).toBe(800);
+      expect(r.salarioLiquido).toBe(1200);
+    });
+
+    it('2. Em férias: não recebe Dia 20 e valor = 0', () => {
+      const r = calcularFolhaProfissional(profBase({ status: 'ferias', diasFerias: 30 }), config2026);
+      expect(r.recebeDia20).toBe(false);
+      expect(r.valorDia20).toBe(0);
+    });
+
+    it('3. Com 10+ faltas injustificadas: não recebe Dia 20', () => {
+      const r = calcularFolhaProfissional(profBase({ faltas: 10 }), config2026);
+      expect(r.recebeDia20).toBe(false);
+    });
+
+    it('4. 1 falta injustificada com cesta ativa: perde cesta e desconta 1 dia', () => {
+      const r = calcularFolhaProfissional(profBase({ faltas: 1, recebeCesta: true }), config2026);
+      expect(r.recebeCesta).toBe(false);
+      // salario/30 ≈ 66.67 (motor arredonda — tolerância de 1 real)
+      expect(r.descontoFaltas).toBeCloseTo(2000 / 30, 0);
+    });
+
+    it('5. Admitido em 2026-04-20: diasEfetivos < 30 e salário proporcional', () => {
+      const r = calcularFolhaProfissional(
+        profBase({ dataAdmissao: '2026-04-20' }),
+        config2026
+      );
+      expect(r.diasEfetivos).toBeLessThan(30);
+      // motor aplica arredondamento — tolerância de 1 real
+      expect(r.salarioReceber).toBeCloseTo((2000 / 30) * r.diasEfetivos, 0);
+    });
+
+    it('6. percentualDia20=150 (inválido): clamp limita Dia 20 a no máximo 100% do salário', () => {
+      const configInvalido: ConfiguracaoFolha = { ...config2026, percentualDia20: 150 };
+      const r = calcularFolhaProfissional(profBase(), configInvalido);
+      expect(r.valorDia20).toBeLessThanOrEqual(2000);
+    });
+
+    it('7. Licença maternidade: valorAfastamento = salario × 0.40 e recebe Dia 20 proporcional', () => {
+      const r = calcularFolhaProfissional(
+        profBase({ status: 'licenca_maternidade', tipoAfastamento: 'licenca_maternidade', diasAfastamento: 120 }),
+        config2026
+      );
+      expect(r.valorAfastamento).toBeCloseTo(2000 * 0.40, 2);
+      expect(r.recebeDia20).toBe(true);
+      expect(r.valorDia20).toBeGreaterThan(0);
+    });
+  });
 });
