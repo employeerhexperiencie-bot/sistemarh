@@ -694,14 +694,44 @@ function HowItWorks() {
           title={<>De planilha para sistema <br /> em <span className="landing-text-gradient">24 horas.</span></>}
         />
 
-        <div className="mt-14 grid md:grid-cols-3 gap-4">
-          {steps.map((s, i) => (
-            <div key={i} className="relative landing-glass rounded-2xl p-7">
-              <div className="text-5xl font-semibold text-primary/30 tracking-tight mb-4">{s.n}</div>
-              <h3 className="text-lg font-semibold">{s.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+        <div className="mt-14 grid lg:grid-cols-12 gap-8 items-center">
+          {/* Steps */}
+          <div className="lg:col-span-7 grid sm:grid-cols-1 gap-3">
+            {steps.map((s, i) => (
+              <div key={i} className="relative landing-glass rounded-2xl p-6 flex gap-5 items-start">
+                <div className="text-4xl font-semibold text-primary/30 tracking-tight shrink-0 w-14">{s.n}</div>
+                <div>
+                  <h3 className="text-lg font-semibold">{s.title}</h3>
+                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Human support image */}
+          <div className="lg:col-span-5">
+            <div className="relative landing-border-gradient rounded-2xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10 pointer-events-none" />
+              <img
+                src={suporteHumano}
+                alt="Suporte humano por WhatsApp respondendo em minutos"
+                loading="lazy"
+                width={1280}
+                height={1280}
+                className="w-full h-[420px] object-cover"
+              />
+              <div className="absolute bottom-5 left-5 right-5 z-20">
+                <div className="landing-glass rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                    <p className="text-[10px] uppercase tracking-wider text-success">Online agora</p>
+                  </div>
+                  <p className="text-sm font-medium text-foreground">Gente de verdade no WhatsApp.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Sem bot, sem URA, sem ticket que some.</p>
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
 
         <div className="mt-10 flex justify-center">
