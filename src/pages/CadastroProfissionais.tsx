@@ -2203,6 +2203,14 @@ export const CadastroProfissionais: React.FC = () => {
 
                   {/* DEMISSÃO */}
                   <TabsContent value="demissao" className="space-y-4">
+                    {formData.data_demissao && (
+                      <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <strong>Atenção:</strong> Ao salvar com a data de demissão preenchida, o status do profissional será automaticamente alterado para <strong>DEMITIDO</strong>.
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="data_demissao">Data Demissão</Label>
