@@ -300,10 +300,10 @@ export function BeneficiosMockup() {
     { label: 'Plano de Saúde', value: 'R$ 18.900' },
   ];
   const rows = [
-    { nome: 'Maria Silva', vt: true, vr: true, cesta: true, odonto: true },
-    { nome: 'João Santos', vt: true, vr: true, cesta: false, odonto: true },
-    { nome: 'Ana Costa', vt: true, vr: true, cesta: true, odonto: false },
-    { nome: 'Pedro Lima', vt: false, vr: true, cesta: true, odonto: true },
+    { nome: 'Maria S.', vt: true, vr: true, cesta: true, odonto: true },
+    { nome: 'João S.', vt: true, vr: true, cesta: false, odonto: true },
+    { nome: 'Ana C.', vt: true, vr: true, cesta: true, odonto: false },
+    { nome: 'Pedro L.', vt: false, vr: true, cesta: true, odonto: true },
   ];
   return (
     <div className="mockup-host w-full h-full relative">
