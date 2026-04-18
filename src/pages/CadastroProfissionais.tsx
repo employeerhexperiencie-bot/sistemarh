@@ -787,11 +787,20 @@ export const CadastroProfissionais: React.FC = () => {
         });
         
         toast({
-          title: "Sucesso",
-          description: detalhes.length > 0 
-            ? `Profissional atualizado. Alteração salarial registrada: ${detalhes.join('; ')}`
-            : "Profissional atualizado com sucesso"
+          title: virouDemitido ? "Demissão registrada" : "Sucesso",
+          description: virouDemitido
+            ? `${formData.nome} foi marcado como DEMITIDO em ${formData.data_demissao.split('-').reverse().join('/')}.${detalhes.length > 0 ? ` Alteração salarial: ${detalhes.join('; ')}` : ''}`
+            : (detalhes.length > 0 
+              ? `Profissional atualizado. Alteração salarial registrada: ${detalhes.join('; ')}`
+              : "Profissional atualizado com sucesso")
         });
+
+        // Atualização otimista da lista (reflete antes do reload completo)
+        setProfessionals(prev => prev.map(prof =>
+          prof.id === editingProfessional.id
+            ? { ...prof, status: computedStatus, data_demissao: professionalData.data_demissao || undefined }
+            : prof
+        ));
       } else {
         // Verificar limite do tenant antes de inserir
         if (!canAddProfissional()) {
