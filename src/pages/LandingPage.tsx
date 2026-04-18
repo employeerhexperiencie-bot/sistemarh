@@ -535,62 +535,84 @@ function Modules() {
   );
 }
 
-// ============ TESTIMONIALS ============
-function Testimonials() {
-  const testimonials = [
+// ============ COMMITMENTS (substitui depoimentos por compromissos reais) ============
+function Commitments() {
+  const commitments = [
     {
-      name: "Coordenadora de RH",
-      role: "Rede de varejo",
-      company: "12 lojas",
-      text: "Antes eu passava 3 dias fazendo a folha. Agora faço em 30 minutos. Mudou minha vida profissional. Hoje consigo focar em projetos estratégicos.",
-      rating: 5,
-      photo: testimonial1
+      icon: Shield,
+      title: "Seus dados, blindados",
+      description: "Cada empresa tem seu ambiente isolado no banco de dados. Ninguém vê o que é seu — nem nossa equipe, sem sua autorização expressa.",
+      proof: "Isolamento por RLS em 38 tabelas",
     },
     {
-      name: "Gerente Administrativo",
-      role: "Comércio multi-filial",
-      company: "8 unidades",
-      text: "O sistema de alertas é incrível. Nunca mais perdi um prazo de ASO ou férias. A multa que evitamos no primeiro ano pagou o sistema por 5 anos.",
-      rating: 5,
-      photo: testimonial2
+      icon: CheckCircle2,
+      title: "Cálculo conferido",
+      description: "Motor de folha CLT auditado com 145 testes automatizados rodando a cada atualização. INSS, IRRF, FGTS, 13º e férias dentro da legislação.",
+      proof: "145/145 testes aprovados",
     },
     {
-      name: "Proprietária",
-      role: "Rede de franquias",
-      company: "+200 colaboradores",
-      text: "Tenho controle total das lojas de um lugar só. Vejo onde está sangrando dinheiro, onde tem absenteísmo alto, onde precisa contratar. Game changer.",
-      rating: 5,
-      photo: testimonial3
-    }
+      icon: MessageCircle,
+      title: "Gente de verdade no atendimento",
+      description: "Você fala com uma pessoa que entende de RH, não com bot. WhatsApp direto, resposta em minutos no horário comercial.",
+      proof: "Atendimento humano · Sem fila",
+    },
+    {
+      icon: TrendingUp,
+      title: "Evoluímos com você",
+      description: "O sistema melhora toda semana com base no que clientes reais pedem. Sua sugestão pode virar funcionalidade na próxima atualização.",
+      proof: "Atualizações contínuas",
+    },
+    {
+      icon: Database,
+      title: "Sem amarras",
+      description: "Seus dados são seus. Exportação completa em Excel a qualquer momento, sem custo, sem burocracia, sem perguntas.",
+      proof: "Exportação livre · 100% transparente",
+    },
+    {
+      icon: Award,
+      title: "Conformidade trabalhista",
+      description: "Acompanhamos as mudanças da legislação CLT e atualizamos as regras de cálculo automaticamente para você não ficar para trás.",
+      proof: "Aderência à legislação vigente",
+    },
   ];
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Quem usa, recomenda</span>
+        <div className="text-center mb-16 max-w-3xl mx-auto">
+          <span className="text-sm text-primary font-medium uppercase tracking-wider">Nossos compromissos com você</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            A diferença é sentida no primeiro mês
+            Confiança não se promete. Se entrega.
           </h2>
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            Em vez de depoimentos, preferimos mostrar o que você pode esperar de nós — e cobrar quando algo sair do combinado.
+          </p>
         </div>
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((t, i) => (
-            <div key={i} className="p-8 rounded-2xl bg-background border border-border">
-              <div className="flex gap-1 mb-4">
-                {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star key={j} className="w-4 h-4 fill-warning text-warning" />
-                ))}
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {commitments.map((c, i) => (
+            <div key={i} className="p-7 rounded-2xl bg-background border border-border hover:border-primary/40 hover:shadow-card-hover transition-all">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
+                <c.icon className="w-6 h-6 text-primary" />
               </div>
-              <p className="text-foreground leading-relaxed mb-6">"{t.text}"</p>
-              <div className="flex items-center gap-3">
-                <img src={t.photo} alt={t.name} className="w-12 h-12 rounded-full object-cover" loading="lazy" width={48} height={48} />
-                <div>
-                  <p className="font-medium text-foreground text-sm">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.role} · {t.company}</p>
-                </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{c.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">{c.description}</p>
+              <div className="flex items-center gap-2 pt-4 border-t border-border">
+                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-xs font-medium text-foreground">{c.proof}</span>
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-16 max-w-3xl mx-auto p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 text-center">
+          <p className="text-lg text-foreground leading-relaxed">
+            <strong className="text-primary">Nosso compromisso:</strong> se em 30 dias o sistema não fizer sentido para a sua operação, devolvemos seu investimento sem perguntas. Simples assim.
+          </p>
+          <Button size="lg" className="mt-6 gap-2 bg-primary hover:bg-primary/90" onClick={openWhatsApp}>
+            <MessageCircle className="w-5 h-5" />
+            Conversar sem compromisso
+          </Button>
         </div>
       </div>
     </section>
