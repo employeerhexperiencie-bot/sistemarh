@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { DelegarAlertaModal, DelegarAlertaData } from './DelegarAlertaModal';
+import { ProfissionalAvatar } from '@/components/profissional/ProfissionalAvatar';
 
 export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento' | 'emprestimo';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
@@ -39,6 +40,7 @@ export interface Alerta {
   loja: string;
   profissional?: string;
   matricula?: string;
+  fotoUrl?: string | null;
   acaoUrl?: string;
   lido: boolean;
   resolvido: boolean;
@@ -133,6 +135,9 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, onD
         <div className={`p-1.5 rounded-lg ${alerta.nivel === 'critico' ? 'bg-destructive/20' : 'bg-background/50'}`}>
           <TipoIcon className={`h-4 w-4 ${tipoConfig.color}`} />
         </div>
+        {alerta.profissional && (
+          <ProfissionalAvatar nome={alerta.profissional} fotoUrl={alerta.fotoUrl} size="sm" />
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <p className="text-sm font-medium truncate">{alerta.titulo}</p>
@@ -192,9 +197,12 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, onD
       </TableCell>
       <TableCell>
         {alerta.profissional ? (
-          <div>
-            <p className="text-sm">{alerta.profissional}</p>
-            <p className="text-xs text-muted-foreground font-mono">{alerta.matricula}</p>
+          <div className="flex items-center gap-2 min-w-0">
+            <ProfissionalAvatar nome={alerta.profissional} fotoUrl={alerta.fotoUrl} size="sm" />
+            <div className="min-w-0">
+              <p className="text-sm truncate">{alerta.profissional}</p>
+              <p className="text-xs text-muted-foreground font-mono">{alerta.matricula}</p>
+            </div>
           </div>
         ) : (
           <span className="text-muted-foreground">-</span>
@@ -319,7 +327,7 @@ export function CentralAlertas() {
         .from('alertas_sistema')
         .select(`
           *,
-          profissionais:profissional_id (nome, matricula),
+          profissionais:profissional_id (nome, matricula, foto_url),
           lojas:loja_id (nome)
         `)
         .order('created_at', { ascending: false });
@@ -357,6 +365,7 @@ export function CentralAlertas() {
           loja: a.lojas?.nome || 'Sistema',
           profissional: a.profissionais?.nome,
           matricula: a.profissionais?.matricula,
+          fotoUrl: a.profissionais?.foto_url,
           acaoUrl: a.acao_url,
           lido: a.lido || false,
           resolvido: false, // Alertas do BD são sempre pendentes se existem
@@ -371,6 +380,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
@@ -400,6 +410,7 @@ export function CentralAlertas() {
           loja: e.profissionais?.lojas?.nome || 'N/A',
           profissional: e.profissionais?.nome,
           matricula: e.profissionais?.matricula,
+          fotoUrl: e.profissionais?.foto_url,
           acaoUrl: '/gestao-aso',
           lido: false,
           resolvido: false,
@@ -414,6 +425,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
@@ -442,6 +454,7 @@ export function CentralAlertas() {
           loja: f.profissionais?.lojas?.nome || 'N/A',
           profissional: f.profissionais?.nome,
           matricula: f.profissionais?.matricula,
+          fotoUrl: f.profissionais?.foto_url,
           acaoUrl: '/gestao-ferias',
           lido: false,
           resolvido: false,
@@ -456,6 +469,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
@@ -490,6 +504,7 @@ export function CentralAlertas() {
           loja: a.profissionais?.lojas?.nome || 'N/A',
           profissional: a.profissionais?.nome,
           matricula: a.profissionais?.matricula,
+          fotoUrl: a.profissionais?.foto_url,
           acaoUrl: '/gestao-afastamentos',
           lido: false,
           resolvido: false,
@@ -504,6 +519,7 @@ export function CentralAlertas() {
           matricula,
           nome,
           status,
+          foto_url,
           lojas:lojas!profissionais_loja_id_fkey (nome)
         `)
         .in('status', ['afastado_acidente', 'licenca_maternidade', 'afastado_doenca', 'afastado']);
@@ -537,6 +553,7 @@ export function CentralAlertas() {
             loja: p.lojas?.nome || 'N/A',
             profissional: p.nome,
             matricula: p.matricula,
+            fotoUrl: p.foto_url,
             acaoUrl: '/gestao-afastamentos',
             lido: false,
             resolvido: false,
@@ -552,6 +569,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
@@ -580,6 +598,7 @@ export function CentralAlertas() {
             loja: e.profissionais?.lojas?.nome || 'N/A',
             profissional: e.profissionais?.nome,
             matricula: e.profissionais?.matricula,
+            fotoUrl: e.profissionais?.foto_url,
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,
@@ -600,6 +619,7 @@ export function CentralAlertas() {
             loja: e.profissionais?.lojas?.nome || 'N/A',
             profissional: e.profissionais?.nome,
             matricula: e.profissionais?.matricula,
+            fotoUrl: e.profissionais?.foto_url,
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,
@@ -616,6 +636,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
@@ -641,6 +662,7 @@ export function CentralAlertas() {
             loja: e.profissionais?.lojas?.nome || 'N/A',
             profissional: e.profissionais?.nome,
             matricula: e.profissionais?.matricula,
+            fotoUrl: e.profissionais?.foto_url,
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,

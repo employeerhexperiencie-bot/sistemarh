@@ -27,6 +27,7 @@ import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfi
 import type { TributosCLT } from '@/lib/payrollCalculator';
 import { TRIBUTOS_CLT_PADRAO } from '@/lib/payrollCalculator';
 import { gerarHoleritePDF, gerarHoleriteDia20, gerarHoleriteDia5, gerarHoleriteVT } from '@/components/folha/HoleritePDF';
+import { ProfissionalAvatar } from '@/components/profissional/ProfissionalAvatar';
 import { 
   gerarRelatorioDia20, gerarRelatorioDia5, gerarRelatorioVT, 
   gerarRelatorioCesta, exportarCSV,
@@ -174,7 +175,7 @@ export default function Fechamentos() {
       for (const loja of openLojas) {
         const { data: profs } = await supabase
           .from('profissionais')
-          .select('id, nome, matricula, cargo, salario_nominal, ultimo_salario, primeiro_salario, loja_id, data_admissao, vale_transporte, valor_diario_rota, vale_refeicao, cesta_basica, pensao_alimenticia, status, insalubridade, escala_trabalho')
+          .select('id, nome, matricula, cargo, salario_nominal, ultimo_salario, primeiro_salario, loja_id, data_admissao, vale_transporte, valor_diario_rota, vale_refeicao, cesta_basica, pensao_alimenticia, status, insalubridade, escala_trabalho, foto_url')
           .eq('loja_id', loja.id)
           .not('status', 'in', '("demitido","inativo")');
 
@@ -945,7 +946,16 @@ export default function Fechamentos() {
                           <TableRow key={r.profissionalId} className={`text-xs ${isEdited ? 'bg-primary/5' : ''}`}>
                             {isMulti && <TableCell className="text-xs text-muted-foreground">{r.lojaNome}</TableCell>}
                             <TableCell className="font-mono">{r.matricula}</TableCell>
-                            <TableCell className="font-medium max-w-[120px] truncate" title={r.profissionalNome}>{r.profissionalNome}</TableCell>
+                            <TableCell className="font-medium max-w-[180px]" title={r.profissionalNome}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <ProfissionalAvatar
+                                  nome={r.profissionalNome}
+                                  fotoUrl={(previewData.profissionais.find((pp: any) => pp.id === r.profissionalId) as any)?.foto_url}
+                                  size="xs"
+                                />
+                                <span className="truncate">{r.profissionalNome}</span>
+                              </div>
+                            </TableCell>
                             <TableCell className="text-right">{formatCurrency(r.salarioBase)}</TableCell>
                             <TableCell className="text-right">{r.diasEfetivos}/{30}</TableCell>
                             {/* Falta Injustificada - mostra valor monetário como na planilha */}

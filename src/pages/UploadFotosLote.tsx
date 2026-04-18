@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Camera, Upload, Search, Check, X, Loader2, Images, Wand2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Camera, Upload, Search, Check, X, Loader2, Images, Wand2, Link2, FileImage } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { ProfissionalAvatar } from '@/components/profissional/ProfissionalAvatar';
@@ -31,10 +33,38 @@ interface PendingPhoto {
   matchedProfId?: string;
   uploaded?: boolean;
   error?: string;
+  /** Origem do arquivo para exibir no card (nome local ou URL) */
+  source: string;
 }
 
 const normalize = (s?: string | null) =>
   (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+
+const formatCPF = (cpf?: string | null) => {
+  if (!cpf) return '';
+  const d = cpf.replace(/\D/g, '');
+  if (d.length !== 11) return cpf;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+};
+
+/**
+ * Converte URLs do Google Drive em links de download direto.
+ * Aceita formatos:
+ *  - https://drive.google.com/file/d/FILE_ID/view?usp=...
+ *  - https://drive.google.com/open?id=FILE_ID
+ *  - https://drive.google.com/uc?id=FILE_ID
+ *  - URLs diretas (devolve como está)
+ */
+function normalizeDriveUrl(url: string): string {
+  const trimmed = url.trim();
+  // /file/d/<id>/
+  const m1 = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (m1) return `https://drive.google.com/uc?export=download&id=${m1[1]}`;
+  // ?id=<id>
+  const m2 = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m2) return `https://drive.google.com/uc?export=download&id=${m2[1]}`;
+  return trimmed;
+}
 
 export default function UploadFotosLote() {
   const { toast } = useToast();
@@ -44,6 +74,8 @@ export default function UploadFotosLote() {
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [urlsTexto, setUrlsTexto] = useState('');
+  const [importandoUrls, setImportandoUrls] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -68,7 +100,7 @@ export default function UploadFotosLote() {
     return semFoto.filter((p) => normalize(p.nome).includes(n) || normalize(p.matricula).includes(n));
   }, [semFoto, search]);
 
-  /** Tenta casar arquivo automaticamente por matrícula ou CPF no nome */
+  /** Tenta casar arquivo automaticamente por matrícula, CPF ou nome */
   const autoMatch = (filename: string): string | undefined => {
     const base = filename.replace(/\.(jpg|jpeg|png|webp)$/i, '');
     const norm = normalize(base);
@@ -104,6 +136,7 @@ export default function UploadFotosLote() {
         file,
         previewUrl: URL.createObjectURL(file),
         matchedProfId: autoMatch(file.name),
+        source: file.name,
       });
     });
     setPending((p) => [...p, ...novos]);
@@ -111,6 +144,57 @@ export default function UploadFotosLote() {
     toast({
       title: `${novos.length} foto(s) carregada(s)`,
       description: `${matched} vinculadas automaticamente. Vincule manualmente as restantes.`,
+    });
+  };
+
+  /** Importa fotos a partir de uma lista de URLs (Google Drive, Forms, links diretos) */
+  const importarUrls = async () => {
+    const linhas = urlsTexto
+      .split(/[\n,;\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.startsWith('http'));
+    if (linhas.length === 0) {
+      toast({ title: 'Nenhuma URL válida', description: 'Cole pelo menos uma URL.', variant: 'destructive' });
+      return;
+    }
+    setImportandoUrls(true);
+    let ok = 0;
+    let fail = 0;
+    const novos: PendingPhoto[] = [];
+
+    for (const raw of linhas) {
+      try {
+        const url = normalizeDriveUrl(raw);
+        const resp = await fetch(url, { mode: 'cors' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
+        if (!/^image\/(jpeg|png|webp)/.test(blob.type)) {
+          // Drive às vezes devolve text/html quando o arquivo é grande — orienta o usuário
+          throw new Error('Conteúdo não é imagem (verifique permissão pública do link).');
+        }
+        // Tenta extrair um identificador útil do final da URL para auto-match
+        const guessName = decodeURIComponent(raw.split('/').pop() || 'foto.jpg');
+        const file = new File([blob], guessName, { type: blob.type });
+        novos.push({
+          id: `${Date.now()}-${Math.random()}`,
+          file,
+          previewUrl: URL.createObjectURL(file),
+          matchedProfId: autoMatch(guessName),
+          source: raw,
+        });
+        ok++;
+      } catch (err: any) {
+        fail++;
+        console.error('Falha ao importar URL', raw, err);
+      }
+    }
+    setPending((p) => [...p, ...novos]);
+    setUrlsTexto('');
+    setImportandoUrls(false);
+    toast({
+      title: `${ok} foto(s) importada(s)`,
+      description: fail > 0 ? `${fail} falharam (link sem permissão pública ou bloqueado por CORS).` : 'Vincule cada foto ao profissional.',
+      variant: fail > 0 && ok === 0 ? 'destructive' : 'default',
     });
   };
 
@@ -183,7 +267,6 @@ export default function UploadFotosLote() {
       title: 'Upload concluído',
       description: `${okCount}/${queue.length} foto(s) salva(s) com sucesso.`,
     });
-    // Recarregar lista para refletir status
     const data = await fetchAllPaginated<Profissional>(() =>
       supabase.from('profissionais').select('id, nome, matricula, cpf, status, foto_url, tenant_id').order('nome')
     );
@@ -209,7 +292,7 @@ export default function UploadFotosLote() {
             <Images className="h-7 w-7" /> Upload de Fotos em Lote
           </h1>
           <p className="text-muted-foreground">
-            Envie várias fotos de uma vez. O sistema tenta vincular automaticamente pelo nome do arquivo (matrícula, CPF ou nome).
+            Visual estilo Google Drive — envie várias fotos ao mesmo tempo. O sistema vincula automaticamente pela matrícula, CPF ou nome no arquivo.
           </p>
         </div>
 
@@ -217,8 +300,8 @@ export default function UploadFotosLote() {
           <Wand2 className="h-4 w-4" />
           <AlertTitle>Como funciona</AlertTitle>
           <AlertDescription>
-            Nomeie os arquivos como <strong>matrícula.jpg</strong> (ex: <code>1234.jpg</code>) ou <strong>cpf.jpg</strong> para vinculação automática.
-            Cada foto gera automaticamente uma versão otimizada (320x240 JPG) para o ponto facial Ezpoint.
+            <strong>Opção 1:</strong> Selecione vários arquivos do seu computador. Para vinculação automática, nomeie como <code>matricula.jpg</code>, <code>cpf.jpg</code> ou contendo o nome do profissional.<br/>
+            <strong>Opção 2:</strong> Cole links públicos do Google Drive ou de respostas do Google Forms. O sistema baixa e converte automaticamente para o padrão Ezpoint (320x240 JPG).
           </AlertDescription>
         </Alert>
 
@@ -250,28 +333,64 @@ export default function UploadFotosLote() {
           </Card>
         </div>
 
-        {/* Upload */}
+        {/* Upload com tabs */}
         <Card>
           <CardHeader>
-            <CardTitle>Selecionar fotos</CardTitle>
+            <CardTitle>Adicionar fotos</CardTitle>
             <CardDescription>JPG, PNG ou WEBP (máx 5MB cada)</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              onChange={(e) => e.target.files && handleFiles(e.target.files)}
-            />
+          <CardContent>
+            <Tabs defaultValue="arquivo">
+              <TabsList className="grid grid-cols-2 w-full sm:w-[400px]">
+                <TabsTrigger value="arquivo">
+                  <FileImage className="h-4 w-4 mr-2" /> Do computador
+                </TabsTrigger>
+                <TabsTrigger value="url">
+                  <Link2 className="h-4 w-4 mr-2" /> Links (Drive/Forms)
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="arquivo" className="pt-4">
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={(e) => e.target.files && handleFiles(e.target.files)}
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Selecione múltiplos arquivos. Nomeie pelo CPF ou matrícula para vinculação automática.
+                </p>
+              </TabsContent>
+
+              <TabsContent value="url" className="pt-4 space-y-3">
+                <Textarea
+                  placeholder={'Cole as URLs aqui (uma por linha):\nhttps://drive.google.com/file/d/.../view\nhttps://drive.google.com/open?id=...\nhttps://exemplo.com/foto.jpg'}
+                  rows={5}
+                  value={urlsTexto}
+                  onChange={(e) => setUrlsTexto(e.target.value)}
+                  disabled={importandoUrls}
+                />
+                <div className="flex items-center gap-2">
+                  <Button onClick={importarUrls} disabled={importandoUrls || !urlsTexto.trim()}>
+                    {importandoUrls ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+                    Importar URLs
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    O link do Drive precisa estar como "Qualquer pessoa com o link pode visualizar".
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+
             {pending.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 text-sm">
+              <div className="flex flex-wrap items-center gap-2 text-sm mt-4">
                 <Badge variant="outline">{totalVinculadas} vinculadas</Badge>
                 {totalNaoVinculadas > 0 && <Badge variant="destructive">{totalNaoVinculadas} sem vínculo</Badge>}
                 {totalEnviadas > 0 && <Badge className="bg-success text-success-foreground">{totalEnviadas} enviadas</Badge>}
               </div>
             )}
-            {uploading && <Progress value={progress} />}
-            <div className="flex flex-wrap gap-2">
+            {uploading && <Progress value={progress} className="mt-3" />}
+            <div className="flex flex-wrap gap-2 mt-4">
               <Button onClick={enviarTodas} disabled={uploading || totalVinculadas === 0}>
                 {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
                 Enviar {totalVinculadas} foto(s) vinculada(s)
@@ -285,66 +404,92 @@ export default function UploadFotosLote() {
           </CardContent>
         </Card>
 
-        {/* Fila de fotos */}
+        {/* Grid estilo Google Drive */}
         {pending.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Fila de envio</CardTitle>
-              <CardDescription>Vincule cada foto ao profissional correto</CardDescription>
+              <CardTitle>Galeria de fotos na fila</CardTitle>
+              <CardDescription>Visual estilo Drive — clique para vincular ao profissional. CPF e matrícula em destaque para localização rápida.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {pending.map((photo) => {
                   const matched = profissionais.find((p) => p.id === photo.matchedProfId);
                   return (
                     <div
                       key={photo.id}
-                      className="flex items-center gap-3 p-3 border rounded-lg bg-card"
+                      className={`group relative rounded-lg overflow-hidden border-2 bg-card transition-all ${
+                        photo.uploaded
+                          ? 'border-success'
+                          : photo.error
+                          ? 'border-destructive'
+                          : matched
+                          ? 'border-primary/50 hover:border-primary'
+                          : 'border-warning/50 hover:border-warning'
+                      }`}
                     >
-                      <img
-                        src={photo.previewUrl}
-                        alt={photo.file.name}
-                        className="h-16 w-16 rounded object-cover border"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{photo.file.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {(photo.file.size / 1024).toFixed(0)} KB
-                        </div>
-                        <div className="mt-1">
-                          {matched ? (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Check className="h-4 w-4 text-success" />
-                              <span className="font-medium">{matched.nome}</span>
-                              <span className="text-muted-foreground">Mat. {matched.matricula}</span>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-destructive">Não vinculada — selecione abaixo</span>
-                          )}
-                        </div>
+                      {/* Foto grande */}
+                      <div className="aspect-square w-full bg-muted relative">
+                        <img
+                          src={photo.previewUrl}
+                          alt={photo.source}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        {photo.uploaded && (
+                          <div className="absolute inset-0 bg-success/80 flex items-center justify-center">
+                            <Check className="h-12 w-12 text-success-foreground" />
+                          </div>
+                        )}
+                        {photo.error && (
+                          <div className="absolute top-1 left-1 right-1">
+                            <Badge variant="destructive" className="text-[10px] w-full justify-center truncate">
+                              {photo.error}
+                            </Badge>
+                          </div>
+                        )}
+                        {!photo.uploaded && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="absolute top-1 right-1 h-6 w-6 p-0 bg-background/80 hover:bg-background"
+                            onClick={() => removePhoto(photo.id)}
+                            disabled={uploading}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
-                      <select
-                        className="h-9 rounded-md border bg-background px-2 text-sm max-w-[220px]"
-                        value={photo.matchedProfId || ''}
-                        onChange={(e) => setMatch(photo.id, e.target.value || undefined)}
-                        disabled={photo.uploaded}
-                      >
-                        <option value="">— escolher —</option>
-                        {profissionais.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.nome} ({p.matricula})
-                          </option>
-                        ))}
-                      </select>
-                      {photo.uploaded ? (
-                        <Badge className="bg-success text-success-foreground">Enviada</Badge>
-                      ) : photo.error ? (
-                        <Badge variant="destructive">Erro</Badge>
-                      ) : (
-                        <Button variant="ghost" size="sm" onClick={() => removePhoto(photo.id)} disabled={uploading}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
+
+                      {/* Informações + select */}
+                      <div className="p-2 space-y-1.5">
+                        {matched ? (
+                          <>
+                            <div className="text-xs font-bold truncate" title={matched.nome}>{matched.nome}</div>
+                            <div className="text-[10px] text-muted-foreground space-y-0.5">
+                              <div className="font-mono">Mat. {matched.matricula}</div>
+                              {matched.cpf && <div className="font-mono">{formatCPF(matched.cpf)}</div>}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-[10px] text-warning font-medium truncate" title={photo.source}>
+                            ⚠️ Vincule abaixo
+                          </div>
+                        )}
+                        {!photo.uploaded && (
+                          <select
+                            className="w-full h-7 rounded-md border bg-background px-1 text-[10px]"
+                            value={photo.matchedProfId || ''}
+                            onChange={(e) => setMatch(photo.id, e.target.value || undefined)}
+                          >
+                            <option value="">— vincular —</option>
+                            {profissionais.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.nome} ({p.matricula})
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -380,7 +525,7 @@ export default function UploadFotosLote() {
                       <ProfissionalAvatar nome={p.nome} size="sm" />
                       <div className="text-sm min-w-0">
                         <div className="font-medium truncate">{p.nome}</div>
-                        <div className="text-xs text-muted-foreground">Mat. {p.matricula}</div>
+                        <div className="text-xs text-muted-foreground">Mat. {p.matricula} {p.cpf && `• ${formatCPF(p.cpf)}`}</div>
                       </div>
                     </div>
                   ))}
