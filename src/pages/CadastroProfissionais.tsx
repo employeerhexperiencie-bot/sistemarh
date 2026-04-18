@@ -2584,7 +2584,13 @@ export const CadastroProfissionais: React.FC = () => {
               {filteredProfessionals.map((professional) => (
                 <TableRow key={professional.id}>
                   <TableCell className="font-mono text-xs">{professional.matricula}</TableCell>
-                  <TableCell className="font-medium">{capitalizeWords(professional.nome)}</TableCell>
+                  <TableCell className="font-medium">
+                    <ProfissionalNomeAvatar
+                      nome={capitalizeWords(professional.nome)}
+                      fotoUrl={(professional as any).foto_url}
+                      size="sm"
+                    />
+                  </TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">{professional.cpf || '-'}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="flex flex-col">
