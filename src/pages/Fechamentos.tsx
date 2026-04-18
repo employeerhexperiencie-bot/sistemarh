@@ -1468,7 +1468,7 @@ export default function Fechamentos() {
                                     <span className="text-xs text-muted-foreground">v{fechamento.versao}</span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                                <div className="flex items-center gap-x-4 gap-y-1 text-xs text-muted-foreground flex-wrap">
                                   <span className="flex items-center gap-1">
                                     <Users className="h-3 w-3" />
                                     {status !== 'fechado' && !summary ? (
@@ -1483,6 +1483,16 @@ export default function Fechamentos() {
                                   {totalValor > 0 && (
                                     <span className="font-semibold text-success text-sm">
                                       Prévia: {formatCurrency(totalValor)}
+                                    </span>
+                                  )}
+                                  {summary && summary.totalDescontos > 0 && (
+                                    <span className="inline-flex items-center gap-1 text-destructive">
+                                      <span className="font-medium">
+                                        − {formatCurrency(summary.totalDescontos)}
+                                      </span>
+                                      <span className="text-muted-foreground">
+                                        ({summary.profComDesconto} c/ desconto)
+                                      </span>
                                     </span>
                                   )}
                                   {fechamento?.fechado_em && (
