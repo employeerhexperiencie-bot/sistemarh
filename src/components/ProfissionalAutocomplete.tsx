@@ -10,6 +10,7 @@ interface Profissional {
   matricula: string;
   nome: string;
   cargo: string | null;
+  status?: string | null;
   loja?: { nome: string } | null;
 }
 
@@ -19,6 +20,8 @@ interface ProfissionalAutocompleteProps {
   label?: string;
   placeholder?: string;
   disabled?: boolean;
+  /** Quando true, inclui também profissionais com status diferente de 'ativo' (ex.: demitidos). */
+  incluirInativos?: boolean;
 }
 
 export function ProfissionalAutocomplete({
@@ -27,6 +30,7 @@ export function ProfissionalAutocomplete({
   label = 'Matrícula',
   placeholder = 'Digite matrícula ou nome',
   disabled = false,
+  incluirInativos = false,
 }: ProfissionalAutocompleteProps) {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<Profissional[]>([]);
@@ -55,12 +59,17 @@ export function ProfissionalAutocomplete({
 
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        let queryBuilder = supabase
           .from('profissionais')
-          .select('id, matricula, nome, cargo, lojas:lojas!profissionais_loja_id_fkey(nome)')
+          .select('id, matricula, nome, cargo, status, lojas:lojas!profissionais_loja_id_fkey(nome)')
           .or(`matricula.ilike.%${query}%,nome.ilike.%${query}%`)
-          .eq('status', 'ativo')
           .limit(8);
+
+        if (!incluirInativos) {
+          queryBuilder = queryBuilder.eq('status', 'ativo');
+        }
+
+        const { data, error } = await queryBuilder;
 
         if (error) throw error;
 
@@ -69,6 +78,7 @@ export function ProfissionalAutocomplete({
           matricula: p.matricula,
           nome: p.nome,
           cargo: p.cargo,
+          status: p.status,
           loja: p.lojas,
         }));
 
@@ -84,7 +94,7 @@ export function ProfissionalAutocomplete({
 
     const debounce = setTimeout(searchProfissionais, 250);
     return () => clearTimeout(debounce);
-  }, [query, selectedProfissional]);
+  }, [query, selectedProfissional, incluirInativos]);
 
   // Fechar ao clicar fora
   useEffect(() => {
@@ -229,6 +239,11 @@ export function ProfissionalAutocomplete({
                     <span className="text-xs font-mono text-muted-foreground">
                       #{profissional.matricula}
                     </span>
+                    {profissional.status && profissional.status !== 'ativo' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium uppercase">
+                        {profissional.status}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
                     {profissional.cargo || 'Sem cargo'} • {profissional.loja?.nome || 'Sem loja'}

@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2, Filter, Search } from 'lucide-react';
+import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2, Filter, Search, UserX } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
@@ -19,6 +20,7 @@ interface Vacation {
   matricula: string;
   nome: string;
   loja: string;
+  desligado?: boolean;
   periodoAquisitivo: {
     inicio: string;
     fim: string;
@@ -45,6 +47,7 @@ export default function GestaoFerias() {
   const [selectedProfissionalId, setSelectedProfissionalId] = useState<string | undefined>(undefined);
   const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
+  const [incluirDesligados, setIncluirDesligados] = useState(false);
   const { addLog } = useAuditLog();
 
   useEffect(() => {
@@ -61,6 +64,7 @@ export default function GestaoFerias() {
           profissionais:profissional_id (
             matricula,
             nome,
+            status,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
@@ -85,6 +89,7 @@ export default function GestaoFerias() {
           matricula: f.profissionais?.matricula || '',
           nome: f.profissionais?.nome || 'Profissional não encontrado',
           loja: f.profissionais?.lojas?.nome || 'Loja não definida',
+          desligado: f.profissionais?.status && f.profissionais.status !== 'ativo',
           periodoAquisitivo: {
             inicio: f.periodo_aquisitivo_inicio,
             fim: f.periodo_aquisitivo_fim,
@@ -96,6 +101,9 @@ export default function GestaoFerias() {
           status,
         };
       });
+
+      // Ordenar alfabeticamente por nome
+      vacationsData.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
       setVacations(vacationsData);
     } catch (error) {
@@ -230,18 +238,25 @@ export default function GestaoFerias() {
     new Set(vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'))
   ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
-  // Aplicar filtros (loja + busca por nome) na listagem e nos contadores
+  // Aplicar filtros (loja + busca por nome + desligados) na listagem e nos contadores
   const filteredVacations = vacations.filter(v => {
     const matchesLoja = filterLoja === 'todas' || v.loja === filterLoja;
     const matchesSearch = searchTerm.trim() === '' ||
       v.nome.toLowerCase().includes(searchTerm.toLowerCase().trim());
-    return matchesLoja && matchesSearch;
+    const matchesAtivo = incluirDesligados || !v.desligado;
+    return matchesLoja && matchesSearch && matchesAtivo;
   });
 
   const pendentes = filteredVacations.filter(v => v.status === 'PENDENTE').length;
   const agendados = filteredVacations.filter(v => v.status === 'AGENDADO').length;
   const emFerias = filteredVacations.filter(v => v.status === 'EM_FERIAS').length;
   const vencendo = filteredVacations.filter(v => v.status === 'VENCENDO').length;
+
+  // Lista detalhada de vencimentos (para o card de alertas com nomes)
+  const listaVencendo = filteredVacations
+    .filter(v => v.status === 'VENCENDO')
+    .map(v => ({ ...v, diasRestantes: calculateDaysRemaining(v) }))
+    .sort((a, b) => a.diasRestantes - b.diasRestantes);
 
   if (loading) {
     return (
@@ -285,7 +300,18 @@ export default function GestaoFerias() {
                   label="Profissional"
                   placeholder="Digite nome ou matrícula"
                   disabled={!!editingVacation}
+                  incluirInativos={incluirDesligados}
                 />
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch
+                    id="incluirDesligadosForm"
+                    checked={incluirDesligados}
+                    onCheckedChange={setIncluirDesligados}
+                  />
+                  <Label htmlFor="incluirDesligadosForm" className="text-xs cursor-pointer">
+                    Incluir desligados (rescisão com férias proporcionais)
+                  </Label>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
@@ -462,6 +488,17 @@ export default function GestaoFerias() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="incluirDesligadosLista"
+                  checked={incluirDesligados}
+                  onCheckedChange={setIncluirDesligados}
+                />
+                <Label htmlFor="incluirDesligadosLista" className="text-xs cursor-pointer flex items-center gap-1">
+                  <UserX className="h-3 w-3" />
+                  Incluir desligados
+                </Label>
+              </div>
               <span className="text-xs text-muted-foreground whitespace-nowrap">
                 {filteredVacations.length} de {vacations.length}
               </span>
@@ -493,9 +530,18 @@ export default function GestaoFerias() {
                 </TableRow>
               ) : (
                 filteredVacations.map((vacation) => (
-                  <TableRow key={vacation.id}>
+                  <TableRow key={vacation.id} className={vacation.desligado ? 'opacity-70' : ''}>
                     <TableCell className="font-mono">{vacation.matricula}</TableCell>
-                    <TableCell className="font-medium">{vacation.nome}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {vacation.nome}
+                        {vacation.desligado && (
+                          <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/20">
+                            Desligado
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{vacation.loja}</TableCell>
                     <TableCell className="text-sm">
                       {new Date(vacation.periodoAquisitivo.inicio).toLocaleDateString('pt-BR')} até{' '}
@@ -549,13 +595,54 @@ export default function GestaoFerias() {
               Alertas de Vencimento de Férias
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-warning">
-              ⚠️ {vencendo} funcionário(s) com período aquisitivo vencendo em breve
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {vencendo} funcionário(s) com período aquisitivo vencido ou prestes a vencer (≤30 dias).
+              Agende as férias antes do vencimento para evitar perda de direitos.
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Agende as férias antes do vencimento para evitar perda de direitos
-            </p>
+            <div className="rounded-lg border border-warning/20 bg-background divide-y max-h-[280px] overflow-y-auto">
+              {listaVencendo.map((v) => {
+                const vencido = v.diasRestantes <= 0;
+                return (
+                  <div
+                    key={v.id}
+                    className="flex items-center justify-between gap-3 px-3 py-2 hover:bg-muted/40"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium truncate">{v.nome}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          #{v.matricula}
+                        </span>
+                        {v.desligado && (
+                          <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/20">
+                            Desligado
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {v.loja} • Aquisitivo até {new Date(v.periodoAquisitivo.fim).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge
+                        variant="outline"
+                        className={
+                          vencido
+                            ? 'bg-destructive/10 text-destructive border-destructive/20'
+                            : 'bg-warning/10 text-warning border-warning/20'
+                        }
+                      >
+                        {vencido ? `Vencido há ${Math.abs(v.diasRestantes)}d` : `Vence em ${v.diasRestantes}d`}
+                      </Badge>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(v)}>
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
