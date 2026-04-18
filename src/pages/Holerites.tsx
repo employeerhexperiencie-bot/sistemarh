@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FileText, Mail, CheckCircle, Download, Printer, Eye, Send, AlertTriangle, CheckCircle2, Bus, Calendar, CalendarDays } from 'lucide-react';
+import { FileText, Mail, CheckCircle, Download, Printer, Eye, Send, AlertTriangle, CheckCircle2, Bus, Calendar, CalendarDays, LayoutGrid, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -693,7 +693,7 @@ export default function Holerites() {
 
       {/* Tabs para os 3 tipos de holerite */}
       <Tabs defaultValue="dia20" className="w-full">
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="dia20" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Dia 20
@@ -705,6 +705,10 @@ export default function Holerites() {
           <TabsTrigger value="vt" className="flex items-center gap-2">
             <Bus className="h-4 w-4" />
             VT
+          </TabsTrigger>
+          <TabsTrigger value="gerencial" className="flex items-center gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Gerencial
           </TabsTrigger>
         </TabsList>
 
