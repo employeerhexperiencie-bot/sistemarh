@@ -363,7 +363,7 @@ function LogoTicker() {
 // ============ PLATAFORMA (3 grandes pilares com mockups) ============
 function Plataforma() {
   return (
-    <section id="plataforma" className="relative py-24 px-4 sm:px-6 lg:px-8">
+    <section id="plataforma" className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <SectionHeader
           eyebrow="A plataforma"
