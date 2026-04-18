@@ -564,3 +564,109 @@
 .landing-rise {
   animation: landing-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* ===========================================================
+   ANIMATED BACKGROUND — orbs flutuantes + aurora suave
+   Cobre toda a landing como camada fixa atrás do conteúdo.
+   =========================================================== */
+.landing-animated-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: radial-gradient(ellipse 100% 60% at 50% 0%, hsl(252 95% 70% / 0.10), transparent 70%),
+              hsl(240 10% 3.9%);
+}
+
+.landing-animated-bg::before,
+.landing-animated-bg::after {
+  content: "";
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  max-width: 900px;
+  max-height: 900px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+/* Orb violeta — drifta diagonalmente */
+.landing-animated-bg::before {
+  background: radial-gradient(circle, hsl(252 95% 65% / 0.55), transparent 60%);
+  top: -15%;
+  left: -10%;
+  animation: orb-drift-a 28s ease-in-out infinite;
+}
+
+/* Orb azul — drifta em contraponto */
+.landing-animated-bg::after {
+  background: radial-gradient(circle, hsl(199 89% 60% / 0.45), transparent 60%);
+  bottom: -20%;
+  right: -10%;
+  animation: orb-drift-b 34s ease-in-out infinite;
+}
+
+/* Orb extra (terceira camada via filho) */
+.landing-animated-bg .orb-3 {
+  position: absolute;
+  width: 50vw;
+  height: 50vw;
+  max-width: 700px;
+  max-height: 700px;
+  top: 40%;
+  left: 50%;
+  border-radius: 50%;
+  filter: blur(140px);
+  background: radial-gradient(circle, hsl(280 90% 60% / 0.30), transparent 60%);
+  transform: translate(-50%, -50%);
+  animation: orb-drift-c 40s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Grid finíssimo sobre os orbs (estático, dá profundidade) */
+.landing-animated-bg .grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(hsl(240 6% 30% / 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(240 6% 30% / 0.12) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);
+}
+
+/* Vinheta sutil para focar no conteúdo */
+.landing-animated-bg .vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, hsl(240 10% 3.9% / 0.6) 100%);
+}
+
+@keyframes orb-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(20vw, 10vh) scale(1.08); }
+  66%      { transform: translate(10vw, 30vh) scale(0.95); }
+}
+@keyframes orb-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(-25vw, -15vh) scale(1.1); }
+  75%      { transform: translate(-10vw, -30vh) scale(0.92); }
+}
+@keyframes orb-drift-c {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-30%, -60%) scale(1.15); }
+}
+
+/* Animated bg fica atrás de tudo (z-index: 0 já definido acima) */
+
+/* Respeita preferências de reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .landing-animated-bg::before,
+  .landing-animated-bg::after,
+  .landing-animated-bg .orb-3 {
+    animation: none;
+  }
+}
