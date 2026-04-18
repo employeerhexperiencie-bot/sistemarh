@@ -31,7 +31,8 @@ import {
   FileCheck,
   ScrollText,
   ClipboardList,
-  Clock
+  Clock,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation } from 'react-router-dom';
