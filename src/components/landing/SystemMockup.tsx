@@ -165,11 +165,11 @@ export function DashboardMockup() {
 // ============ FOLHA MOCKUP ============
 export function FolhaMockup() {
   const rows = [
-    { nome: 'Maria Silva', salario: '3.500,00', liquido: '3.180,45', status: 'ok' },
-    { nome: 'João Santos', salario: '4.200,00', liquido: '3.890,12', status: 'ok' },
-    { nome: 'Ana Costa', salario: '3.200,00', liquido: '2.950,30', status: 'ok' },
-    { nome: 'Pedro Lima', salario: '5.100,00', liquido: '4.620,88', status: 'warn' },
-    { nome: 'Carla Souza', salario: '3.800,00', liquido: '3.480,15', status: 'ok' },
+    { nome: 'Maria S.', salario: '3.500,00', liquido: '3.180,45', status: 'ok' },
+    { nome: 'João S.', salario: '4.200,00', liquido: '3.890,12', status: 'ok' },
+    { nome: 'Ana C.', salario: '3.200,00', liquido: '2.950,30', status: 'ok' },
+    { nome: 'Pedro L.', salario: '5.100,00', liquido: '4.620,88', status: 'warn' },
+    { nome: 'Carla S.', salario: '3.800,00', liquido: '3.480,15', status: 'ok' },
   ];
   return (
     <div className="mockup-host w-full h-full relative">
@@ -246,8 +246,8 @@ export function CadastroMockup() {
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-slate-900">Maria Silva Costa</p>
-                    <p className="text-[11px] text-slate-500">Atendente · Tennessee Steak House · Admissão 12/03/2023</p>
+                    <p className="text-sm font-bold text-slate-900">Profissional •••</p>
+                    <p className="text-[11px] text-slate-500">Atendente · Loja •••• · Admissão ••/••/••••</p>
                   </div>
                   <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[10px] font-semibold">Ativo</span>
                 </div>
@@ -267,12 +267,12 @@ export function CadastroMockup() {
                 {/* Form */}
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   {[
-                    { l: 'CPF', v: '123.456.789-00' },
-                    { l: 'RG', v: '12.345.678-9' },
-                    { l: 'Data de nascimento', v: '15/05/1992' },
+                    { l: 'CPF', v: '•••.•••.•••-••' },
+                    { l: 'RG', v: '••.•••.•••-•' },
+                    { l: 'Data de nascimento', v: '••/••/••••' },
                     { l: 'Estado civil', v: 'Solteira' },
-                    { l: 'Telefone', v: '(11) 98765-4321' },
-                    { l: 'E-mail', v: 'maria.costa@email.com' },
+                    { l: 'Telefone', v: '(••) •••••-••••' },
+                    { l: 'E-mail', v: '••••••@••••••.com' },
                   ].map((f) => (
                     <div key={f.l}>
                       <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-1">{f.l}</p>
@@ -300,10 +300,10 @@ export function BeneficiosMockup() {
     { label: 'Plano de Saúde', value: 'R$ 18.900' },
   ];
   const rows = [
-    { nome: 'Maria Silva', vt: true, vr: true, cesta: true, odonto: true },
-    { nome: 'João Santos', vt: true, vr: true, cesta: false, odonto: true },
-    { nome: 'Ana Costa', vt: true, vr: true, cesta: true, odonto: false },
-    { nome: 'Pedro Lima', vt: false, vr: true, cesta: true, odonto: true },
+    { nome: 'Maria S.', vt: true, vr: true, cesta: true, odonto: true },
+    { nome: 'João S.', vt: true, vr: true, cesta: false, odonto: true },
+    { nome: 'Ana C.', vt: true, vr: true, cesta: true, odonto: false },
+    { nome: 'Pedro L.', vt: false, vr: true, cesta: true, odonto: true },
   ];
   return (
     <div className="mockup-host w-full h-full relative">
