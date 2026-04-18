@@ -267,12 +267,12 @@ export function CadastroMockup() {
                 {/* Form */}
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   {[
-                    { l: 'CPF', v: '123.456.789-00' },
-                    { l: 'RG', v: '12.345.678-9' },
-                    { l: 'Data de nascimento', v: '15/05/1992' },
+                    { l: 'CPF', v: '•••.•••.•••-••' },
+                    { l: 'RG', v: '••.•••.•••-•' },
+                    { l: 'Data de nascimento', v: '••/••/••••' },
                     { l: 'Estado civil', v: 'Solteira' },
-                    { l: 'Telefone', v: '(11) 98765-4321' },
-                    { l: 'E-mail', v: 'maria.costa@email.com' },
+                    { l: 'Telefone', v: '(••) •••••-••••' },
+                    { l: 'E-mail', v: '••••••@••••••.com' },
                   ].map((f) => (
                     <div key={f.l}>
                       <p className="text-[9px] text-slate-500 uppercase tracking-wide mb-1">{f.l}</p>
