@@ -320,12 +320,12 @@ function StatsImpact() {
 // ============ FEATURES / SOLUCAO ============
 function Features() {
   const features = [
-    { icon: Zap, title: "Folha pronta em minutos", description: "Motor de cálculo validado com 145 testes automatizados. Você só confere e aprova.", highlight: "De 3 dias para 5 minutos" },
-    { icon: Bell, title: "Alertas que te salvam", description: "ASO, férias, vencimentos, documentos. Você é avisado antes de virar problema.", highlight: "Zero surpresa fiscal" },
-    { icon: Clock, title: "Sobra tempo pra estratégia", description: "Pare de apagar incêndio. Foque em desenvolver pessoas e fazer a empresa crescer.", highlight: "+60 horas livres/mês" },
-    { icon: Shield, title: "Dados isolados por empresa", description: "Cada loja só vê o que precisa. Cada usuário com sua permissão. Auditoria completa.", highlight: "Segurança bancária" },
-    { icon: FileText, title: "Histórico de tudo, pra sempre", description: "Quem mudou o quê, quando e por quê. Se a Receita pedir, você tem em segundos.", highlight: "Compliance total" },
-    { icon: TrendingUp, title: "Cresce com você", description: "Atende de 10 a 2.000+ profissionais sem travar. Sua expansão não para por causa do RH.", highlight: "Sem limite real" },
+    { icon: Zap, title: "Folha pronta em minutos", description: "Motor validado com 145 testes. Você só confere e aprova.", highlight: "De 3 dias para 5 minutos" },
+    { icon: Bell, title: "Alertas que te salvam", description: "ASO, férias, vencimentos. Avisos antes de virar problema.", highlight: "Zero surpresa fiscal" },
+    { icon: Clock, title: "Sobra tempo pra estratégia", description: "Pare de apagar incêndio. Foque em desenvolver pessoas.", highlight: "+60h livres/mês" },
+    { icon: Shield, title: "Dados isolados por empresa", description: "Cada loja vê só o que precisa. Auditoria completa.", highlight: "Segurança bancária" },
+    { icon: FileText, title: "Histórico de tudo", description: "Quem mudou, quando e por quê. Pronto para a Receita.", highlight: "Compliance total" },
+    { icon: TrendingUp, title: "Cresce com você", description: "De 10 a 2.000+ profissionais sem travar.", highlight: "Sem limite real" },
   ];
 
   return (
@@ -397,37 +397,37 @@ function Differentiators() {
     {
       icon: Calculator,
       title: "Pagamento Split (Dia 20 + Dia 5)",
-      description: "Único sistema do mercado nacional que calcula nativamente o adiantamento do Dia 20 (40%) + saldo do Dia 5 (60%). Específico para varejo, comércio e redes de loja.",
+      description: "Único no Brasil que calcula o adiantamento Dia 20 (40%) + saldo Dia 5 (60%) nativamente.",
       market: "Concorrentes não têm"
     },
     {
       icon: Wallet,
-      title: "Empréstimos CLT + Direto da Loja",
-      description: "Controle total de empréstimos consignados (CLT) e empréstimos da loja para o colaborador. Parcelas, saldos, histórico de alterações com auditoria.",
+      title: "Empréstimos CLT + Loja",
+      description: "Consignados e empréstimos da loja com parcelas, saldos e auditoria.",
       market: "Concorrentes não têm"
     },
     {
       icon: Gift,
-      title: "11 Tipos de Benefícios Configuráveis",
-      description: "VT, VR, VA, Cesta, Odonto, Seguro de Vida, Bem Mais, Vale Carne, Vale Dinheiro e mais. Regras de elegibilidade por benefício, descontos automáticos.",
-      market: "Sistemas comuns têm 3-4"
+      title: "11 Tipos de Benefícios",
+      description: "VT, VR, VA, Cesta, Odonto, Seguro de Vida, Vale Carne e mais — com elegibilidade automática.",
+      market: "Comuns têm 3-4"
     },
     {
       icon: Award,
       title: "Motor de Cálculo Validado",
-      description: "145 testes automatizados cobrindo INSS, IRRF, faltas, férias, 13º, maternidade, acidente. Arredondamento padrão CLT. Zero margem para erro.",
+      description: "145 testes cobrindo INSS, IRRF, faltas, férias, 13º. Zero margem para erro.",
       market: "Padrão de auditoria"
     },
     {
       icon: ShieldCheck,
-      title: "Multi-loja com Isolamento Total",
-      description: "Cada loja é uma unidade independente. Gerente de uma filial não vê dados da outra. Consolidação automática para o administrador.",
+      title: "Multi-loja com Isolamento",
+      description: "Cada filial é independente. Consolidação automática para o administrador.",
       market: "Diferencial real"
     },
     {
       icon: Target,
       title: "White-label Pronto",
-      description: "Logo, cores e identidade da sua empresa. Seus colaboradores acessam um sistema com a sua marca, não com a marca de fornecedor.",
+      description: "Logo, cores e identidade da sua empresa. Seu time acessa com a sua marca.",
       market: "Único no segmento"
     }
   ];
@@ -441,8 +441,7 @@ function Differentiators() {
             O que nos torna únicos no Brasil
           </h2>
           <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Não somos mais um sistema genérico. Fomos construídos com base nas dores reais 
-            de operações de varejo, comércio e redes de loja.
+            Construído com base nas dores reais de varejo, comércio e redes de loja.
           </p>
         </div>
 
@@ -491,7 +490,7 @@ function Modules() {
             Pare de pular de planilha em planilha
           </h2>
           <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Mais de 40 módulos integrados. Tudo o que seu RH precisa, sem precisar de 5 ferramentas diferentes.
+            Mais de 40 módulos integrados. Tudo que seu RH precisa, em um só lugar.
           </p>
         </div>
 
@@ -513,20 +512,20 @@ function Modules() {
             <img src={screenshotCadastro} alt="Cadastro de Profissionais" className="w-full h-auto" loading="lazy" width={1280} height={800} />
             <div className="p-4 bg-card">
               <p className="font-medium text-foreground">Cadastro 360° do Colaborador</p>
-              <p className="text-sm text-muted-foreground">10 abas integradas: dados pessoais, documentos, cargo, benefícios, histórico, pensões, empréstimos, ASO, EPI e ocorrências</p>
+              <p className="text-sm text-muted-foreground">10 abas integradas: dados, documentos, benefícios, ASO, EPI e mais.</p>
             </div>
           </div>
           <div className="rounded-2xl overflow-hidden border border-border shadow-premium">
             <img src={screenshotBeneficios} alt="Gestão de Benefícios" className="w-full h-auto" loading="lazy" width={1280} height={800} />
             <div className="p-4 bg-card">
               <p className="font-medium text-foreground">Gestão de 11 Benefícios</p>
-              <p className="text-sm text-muted-foreground">Configuração de elegibilidade por benefício, descontos automáticos, relatórios consolidados por loja</p>
+              <p className="text-sm text-muted-foreground">Elegibilidade automática, descontos e relatórios consolidados.</p>
             </div>
           </div>
         </div>
 
         <p className="text-center mt-8 text-muted-foreground">
-          E muito mais: EPI com validade, pensão alimentícia, vales, 13º com avos, importação Excel, integração eSocial...
+          E muito mais: EPI, pensão alimentícia, vales, 13º, importação Excel...
         </p>
       </div>
     </section>
