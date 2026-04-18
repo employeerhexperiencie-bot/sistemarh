@@ -11,12 +11,42 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    // Remove console.log e debugger em produção (mantém console.error/warn)
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // Manual chunks: separa libs pesadas para cache de longo prazo
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'supabase': ['@supabase/supabase-js'],
+          'ui-radix': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-toast',
+          ],
+          'pdf-libs': ['jspdf', 'jspdf-autotable', 'html2canvas'],
+          'charts': ['recharts'],
+          'forms': ['react-hook-form', 'zod', '@hookform/resolvers'],
+          'date-utils': ['date-fns'],
+        },
+      },
+    },
+  },
+  esbuild: {
+    // Strip console.log/debug/info em produção (preserva error/warn para diagnóstico)
+    drop: mode === 'production' ? ['debugger'] : [],
+    pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
   },
 }));
