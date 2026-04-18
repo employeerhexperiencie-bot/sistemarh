@@ -668,7 +668,7 @@ function HowItWorks() {
 function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const faqs = [
-    { q: "Quanto custa o sistema?", a: `O investimento depende do tamanho da sua operação (quantidade de colaboradores e lojas). Chame no WhatsApp ${WHATSAPP_DISPLAY} e em 10 minutos a gente monta uma proposta sob medida pra você.` },
+    { q: "Quanto custa o sistema?", a: "O investimento depende do tamanho da sua operação (quantidade de colaboradores e lojas). Chame no WhatsApp e em 10 minutos a gente monta uma proposta sob medida pra você." },
     { q: "Preciso instalar alguma coisa?", a: "Não. O sistema funciona 100% online, pelo navegador. Funciona no computador, tablet e celular sem instalação." },
     { q: "Como vocês importam meus dados?", a: "Basta nos enviar suas planilhas de Excel. Nossa equipe técnica faz toda a importação, validação e conferência dos dados. Você não precisa fazer nada." },
     { q: "Meus dados ficam seguros?", a: "Sim. Usamos criptografia de nível bancário, isolamento total entre empresas (multi-tenant) e auditoria completa de todas as ações. Seus dados nunca se misturam com os de outras empresas." },
