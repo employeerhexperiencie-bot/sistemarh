@@ -632,8 +632,8 @@ export const CadastroProfissionais: React.FC = () => {
 
       // Dados principais para salvar no banco
       const professionalData = {
-        matricula: formData.matricula,
-        nome: formData.nome,
+        matricula: matriculaNorm,
+        nome: nomeNorm,
         cpf: formData.cpf || null,
         rg: formData.rg || null,
         loja_id: formData.loja_id || null,
