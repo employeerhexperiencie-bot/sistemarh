@@ -230,10 +230,13 @@ export default function GestaoFerias() {
     new Set(vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'))
   ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
-  // Aplicar filtro de loja na listagem e nos contadores
-  const filteredVacations = filterLoja === 'todas'
-    ? vacations
-    : vacations.filter(v => v.loja === filterLoja);
+  // Aplicar filtros (loja + busca por nome) na listagem e nos contadores
+  const filteredVacations = vacations.filter(v => {
+    const matchesLoja = filterLoja === 'todas' || v.loja === filterLoja;
+    const matchesSearch = searchTerm.trim() === '' ||
+      v.nome.toLowerCase().includes(searchTerm.toLowerCase().trim());
+    return matchesLoja && matchesSearch;
+  });
 
   const pendentes = filteredVacations.filter(v => v.status === 'PENDENTE').length;
   const agendados = filteredVacations.filter(v => v.status === 'AGENDADO').length;
