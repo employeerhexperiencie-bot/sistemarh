@@ -67,12 +67,12 @@ function LandingHeader() {
             </span>
           </a>
 
-          <nav className="hidden md:flex items-center gap-7">
+          <nav className="hidden lg:flex items-center gap-7">
             {NAV_LINKS.map(link => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm whitespace-nowrap"
               >
                 {link.label}
               </a>
@@ -90,7 +90,7 @@ function LandingHeader() {
             </Button>
             <Button
               size="sm"
-              className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-9 text-sm font-medium"
+              className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-9 text-sm font-medium whitespace-nowrap"
               onClick={openWhatsApp}
             >
               Falar com vendas
@@ -240,7 +240,7 @@ function LiveMockupCarousel() {
         </div>
 
         {/* Stack of mockups, cross-fading */}
-        <div className="relative aspect-[4/3] sm:aspect-[16/10]" style={{ background: 'hsl(220 16% 96%)' }}>
+        <div className="relative aspect-[16/10]" style={{ background: 'hsl(220 16% 96%)' }}>
           {screens.map((Screen, i) => (
             <div
               key={i}
