@@ -146,20 +146,27 @@ export default function GestaoASO() {
     if (!dataProximoExame) {
       return { status: 'PENDENTE', diasRestantes: null };
     }
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Zerar horas para comparação precisa
-    
-    const proximoExame = new Date(dataProximoExame);
+
+    // Normalizar data do banco (YYYY-MM-DD) sem efeito de timezone:
+    // new Date('2026-04-18') é interpretado como UTC e pode virar dia anterior em fusos negativos.
+    // Construir como data local explicitamente.
+    const isoMatch = String(dataProximoExame).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const proximoExame = isoMatch
+      ? new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]))
+      : new Date(dataProximoExame);
     proximoExame.setHours(0, 0, 0, 0);
-    
+
     const diffTime = proximoExame.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) return { status: 'VENCIDO', diasRestantes: diffDays };
     if (diffDays <= 30) return { status: 'VENCE_30_DIAS', diasRestantes: diffDays };
     return { status: 'VALIDO', diasRestantes: diffDays };
   };
+
 
   // Capitalizar nomes
   const capitalizeWords = (str: string) => {
