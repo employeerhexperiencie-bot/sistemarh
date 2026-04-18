@@ -5,7 +5,7 @@ import {
   FileText, TrendingUp, LayoutDashboard, Users, Calendar, Stethoscope, 
   Wallet, Gift, Receipt, FileSpreadsheet, ShieldCheck, ChevronDown,
   Phone, Mail, MapPin, Star, MessageCircle, Sparkles, Target, Award,
-  AlertTriangle, Calculator, Database
+  AlertTriangle, Calculator, Database, ScanFace, BookOpen, Minus
 } from 'lucide-react';
 
 import screenshotDashboard from '@/assets/landing/screenshot-dashboard.jpg';
@@ -14,6 +14,8 @@ import screenshotFolha from '@/assets/landing/screenshot-folha.jpg';
 import screenshotBeneficios from '@/assets/landing/screenshot-beneficios.jpg';
 import heroTeam from '@/assets/landing/hero-team.jpg';
 import heroRhPonto from '@/assets/landing/hero-rh-ponto.jpg';
+import heroFacialPoint from '@/assets/landing/hero-facial-point.jpg';
+import clientsTeam from '@/assets/landing/clients-team.jpg';
 import problemStress from '@/assets/landing/problem-stress.jpg';
 import solutionEasy from '@/assets/landing/solution-easy.jpg';
 import supportCall from '@/assets/landing/support-call.jpg';
