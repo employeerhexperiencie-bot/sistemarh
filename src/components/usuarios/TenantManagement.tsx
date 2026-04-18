@@ -64,6 +64,8 @@ interface TenantMetrics {
   lojas: number;
   folhas: number;
   emprestimos: number;
+  alertas_pendentes: number;
+  ocorrencias_abertas: number;
 }
 
 interface Pagamento {
@@ -126,12 +128,14 @@ export function TenantManagement() {
         const metricsMap: Record<string, TenantMetrics> = {};
 
         for (const tid of tenantIds) {
-          const [uRes, pRes, lRes, fRes, eRes] = await Promise.all([
+          const [uRes, pRes, lRes, fRes, eRes, aRes, oRes] = await Promise.all([
             supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).neq('role', 'super_admin'),
             supabase.from('profissionais').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).eq('status', 'ativo'),
             supabase.from('lojas').select('id', { count: 'exact', head: true }).eq('tenant_id', tid),
             supabase.from('folha_pagamento').select('id', { count: 'exact', head: true }).eq('tenant_id', tid),
             supabase.from('emprestimos').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).eq('status', 'ativo'),
+            supabase.from('alertas_sistema').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).eq('lido', false),
+            supabase.from('pendencias').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).neq('status', 'concluida'),
           ]);
           metricsMap[tid] = {
             tenant_id: tid,
@@ -140,6 +144,8 @@ export function TenantManagement() {
             lojas: lRes.count || 0,
             folhas: fRes.count || 0,
             emprestimos: eRes.count || 0,
+            alertas_pendentes: aRes.count || 0,
+            ocorrencias_abertas: oRes.count || 0,
           };
         }
         setMetrics(metricsMap);
