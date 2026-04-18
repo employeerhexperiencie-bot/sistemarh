@@ -488,7 +488,7 @@ export default function GestaoFerias() {
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     {vacations.length === 0
                       ? 'Nenhum registro de férias encontrado'
-                      : `Nenhum registro encontrado para a loja "${filterLoja}"`}
+                      : 'Nenhum colaborador encontrado'}
                   </TableCell>
                 </TableRow>
               ) : (
