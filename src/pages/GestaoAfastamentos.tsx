@@ -503,7 +503,38 @@ export default function GestaoAfastamentos() {
         <CardHeader>
           <CardTitle>Controle de Afastamentos</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="space-y-4 overflow-x-auto">
+          {/* Filtros: loja + busca por nome */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1 sm:col-span-1">
+              <Label htmlFor="filtroLoja" className="text-xs">Filtrar por loja</Label>
+              <Select value={filterLoja} onValueChange={setFilterLoja}>
+                <SelectTrigger id="filtroLoja">
+                  <SelectValue placeholder="Todas as lojas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as lojas</SelectItem>
+                  {lojasDisponiveis.map(loja => (
+                    <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="buscaNome" className="text-xs">Buscar por nome ou matrícula</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="buscaNome"
+                  placeholder="Digite para filtrar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
@@ -518,14 +549,16 @@ export default function GestaoAfastamentos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {afastamentos.length === 0 ? (
+              {afastamentosFiltrados.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Nenhum afastamento registrado
+                    {afastamentos.length === 0
+                      ? 'Nenhum afastamento registrado'
+                      : 'Nenhum colaborador encontrado para o filtro selecionado.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                [...afastamentos]
+                [...afastamentosFiltrados]
                   .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
                   .map((afastamento) => (
                   <TableRow key={afastamento.id}>
