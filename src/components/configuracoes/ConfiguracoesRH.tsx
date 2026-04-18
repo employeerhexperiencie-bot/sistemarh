@@ -114,6 +114,16 @@ export function ConfiguracoesRH() {
   };
 
   const handleSave = async () => {
+    // Validação: percentual de adiantamento deve estar entre 0 e 100
+    const percentualRaw = configs['percentual_adiantamento'];
+    if (percentualRaw !== undefined && percentualRaw !== '') {
+      const pct = Number(percentualRaw);
+      if (Number.isNaN(pct) || pct < 0 || pct > 100) {
+        toast.error('O percentual deve ser entre 0% e 100%.');
+        return;
+      }
+    }
+
     setIsSaving(true);
     
     try {
@@ -141,7 +151,7 @@ export function ConfiguracoesRH() {
       toast.success('Configurações salvas com sucesso!');
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
-      toast.error('Erro ao salvar configurações');
+      toast.error(`Erro ao salvar configurações: ${error?.message || 'erro desconhecido'}`);
     } finally {
       setIsSaving(false);
     }
@@ -190,9 +200,13 @@ export function ConfiguracoesRH() {
     }
     
     if (config.tipo === 'number') {
+      const isPercentual = config.chave === 'percentual_adiantamento';
       return (
         <Input
           type="number"
+          min={isPercentual ? 0 : undefined}
+          max={isPercentual ? 100 : undefined}
+          step={isPercentual ? 1 : undefined}
           value={value}
           onChange={(e) => handleChange(config.chave, e.target.value)}
           className="w-24"
