@@ -711,7 +711,7 @@ function FAQ() {
           <p className="text-foreground font-medium mb-3">Ficou com alguma outra dúvida?</p>
           <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90" onClick={openWhatsApp}>
             <MessageCircle className="w-5 h-5" />
-            Chamar no WhatsApp {WHATSAPP_DISPLAY}
+            Chamar no WhatsApp
           </Button>
         </div>
       </div>
