@@ -64,6 +64,27 @@ Deno.serve(async (req) => {
     }
 
     // ============================================
+    // VALIDAR ROLE - prevenir escalação de privilégios
+    // ============================================
+    // Whitelist server-side: nunca confiar no role enviado pelo cliente.
+    // Apenas super_admin pode atribuir 'admin'. Ninguém pode atribuir 'super_admin' via convite.
+    const ALLOWED_ROLES_FOR_ADMIN = ['gerente', 'operador', 'executor'];
+    const ALLOWED_ROLES_FOR_SUPER_ADMIN = ['admin', 'gerente', 'operador', 'executor'];
+
+    const allowedRoles = callerRole.role === 'super_admin'
+      ? ALLOWED_ROLES_FOR_SUPER_ADMIN
+      : ALLOWED_ROLES_FOR_ADMIN;
+
+    if (!allowedRoles.includes(role)) {
+      console.warn(`Role escalation attempt blocked: caller=${caller.id} (${callerRole.role}) tried to assign role=${role}`);
+      return new Response(JSON.stringify({
+        error: `Você não tem permissão para atribuir o papel "${role}". Papéis permitidos: ${allowedRoles.join(', ')}.`
+      }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // ============================================
     // VERIFICAR LIMITES DO TENANT
     // ============================================
     const { data: tenantData } = await supabaseAdmin

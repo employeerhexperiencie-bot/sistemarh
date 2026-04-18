@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { resolveProfessionalPhotoUrl } from '@/lib/professionalPhotoUrl';
 
 interface ProfissionalAvatarProps {
   nome: string;
@@ -24,15 +25,40 @@ function getInitials(nome: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+/**
+ * Hook que resolve o path/URL armazenada para uma URL assinada exibível.
+ * O bucket de fotos é privado, então é necessário gerar signed URL no cliente.
+ */
+function useSignedPhotoUrl(stored?: string | null): string | undefined {
+  const [resolved, setResolved] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!stored) {
+      setResolved(undefined);
+      return;
+    }
+    let cancelled = false;
+    resolveProfessionalPhotoUrl(stored).then((url) => {
+      if (!cancelled) setResolved(url ?? undefined);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [stored]);
+
+  return resolved;
+}
+
 export const ProfissionalAvatar: React.FC<ProfissionalAvatarProps> = ({
   nome,
   fotoUrl,
   size = 'sm',
   className,
 }) => {
+  const signed = useSignedPhotoUrl(fotoUrl);
   return (
     <Avatar className={cn(sizeMap[size], className)}>
-      {fotoUrl && <AvatarImage src={fotoUrl} alt={nome} />}
+      {signed && <AvatarImage src={signed} alt={nome} />}
       <AvatarFallback className="bg-primary/10 text-primary font-medium">
         {getInitials(nome)}
       </AvatarFallback>
