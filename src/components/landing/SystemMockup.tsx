@@ -246,8 +246,8 @@ export function CadastroMockup() {
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-glow shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-slate-900">Maria Silva Costa</p>
-                    <p className="text-[11px] text-slate-500">Atendente · Tennessee Steak House · Admissão 12/03/2023</p>
+                    <p className="text-sm font-bold text-slate-900">Profissional •••</p>
+                    <p className="text-[11px] text-slate-500">Atendente · Loja •••• · Admissão ••/••/••••</p>
                   </div>
                   <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[10px] font-semibold">Ativo</span>
                 </div>
