@@ -446,7 +446,7 @@ function FeaturesBento() {
           title={<>Construído para quem precisa <br /> de <span className="landing-text-gradient">precisão e velocidade.</span></>}
         />
 
-        <div className="mt-14 grid md:grid-cols-6 gap-4">
+        <div className="mt-10 sm:mt-14 grid grid-cols-1 md:grid-cols-6 gap-3 sm:gap-4">
           <BentoCard
             className="md:col-span-3"
             icon={Zap}
