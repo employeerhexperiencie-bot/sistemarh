@@ -224,10 +224,20 @@ export default function GestaoFerias() {
     return Math.max(0, diffDays);
   };
 
-  const pendentes = vacations.filter(v => v.status === 'PENDENTE').length;
-  const agendados = vacations.filter(v => v.status === 'AGENDADO').length;
-  const emFerias = vacations.filter(v => v.status === 'EM_FERIAS').length;
-  const vencendo = vacations.filter(v => v.status === 'VENCENDO').length;
+  // Lista única de lojas presentes nos registros (para o filtro)
+  const lojasDisponiveis = Array.from(
+    new Set(vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'))
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+  // Aplicar filtro de loja na listagem e nos contadores
+  const filteredVacations = filterLoja === 'todas'
+    ? vacations
+    : vacations.filter(v => v.loja === filterLoja);
+
+  const pendentes = filteredVacations.filter(v => v.status === 'PENDENTE').length;
+  const agendados = filteredVacations.filter(v => v.status === 'AGENDADO').length;
+  const emFerias = filteredVacations.filter(v => v.status === 'EM_FERIAS').length;
+  const vencendo = filteredVacations.filter(v => v.status === 'VENCENDO').length;
 
   if (loading) {
     return (
