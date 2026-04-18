@@ -972,6 +972,7 @@ export default function LandingPage() {
         <Plataforma />
         <FeaturesBento />
         <Differentiators />
+        <HumanStories />
         <Modules />
         <HowItWorks />
         <StatsBar />
