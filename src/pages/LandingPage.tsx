@@ -162,7 +162,7 @@ function Hero() {
             </div>
 
             <p className="mt-4 text-sm text-muted-foreground">
-              Atendimento direto: <strong className="text-foreground">{WHATSAPP_DISPLAY}</strong> · Resposta em minutos
+              Atendimento humano direto no WhatsApp · Resposta em minutos
             </p>
           </div>
 
