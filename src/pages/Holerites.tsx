@@ -1172,6 +1172,145 @@ export default function Holerites() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ========== TAB GERENCIAL ========== */}
+        <TabsContent value="gerencial" className="space-y-4 mt-4">
+          {/* Resumo Gerencial */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Card className="bg-muted/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Profissionais</p>
+                    <p className="text-2xl font-bold">{holeritesFiltrados.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-warning/5 border-warning/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-warning/10">
+                    <Calendar className="h-4 w-4 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Dia 20</p>
+                    <p className="text-lg font-bold text-warning">{formatCurrency(resumo.adiantamentoDia20)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-success/5 border-success/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-success/10">
+                    <CalendarDays className="h-4 w-4 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Dia 5</p>
+                    <p className="text-lg font-bold text-success">{formatCurrency(resumo.saldoDia5)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total do Mês</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(resumo.totalSalarios)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Ações Gerencial */}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={exportarGerencialCSV}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
+          </div>
+
+          {/* Tabela Gerencial */}
+          <Card>
+            <CardContent className="p-0">
+              <ScrollArea className="w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-20">Mat.</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Loja</TableHead>
+                      <TableHead className="text-right">Salário Base</TableHead>
+                      <TableHead className="text-right">Dia 20 (40%)</TableHead>
+                      <TableHead className="text-right">Dia 5 (60%)</TableHead>
+                      <TableHead className="text-right">Total do Mês</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {holeritesFiltrados.map((h) => {
+                      const dia20 = Math.round(h.salario * 0.4);
+                      const dia5 = h.salario - dia20;
+                      return (
+                        <TableRow key={h.id}>
+                          <TableCell className="font-mono text-sm">{h.matricula}</TableCell>
+                          <TableCell className="font-medium">{h.nome}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{h.loja}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{formatCurrency(h.salario)}</TableCell>
+                          <TableCell className="text-right text-warning">{formatCurrency(dia20)}</TableCell>
+                          <TableCell className="text-right text-success">{formatCurrency(dia5)}</TableCell>
+                          <TableCell className="text-right font-bold text-primary">{formatCurrency(h.salario)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {holeritesFiltrados.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          Nenhum profissional encontrado
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {holeritesFiltrados.length > 0 && (
+                      <TableRow className="bg-muted/30 font-bold">
+                        <TableCell colSpan={3} className="text-right">TOTAIS</TableCell>
+                        <TableCell className="text-right">{formatCurrency(resumo.totalSalarios)}</TableCell>
+                        <TableCell className="text-right text-warning">{formatCurrency(resumo.adiantamentoDia20)}</TableCell>
+                        <TableCell className="text-right text-success">{formatCurrency(resumo.saldoDia5)}</TableCell>
+                        <TableCell className="text-right text-primary">{formatCurrency(resumo.totalSalarios)}</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Info Gerencial */}
+          <Card className="bg-muted/30">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <LayoutGrid className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Visão Gerencial</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Consolidação de todos os profissionais filtrados, com Dia 20 (40%), Dia 5 (60%) e total do mês. 
+                    Use o botão "Exportar CSV" para baixar o resumo em planilha.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
