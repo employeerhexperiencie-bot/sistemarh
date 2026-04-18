@@ -567,10 +567,18 @@ export const CadastroProfissionais: React.FC = () => {
       return;
     }
 
-    if (!formData.nome || !formData.matricula) {
+    // Validação de campos obrigatórios (NOT NULL no banco: nome, matricula, tenant_id)
+    const nomeNorm = (formData.nome || '').trim();
+    const matriculaNorm = (formData.matricula || '').trim();
+
+    if (!nomeNorm || !matriculaNorm) {
       toast({
-        title: "Erro",
-        description: "Preencha os campos obrigatórios (Nome e Matrícula)",
+        title: "Campos obrigatórios faltando",
+        description: !nomeNorm && !matriculaNorm
+          ? "Preencha Nome e Matrícula antes de salvar."
+          : !nomeNorm
+            ? "O campo Nome é obrigatório."
+            : "O campo Matrícula é obrigatório. Informe um identificador único do colaborador.",
         variant: "destructive"
       });
       return;
@@ -578,6 +586,29 @@ export const CadastroProfissionais: React.FC = () => {
 
     setLoading(true);
     try {
+      // Pré-checagem de matrícula duplicada (evita rejeição silenciosa por unique constraint)
+      if (!editingProfessional) {
+        const { data: jaExiste, error: checkError } = await supabase
+          .from('profissionais')
+          .select('id, nome')
+          .eq('matricula', matriculaNorm)
+          .maybeSingle();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.warn('Erro ao verificar matrícula duplicada:', checkError);
+        }
+
+        if (jaExiste) {
+          toast({
+            title: "Matrícula já cadastrada",
+            description: `A matrícula "${matriculaNorm}" já está em uso por: ${jaExiste.nome}. Use uma matrícula diferente.`,
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       // Normaliza qualquer valor de data para YYYY-MM-DD ou null.
       // Aceita: "", "DD/MM/YYYY", "YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss", Date.
       const toDateOnly = (raw: any): string | null => {
@@ -601,8 +632,8 @@ export const CadastroProfissionais: React.FC = () => {
 
       // Dados principais para salvar no banco
       const professionalData = {
-        matricula: formData.matricula,
-        nome: formData.nome,
+        matricula: matriculaNorm,
+        nome: nomeNorm,
         cpf: formData.cpf || null,
         rg: formData.rg || null,
         loja_id: formData.loja_id || null,
