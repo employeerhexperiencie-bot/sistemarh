@@ -170,7 +170,7 @@ export function buildProfissionalInput(
     cargo: p.cargo || null,
     lojaId: p.loja_id || 'sem-loja',
     salario,
-    escala: (p.escala === '5x2' ? '5x2' : '6x1') as '6x1' | '5x2',
+    escala: ((p.escala_trabalho || p.escala) === '5x2' ? '5x2' : '6x1') as '6x1' | '5x2',
     valorPassagem: p.vale_transporte === true && p.valor_diario_rota ? Number(p.valor_diario_rota) : 0,
     dataAdmissao: p.data_admissao || null,
     status,

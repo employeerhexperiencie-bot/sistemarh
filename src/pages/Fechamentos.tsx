@@ -174,7 +174,7 @@ export default function Fechamentos() {
       for (const loja of openLojas) {
         const { data: profs } = await supabase
           .from('profissionais')
-          .select('id, nome, matricula, cargo, salario_nominal, ultimo_salario, primeiro_salario, loja_id, data_admissao, vale_transporte, valor_diario_rota, vale_refeicao, cesta_basica, pensao_alimenticia, status, insalubridade, escala')
+          .select('id, nome, matricula, cargo, salario_nominal, ultimo_salario, primeiro_salario, loja_id, data_admissao, vale_transporte, valor_diario_rota, vale_refeicao, cesta_basica, pensao_alimenticia, status, insalubridade, escala_trabalho')
           .eq('loja_id', loja.id)
           .not('status', 'in', '("demitido","inativo")');
 
@@ -1465,14 +1465,21 @@ export default function Fechamentos() {
                                     <span className="text-xs text-muted-foreground">v{fechamento.versao}</span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                                   <span className="flex items-center gap-1">
                                     <Users className="h-3 w-3" />
-                                    {totalProf} profissionais
+                                    {status !== 'fechado' && !summary ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        calculando...
+                                      </span>
+                                    ) : (
+                                      <>{totalProf} profissionais</>
+                                    )}
                                   </span>
                                   {totalValor > 0 && (
-                                    <span className="font-semibold text-foreground text-sm">
-                                      {formatCurrency(totalValor)}
+                                    <span className="font-semibold text-success text-sm">
+                                      Prévia: {formatCurrency(totalValor)}
                                     </span>
                                   )}
                                   {fechamento?.fechado_em && (
