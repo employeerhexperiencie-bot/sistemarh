@@ -240,11 +240,21 @@ export default function GestaoASO() {
 
       if (checkError) throw checkError;
 
+      // Normaliza para YYYY-MM-DD (sem componente de hora/timezone)
+      const toDateOnly = (raw: string): string | null => {
+        if (!raw) return null;
+        const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+        return m ? m[1] : null;
+      };
+
+      const dataUltimoNorm = toDateOnly(formData.data_ultimo_exame);
+      const dataProximoNorm = toDateOnly(formData.data_proximo_exame);
+
       const payload = {
         profissional_id: formData.profissional_id,
         tipo_exame: formData.tipo_exame,
-        data_ultimo_exame: formData.data_ultimo_exame,
-        data_proximo_exame: formData.data_proximo_exame || null,
+        data_ultimo_exame: dataUltimoNorm,
+        data_proximo_exame: dataProximoNorm,
         periodicidade: formData.periodicidade,
         status: status.toLowerCase(),
       };
@@ -263,6 +273,22 @@ export default function GestaoASO() {
         if (updateError) throw updateError;
         savedId = updatedData?.id;
         acao = 'EDITAR';
+
+        // Atualização otimista: refletir na lista antes do reload completo
+        const { status: novoStatus, diasRestantes } = calculateStatus(dataProximoNorm);
+        setExams(prev => prev.map(e =>
+          e.id === existente.id
+            ? {
+                ...e,
+                dataUltimoExame: dataUltimoNorm,
+                dataProximoExame: dataProximoNorm,
+                tipoExame: formData.tipo_exame,
+                periodicidade: formData.periodicidade,
+                status: novoStatus,
+                diasRestantes,
+              }
+            : e
+        ));
       } else {
         // INSERT: novo ASO
         const { data: insertedData, error: insertError } = await supabase
@@ -281,7 +307,7 @@ export default function GestaoASO() {
         modulo: 'ASO',
         entidade: nomeProfissional,
         detalhes: `Exame ASO "${formData.tipo_exame}" ${acao === 'EDITAR' ? 'atualizado' : 'cadastrado'} para ${nomeProfissional}`,
-        metadata: { 
+        metadata: {
           id: savedId,
           dados_novos: formData
         }
@@ -290,23 +316,26 @@ export default function GestaoASO() {
       toast({
         title: "Sucesso",
         description: acao === 'EDITAR'
-          ? "Exame ASO atualizado com sucesso"
-          : "Exame ASO cadastrado com sucesso"
+          ? `Exame ASO atualizado. Novo status: ${status}`
+          : `Exame ASO cadastrado. Status: ${status}`
       });
 
       handleCloseDialog();
-      loadData();
+      await loadData();
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
+      const detalhes = [error?.message, error?.details, error?.hint, error?.code ? `(código ${error.code})` : null]
+        .filter(Boolean).join(' — ');
       toast({
-        title: "Erro",
-        description: error?.message || "Erro ao cadastrar exame",
+        title: "Erro ao salvar exame ASO",
+        description: detalhes || "Erro desconhecido ao cadastrar exame",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
