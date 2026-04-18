@@ -64,6 +64,7 @@ export default function GestaoFerias() {
           profissionais:profissional_id (
             matricula,
             nome,
+            status,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
@@ -88,6 +89,7 @@ export default function GestaoFerias() {
           matricula: f.profissionais?.matricula || '',
           nome: f.profissionais?.nome || 'Profissional não encontrado',
           loja: f.profissionais?.lojas?.nome || 'Loja não definida',
+          desligado: f.profissionais?.status && f.profissionais.status !== 'ativo',
           periodoAquisitivo: {
             inicio: f.periodo_aquisitivo_inicio,
             fim: f.periodo_aquisitivo_fim,
@@ -99,6 +101,9 @@ export default function GestaoFerias() {
           status,
         };
       });
+
+      // Ordenar alfabeticamente por nome
+      vacationsData.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
       setVacations(vacationsData);
     } catch (error) {
