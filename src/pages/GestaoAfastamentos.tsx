@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUploader } from '@/components/FileUploader';
-import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2, Trash2 } from 'lucide-react';
+import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2, Trash2, Search } from 'lucide-react';
+import { Select as FilterSelect, SelectContent as FilterSelectContent, SelectItem as FilterSelectItem, SelectTrigger as FilterSelectTrigger, SelectValue as FilterSelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
