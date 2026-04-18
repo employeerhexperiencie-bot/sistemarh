@@ -20,8 +20,7 @@ import teamSuccess from '@/assets/landing/team-success.jpg';
 
 // ============ CONSTANTS ============
 const WHATSAPP_NUMBER = '5511953340284';
-const WHATSAPP_DISPLAY = '(11) 95334-0284';
-const WHATSAPP_MESSAGE = encodeURIComponent('Olá! Vi a página do Sistema RH e quero saber como ele pode ajudar minha empresa.');
+const WHATSAPP_MESSAGE = encodeURIComponent('Olá! 👋 Vim pelo site do Sistema RH (eazdev.com) e quero saber como pode ajudar minha empresa.');
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
 const openWhatsApp = () => window.open(WHATSAPP_URL, '_blank');
