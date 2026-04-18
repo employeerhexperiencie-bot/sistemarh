@@ -593,6 +593,91 @@ function Modules() {
   );
 }
 
+// ============ HUMAN STORIES (relacionamento + identidade) ============
+function HumanStories() {
+  const stories = [
+    {
+      img: gestoraRH,
+      eyebrow: 'Gestores de RH',
+      title: 'Mais tempo com gente. Menos com planilha.',
+      desc: 'Quem cuida do RH não foi contratado para fechar 14 abas do Excel. Devolvemos as horas — e a tranquilidade — para quem realmente importa.',
+      stat: '–95%',
+      statLabel: 'tempo gasto com folha',
+    },
+    {
+      img: equipeVarejo,
+      eyebrow: 'Equipes de loja',
+      title: 'Ponto, holerite e benefícios na palma da mão.',
+      desc: 'O colaborador da ponta não precisa ligar para o RH. Bate o ponto facial, recebe o holerite no app e acompanha tudo com clareza.',
+      stat: '0',
+      statLabel: 'fila no RH no dia 5',
+    },
+    {
+      img: empresariaAliviada,
+      eyebrow: 'Donos & sócios',
+      title: 'Folha sob controle. Dorme em paz.',
+      desc: 'Você sabe, em tempo real, quanto vai sair, para quem, quando — e o que pode pegar fogo na conformidade. Sem surpresa no dia 30.',
+      stat: '24h',
+      statLabel: 'pra começar a usar',
+    },
+  ];
+
+  return (
+    <section className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border relative overflow-hidden">
+      <div className="absolute -top-20 right-0 w-[40vw] h-[400px] bg-primary/15 rounded-full blur-[140px] pointer-events-none" />
+      <div className="max-w-6xl mx-auto relative">
+        <SectionHeader
+          eyebrow="Feito para gente"
+          title={<>Por trás de cada folha,<br/><span className="landing-text-gradient">pessoas reais.</span></>}
+          subtitle="Não vendemos software. Devolvemos tempo, tranquilidade e clareza para quem cuida de pessoas todos os dias."
+        />
+
+        <div className="mt-16 space-y-10">
+          {stories.map((s, i) => (
+            <div
+              key={i}
+              className={`grid lg:grid-cols-12 gap-8 items-center ${
+                i % 2 === 1 ? 'lg:[&>*:first-child]:order-2' : ''
+              }`}
+            >
+              {/* Image */}
+              <div className="lg:col-span-6">
+                <div className="relative landing-border-gradient rounded-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent z-10 pointer-events-none" />
+                  <img
+                    src={s.img}
+                    alt={s.title}
+                    loading="lazy"
+                    width={1280}
+                    height={1280}
+                    className="w-full h-[360px] sm:h-[440px] object-cover"
+                  />
+                  {/* Floating stat */}
+                  <div className="absolute bottom-4 left-4 landing-glass rounded-xl px-4 py-3 z-20">
+                    <p className="text-2xl font-semibold text-foreground tracking-tight">{s.stat}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.statLabel}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Text */}
+              <div className="lg:col-span-6">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-primary mb-3">{s.eyebrow}</p>
+                <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-tight">{s.title}</h3>
+                <p className="mt-4 text-base text-muted-foreground leading-relaxed">{s.desc}</p>
+                <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  Validado com clientes do varejo brasileiro
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ============ HOW IT WORKS ============
 function HowItWorks() {
   const steps = [
