@@ -48,8 +48,8 @@ export default function UploadFotosLote() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const data = await fetchAllPaginated<Profissional>('profissionais', (q) =>
-        q.select('id, nome, matricula, cpf, status, foto_url, tenant_id').order('nome')
+      const data = await fetchAllPaginated<Profissional>(() =>
+        supabase.from('profissionais').select('id, nome, matricula, cpf, status, foto_url, tenant_id').order('nome')
       );
       setProfissionais(data || []);
       setLoading(false);
@@ -184,8 +184,8 @@ export default function UploadFotosLote() {
       description: `${okCount}/${queue.length} foto(s) salva(s) com sucesso.`,
     });
     // Recarregar lista para refletir status
-    const data = await fetchAllPaginated<Profissional>('profissionais', (q) =>
-      q.select('id, nome, matricula, cpf, status, foto_url, tenant_id').order('nome')
+    const data = await fetchAllPaginated<Profissional>(() =>
+      supabase.from('profissionais').select('id, nome, matricula, cpf, status, foto_url, tenant_id').order('nome')
     );
     setProfissionais(data || []);
   };
