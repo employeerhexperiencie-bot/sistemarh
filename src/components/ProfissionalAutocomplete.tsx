@@ -10,6 +10,7 @@ interface Profissional {
   matricula: string;
   nome: string;
   cargo: string | null;
+  status?: string | null;
   loja?: { nome: string } | null;
 }
 
@@ -58,12 +59,17 @@ export function ProfissionalAutocomplete({
 
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        let queryBuilder = supabase
           .from('profissionais')
-          .select('id, matricula, nome, cargo, lojas:lojas!profissionais_loja_id_fkey(nome)')
+          .select('id, matricula, nome, cargo, status, lojas:lojas!profissionais_loja_id_fkey(nome)')
           .or(`matricula.ilike.%${query}%,nome.ilike.%${query}%`)
-          .eq('status', 'ativo')
           .limit(8);
+
+        if (!incluirInativos) {
+          queryBuilder = queryBuilder.eq('status', 'ativo');
+        }
+
+        const { data, error } = await queryBuilder;
 
         if (error) throw error;
 
@@ -72,6 +78,7 @@ export function ProfissionalAutocomplete({
           matricula: p.matricula,
           nome: p.nome,
           cargo: p.cargo,
+          status: p.status,
           loja: p.lojas,
         }));
 
@@ -87,7 +94,7 @@ export function ProfissionalAutocomplete({
 
     const debounce = setTimeout(searchProfissionais, 250);
     return () => clearTimeout(debounce);
-  }, [query, selectedProfissional]);
+  }, [query, selectedProfissional, incluirInativos]);
 
   // Fechar ao clicar fora
   useEffect(() => {
