@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
 
 export interface TenantMetrics {
   id: string;
@@ -36,24 +34,18 @@ export interface SecurityLog {
 export function useTenantMetrics() {
   const [metrics, setMetrics] = useState<TenantMetrics | null>(null);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
 
-  const fetchCurrentMetrics = useCallback(async () => {
+  const fetchCurrentMetrics = useCallback(async (tenantId?: string) => {
     try {
       setLoading(true);
-      
       const mesAtual = new Date().toISOString().slice(0, 7) + '-01';
-      
-      const { data, error } = await supabase
+      let query = supabase
         .from('tenant_metrics')
         .select('*')
-        .eq('mes_referencia', mesAtual)
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
+        .eq('mes_referencia', mesAtual);
+      if (tenantId) query = query.eq('tenant_id', tenantId);
+      const { data, error } = await query.maybeSingle();
+      if (error) throw error;
       setMetrics(data as TenantMetrics);
       return data;
     } catch (err: any) {
@@ -64,59 +56,22 @@ export function useTenantMetrics() {
     }
   }, []);
 
-  const updateMetrics = useCallback(async () => {
+  /**
+   * Atualiza métricas via função SQL (atualizar_tenant_metrics ou atualizar_todas_tenant_metrics)
+   * Mais confiável e respeita tenant_id corretamente.
+   */
+  const updateMetrics = useCallback(async (tenantId?: string) => {
     try {
-      // Calcular métricas manualmente
-      const mesAtual = new Date().toISOString().slice(0, 7) + '-01';
-      
-      const [usuarios, profissionais, lojas, ocorrencias, documentos] = await Promise.all([
-        supabase.from('user_roles').select('id', { count: 'exact', head: true }),
-        supabase.from('profissionais').select('id', { count: 'exact', head: true }),
-        supabase.from('lojas').select('id', { count: 'exact', head: true }),
-        supabase.from('pendencias').select('id', { count: 'exact', head: true }),
-        supabase.from('professional_documents').select('id', { count: 'exact', head: true }),
-      ]);
-
-      // Verificar se já existe registro para este mês
-      const { data: existing } = await supabase
-        .from('tenant_metrics')
-        .select('id')
-        .eq('mes_referencia', mesAtual)
-        .maybeSingle();
-
-      if (existing) {
-        // Update
-        const { error } = await supabase
-          .from('tenant_metrics')
-          .update({
-            total_usuarios: usuarios.count || 0,
-            total_profissionais: profissionais.count || 0,
-            total_lojas: lojas.count || 0,
-            total_ocorrencias: ocorrencias.count || 0,
-            total_documentos: documentos.count || 0,
-          })
-          .eq('id', existing.id);
-
+      if (tenantId) {
+        const { error } = await supabase.rpc('atualizar_tenant_metrics' as any, {
+          _tenant_id: tenantId,
+        });
         if (error) throw error;
       } else {
-        // Insert - tenant_id é preenchido automaticamente pelo default
-        const { error } = await supabase
-          .from('tenant_metrics')
-          .insert({
-            mes_referencia: mesAtual,
-            total_usuarios: usuarios.count || 0,
-            total_profissionais: profissionais.count || 0,
-            total_lojas: lojas.count || 0,
-            total_ocorrencias: ocorrencias.count || 0,
-            total_documentos: documentos.count || 0,
-          } as any);
-
+        const { error } = await supabase.rpc('atualizar_todas_tenant_metrics' as any);
         if (error) throw error;
       }
-
-      // Recarregar métricas após atualização
-      await fetchCurrentMetrics();
-      
+      await fetchCurrentMetrics(tenantId);
       return true;
     } catch (err: any) {
       console.error('Erro ao atualizar métricas:', err);
@@ -139,17 +94,12 @@ export function useSecurityLogs() {
   const fetchLogs = useCallback(async (limit = 100) => {
     try {
       setLoading(true);
-      
       const { data, error } = await supabase
         .from('security_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
-
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       setLogs((data || []) as SecurityLog[]);
       return data;
     } catch (err: any) {
@@ -169,7 +119,6 @@ export function useSecurityLogs() {
     metadata?: any
   ) => {
     try {
-      // Inserir diretamente na tabela security_logs
       const { error } = await supabase
         .from('security_logs')
         .insert({
@@ -180,19 +129,11 @@ export function useSecurityLogs() {
           error_message: errorMessage || null,
           metadata: metadata || {},
         });
-
-      if (error) {
-        console.error('Erro ao registrar log:', error);
-      }
+      if (error) console.error('Erro ao registrar log:', error);
     } catch (err) {
       console.error('Erro ao registrar log de segurança:', err);
     }
   }, []);
 
-  return {
-    logs,
-    loading,
-    fetchLogs,
-    logEvent,
-  };
+  return { logs, loading, fetchLogs, logEvent };
 }
