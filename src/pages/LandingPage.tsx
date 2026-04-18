@@ -1,105 +1,127 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowRight, CheckCircle2, Play, Menu, X, Zap, Clock, Shield, Bell, 
-  FileText, TrendingUp, LayoutDashboard, Users, Calendar, Stethoscope, 
-  Wallet, Gift, Receipt, FileSpreadsheet, ShieldCheck, ChevronDown,
-  Phone, Mail, MapPin, Star, MessageCircle, Sparkles, Target, Award,
-  AlertTriangle, Calculator, Database, ScanFace, BookOpen, Minus
+import {
+  ArrowRight, CheckCircle2, Menu, X, Zap, Shield, Bell,
+  ChevronDown, MessageCircle, Sparkles, Calculator, ScanFace,
+  Users, Calendar, Stethoscope, Wallet, Gift, Receipt,
+  FileSpreadsheet, LayoutDashboard, ShieldCheck, TrendingUp,
+  Clock, Phone, MapPin, Layers, Workflow, Database,
 } from 'lucide-react';
 
-import screenshotDashboard from '@/assets/landing/screenshot-dashboard-real.jpg';
-import screenshotCadastro from '@/assets/landing/screenshot-cadastro.jpg';
-import screenshotFolha from '@/assets/landing/screenshot-folha.jpg';
-import screenshotBeneficios from '@/assets/landing/screenshot-beneficios.jpg';
-import heroTeam from '@/assets/landing/hero-team.jpg';
-import heroRhPonto from '@/assets/landing/hero-rh-ponto.jpg';
-import heroFacialPoint from '@/assets/landing/hero-facial-point.jpg';
-import clientsTeam from '@/assets/landing/clients-team.jpg';
-import problemStress from '@/assets/landing/problem-stress.jpg';
-import solutionEasy from '@/assets/landing/solution-easy.jpg';
-import supportCall from '@/assets/landing/support-call.jpg';
-import teamSuccess from '@/assets/landing/team-success.jpg';
+import {
+  DashboardMockup, FolhaMockup, CadastroMockup, BeneficiosMockup,
+} from '@/components/landing/SystemMockup';
 
 // ============ CONSTANTS ============
 const WHATSAPP_NUMBER = '5511953340284';
-const WHATSAPP_MESSAGE = encodeURIComponent('Olá! 👋 Vim pelo site do Sistema RH (eazdev.com) e quero saber como pode ajudar minha empresa.');
+const WHATSAPP_MESSAGE = encodeURIComponent(
+  'Olá! 👋 Vim pelo site do Sistema RH (eazdev.com) e quero saber como pode ajudar minha empresa.'
+);
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
-
 const openWhatsApp = () => window.open(WHATSAPP_URL, '_blank');
+
+const NAV_LINKS = [
+  { href: '#plataforma', label: 'Plataforma' },
+  { href: '#modulos', label: 'Módulos' },
+  { href: '#diferencial', label: 'Diferenciais' },
+  { href: '#como', label: 'Como funciona' },
+  { href: '#faq', label: 'FAQ' },
+];
 
 // ============ HEADER ============
 function LandingHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-border/40">
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-background/70 backdrop-blur-xl border-b border-border'
+          : 'bg-transparent'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <a href="#" className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-gradient-primary rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-sm">RH</span>
+          <a href="#" className="flex items-center gap-2.5">
+            <div className="relative">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-xs">RH</span>
+              </div>
+              <div className="absolute inset-0 rounded-lg bg-primary/40 blur-md -z-10" />
             </div>
-            <span className="text-foreground font-semibold text-lg">Sistema RH</span>
+            <span className="text-foreground font-semibold text-[15px] tracking-tight">
+              Sistema RH
+            </span>
           </a>
 
-          <nav className="hidden md:flex items-center gap-8">
-            {[
-              { href: '#dores', label: 'Por que mudar' },
-              { href: '#solucao', label: 'A solução' },
-              { href: '#modulos', label: 'O que faz' },
-              { href: '#diferencial', label: 'Diferenciais' },
-              { href: '#faq', label: 'Dúvidas' },
-            ].map(link => (
-              <a key={link.href} href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+          <nav className="hidden md:flex items-center gap-7">
+            {NAV_LINKS.map(link => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+              >
                 {link.label}
               </a>
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground"
-              onClick={() => window.location.href = '/login'}>
+          <div className="hidden md:flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted text-sm"
+              onClick={() => (window.location.href = '/login')}
+            >
               Entrar
             </Button>
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
-              onClick={openWhatsApp}>
-              <MessageCircle className="w-4 h-4" />
-              Falar com especialista
+            <Button
+              size="sm"
+              className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-9 text-sm font-medium"
+              onClick={openWhatsApp}
+            >
+              Falar com vendas
+              <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </div>
 
           <button
             className="md:hidden text-foreground p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Menu"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
 
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
-            <nav className="flex flex-col gap-4">
-              {[
-                { href: '#dores', label: 'Por que mudar' },
-                { href: '#solucao', label: 'A solução' },
-                { href: '#modulos', label: 'O que faz' },
-                { href: '#diferencial', label: 'Diferenciais' },
-                { href: '#faq', label: 'Dúvidas' },
-              ].map(link => (
-                <a key={link.href} href={link.href} className="text-muted-foreground hover:text-foreground text-sm py-2"
-                  onClick={() => setIsMenuOpen(false)}>
+            <nav className="flex flex-col gap-1">
+              {NAV_LINKS.map(link => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="text-muted-foreground hover:text-foreground text-sm py-2 px-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
                   {link.label}
                 </a>
               ))}
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
+              <div className="flex flex-col gap-2 pt-3 mt-2 border-t border-border">
                 <Button variant="ghost" size="sm" className="justify-start"
-                  onClick={() => window.location.href = '/login'}>
+                  onClick={() => (window.location.href = '/login')}>
                   Entrar
                 </Button>
-                <Button size="sm" className="gap-2" onClick={openWhatsApp}>
-                  <MessageCircle className="w-4 h-4" />
-                  Falar com especialista
+                <Button size="sm" className="gap-2 bg-foreground text-background" onClick={openWhatsApp}>
+                  Falar com vendas <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </nav>
@@ -112,392 +134,220 @@ function LandingHeader() {
 
 // ============ HERO ============
 function Hero() {
-  const benefits = [
-    "Ponto facial + folha + diário operacional integrados",
-    "Cálculo Dia 20 e Dia 5 automático, sem erro de CLT",
-    "Alertas de ASO, férias e jornada antes de virar problema"
-  ];
-
   return (
-    <section className="pt-28 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-foreground text-white">
-      {/* Background image with overlay */}
-      <div className="absolute inset-0">
-        <img src={heroFacialPoint} alt="" className="w-full h-full object-cover opacity-25" loading="eager" decoding="async" aria-hidden="true" />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground via-foreground/95 to-foreground/70" />
-      </div>
+    <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      {/* Background grid */}
+      <div className="absolute inset-0 landing-grid-bg pointer-events-none" />
+      {/* Top glow */}
+      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[80vw] h-[600px] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Floating orbs (Factorial style) */}
-      <div className="absolute top-20 -left-20 w-72 h-72 bg-primary/30 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-success/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-accent/20 rounded-full blur-3xl pointer-events-none" />
-      
-      <div className="max-w-7xl mx-auto relative">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-6">
-              <Sparkles className="w-4 h-4 text-primary-glow" />
-              <span className="text-sm text-white">
-                <strong className="text-primary-glow">RH + Ponto Facial + Diário Operacional</strong> em um só sistema
-              </span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05]">
-              Toda a gestão de pessoas da sua empresa{" "}
-              <span className="bg-gradient-to-r from-primary-glow to-success bg-clip-text text-transparent">em um só sistema.</span>
-            </h1>
-
-            <p className="mt-6 text-lg text-white/80 leading-relaxed max-w-xl">
-              Substitua planilhas, Diário e Ponto, controle de jornada e folha por uma plataforma moderna 
-              feita para o varejo brasileiro. Pague menos, ganhe mais tempo.
-            </p>
-
-            <ul className="mt-8 space-y-3">
-              {benefits.map((benefit, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary-glow shrink-0" />
-                  <span className="text-white/90">{benefit}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-10">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 px-8 h-14 text-base shadow-glow"
-                onClick={openWhatsApp}>
-                <MessageCircle className="w-5 h-5" />
-                Quero uma demonstração
-              </Button>
-              <Button size="lg" variant="outline" className="gap-2 h-14 text-base border-white/30 text-white hover:bg-white/10 bg-transparent"
-                onClick={openWhatsApp}>
-                <Phone className="w-5 h-5" />
-                Chamar no WhatsApp
-              </Button>
-            </div>
-
-            {/* Mini ratings row */}
-            <div className="mt-8 flex flex-wrap items-center gap-6 text-white/70 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-primary-glow text-primary-glow" />)}
-                </div>
-                <span><strong className="text-white">4.9/5</strong> avaliação dos clientes</span>
-              </div>
-              <div className="hidden sm:block w-px h-5 bg-white/20" />
-              <span>🔒 Dados isolados · ⚡ Setup em 24h</span>
-            </div>
-          </div>
-
-          {/* Product Mockup with floating cards */}
-          <div className="relative lg:scale-105">
-            <div className="bg-card rounded-2xl border border-white/20 p-2 shadow-2xl rotate-[-2deg] hover:rotate-0 transition-transform duration-500">
-              <img 
-                src={screenshotDashboard} 
-                alt="Dashboard do Sistema RH" 
-                className="w-full h-auto rounded-xl"
-                width={1280}
-                height={800}
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-              />
-            </div>
-
-            {/* Floating card 1: Ponto Facial */}
-            <div className="absolute -left-6 top-12 bg-card rounded-xl border border-border px-4 py-3 shadow-2xl animate-fade-in max-w-[200px]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                  <ScanFace className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Ponto facial</p>
-                  <p className="text-sm font-semibold text-foreground">Maria registrou 08:02</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating card 2: Folha */}
-            <div className="absolute -right-4 top-1/2 -translate-y-1/2 bg-card rounded-xl border border-border px-4 py-3 shadow-2xl animate-fade-in max-w-[220px]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Calculator className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Folha calculada</p>
-                  <p className="text-sm font-semibold text-foreground">R$ 142.380 · 0 erros</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating card 3: Alerta */}
-            <div className="absolute -left-4 bottom-8 bg-card rounded-xl border border-border px-4 py-3 shadow-2xl animate-fade-in max-w-[200px]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
-                  <Bell className="w-5 h-5 text-warning" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Alerta automático</p>
-                  <p className="text-sm font-semibold text-foreground">3 ASOs em 7 dias</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============ COMPARISON TABLE (vs concorrentes) ============
-function Comparison() {
-  const features = [
-    { label: 'Ponto facial integrado', us: true, concorrentes: 'avulso', planilha: false },
-    { label: 'Folha de pagamento CLT', us: true, concorrentes: 'limitado', planilha: false },
-    { label: 'Cálculo Dia 20 + Dia 5', us: true, concorrentes: false, planilha: false },
-    { label: 'Diário operacional', us: true, concorrentes: 'limitado', planilha: false },
-    { label: '11 tipos de benefícios', us: true, concorrentes: 'parcial', planilha: false },
-    { label: 'Empréstimos CLT + Loja', us: true, concorrentes: false, planilha: false },
-    { label: 'Multi-loja com isolamento', us: true, concorrentes: 'parcial', planilha: false },
-    { label: 'Alertas de ASO/Férias', us: true, concorrentes: 'parcial', planilha: false },
-    { label: 'Suporte humano por WhatsApp', us: true, concorrentes: false, planilha: false },
-  ];
-
-  const renderCell = (val: boolean | string) => {
-    if (val === true) return <CheckCircle2 className="w-5 h-5 text-success mx-auto" />;
-    if (val === false) return <X className="w-5 h-5 text-destructive mx-auto" />;
-    return <span className="text-xs text-warning font-medium">{val}</span>;
-  };
-
-  return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-secondary/30 to-card">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-12">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Compare e decida</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Por que escolher o Sistema RH?
-          </h2>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Substitua 3 ferramentas diferentes (e o caos das planilhas) por uma única solução integrada.
-          </p>
+      <div className="max-w-6xl mx-auto relative">
+        {/* Announcement pill */}
+        <div className="flex justify-center mb-8 landing-rise">
+          <a
+            href="#plataforma"
+            className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full landing-glass text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
+              <Sparkles className="w-3 h-3" /> Novo
+            </span>
+            <span>Ponto facial + Folha + Diário em uma plataforma</span>
+            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+          </a>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-premium">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-background/50">
-                <th className="text-left px-6 py-5 text-sm font-semibold text-muted-foreground">Funcionalidade</th>
-                <th className="px-4 py-5 text-center min-w-[140px]">
-                  <div className="inline-flex flex-col items-center">
-                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center mb-2 shadow-glow">
-                      <span className="text-white font-bold text-xs">RH</span>
-                    </div>
-                    <span className="text-sm font-bold text-foreground">Sistema RH</span>
-                    <span className="text-[10px] text-primary">RECOMENDADO</span>
-                  </div>
-                </th>
-                <th className="px-4 py-5 text-center min-w-[120px]">
-                  <span className="text-sm font-medium text-muted-foreground">Outros<br/>sistemas RH</span>
-                </th>
-                <th className="px-4 py-5 text-center min-w-[120px]">
-                  <span className="text-sm font-medium text-muted-foreground">Planilhas<br/>Excel</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {features.map((f, i) => (
-                <tr key={i} className="border-b border-border last:border-0 hover:bg-background/30 transition-colors">
-                  <td className="px-6 py-4 text-sm text-foreground">{f.label}</td>
-                  <td className="px-4 py-4 text-center bg-primary/5">{renderCell(f.us)}</td>
-                  <td className="px-4 py-4 text-center">{renderCell(f.concorrentes)}</td>
-                  <td className="px-4 py-4 text-center">{renderCell(f.planilha)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Headline */}
+        <h1 className="text-center text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.02] landing-rise" style={{ animationDelay: '60ms' }}>
+          Toda a gestão de RH<br />
+          <span className="landing-text-gradient">em um único sistema.</span>
+        </h1>
 
-        <div className="mt-8 text-center">
-          <Button size="lg" className="bg-primary hover:bg-primary/90 gap-2 px-8 h-14" onClick={openWhatsApp}>
-            <MessageCircle className="w-5 h-5" />
-            Quero migrar para o Sistema RH
+        <p className="mt-7 text-center text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed landing-rise" style={{ animationDelay: '120ms' }}>
+          Pare de orquestrar 5 ferramentas diferentes. Folha, ponto facial,
+          benefícios, ASO, férias e diário operacional —{' '}
+          <span className="text-foreground">conversando entre si, em tempo real.</span>
+        </p>
+
+        {/* CTAs */}
+        <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center landing-rise" style={{ animationDelay: '180ms' }}>
+          <Button
+            size="lg"
+            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-6 text-[15px] font-medium"
+            onClick={openWhatsApp}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Agendar demonstração
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="gap-2 h-12 px-6 text-[15px] border-border bg-card hover:bg-muted text-foreground"
+            onClick={() => document.getElementById('plataforma')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            Ver a plataforma
+            <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
-      </div>
-    </section>
-  );
-}
 
-// ============ PROBLEMS / DORES ============
-function Problems() {
-  const problems = [
-    {
-      icon: Clock,
-      title: "Você perde 3 dias inteiros por mês fechando folha",
-      description: "Planilhas travando, fórmulas quebrando, conferência manual. E quando termina, ainda precisa começar a do mês seguinte."
-    },
-    {
-      icon: AlertTriangle,
-      title: "Tem medo de uma multa do eSocial bater na sua porta",
-      description: "Um cálculo errado de INSS, IRRF ou férias pode custar mais que um ano de sistema. E você está apostando todo mês."
-    },
-    {
-      icon: Database,
-      title: "Cada loja tem o RH de um jeito diferente",
-      description: "Uma loja usa caderno, outra usa planilha, outra mensagem no WhatsApp. Quando precisa consolidar, é um inferno."
-    },
-    {
-      icon: Bell,
-      title: "Você descobre que o ASO venceu... depois que venceu",
-      description: "Sem alerta, sem controle. O fiscal chega, pede o documento e você não tem. Multa garantida."
-    }
-  ];
+        {/* Trust line */}
+        <p className="mt-6 text-center text-xs text-muted-foreground landing-rise" style={{ animationDelay: '240ms' }}>
+          Setup em 24h · Sem cartão de crédito · Suporte humano por WhatsApp
+        </p>
 
-  return (
-    <section id="dores" className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-sm text-destructive font-medium uppercase tracking-wider">A dor real do RH</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Você está perdendo dinheiro todo mês — e nem percebe
-          </h2>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Se você se reconhece em qualquer uma dessas situações, está na hora de parar.
-          </p>
-        </div>
-        
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="rounded-2xl overflow-hidden shadow-xl">
-            <img src={problemStress} alt="Profissional estressada com planilhas" className="w-full h-auto object-cover" loading="lazy" width={1280} height={800} />
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold text-foreground mb-4">A conta que ninguém faz</h3>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              60 horas por mês em planilhas = <strong className="text-foreground">720 horas perdidas por ano</strong>. Sem contar o risco de multa.
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
-                <p className="text-2xl font-bold text-destructive">R$ 38mil</p>
-                <p className="text-xs text-muted-foreground mt-1">multa média do eSocial por erro</p>
-              </div>
-              <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
-                <p className="text-2xl font-bold text-destructive">72%</p>
-                <p className="text-xs text-muted-foreground mt-1">das empresas erram em planilhas</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {problems.map((problem, i) => (
-            <div key={i} className="p-8 rounded-2xl bg-background border border-border hover:border-destructive/30 transition-colors flex gap-5">
-              <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
-                <problem.icon className="w-6 h-6 text-destructive" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">{problem.title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-sm">{problem.description}</p>
-              </div>
-            </div>
-          ))}
+        {/* Live mockup */}
+        <div className="mt-16 relative landing-rise" style={{ animationDelay: '320ms' }}>
+          <LiveMockupCarousel />
         </div>
       </div>
     </section>
   );
 }
 
-// ============ STATS ============
-function StatsImpact() {
-  const stats = [
-    { value: "95%", label: "menos tempo gasto com folha" },
-    { value: "0", label: "erros de cálculo (motor com 145 testes)" },
-    { value: "+2.000", label: "profissionais por empresa" },
-    { value: "24h", label: "para começar a usar" }
-  ];
+// ============ LIVE MOCKUP (cross-fading screens, "system in use") ============
+function LiveMockupCarousel() {
+  const screens = [DashboardMockup, FolhaMockup, CadastroMockup, BeneficiosMockup];
+  const labels = ['Painel', 'Folha', 'Cadastro', 'Benefícios'];
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-primary text-white relative overflow-hidden">
-      <div className="absolute inset-0">
-        <img src={heroTeam} alt="" className="w-full h-full object-cover opacity-10" loading="lazy" decoding="async" aria-hidden="true" />
-      </div>
-      <div className="max-w-7xl mx-auto relative">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {stats.map((stat, i) => (
-            <div key={i} className="text-center">
-              <p className="text-4xl sm:text-5xl font-bold">{stat.value}</p>
-              <p className="mt-2 text-sm text-white/80">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+    <div className="relative">
+      {/* Outer glow */}
+      <div className="absolute inset-x-10 -top-6 h-40 bg-primary/30 blur-[80px] pointer-events-none" />
 
-// ============ FEATURES / SOLUCAO ============
-function Features() {
-  const features = [
-    { icon: Zap, title: "Folha pronta em minutos", description: "Motor validado com 145 testes. Você só confere e aprova.", highlight: "De 3 dias para 5 minutos" },
-    { icon: Bell, title: "Alertas que te salvam", description: "ASO, férias, vencimentos. Avisos antes de virar problema.", highlight: "Zero surpresa fiscal" },
-    { icon: Clock, title: "Sobra tempo pra estratégia", description: "Pare de apagar incêndio. Foque em desenvolver pessoas.", highlight: "+60h livres/mês" },
-    { icon: Shield, title: "Dados isolados por empresa", description: "Cada loja vê só o que precisa. Auditoria completa.", highlight: "Segurança bancária" },
-    { icon: FileText, title: "Histórico de tudo", description: "Quem mudou, quando e por quê. Pronto para a Receita.", highlight: "Compliance total" },
-    { icon: TrendingUp, title: "Cresce com você", description: "De 10 a 2.000+ profissionais sem travar.", highlight: "Sem limite real" },
-  ];
-
-  return (
-    <section id="solucao" className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="relative">
-            <div className="rounded-2xl overflow-hidden shadow-xl border border-border">
-              <img src={screenshotFolha} alt="Folha de Pagamento do Sistema RH" className="w-full h-auto" loading="lazy" width={1280} height={800} />
-            </div>
-            <div className="absolute -bottom-4 -right-4 p-4 rounded-xl bg-primary text-white shadow-lg">
-              <div className="text-center">
-                <p className="text-3xl font-bold">95%</p>
-                <p className="text-xs opacity-90">menos tempo gasto</p>
-              </div>
+      {/* Browser-style frame */}
+      <div className="relative landing-border-gradient rounded-2xl overflow-hidden bg-card">
+        {/* Browser chrome */}
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-card/80">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-destructive/70" />
+            <span className="w-3 h-3 rounded-full bg-warning/70" />
+            <span className="w-3 h-3 rounded-full bg-success/70" />
+          </div>
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-muted text-[11px] text-muted-foreground">
+              <Shield className="w-3 h-3 text-success" />
+              app.eazdev.com
             </div>
           </div>
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+            ao vivo
+          </div>
+        </div>
 
-           <div>
-            <span className="text-sm text-primary font-medium uppercase tracking-wider">A solução definitiva</span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-              Imagine seu RH funcionando enquanto você dorme
-            </h2>
-            <p className="mt-4 text-muted-foreground leading-relaxed">
-              O Sistema RH executa o trabalho pesado por você: cálculos, alertas, relatórios, holerites. 
-              Você só revisa, aprova e ganha tempo para o que realmente importa: as pessoas.
-            </p>
-
-            <div className="grid sm:grid-cols-2 gap-3 mt-6">
-              {[
-                { icon: Shield, label: 'Dados isolados por empresa' },
-                { icon: CheckCircle2, label: '145 testes automatizados' },
-                { icon: Clock, label: 'Suporte humano em minutos' },
-                { icon: Award, label: 'Cálculo CLT validado' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                  <item.icon className="w-5 h-5 text-primary shrink-0" />
-                  <span className="text-sm text-foreground font-medium">{item.label}</span>
+        {/* Stack of mockups, cross-fading */}
+        <div className="relative aspect-[16/10]" style={{ background: 'hsl(220 16% 96%)' }}>
+          {screens.map((Screen, i) => (
+            <div
+              key={i}
+              className="landing-mockup-frame"
+              style={{ animationDelay: `${i * 4}s`, animationDuration: '16s' }}
+            >
+              <div className="absolute inset-0 p-3 sm:p-4">
+                <div className="w-full h-full rounded-xl overflow-hidden">
+                  <Screen />
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div key={index} className="p-6 rounded-xl bg-background border border-border hover:border-primary/50 transition-colors group">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <feature.icon className="w-6 h-6 text-primary" />
-                </div>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  {feature.highlight}
-                </span>
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Floating stat cards */}
+      <FloatingStat
+        className="absolute -left-2 sm:-left-8 top-24 hidden sm:flex"
+        icon={ScanFace}
+        accent="success"
+        title="Ponto facial"
+        value="Maria registrou 08:02"
+      />
+      <FloatingStat
+        className="absolute -right-2 sm:-right-8 top-1/2 -translate-y-1/2 hidden sm:flex"
+        icon={Calculator}
+        accent="primary"
+        title="Folha calculada"
+        value="R$ 142.380 · 0 erros"
+      />
+      <FloatingStat
+        className="absolute -left-2 sm:-left-8 bottom-12 hidden sm:flex"
+        icon={Bell}
+        accent="warning"
+        title="Alerta automático"
+        value="3 ASOs em 7 dias"
+      />
+
+      {/* Screen indicator */}
+      <div className="mt-6 flex justify-center gap-2">
+        {labels.map((l, i) => (
+          <span
+            key={l}
+            className="text-[11px] text-muted-foreground/70 px-2.5 py-1 rounded-full border border-border bg-card/50"
+          >
+            {l}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FloatingStat({
+  className = '',
+  icon: Icon,
+  accent,
+  title,
+  value,
+}: {
+  className?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  accent: 'primary' | 'success' | 'warning';
+  title: string;
+  value: string;
+}) {
+  const accentMap = {
+    primary: 'text-primary bg-primary/15',
+    success: 'text-success bg-success/15',
+    warning: 'text-warning bg-warning/15',
+  };
+  return (
+    <div className={`landing-glass rounded-xl px-3.5 py-2.5 max-w-[210px] landing-float ${className}`}>
+      <div className="flex items-center gap-3">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${accentMap[accent]}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{title}</p>
+          <p className="text-xs font-medium text-foreground truncate">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ LOGO TICKER ============
+function LogoTicker() {
+  const items = [
+    'Folha CLT', 'Ponto Facial', 'eSocial', 'Benefícios',
+    '13º + Férias', 'ASO', 'Holerites PDF', 'Empréstimos',
+    'Multi-loja', 'Auditoria', 'Importação Excel', 'White-label',
+  ];
+  // duplicate for seamless loop
+  const loop = [...items, ...items];
+  return (
+    <section className="relative py-12 border-y border-border overflow-hidden">
+      <p className="text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-7">
+        Uma plataforma. Tudo conectado.
+      </p>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-background to-transparent z-10" />
+        <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-background to-transparent z-10" />
+        <div className="flex landing-marquee gap-3 w-max">
+          {loop.map((item, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card text-sm text-muted-foreground"
+            >
+              <span className="w-1 h-1 rounded-full bg-primary" /> {item}
+            </span>
           ))}
         </div>
       </div>
@@ -505,73 +355,188 @@ function Features() {
   );
 }
 
-// ============ DIFERENCIAL ============
+// ============ PLATAFORMA (3 grandes pilares com mockups) ============
+function Plataforma() {
+  return (
+    <section id="plataforma" className="relative py-24 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        <SectionHeader
+          eyebrow="A plataforma"
+          title={<>Pare de costurar 5 sistemas.<br /><span className="text-muted-foreground">Use um só.</span></>}
+          subtitle="Cada módulo conversa com o próximo. O ponto vira folha, a folha vira holerite, o holerite vira diário operacional. Sem exportar, sem colar, sem retrabalho."
+        />
+
+        <div className="mt-16 grid lg:grid-cols-12 gap-6">
+          {/* Big card 1 */}
+          <PillarCard
+            className="lg:col-span-7"
+            eyebrow="Painel executivo"
+            title="Tudo que importa, em uma tela."
+            description="KPIs, folha do mês, alertas críticos e próximos vencimentos. Sem precisar abrir relatório nenhum."
+            mockup={<DashboardMockup />}
+          />
+          {/* Big card 2 */}
+          <PillarCard
+            className="lg:col-span-5"
+            eyebrow="Folha CLT"
+            title="Pronta em minutos."
+            description="Motor com 145+ testes automatizados. Dia 20 + Dia 5, INSS, IRRF, FGTS, 13º — calculados sem você tocar."
+            mockup={<FolhaMockup />}
+          />
+          {/* Big card 3 */}
+          <PillarCard
+            className="lg:col-span-5"
+            eyebrow="Cadastro 360°"
+            title="O colaborador inteiro em 10 abas."
+            description="Documentos, contrato, benefícios, ASO, EPI, férias, empréstimos e histórico. Tudo num lugar só."
+            mockup={<CadastroMockup />}
+          />
+          <PillarCard
+            className="lg:col-span-7"
+            eyebrow="Benefícios"
+            title="11 tipos com elegibilidade automática."
+            description="VT, VR, VA, Cesta, Odonto, Seguro de Vida, Vale Carne… cada um com sua regra, calculados mensalmente."
+            mockup={<BeneficiosMockup />}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PillarCard({
+  className = '',
+  eyebrow,
+  title,
+  description,
+  mockup,
+}: {
+  className?: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  mockup: React.ReactNode;
+}) {
+  return (
+    <div className={`landing-glass landing-border-gradient rounded-2xl p-6 sm:p-8 group hover:translate-y-[-2px] transition-transform ${className}`}>
+      <p className="text-[11px] uppercase tracking-[0.16em] text-primary mb-3">{eyebrow}</p>
+      <h3 className="text-xl sm:text-2xl font-semibold tracking-tight">{title}</h3>
+      <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-xl">{description}</p>
+      <div className="mt-6 rounded-xl overflow-hidden border border-border" style={{ background: 'hsl(220 16% 96%)' }}>
+        <div className="aspect-[16/10] relative">
+          <div className="absolute inset-0">{mockup}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ FEATURES BENTO ============
+function FeaturesBento() {
+  return (
+    <section className="py-24 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        <SectionHeader
+          eyebrow="Por que escolher"
+          title={<>Construído para quem precisa <br /> de <span className="landing-text-gradient">precisão e velocidade.</span></>}
+        />
+
+        <div className="mt-14 grid md:grid-cols-6 gap-4">
+          <BentoCard
+            className="md:col-span-3"
+            icon={Zap}
+            title="Folha em minutos, não em dias"
+            text="O motor calcula tudo (Dia 20 + Dia 5, INSS, IRRF, FGTS, 13º, férias). Você só revisa, aprova e exporta."
+          />
+          <BentoCard
+            className="md:col-span-3"
+            icon={ShieldCheck}
+            title="Conformidade que não dorme"
+            text="Alertas de ASO, férias e documentos vencendo. O fiscal não pega você de surpresa."
+          />
+          <BentoCard
+            className="md:col-span-2"
+            icon={Layers}
+            title="Multi-loja com isolamento"
+            text="Cada filial é uma ilha. Só o admin enxerga tudo."
+          />
+          <BentoCard
+            className="md:col-span-2"
+            icon={Workflow}
+            title="Importa do Excel"
+            text="Suas planilhas viram sistema em horas. Sem retrabalho."
+          />
+          <BentoCard
+            className="md:col-span-2"
+            icon={Database}
+            title="Auditoria completa"
+            text="Quem mudou, quando e por quê. Pronto para a Receita."
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BentoCard({
+  className = '',
+  icon: Icon,
+  title,
+  text,
+}: {
+  className?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className={`relative landing-glass rounded-2xl p-6 sm:p-7 hover:border-primary/40 transition-colors group ${className}`}>
+      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+           style={{ background: 'radial-gradient(400px circle at 30% 0%, hsl(var(--primary) / 0.08), transparent 60%)' }} />
+      <div className="relative">
+        <div className="w-10 h-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mb-4">
+          <Icon className="w-5 h-5" />
+        </div>
+        <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+// ============ DIFERENCIAIS ============
 function Differentiators() {
   const diffs = [
-    {
-      icon: Calculator,
-      title: "Pagamento Split (Dia 20 + Dia 5)",
-      description: "Único no Brasil que calcula o adiantamento Dia 20 (40%) + saldo Dia 5 (60%) nativamente.",
-      market: "Concorrentes não têm"
-    },
-    {
-      icon: Wallet,
-      title: "Empréstimos CLT + Loja",
-      description: "Consignados e empréstimos da loja com parcelas, saldos e auditoria.",
-      market: "Concorrentes não têm"
-    },
-    {
-      icon: Gift,
-      title: "11 Tipos de Benefícios",
-      description: "VT, VR, VA, Cesta, Odonto, Seguro de Vida, Vale Carne e mais — com elegibilidade automática.",
-      market: "Comuns têm 3-4"
-    },
-    {
-      icon: Award,
-      title: "Motor de Cálculo Validado",
-      description: "145 testes cobrindo INSS, IRRF, faltas, férias, 13º. Zero margem para erro.",
-      market: "Padrão de auditoria"
-    },
-    {
-      icon: ShieldCheck,
-      title: "Multi-loja com Isolamento",
-      description: "Cada filial é independente. Consolidação automática para o administrador.",
-      market: "Diferencial real"
-    },
-    {
-      icon: Target,
-      title: "White-label Pronto",
-      description: "Logo, cores e identidade da sua empresa. Seu time acessa com a sua marca.",
-      market: "Único no segmento"
-    }
+    { icon: Calculator, title: 'Pagamento Split (Dia 20 + Dia 5)', desc: 'Único no Brasil que calcula adiantamento Dia 20 (40%) + saldo Dia 5 (60%) nativo.', tag: 'Exclusivo' },
+    { icon: Wallet, title: 'Empréstimos CLT + Loja', desc: 'Consignados e empréstimos da loja com parcelas, saldos e auditoria automática.', tag: 'Exclusivo' },
+    { icon: Gift, title: '11 Tipos de Benefícios', desc: 'Cada um com sua regra de elegibilidade, recalculada todo mês.', tag: 'Mercado tem 3-4' },
+    { icon: ScanFace, title: 'Ponto Facial integrado', desc: 'Reconhecimento + folha sem exportar planilha. EzPoint nativo.', tag: 'Nativo' },
+    { icon: ShieldCheck, title: 'Multi-tenant blindado', desc: 'RLS em 50+ tabelas. Cada empresa vê só o que é dela.', tag: 'Bancário' },
+    { icon: TrendingUp, title: 'Escala até 2.000+ profissionais', desc: 'Índices compostos e otimizações para alta volumetria. Sem travar.', tag: 'Performance' },
   ];
 
   return (
-    <section id="diferencial" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-secondary/30 to-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Diferencial de mercado</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            O que nos torna únicos no Brasil
-          </h2>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Construído com base nas dores reais de varejo, comércio e redes de loja.
-          </p>
-        </div>
+    <section id="diferencial" className="py-24 px-4 sm:px-6 lg:px-8 relative">
+      <div className="max-w-6xl mx-auto">
+        <SectionHeader
+          eyebrow="Diferenciais"
+          title={<>O que <span className="landing-text-gradient">ninguém mais faz</span> no Brasil.</>}
+          subtitle="Construído com base nas dores reais de redes de varejo, comércio e franquias."
+        />
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mt-14 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {diffs.map((d, i) => (
-            <div key={i} className="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-premium transition-all">
+            <div key={i} className="landing-glass rounded-2xl p-6 hover:border-primary/40 transition-all group">
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <d.icon className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/30 to-accent/20 text-primary flex items-center justify-center">
+                  <d.icon className="w-5 h-5" />
                 </div>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  {d.market}
+                <span className="text-[10px] uppercase tracking-wider text-primary/80 px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+                  {d.tag}
                 </span>
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{d.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{d.description}</p>
+              <h3 className="text-base font-semibold">{d.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{d.desc}</p>
             </div>
           ))}
         </div>
@@ -580,133 +545,44 @@ function Differentiators() {
   );
 }
 
-// ============ MODULES ============
+// ============ MODULES GRID (compacto, dark) ============
 function Modules() {
   const modules = [
-    { icon: LayoutDashboard, name: "Painel Executivo", description: "KPIs em tempo real" },
-    { icon: Users, name: "Cadastro 360°", description: "Tudo do colaborador" },
-    { icon: Calendar, name: "Férias e Folgas", description: "Período aquisitivo automático" },
-    { icon: Stethoscope, name: "Exames ASO", description: "Alertas antes de vencer" },
-    { icon: Wallet, name: "Empréstimos", description: "CLT e direto da loja" },
-    { icon: Gift, name: "11 Benefícios", description: "VT, VR, cesta e mais" },
-    { icon: Receipt, name: "Holerites PDF", description: "Em lote ou individual" },
-    { icon: FileSpreadsheet, name: "Relatórios", description: "Prontos para auditoria" },
-    { icon: Bell, name: "Central de Alertas", description: "Você sabe antes" },
-    { icon: ShieldCheck, name: "Auditoria Total", description: "Quem fez o quê" },
+    { icon: LayoutDashboard, name: 'Painel Executivo' },
+    { icon: Users, name: 'Cadastro 360°' },
+    { icon: Calculator, name: 'Folha CLT' },
+    { icon: ScanFace, name: 'Ponto Facial' },
+    { icon: Calendar, name: 'Férias' },
+    { icon: Stethoscope, name: 'ASO' },
+    { icon: Wallet, name: 'Empréstimos' },
+    { icon: Gift, name: 'Benefícios' },
+    { icon: Receipt, name: 'Holerites' },
+    { icon: FileSpreadsheet, name: 'Relatórios' },
+    { icon: Bell, name: 'Alertas' },
+    { icon: ShieldCheck, name: 'Auditoria' },
   ];
 
   return (
-    <section id="modulos" className="py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Tudo em um só sistema</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Pare de pular de planilha em planilha
-          </h2>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Mais de 40 módulos integrados. Tudo que seu RH precisa, em um só lugar.
-          </p>
-        </div>
+    <section id="modulos" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
+      <div className="max-w-6xl mx-auto">
+        <SectionHeader
+          eyebrow="Módulos"
+          title={<>40+ módulos.<br/><span className="text-muted-foreground">Uma única plataforma.</span></>}
+        />
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {modules.map((mod, index) => (
-            <div key={index} className="p-5 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg transition-all text-center group">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
-                <mod.icon className="w-6 h-6 text-primary" />
+        <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {modules.map((m, i) => (
+            <div key={i} className="landing-glass rounded-xl p-5 text-center hover:border-primary/40 hover:translate-y-[-2px] transition-all">
+              <div className="w-10 h-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mx-auto mb-3">
+                <m.icon className="w-5 h-5" />
               </div>
-              <h3 className="font-semibold text-foreground text-sm mb-1">{mod.name}</h3>
-              <p className="text-xs text-muted-foreground">{mod.description}</p>
+              <p className="text-xs font-medium text-foreground">{m.name}</p>
             </div>
           ))}
         </div>
-
-        {/* Screenshots Gallery */}
-        <div className="mt-16 grid md:grid-cols-2 gap-8">
-          <div className="rounded-2xl overflow-hidden border border-border shadow-premium">
-            <img src={screenshotCadastro} alt="Cadastro de Profissionais" className="w-full h-auto" loading="lazy" width={1280} height={800} />
-            <div className="p-4 bg-card">
-              <p className="font-medium text-foreground">Cadastro 360° do Colaborador</p>
-              <p className="text-sm text-muted-foreground">10 abas integradas: dados, documentos, benefícios, ASO, EPI e mais.</p>
-            </div>
-          </div>
-          <div className="rounded-2xl overflow-hidden border border-border shadow-premium">
-            <img src={screenshotBeneficios} alt="Gestão de Benefícios" className="w-full h-auto" loading="lazy" width={1280} height={800} />
-            <div className="p-4 bg-card">
-              <p className="font-medium text-foreground">Gestão de 11 Benefícios</p>
-              <p className="text-sm text-muted-foreground">Elegibilidade automática, descontos e relatórios consolidados.</p>
-            </div>
-          </div>
-        </div>
-
-        <p className="text-center mt-8 text-muted-foreground">
-          E muito mais: EPI, pensão alimentícia, vales, 13º, importação Excel...
+        <p className="text-center text-xs text-muted-foreground mt-8">
+          E mais: EPI, pensão alimentícia, vales, 13º, importação Excel, white-label…
         </p>
-      </div>
-    </section>
-  );
-}
-
-// ============ COMMITMENTS (substitui depoimentos por compromissos reais) ============
-function Commitments() {
-  const commitments = [
-    {
-      icon: Shield,
-      title: "Seus dados, blindados",
-      description: "Cada empresa em ambiente isolado. Ninguém vê o que é seu — nem nossa equipe.",
-      proof: "Isolamento RLS em 38 tabelas",
-    },
-    {
-      icon: CheckCircle2,
-      title: "Cálculo conferido",
-      description: "Motor CLT auditado: INSS, IRRF, FGTS, 13º e férias dentro da legislação.",
-      proof: "145/145 testes aprovados",
-    },
-    {
-      icon: MessageCircle,
-      title: "Atendimento humano",
-      description: "Você fala com gente que entende de RH. WhatsApp direto, resposta em minutos.",
-      proof: "Sem bot · Sem fila",
-    },
-  ];
-
-  return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 max-w-3xl mx-auto">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Nossos compromissos com você</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Confiança não se promete. Se entrega.
-          </h2>
-          <p className="mt-4 text-muted-foreground leading-relaxed">
-            Em vez de depoimentos, mostramos o que você pode esperar — e cobrar.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {commitments.map((c, i) => (
-            <div key={i} className="p-7 rounded-2xl bg-background border border-border hover:border-primary/40 hover:shadow-card-hover transition-all">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
-                <c.icon className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{c.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">{c.description}</p>
-              <div className="flex items-center gap-2 pt-4 border-t border-border">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-xs font-medium text-foreground">{c.proof}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-16 max-w-3xl mx-auto p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 text-center">
-          <p className="text-lg text-foreground leading-relaxed">
-            <strong className="text-primary">Garantia de 30 dias:</strong> se não fizer sentido pra sua operação, devolvemos seu investimento. Simples assim.
-          </p>
-          <Button size="lg" className="mt-6 gap-2 bg-primary hover:bg-primary/90" onClick={openWhatsApp}>
-            <MessageCircle className="w-5 h-5" />
-            Conversar sem compromisso
-          </Button>
-        </div>
       </div>
     </section>
   );
@@ -715,41 +591,62 @@ function Commitments() {
 // ============ HOW IT WORKS ============
 function HowItWorks() {
   const steps = [
-    { step: "1", title: "Você nos chama no WhatsApp", description: "Conta seu cenário em 10 minutos." },
-    { step: "2", title: "Importamos seus dados", description: "Suas planilhas viram sistema. Sem trabalho pra você." },
-    { step: "3", title: "Em 24h você está rodando", description: "Treinamento incluso e suporte por WhatsApp." },
+    { n: '01', title: 'Conversa de 10 minutos', desc: 'Conta seu cenário no WhatsApp. Sem formulário, sem demo agendada com 7 dias.' },
+    { n: '02', title: 'Importamos seus dados', desc: 'Suas planilhas viram sistema. Nossa equipe cuida da migração — você só valida.' },
+    { n: '03', title: 'Em 24h você opera', desc: 'Treinamento incluso. Suporte humano por WhatsApp respondendo em minutos.' },
   ];
 
   return (
-    <section id="como-funciona" className="py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div>
-            <span className="text-sm text-primary font-medium uppercase tracking-wider">Simples assim</span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-              Três passos e pronto
-            </h2>
-            <p className="mt-4 text-muted-foreground leading-relaxed">
-              Sem migração complicada. A gente cuida de tudo pra você começar amanhã.
-            </p>
-            <Button size="lg" className="mt-6 gap-2 bg-primary hover:bg-primary/90"
-              onClick={openWhatsApp}>
-              <MessageCircle className="w-5 h-5" />
-              Começar agora pelo WhatsApp
-            </Button>
-          </div>
-          <div className="rounded-2xl overflow-hidden shadow-xl">
-            <img src={supportCall} alt="Suporte dedicado" className="w-full h-auto object-cover" loading="lazy" width={1280} height={800} />
-          </div>
-        </div>
-        <div className="grid md:grid-cols-3 gap-8">
+    <section id="como" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
+      <div className="max-w-6xl mx-auto">
+        <SectionHeader
+          eyebrow="Como funciona"
+          title={<>De planilha para sistema <br /> em <span className="landing-text-gradient">24 horas.</span></>}
+        />
+
+        <div className="mt-14 grid md:grid-cols-3 gap-4">
           {steps.map((s, i) => (
+            <div key={i} className="relative landing-glass rounded-2xl p-7">
+              <div className="text-5xl font-semibold text-primary/30 tracking-tight mb-4">{s.n}</div>
+              <h3 className="text-lg font-semibold">{s.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <Button
+            size="lg"
+            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-6 text-[15px]"
+            onClick={openWhatsApp}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Começar agora pelo WhatsApp
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============ STATS BAR ============
+function StatsBar() {
+  const stats = [
+    { value: '95%', label: 'menos tempo gasto com folha' },
+    { value: '0', label: 'erros (motor com 145 testes)' },
+    { value: '+2.000', label: 'profissionais por empresa' },
+    { value: '24h', label: 'para começar a usar' },
+  ];
+
+  return (
+    <section className="py-16 px-4 sm:px-6 lg:px-8 border-t border-border relative overflow-hidden">
+      <div className="absolute inset-0 landing-grid-bg opacity-50 pointer-events-none" />
+      <div className="max-w-6xl mx-auto relative">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          {stats.map((s, i) => (
             <div key={i} className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-primary text-white flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-glow">
-                {s.step}
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">{s.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{s.description}</p>
+              <p className="text-4xl sm:text-5xl font-semibold tracking-tight text-foreground">{s.value}</p>
+              <p className="mt-2 text-xs sm:text-sm text-muted-foreground">{s.label}</p>
             </div>
           ))}
         </div>
@@ -760,101 +657,103 @@ function HowItWorks() {
 
 // ============ FAQ ============
 function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
   const faqs = [
-    { q: "Quanto custa o sistema?", a: "Depende do tamanho da sua operação. Chame no WhatsApp e em 10 minutos montamos uma proposta sob medida." },
-    { q: "Meus dados ficam seguros?", a: "Sim. Criptografia de nível bancário, isolamento total entre empresas e auditoria completa." },
-    { q: "Como vocês importam meus dados?", a: "Você envia suas planilhas e nossa equipe técnica faz toda a importação e validação." },
-    { q: "Posso cancelar quando quiser?", a: "Sim, sem multa, sem fidelidade. Garantia de 30 dias com devolução do investimento." },
+    { q: 'Quanto custa o sistema?', a: 'O preço varia conforme o tamanho da operação (número de profissionais e lojas). Em 10 minutos no WhatsApp montamos uma proposta sob medida — sem rodeio.' },
+    { q: 'Meus dados ficam seguros?', a: 'Sim. Cada empresa opera em ambiente isolado (RLS em 50+ tabelas), criptografia em trânsito e em repouso, auditoria completa de todas as ações.' },
+    { q: 'Como vocês importam meus dados atuais?', a: 'Você nos envia suas planilhas e nossa equipe técnica faz a importação, validação e correção de divergências. Você só aprova.' },
+    { q: 'Posso cancelar quando quiser?', a: 'Sim, sem multa, sem fidelidade. Garantia de 30 dias com devolução do investimento se não fizer sentido para você.' },
+    { q: 'Funciona com ponto facial?', a: 'Sim. Integração nativa com EzPoint — o ponto registrado vira automaticamente folha, sem exportar planilha.' },
+    { q: 'Tem suporte?', a: 'WhatsApp humano respondendo em minutos no horário comercial, e plantão para emergências de fechamento.' },
   ];
 
   return (
-    <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Dúvidas frequentes</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Perguntas que sempre nos fazem
-          </h2>
-        </div>
+        <SectionHeader
+          eyebrow="Perguntas frequentes"
+          title={<>Tudo que você quer <br/> saber antes de falar com a gente.</>}
+        />
 
-        <div className="space-y-3">
+        <div className="mt-12 space-y-2">
           {faqs.map((faq, i) => (
-            <div key={i} className="border border-border rounded-xl overflow-hidden">
+            <div
+              key={i}
+              className="landing-glass rounded-xl overflow-hidden"
+            >
               <button
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                className="w-full flex items-center justify-between p-5 text-left hover:bg-secondary/50 transition-colors"
+                className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors"
               >
-                <span className="font-medium text-foreground">{faq.q}</span>
-                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${openIndex === i ? 'rotate-180' : ''}`} />
+                <span className="text-[15px] font-medium text-foreground">{faq.q}</span>
+                <ChevronDown
+                  className={`w-4 h-4 text-muted-foreground transition-transform ${openIndex === i ? 'rotate-180' : ''}`}
+                />
               </button>
               {openIndex === i && (
-                <div className="px-5 pb-5 text-muted-foreground leading-relaxed">
+                <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">
                   {faq.a}
                 </div>
               )}
             </div>
           ))}
         </div>
-
-        <div className="mt-10 p-6 rounded-2xl bg-primary/5 border border-primary/20 text-center">
-          <p className="text-foreground font-medium mb-3">Ficou com alguma outra dúvida?</p>
-          <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90" onClick={openWhatsApp}>
-            <MessageCircle className="w-5 h-5" />
-            Chamar no WhatsApp
-          </Button>
-        </div>
       </div>
     </section>
   );
 }
 
-// ============ CTA ============
+// ============ CTA FINAL ============
 function CTA() {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary relative overflow-hidden">
-      <div className="absolute inset-0">
-        <img src={teamSuccess} alt="" className="w-full h-full object-cover opacity-15" loading="lazy" decoding="async" aria-hidden="true" />
-      </div>
-      <div className="max-w-3xl mx-auto text-center relative">
-        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-          Chega de perder tempo e dinheiro com planilha
+    <section className="relative py-28 px-4 sm:px-6 lg:px-8 overflow-hidden border-t border-border">
+      <div className="absolute inset-0 landing-grid-bg pointer-events-none opacity-50" />
+      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[60vw] h-[400px] bg-primary/30 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="relative max-w-3xl mx-auto text-center">
+        <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
+          Tudo que seu RH precisa.<br />
+          <span className="landing-text-gradient">Em um único lugar.</span>
         </h2>
-        <p className="text-white/90 text-lg mb-8 leading-relaxed">
-          Em 10 minutos no WhatsApp você descobre se o sistema resolve a sua dor. Sem compromisso.
+        <p className="mt-6 text-base text-muted-foreground max-w-xl mx-auto">
+          10 minutos no WhatsApp. Sem compromisso. Você decide se faz sentido para sua empresa.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="bg-white text-primary hover:bg-white/90 gap-2 px-8 h-14 text-base font-semibold"
-            onClick={openWhatsApp}>
-            <MessageCircle className="w-5 h-5" />
-            Chamar no WhatsApp agora
+        <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+          <Button
+            size="lg"
+            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-7 text-[15px] font-medium"
+            onClick={openWhatsApp}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Falar com a gente agora
           </Button>
-          <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-14 text-base bg-transparent gap-2"
-            onClick={openWhatsApp}>
-            <Phone className="w-5 h-5" />
-            Falar com especialista
+          <Button
+            size="lg"
+            variant="outline"
+            className="gap-2 h-12 px-7 text-[15px] border-border bg-card hover:bg-muted text-foreground"
+            onClick={() => (window.location.href = '/login')}
+          >
+            Já sou cliente, entrar
           </Button>
         </div>
-        <p className="text-white/70 text-sm mt-6">
-          📱 Atendimento direto no WhatsApp · ⚡ Resposta em minutos · 🔒 Sigilo garantido
+        <p className="mt-6 text-xs text-muted-foreground">
+          Resposta em minutos · Sigilo garantido · Sem cartão de crédito
         </p>
       </div>
     </section>
   );
 }
 
-// ============ FLOATING WHATSAPP BUTTON ============
+// ============ FLOATING WHATSAPP ============
 function FloatingWhatsApp() {
   return (
     <button
       onClick={openWhatsApp}
-      className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-success hover:bg-success/90 shadow-2xl flex items-center justify-center transition-all hover:scale-110 group"
+      className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-success hover:bg-success/90 shadow-2xl flex items-center justify-center transition-transform hover:scale-110 group"
       aria-label="Falar no WhatsApp"
     >
-      <MessageCircle className="w-7 h-7 text-white" />
-      <span className="absolute right-full mr-3 bg-foreground text-background text-sm px-3 py-2 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        Fale conosco
-      </span>
+      <span className="absolute inset-0 rounded-full landing-pulse-ring" />
+      <MessageCircle className="w-6 h-6 text-success-foreground relative" />
     </button>
   );
 }
@@ -862,51 +761,42 @@ function FloatingWhatsApp() {
 // ============ FOOTER ============
 function LandingFooter() {
   return (
-    <footer className="py-16 px-4 sm:px-6 lg:px-8 bg-foreground text-white/70">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-4 gap-8">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-sm">RH</span>
+    <footer className="py-16 px-4 sm:px-6 lg:px-8 border-t border-border">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-4 gap-10">
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-xs">RH</span>
               </div>
-              <span className="text-white font-semibold text-lg">Sistema RH</span>
+              <span className="text-foreground font-semibold tracking-tight">Sistema RH</span>
             </div>
-            <p className="text-sm leading-relaxed">
-              Sistema completo de gestão de RH, folha de pagamento, benefícios e compliance. Feito para o varejo brasileiro.
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+              Plataforma completa de gestão de RH, folha CLT, benefícios e
+              compliance — feita para o varejo brasileiro.
             </p>
           </div>
-          
+
           <div>
-            <h4 className="text-white font-semibold mb-4">Sistema</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#solucao" className="hover:text-white transition-colors">Funcionalidades</a></li>
-              <li><a href="#modulos" className="hover:text-white transition-colors">Módulos</a></li>
-              <li><a href="#diferencial" className="hover:text-white transition-colors">Diferenciais</a></li>
-              <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
+            <h4 className="text-foreground text-sm font-medium mb-4">Plataforma</h4>
+            <ul className="space-y-2.5 text-sm text-muted-foreground">
+              <li><a href="#plataforma" className="hover:text-foreground transition-colors">Visão geral</a></li>
+              <li><a href="#modulos" className="hover:text-foreground transition-colors">Módulos</a></li>
+              <li><a href="#diferencial" className="hover:text-foreground transition-colors">Diferenciais</a></li>
+              <li><a href="#faq" className="hover:text-foreground transition-colors">FAQ</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">Suporte</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Central de Ajuda</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Tutoriais</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Política de Privacidade</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Termos de Uso</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-semibold mb-4">Fale conosco</h4>
-            <ul className="space-y-3 text-sm">
+            <h4 className="text-foreground text-sm font-medium mb-4">Contato</h4>
+            <ul className="space-y-2.5 text-sm text-muted-foreground">
               <li>
-                <button onClick={openWhatsApp} className="flex items-center gap-2 hover:text-white transition-colors">
-                  <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
+                <button onClick={openWhatsApp} className="inline-flex items-center gap-2 hover:text-foreground transition-colors">
+                  <MessageCircle className="w-4 h-4" /> WhatsApp
                 </button>
               </li>
               <li>
-                <button onClick={openWhatsApp} className="flex items-center gap-2 hover:text-white transition-colors">
+                <button onClick={openWhatsApp} className="inline-flex items-center gap-2 hover:text-foreground transition-colors">
                   <Phone className="w-4 h-4" /> Solicitar contato
                 </button>
               </li>
@@ -917,32 +807,59 @@ function LandingFooter() {
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-12 pt-8 text-center text-sm">
-          <p>© {new Date().getFullYear()} Sistema RH. Todos os direitos reservados.</p>
+        <div className="border-t border-border mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} Sistema RH · eazdev.com</p>
+          <p>Feito com cuidado para quem cuida de pessoas.</p>
         </div>
       </div>
     </footer>
   );
 }
 
-// ============ MAIN PAGE ============
+// ============ SHARED ============
+function SectionHeader({
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  eyebrow: string;
+  title: React.ReactNode;
+  subtitle?: string;
+}) {
+  return (
+    <div className="text-center max-w-3xl mx-auto">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-primary mb-4">{eyebrow}</p>
+      <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="mt-5 text-base text-muted-foreground leading-relaxed">
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ============ MAIN ============
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-background">
+    <div className="landing-theme min-h-screen">
       <LandingHeader />
-      <Hero />
-      <Problems />
-      <StatsImpact />
-      <Features />
-      <Comparison />
-      <Differentiators />
-      <Modules />
-      <Commitments />
-      <HowItWorks />
-      <FAQ />
-      <CTA />
+      <main>
+        <Hero />
+        <LogoTicker />
+        <Plataforma />
+        <FeaturesBento />
+        <Differentiators />
+        <Modules />
+        <HowItWorks />
+        <StatsBar />
+        <FAQ />
+        <CTA />
+      </main>
       <LandingFooter />
       <FloatingWhatsApp />
-    </main>
+    </div>
   );
 }
