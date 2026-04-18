@@ -355,17 +355,19 @@ function Features() {
               O Sistema RH executa o trabalho pesado por você: cálculos, alertas, relatórios, holerites. 
               Você só revisa, aprova e ganha tempo para o que realmente importa: as pessoas.
             </p>
-            
-            <div className="flex items-center gap-4 mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
-              <img src={solutionEasy} alt="Profissional satisfeita" className="w-14 h-14 rounded-full object-cover" loading="lazy" width={56} height={56} />
-              <div>
-                <p className="text-sm text-foreground font-medium">
-                  "Agora saio no horário e ainda sobra tempo pra desenvolver a equipe"
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Depoimento real de uma coordenadora que migrou de planilha
-                </p>
-              </div>
+
+            <div className="grid sm:grid-cols-2 gap-3 mt-6">
+              {[
+                { icon: Shield, label: 'Dados isolados por empresa' },
+                { icon: CheckCircle2, label: '145 testes automatizados' },
+                { icon: Clock, label: 'Suporte humano em minutos' },
+                { icon: Award, label: 'Cálculo CLT validado' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                  <item.icon className="w-5 h-5 text-primary shrink-0" />
+                  <span className="text-sm text-foreground font-medium">{item.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
