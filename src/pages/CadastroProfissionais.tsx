@@ -1107,9 +1107,12 @@ export const CadastroProfissionais: React.FC = () => {
     }
   }, [matriculaParam, professionals]);
 
-  const activeProfessionals = professionals.filter(p => p.status === 'ativo');
-  const dismissedProfessionals = professionals.filter(p => p.status === 'demitido');
-  const uniqueStores = new Set(professionals.map(p => p.loja?.nome).filter(Boolean)).size;
+  // Memoizar contagens para evitar recalculo a cada render
+  const { activeProfessionals, dismissedProfessionals, uniqueStores } = useMemo(() => ({
+    activeProfessionals: professionals.filter(p => p.status === 'ativo'),
+    dismissedProfessionals: professionals.filter(p => p.status === 'demitido'),
+    uniqueStores: new Set(professionals.map(p => p.loja?.nome).filter(Boolean)).size,
+  }), [professionals]);
 
   // 🔍 PROFISSIONAIS FILTRADOS (ordenação alfabética por nome)
   const filteredProfessionals = useMemo(() => {
