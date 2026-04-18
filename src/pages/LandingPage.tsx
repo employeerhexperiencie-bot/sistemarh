@@ -495,7 +495,7 @@ function BentoCard({
   text: string;
 }) {
   return (
-    <div className={`relative landing-glass rounded-2xl p-6 sm:p-7 hover:border-primary/40 transition-colors group ${className}`}>
+    <div className={`relative landing-glass rounded-2xl p-5 sm:p-7 hover:border-primary/40 transition-colors group ${className}`}>
       <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
            style={{ background: 'radial-gradient(400px circle at 30% 0%, hsl(var(--primary) / 0.08), transparent 60%)' }} />
       <div className="relative">
