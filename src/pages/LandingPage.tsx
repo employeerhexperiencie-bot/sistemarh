@@ -161,6 +161,9 @@ function Hero() {
                 className="w-full h-auto rounded-xl"
                 width={1280}
                 height={800}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
               />
             </div>
 
@@ -264,7 +267,7 @@ function StatsImpact() {
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-primary text-white relative overflow-hidden">
       <div className="absolute inset-0">
-        <img src={heroTeam} alt="" className="w-full h-full object-cover opacity-10" />
+        <img src={heroTeam} alt="" className="w-full h-full object-cover opacity-10" loading="lazy" decoding="async" aria-hidden="true" />
       </div>
       <div className="max-w-7xl mx-auto relative">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
@@ -650,7 +653,7 @@ function CTA() {
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary relative overflow-hidden">
       {/* Background image with overlay */}
       <div className="absolute inset-0">
-        <img src={teamSuccess} alt="" className="w-full h-full object-cover opacity-15" />
+        <img src={teamSuccess} alt="" className="w-full h-full object-cover opacity-15" loading="lazy" decoding="async" aria-hidden="true" />
       </div>
       <div className="max-w-3xl mx-auto text-center relative">
         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
