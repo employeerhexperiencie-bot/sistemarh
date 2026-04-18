@@ -135,6 +135,9 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, onD
         <div className={`p-1.5 rounded-lg ${alerta.nivel === 'critico' ? 'bg-destructive/20' : 'bg-background/50'}`}>
           <TipoIcon className={`h-4 w-4 ${tipoConfig.color}`} />
         </div>
+        {alerta.profissional && (
+          <ProfissionalAvatar nome={alerta.profissional} fotoUrl={alerta.fotoUrl} size="sm" />
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <p className="text-sm font-medium truncate">{alerta.titulo}</p>
@@ -194,9 +197,12 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, onD
       </TableCell>
       <TableCell>
         {alerta.profissional ? (
-          <div>
-            <p className="text-sm">{alerta.profissional}</p>
-            <p className="text-xs text-muted-foreground font-mono">{alerta.matricula}</p>
+          <div className="flex items-center gap-2 min-w-0">
+            <ProfissionalAvatar nome={alerta.profissional} fotoUrl={alerta.fotoUrl} size="sm" />
+            <div className="min-w-0">
+              <p className="text-sm truncate">{alerta.profissional}</p>
+              <p className="text-xs text-muted-foreground font-mono">{alerta.matricula}</p>
+            </div>
           </div>
         ) : (
           <span className="text-muted-foreground">-</span>
