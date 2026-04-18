@@ -146,20 +146,27 @@ export default function GestaoASO() {
     if (!dataProximoExame) {
       return { status: 'PENDENTE', diasRestantes: null };
     }
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Zerar horas para comparação precisa
-    
-    const proximoExame = new Date(dataProximoExame);
+
+    // Normalizar data do banco (YYYY-MM-DD) sem efeito de timezone:
+    // new Date('2026-04-18') é interpretado como UTC e pode virar dia anterior em fusos negativos.
+    // Construir como data local explicitamente.
+    const isoMatch = String(dataProximoExame).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const proximoExame = isoMatch
+      ? new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]))
+      : new Date(dataProximoExame);
     proximoExame.setHours(0, 0, 0, 0);
-    
+
     const diffTime = proximoExame.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) return { status: 'VENCIDO', diasRestantes: diffDays };
     if (diffDays <= 30) return { status: 'VENCE_30_DIAS', diasRestantes: diffDays };
     return { status: 'VALIDO', diasRestantes: diffDays };
   };
+
 
   // Capitalizar nomes
   const capitalizeWords = (str: string) => {
@@ -233,11 +240,21 @@ export default function GestaoASO() {
 
       if (checkError) throw checkError;
 
+      // Normaliza para YYYY-MM-DD (sem componente de hora/timezone)
+      const toDateOnly = (raw: string): string | null => {
+        if (!raw) return null;
+        const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+        return m ? m[1] : null;
+      };
+
+      const dataUltimoNorm = toDateOnly(formData.data_ultimo_exame);
+      const dataProximoNorm = toDateOnly(formData.data_proximo_exame);
+
       const payload = {
         profissional_id: formData.profissional_id,
         tipo_exame: formData.tipo_exame,
-        data_ultimo_exame: formData.data_ultimo_exame,
-        data_proximo_exame: formData.data_proximo_exame || null,
+        data_ultimo_exame: dataUltimoNorm,
+        data_proximo_exame: dataProximoNorm,
         periodicidade: formData.periodicidade,
         status: status.toLowerCase(),
       };
@@ -256,6 +273,22 @@ export default function GestaoASO() {
         if (updateError) throw updateError;
         savedId = updatedData?.id;
         acao = 'EDITAR';
+
+        // Atualização otimista: refletir na lista antes do reload completo
+        const { status: novoStatus, diasRestantes } = calculateStatus(dataProximoNorm);
+        setExams(prev => prev.map(e =>
+          e.id === existente.id
+            ? {
+                ...e,
+                dataUltimoExame: dataUltimoNorm,
+                dataProximoExame: dataProximoNorm,
+                tipoExame: formData.tipo_exame,
+                periodicidade: formData.periodicidade,
+                status: novoStatus,
+                diasRestantes,
+              }
+            : e
+        ));
       } else {
         // INSERT: novo ASO
         const { data: insertedData, error: insertError } = await supabase
@@ -274,7 +307,7 @@ export default function GestaoASO() {
         modulo: 'ASO',
         entidade: nomeProfissional,
         detalhes: `Exame ASO "${formData.tipo_exame}" ${acao === 'EDITAR' ? 'atualizado' : 'cadastrado'} para ${nomeProfissional}`,
-        metadata: { 
+        metadata: {
           id: savedId,
           dados_novos: formData
         }
@@ -283,23 +316,26 @@ export default function GestaoASO() {
       toast({
         title: "Sucesso",
         description: acao === 'EDITAR'
-          ? "Exame ASO atualizado com sucesso"
-          : "Exame ASO cadastrado com sucesso"
+          ? `Exame ASO atualizado. Novo status: ${status}`
+          : `Exame ASO cadastrado. Status: ${status}`
       });
 
       handleCloseDialog();
-      loadData();
+      await loadData();
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
+      const detalhes = [error?.message, error?.details, error?.hint, error?.code ? `(código ${error.code})` : null]
+        .filter(Boolean).join(' — ');
       toast({
-        title: "Erro",
-        description: error?.message || "Erro ao cadastrar exame",
+        title: "Erro ao salvar exame ASO",
+        description: detalhes || "Erro desconhecido ao cadastrar exame",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
