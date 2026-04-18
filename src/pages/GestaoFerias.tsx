@@ -595,13 +595,54 @@ export default function GestaoFerias() {
               Alertas de Vencimento de Férias
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-warning">
-              ⚠️ {vencendo} funcionário(s) com período aquisitivo vencendo em breve
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {vencendo} funcionário(s) com período aquisitivo vencido ou prestes a vencer (≤30 dias).
+              Agende as férias antes do vencimento para evitar perda de direitos.
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Agende as férias antes do vencimento para evitar perda de direitos
-            </p>
+            <div className="rounded-lg border border-warning/20 bg-background divide-y max-h-[280px] overflow-y-auto">
+              {listaVencendo.map((v) => {
+                const vencido = v.diasRestantes <= 0;
+                return (
+                  <div
+                    key={v.id}
+                    className="flex items-center justify-between gap-3 px-3 py-2 hover:bg-muted/40"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium truncate">{v.nome}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          #{v.matricula}
+                        </span>
+                        {v.desligado && (
+                          <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/20">
+                            Desligado
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {v.loja} • Aquisitivo até {new Date(v.periodoAquisitivo.fim).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge
+                        variant="outline"
+                        className={
+                          vencido
+                            ? 'bg-destructive/10 text-destructive border-destructive/20'
+                            : 'bg-warning/10 text-warning border-warning/20'
+                        }
+                      >
+                        {vencido ? `Vencido há ${Math.abs(v.diasRestantes)}d` : `Vence em ${v.diasRestantes}d`}
+                      </Badge>
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(v)}>
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
