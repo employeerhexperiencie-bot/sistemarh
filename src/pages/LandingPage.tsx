@@ -848,7 +848,7 @@ export default function LandingPage() {
       <Features />
       <Differentiators />
       <Modules />
-      <Testimonials />
+      <Commitments />
       <HowItWorks />
       <FAQ />
       <CTA />
