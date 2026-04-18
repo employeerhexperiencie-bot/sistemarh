@@ -19,6 +19,8 @@ interface ProfissionalAutocompleteProps {
   label?: string;
   placeholder?: string;
   disabled?: boolean;
+  /** Quando true, inclui também profissionais com status diferente de 'ativo' (ex.: demitidos). */
+  incluirInativos?: boolean;
 }
 
 export function ProfissionalAutocomplete({
@@ -27,6 +29,7 @@ export function ProfissionalAutocomplete({
   label = 'Matrícula',
   placeholder = 'Digite matrícula ou nome',
   disabled = false,
+  incluirInativos = false,
 }: ProfissionalAutocompleteProps) {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<Profissional[]>([]);
