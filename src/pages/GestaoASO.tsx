@@ -179,15 +179,21 @@ export default function GestaoASO() {
       .join(' ');
   };
 
+  // Lista única de lojas presentes nos exames carregados (para o filtro)
+  const lojasDisponiveis = Array.from(
+    new Set(exams.map(e => e.loja).filter(l => l && l !== '-'))
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
   // Filtrar exames
   const filteredExams = exams.filter(exam => {
     const matchesStatus = filterStatus === 'todos' || exam.status === filterStatus;
     const matchesTipo = filterTipoExame === 'todos' || exam.tipoExame === filterTipoExame;
+    const matchesLoja = filterLoja === 'todas' || exam.loja === filterLoja;
     const matchesSearch = searchTerm === '' || 
       exam.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.loja.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesTipo && matchesSearch;
+    return matchesStatus && matchesTipo && matchesLoja && matchesSearch;
   });
 
   // Função para obter a cor de risco baseada nos dias de atraso
