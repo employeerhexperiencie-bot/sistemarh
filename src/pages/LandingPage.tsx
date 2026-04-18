@@ -338,18 +338,18 @@ function LogoTicker() {
   // duplicate for seamless loop
   const loop = [...items, ...items];
   return (
-    <section className="relative py-12 border-y border-border overflow-hidden">
-      <p className="text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-7">
+    <section className="relative py-10 sm:py-12 border-y border-border overflow-hidden">
+      <p className="text-center text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-5 sm:mb-7 px-4">
         Uma plataforma. Tudo conectado.
       </p>
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-background to-transparent z-10" />
-        <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-background to-transparent z-10" />
-        <div className="flex landing-marquee gap-3 w-max">
+        <div className="absolute inset-y-0 left-0 w-16 sm:w-32 bg-gradient-to-r from-background to-transparent z-10" />
+        <div className="absolute inset-y-0 right-0 w-16 sm:w-32 bg-gradient-to-l from-background to-transparent z-10" />
+        <div className="flex landing-marquee gap-2.5 sm:gap-3 w-max">
           {loop.map((item, i) => (
             <span
               key={i}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card text-sm text-muted-foreground"
+              className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-border bg-card text-xs sm:text-sm text-muted-foreground whitespace-nowrap"
             >
               <span className="w-1 h-1 rounded-full bg-primary" /> {item}
             </span>
