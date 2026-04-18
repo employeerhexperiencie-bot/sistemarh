@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUploader } from '@/components/FileUploader';
 import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2, Trash2, Search } from 'lucide-react';
-import { Select as FilterSelect, SelectContent as FilterSelectContent, SelectItem as FilterSelectItem, SelectTrigger as FilterSelectTrigger, SelectValue as FilterSelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -46,6 +45,8 @@ export default function GestaoAfastamentos() {
   const [editingAfastamento, setEditingAfastamento] = useState<Afastamento | null>(null);
   const [formData, setFormData] = useState<Partial<Afastamento>>({ status: 'ATIVO' });
   const [saving, setSaving] = useState(false);
+  const [filterLoja, setFilterLoja] = useState<string>('todas');
+  const [searchTerm, setSearchTerm] = useState('');
   const { addLog } = useAuditLog();
 
   useEffect(() => {
@@ -268,10 +269,24 @@ export default function GestaoAfastamentos() {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const ativos = afastamentos.filter(a => a.status === 'ATIVO').length;
-  const aguardandoPericia = afastamentos.filter(a => a.status === 'AGUARDANDO_PERICIA').length;
-  const finalizados = afastamentos.filter(a => a.status === 'FINALIZADO').length;
-  const maternidade = afastamentos.filter(a => a.motivo === 'LICENCA_MATERNIDADE' && a.status === 'ATIVO').length;
+  // Lojas únicas para o dropdown de filtro
+  const lojasDisponiveis = Array.from(
+    new Set(afastamentos.map(a => a.loja).filter(l => l && l !== 'Loja não definida'))
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+  // Aplica filtros (loja + busca por nome) a todos os contadores e à listagem
+  const afastamentosFiltrados = afastamentos.filter(a => {
+    const matchLoja = filterLoja === 'todas' || a.loja === filterLoja;
+    const matchSearch = searchTerm.trim() === '' ||
+      a.nome.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+      a.matricula.toLowerCase().includes(searchTerm.toLowerCase().trim());
+    return matchLoja && matchSearch;
+  });
+
+  const ativos = afastamentosFiltrados.filter(a => a.status === 'ATIVO').length;
+  const aguardandoPericia = afastamentosFiltrados.filter(a => a.status === 'AGUARDANDO_PERICIA').length;
+  const finalizados = afastamentosFiltrados.filter(a => a.status === 'FINALIZADO').length;
+  const maternidade = afastamentosFiltrados.filter(a => a.motivo === 'LICENCA_MATERNIDADE' && a.status === 'ATIVO').length;
 
   if (loading) {
     return (
