@@ -256,17 +256,16 @@ function Problems() {
           <div>
             <h3 className="text-2xl font-bold text-foreground mb-4">A conta que ninguém faz</h3>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Se o seu RH gasta 60 horas por mês com planilhas, isso são <strong className="text-foreground">720 horas por ano</strong> que 
-              poderiam estar gerando resultado para a empresa. Sem contar o risco de multa, o stress da equipe e a falta de visibilidade.
+              60 horas por mês em planilhas = <strong className="text-foreground">720 horas perdidas por ano</strong>. Sem contar o risco de multa.
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
                 <p className="text-2xl font-bold text-destructive">R$ 38mil</p>
-                <p className="text-xs text-muted-foreground mt-1">multa média do eSocial por erro de folha</p>
+                <p className="text-xs text-muted-foreground mt-1">multa média do eSocial por erro</p>
               </div>
               <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
                 <p className="text-2xl font-bold text-destructive">72%</p>
-                <p className="text-xs text-muted-foreground mt-1">das empresas têm erro recorrente em planilhas</p>
+                <p className="text-xs text-muted-foreground mt-1">das empresas erram em planilhas</p>
               </div>
             </div>
           </div>
@@ -321,12 +320,12 @@ function StatsImpact() {
 // ============ FEATURES / SOLUCAO ============
 function Features() {
   const features = [
-    { icon: Zap, title: "Folha pronta em minutos", description: "Motor de cálculo validado com 145 testes automatizados. Você só confere e aprova.", highlight: "De 3 dias para 5 minutos" },
-    { icon: Bell, title: "Alertas que te salvam", description: "ASO, férias, vencimentos, documentos. Você é avisado antes de virar problema.", highlight: "Zero surpresa fiscal" },
-    { icon: Clock, title: "Sobra tempo pra estratégia", description: "Pare de apagar incêndio. Foque em desenvolver pessoas e fazer a empresa crescer.", highlight: "+60 horas livres/mês" },
-    { icon: Shield, title: "Dados isolados por empresa", description: "Cada loja só vê o que precisa. Cada usuário com sua permissão. Auditoria completa.", highlight: "Segurança bancária" },
-    { icon: FileText, title: "Histórico de tudo, pra sempre", description: "Quem mudou o quê, quando e por quê. Se a Receita pedir, você tem em segundos.", highlight: "Compliance total" },
-    { icon: TrendingUp, title: "Cresce com você", description: "Atende de 10 a 2.000+ profissionais sem travar. Sua expansão não para por causa do RH.", highlight: "Sem limite real" },
+    { icon: Zap, title: "Folha pronta em minutos", description: "Motor validado com 145 testes. Você só confere e aprova.", highlight: "De 3 dias para 5 minutos" },
+    { icon: Bell, title: "Alertas que te salvam", description: "ASO, férias, vencimentos. Avisos antes de virar problema.", highlight: "Zero surpresa fiscal" },
+    { icon: Clock, title: "Sobra tempo pra estratégia", description: "Pare de apagar incêndio. Foque em desenvolver pessoas.", highlight: "+60h livres/mês" },
+    { icon: Shield, title: "Dados isolados por empresa", description: "Cada loja vê só o que precisa. Auditoria completa.", highlight: "Segurança bancária" },
+    { icon: FileText, title: "Histórico de tudo", description: "Quem mudou, quando e por quê. Pronto para a Receita.", highlight: "Compliance total" },
+    { icon: TrendingUp, title: "Cresce com você", description: "De 10 a 2.000+ profissionais sem travar.", highlight: "Sem limite real" },
   ];
 
   return (
@@ -398,37 +397,37 @@ function Differentiators() {
     {
       icon: Calculator,
       title: "Pagamento Split (Dia 20 + Dia 5)",
-      description: "Único sistema do mercado nacional que calcula nativamente o adiantamento do Dia 20 (40%) + saldo do Dia 5 (60%). Específico para varejo, comércio e redes de loja.",
+      description: "Único no Brasil que calcula o adiantamento Dia 20 (40%) + saldo Dia 5 (60%) nativamente.",
       market: "Concorrentes não têm"
     },
     {
       icon: Wallet,
-      title: "Empréstimos CLT + Direto da Loja",
-      description: "Controle total de empréstimos consignados (CLT) e empréstimos da loja para o colaborador. Parcelas, saldos, histórico de alterações com auditoria.",
+      title: "Empréstimos CLT + Loja",
+      description: "Consignados e empréstimos da loja com parcelas, saldos e auditoria.",
       market: "Concorrentes não têm"
     },
     {
       icon: Gift,
-      title: "11 Tipos de Benefícios Configuráveis",
-      description: "VT, VR, VA, Cesta, Odonto, Seguro de Vida, Bem Mais, Vale Carne, Vale Dinheiro e mais. Regras de elegibilidade por benefício, descontos automáticos.",
-      market: "Sistemas comuns têm 3-4"
+      title: "11 Tipos de Benefícios",
+      description: "VT, VR, VA, Cesta, Odonto, Seguro de Vida, Vale Carne e mais — com elegibilidade automática.",
+      market: "Comuns têm 3-4"
     },
     {
       icon: Award,
       title: "Motor de Cálculo Validado",
-      description: "145 testes automatizados cobrindo INSS, IRRF, faltas, férias, 13º, maternidade, acidente. Arredondamento padrão CLT. Zero margem para erro.",
+      description: "145 testes cobrindo INSS, IRRF, faltas, férias, 13º. Zero margem para erro.",
       market: "Padrão de auditoria"
     },
     {
       icon: ShieldCheck,
-      title: "Multi-loja com Isolamento Total",
-      description: "Cada loja é uma unidade independente. Gerente de uma filial não vê dados da outra. Consolidação automática para o administrador.",
+      title: "Multi-loja com Isolamento",
+      description: "Cada filial é independente. Consolidação automática para o administrador.",
       market: "Diferencial real"
     },
     {
       icon: Target,
       title: "White-label Pronto",
-      description: "Logo, cores e identidade da sua empresa. Seus colaboradores acessam um sistema com a sua marca, não com a marca de fornecedor.",
+      description: "Logo, cores e identidade da sua empresa. Seu time acessa com a sua marca.",
       market: "Único no segmento"
     }
   ];
@@ -442,8 +441,7 @@ function Differentiators() {
             O que nos torna únicos no Brasil
           </h2>
           <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Não somos mais um sistema genérico. Fomos construídos com base nas dores reais 
-            de operações de varejo, comércio e redes de loja.
+            Construído com base nas dores reais de varejo, comércio e redes de loja.
           </p>
         </div>
 
@@ -492,7 +490,7 @@ function Modules() {
             Pare de pular de planilha em planilha
           </h2>
           <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Mais de 40 módulos integrados. Tudo o que seu RH precisa, sem precisar de 5 ferramentas diferentes.
+            Mais de 40 módulos integrados. Tudo que seu RH precisa, em um só lugar.
           </p>
         </div>
 
@@ -514,20 +512,20 @@ function Modules() {
             <img src={screenshotCadastro} alt="Cadastro de Profissionais" className="w-full h-auto" loading="lazy" width={1280} height={800} />
             <div className="p-4 bg-card">
               <p className="font-medium text-foreground">Cadastro 360° do Colaborador</p>
-              <p className="text-sm text-muted-foreground">10 abas integradas: dados pessoais, documentos, cargo, benefícios, histórico, pensões, empréstimos, ASO, EPI e ocorrências</p>
+              <p className="text-sm text-muted-foreground">10 abas integradas: dados, documentos, benefícios, ASO, EPI e mais.</p>
             </div>
           </div>
           <div className="rounded-2xl overflow-hidden border border-border shadow-premium">
             <img src={screenshotBeneficios} alt="Gestão de Benefícios" className="w-full h-auto" loading="lazy" width={1280} height={800} />
             <div className="p-4 bg-card">
               <p className="font-medium text-foreground">Gestão de 11 Benefícios</p>
-              <p className="text-sm text-muted-foreground">Configuração de elegibilidade por benefício, descontos automáticos, relatórios consolidados por loja</p>
+              <p className="text-sm text-muted-foreground">Elegibilidade automática, descontos e relatórios consolidados.</p>
             </div>
           </div>
         </div>
 
         <p className="text-center mt-8 text-muted-foreground">
-          E muito mais: EPI com validade, pensão alimentícia, vales, 13º com avos, importação Excel, integração eSocial...
+          E muito mais: EPI, pensão alimentícia, vales, 13º, importação Excel...
         </p>
       </div>
     </section>
@@ -540,38 +538,20 @@ function Commitments() {
     {
       icon: Shield,
       title: "Seus dados, blindados",
-      description: "Cada empresa tem seu ambiente isolado no banco de dados. Ninguém vê o que é seu — nem nossa equipe, sem sua autorização expressa.",
-      proof: "Isolamento por RLS em 38 tabelas",
+      description: "Cada empresa em ambiente isolado. Ninguém vê o que é seu — nem nossa equipe.",
+      proof: "Isolamento RLS em 38 tabelas",
     },
     {
       icon: CheckCircle2,
       title: "Cálculo conferido",
-      description: "Motor de folha CLT auditado com 145 testes automatizados rodando a cada atualização. INSS, IRRF, FGTS, 13º e férias dentro da legislação.",
+      description: "Motor CLT auditado: INSS, IRRF, FGTS, 13º e férias dentro da legislação.",
       proof: "145/145 testes aprovados",
     },
     {
       icon: MessageCircle,
-      title: "Gente de verdade no atendimento",
-      description: "Você fala com uma pessoa que entende de RH, não com bot. WhatsApp direto, resposta em minutos no horário comercial.",
-      proof: "Atendimento humano · Sem fila",
-    },
-    {
-      icon: TrendingUp,
-      title: "Evoluímos com você",
-      description: "O sistema melhora toda semana com base no que clientes reais pedem. Sua sugestão pode virar funcionalidade na próxima atualização.",
-      proof: "Atualizações contínuas",
-    },
-    {
-      icon: Database,
-      title: "Sem amarras",
-      description: "Seus dados são seus. Exportação completa em Excel a qualquer momento, sem custo, sem burocracia, sem perguntas.",
-      proof: "Exportação livre · 100% transparente",
-    },
-    {
-      icon: Award,
-      title: "Conformidade trabalhista",
-      description: "Acompanhamos as mudanças da legislação CLT e atualizamos as regras de cálculo automaticamente para você não ficar para trás.",
-      proof: "Aderência à legislação vigente",
+      title: "Atendimento humano",
+      description: "Você fala com gente que entende de RH. WhatsApp direto, resposta em minutos.",
+      proof: "Sem bot · Sem fila",
     },
   ];
 
@@ -584,7 +564,7 @@ function Commitments() {
             Confiança não se promete. Se entrega.
           </h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">
-            Em vez de depoimentos, preferimos mostrar o que você pode esperar de nós — e cobrar quando algo sair do combinado.
+            Em vez de depoimentos, mostramos o que você pode esperar — e cobrar.
           </p>
         </div>
 
@@ -606,7 +586,7 @@ function Commitments() {
 
         <div className="mt-16 max-w-3xl mx-auto p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 text-center">
           <p className="text-lg text-foreground leading-relaxed">
-            <strong className="text-primary">Nosso compromisso:</strong> se em 30 dias o sistema não fizer sentido para a sua operação, devolvemos seu investimento sem perguntas. Simples assim.
+            <strong className="text-primary">Garantia de 30 dias:</strong> se não fizer sentido pra sua operação, devolvemos seu investimento. Simples assim.
           </p>
           <Button size="lg" className="mt-6 gap-2 bg-primary hover:bg-primary/90" onClick={openWhatsApp}>
             <MessageCircle className="w-5 h-5" />
@@ -621,9 +601,9 @@ function Commitments() {
 // ============ HOW IT WORKS ============
 function HowItWorks() {
   const steps = [
-    { step: "1", title: "Você nos chama no WhatsApp", description: "Conta seu cenário em 10 minutos. A gente entende sua operação e mostra como o sistema resolve." },
-    { step: "2", title: "Importamos seus dados", description: "Suas planilhas viram um sistema profissional. Sem trabalho para você. Equipe técnica dedicada." },
-    { step: "3", title: "Em 24h você está rodando", description: "Treinamento incluso, suporte por WhatsApp e a tranquilidade de saber que está tudo certo." },
+    { step: "1", title: "Você nos chama no WhatsApp", description: "Conta seu cenário em 10 minutos." },
+    { step: "2", title: "Importamos seus dados", description: "Suas planilhas viram sistema. Sem trabalho pra você." },
+    { step: "3", title: "Em 24h você está rodando", description: "Treinamento incluso e suporte por WhatsApp." },
   ];
 
   return (
@@ -636,7 +616,7 @@ function HowItWorks() {
               Três passos e pronto
             </h2>
             <p className="mt-4 text-muted-foreground leading-relaxed">
-              Sem dor de cabeça, sem migração complicada. A gente cuida de tudo pra você começar a usar amanhã.
+              Sem migração complicada. A gente cuida de tudo pra você começar amanhã.
             </p>
             <Button size="lg" className="mt-6 gap-2 bg-primary hover:bg-primary/90"
               onClick={openWhatsApp}>
@@ -668,14 +648,10 @@ function HowItWorks() {
 function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const faqs = [
-    { q: "Quanto custa o sistema?", a: "O investimento depende do tamanho da sua operação (quantidade de colaboradores e lojas). Chame no WhatsApp e em 10 minutos a gente monta uma proposta sob medida pra você." },
-    { q: "Preciso instalar alguma coisa?", a: "Não. O sistema funciona 100% online, pelo navegador. Funciona no computador, tablet e celular sem instalação." },
-    { q: "Como vocês importam meus dados?", a: "Basta nos enviar suas planilhas de Excel. Nossa equipe técnica faz toda a importação, validação e conferência dos dados. Você não precisa fazer nada." },
-    { q: "Meus dados ficam seguros?", a: "Sim. Usamos criptografia de nível bancário, isolamento total entre empresas (multi-tenant) e auditoria completa de todas as ações. Seus dados nunca se misturam com os de outras empresas." },
-    { q: "Funciona para o meu modelo de pagamento?", a: "Sim. Somos os únicos do mercado a calcular nativamente o pagamento split Dia 20 (adiantamento) + Dia 5 (saldo), além do modelo mensal tradicional. Atendemos varejo, comércio, indústria e serviços." },
-    { q: "Vocês dão suporte?", a: "Sim! Suporte direto por WhatsApp com a equipe técnica. Resposta em minutos durante horário comercial e atendimento dedicado para questões urgentes." },
-    { q: "Posso cancelar quando quiser?", a: "Sim. Sem multa, sem fidelidade longa. Se não gostar, cancela. Mas em 8 anos de operação, ninguém pediu pra cancelar." },
-    { q: "Funciona para quantos funcionários?", a: "De 10 a 2.000+ colaboradores por empresa. Arquitetura preparada para escalar conforme você cresce, sem precisar trocar de sistema." },
+    { q: "Quanto custa o sistema?", a: "Depende do tamanho da sua operação. Chame no WhatsApp e em 10 minutos montamos uma proposta sob medida." },
+    { q: "Meus dados ficam seguros?", a: "Sim. Criptografia de nível bancário, isolamento total entre empresas e auditoria completa." },
+    { q: "Como vocês importam meus dados?", a: "Você envia suas planilhas e nossa equipe técnica faz toda a importação e validação." },
+    { q: "Posso cancelar quando quiser?", a: "Sim, sem multa, sem fidelidade. Garantia de 30 dias com devolução do investimento." },
   ];
 
   return (
@@ -730,11 +706,8 @@ function CTA() {
         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
           Chega de perder tempo e dinheiro com planilha
         </h2>
-        <p className="text-white/90 text-lg mb-2 leading-relaxed">
-          Em 10 minutos no WhatsApp você descobre se o sistema resolve a sua dor.
-        </p>
-        <p className="text-white/80 text-base mb-8">
-          Sem compromisso. Sem cartão de crédito. Resposta em minutos.
+        <p className="text-white/90 text-lg mb-8 leading-relaxed">
+          Em 10 minutos no WhatsApp você descobre se o sistema resolve a sua dor. Sem compromisso.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button size="lg" className="bg-white text-primary hover:bg-white/90 gap-2 px-8 h-14 text-base font-semibold"
