@@ -423,12 +423,12 @@ function PillarCard({
   mockup: React.ReactNode;
 }) {
   return (
-    <div className={`landing-glass landing-border-gradient rounded-2xl p-6 sm:p-8 group hover:translate-y-[-2px] transition-transform ${className}`}>
-      <p className="text-[11px] uppercase tracking-[0.16em] text-primary mb-3">{eyebrow}</p>
-      <h3 className="text-xl sm:text-2xl font-semibold tracking-tight">{title}</h3>
+    <div className={`landing-glass landing-border-gradient rounded-2xl p-5 sm:p-8 group hover:translate-y-[-2px] transition-transform ${className}`}>
+      <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.16em] text-primary mb-2 sm:mb-3">{eyebrow}</p>
+      <h3 className="text-lg sm:text-2xl font-semibold tracking-tight">{title}</h3>
       <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-xl">{description}</p>
-      <div className="mt-6 rounded-xl overflow-hidden border border-border" style={{ background: 'hsl(220 16% 96%)' }}>
-        <div className="aspect-[16/10] relative">
+      <div className="mt-5 sm:mt-6 rounded-xl overflow-hidden border border-border" style={{ background: 'hsl(220 16% 96%)' }}>
+        <div className="aspect-[4/3] sm:aspect-[16/10] relative">
           <div className="absolute inset-0">{mockup}</div>
         </div>
       </div>
