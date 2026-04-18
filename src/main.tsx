@@ -1,6 +1,10 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { initPIIStorageGuards } from './lib/piiStorage'
+
+// Inicializa proteção de PII em armazenamento do navegador
+initPIIStorageGuards();
 
 // Patch para prevenir erro "removeChild"/"insertBefore" causado por extensões
 // do navegador (ex: Google Tradutor, Grammarly) que modificam o DOM

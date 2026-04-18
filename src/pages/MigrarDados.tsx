@@ -7,6 +7,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Database, Upload, CheckCircle2, Loader2, AlertTriangle, Calendar, UserX, Plane, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { getPIIData } from "@/lib/piiStorage";
+
+// Helper: lê de sessionStorage (PII) com fallback para localStorage legado
+function readImportData<T = unknown>(key: string): T | null {
+  const fromSession = getPIIData<T>(key);
+  if (fromSession) return fromSession;
+  const legacy = localStorage.getItem(key);
+  if (!legacy) return null;
+  try {
+    return JSON.parse(legacy) as T;
+  } catch {
+    return null;
+  }
+}
 
 interface MigrationResults {
   lojas: { inserted: number; errors: string[] };
@@ -70,37 +84,25 @@ const MigrarDados = () => {
     setResults(null);
 
     try {
-      // Carregar dados do localStorage
-      const profissionaisImportados = localStorage.getItem('profissionaisImportados');
-      const lojasData = localStorage.getItem('lojas');
-      const dadosASO = localStorage.getItem('dadosASO');
-      const dadosBeneficios = localStorage.getItem('dadosBeneficios');
-      const dadosFerias = localStorage.getItem('dadosFerias');
-      const dadosFaltas = localStorage.getItem('dadosFaltas');
-      const dadosAfastamentos = localStorage.getItem('dadosAfastamentos');
+      // Lê dados do cofre temporário (sessionStorage com TTL) com fallback
+      const profissionais = readImportData<any[]>('profissionaisImportados');
+      const lojas = readImportData<any[]>('lojas') ?? [];
+      const parsedASO = readImportData<any>('dadosASO');
+      const parsedBeneficios = readImportData<any>('dadosBeneficios');
+      const parsedFerias = readImportData<any>('dadosFerias');
+      const parsedFaltas = readImportData<any>('dadosFaltas');
+      const parsedAfastamentos = readImportData<any>('dadosAfastamentos');
 
-      if (!profissionaisImportados) {
+      if (!profissionais || profissionais.length === 0) {
         toast.error("Dados não encontrados! Carregue os arquivos Excel primeiro.");
         setMigrating(false);
         return;
       }
 
-      const profissionais = JSON.parse(profissionaisImportados);
-      const lojas = lojasData ? JSON.parse(lojasData) : [];
-      
-      const parsedASO = dadosASO ? JSON.parse(dadosASO) : null;
       const examesASO = parsedASO ? (Array.isArray(parsedASO) ? parsedASO : parsedASO.dados || []) : [];
-      
-      const parsedBeneficios = dadosBeneficios ? JSON.parse(dadosBeneficios) : null;
       const beneficios = parsedBeneficios ? (Array.isArray(parsedBeneficios) ? parsedBeneficios : parsedBeneficios.dados || []) : [];
-      
-      const parsedFerias = dadosFerias ? JSON.parse(dadosFerias) : null;
       const ferias = parsedFerias ? (Array.isArray(parsedFerias) ? parsedFerias : parsedFerias.dados || []) : [];
-      
-      const parsedFaltas = dadosFaltas ? JSON.parse(dadosFaltas) : null;
       const faltas = parsedFaltas ? (Array.isArray(parsedFaltas) ? parsedFaltas : parsedFaltas.dados || []) : [];
-      
-      const parsedAfastamentos = dadosAfastamentos ? JSON.parse(dadosAfastamentos) : null;
       const afastamentos = parsedAfastamentos ? (Array.isArray(parsedAfastamentos) ? parsedAfastamentos : parsedAfastamentos.dados || []) : [];
       
       console.log('Dados para migração:', {
@@ -172,34 +174,21 @@ const MigrarDados = () => {
   };
 
   const verificarDadosLocalStorage = () => {
-    const profissionaisImportados = localStorage.getItem('profissionaisImportados');
-    const lojasData = localStorage.getItem('lojas');
-    const dadosASO = localStorage.getItem('dadosASO');
-    const dadosBeneficios = localStorage.getItem('dadosBeneficios');
-    const dadosFerias = localStorage.getItem('dadosFerias');
-    const dadosFaltas = localStorage.getItem('dadosFaltas');
-    const dadosAfastamentos = localStorage.getItem('dadosAfastamentos');
-
-    const parseData = (data: string | null) => {
+    const countOf = (data: any): number => {
       if (!data) return 0;
-      try {
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed)) return parsed.length;
-        if (parsed.dados && Array.isArray(parsed.dados)) return parsed.dados.length;
-        return 0;
-      } catch {
-        return 0;
-      }
+      if (Array.isArray(data)) return data.length;
+      if (data?.dados && Array.isArray(data.dados)) return data.dados.length;
+      return 0;
     };
 
     return {
-      profissionais: profissionaisImportados ? JSON.parse(profissionaisImportados).length : 0,
-      lojas: lojasData ? JSON.parse(lojasData).length : 0,
-      aso: parseData(dadosASO),
-      beneficios: parseData(dadosBeneficios),
-      ferias: parseData(dadosFerias),
-      faltas: parseData(dadosFaltas),
-      afastamentos: parseData(dadosAfastamentos)
+      profissionais: countOf(readImportData('profissionaisImportados')),
+      lojas: countOf(readImportData('lojas')),
+      aso: countOf(readImportData('dadosASO')),
+      beneficios: countOf(readImportData('dadosBeneficios')),
+      ferias: countOf(readImportData('dadosFerias')),
+      faltas: countOf(readImportData('dadosFaltas')),
+      afastamentos: countOf(readImportData('dadosAfastamentos')),
     };
   };
 

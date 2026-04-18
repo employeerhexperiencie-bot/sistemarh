@@ -240,14 +240,12 @@ export default function UploadFotosLote() {
           .upload(ezpointPath, ezBlob, { upsert: true, contentType: 'image/jpeg' });
         if (up2.error) throw up2.error;
 
-        const { data: u1 } = supabase.storage.from('professional-photos').getPublicUrl(originalPath);
-        const { data: u2 } = supabase.storage.from('professional-photos').getPublicUrl(ezpointPath);
-
+        // Bucket é privado: armazena apenas o path; URLs assinadas são geradas no display.
         const { error: upErr } = await supabase
           .from('profissionais')
           .update({
-            foto_url: u1.publicUrl,
-            foto_ezpoint_url: u2.publicUrl,
+            foto_url: originalPath,
+            foto_ezpoint_url: ezpointPath,
             foto_atualizada_em: new Date().toISOString(),
           })
           .eq('id', prof.id);

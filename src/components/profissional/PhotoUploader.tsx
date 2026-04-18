@@ -65,22 +65,20 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         .upload(ezpointPath, ezpointBlob, { upsert: true, contentType: 'image/jpeg' });
       if (e2) throw e2;
 
-      const { data: u1 } = supabase.storage.from('professional-photos').getPublicUrl(originalPath);
-      const { data: u2 } = supabase.storage.from('professional-photos').getPublicUrl(ezpointPath);
-
+      // Bucket é privado: armazenamos apenas o path. URLs assinadas são geradas no display.
       // 3) Atualiza registro do profissional
       const { error: e3 } = await supabase
         .from('profissionais')
         .update({
-          foto_url: u1.publicUrl,
-          foto_ezpoint_url: u2.publicUrl,
+          foto_url: originalPath,
+          foto_ezpoint_url: ezpointPath,
           foto_atualizada_em: new Date().toISOString(),
         })
         .eq('id', profissionalId);
       if (e3) throw e3;
 
       toast({ title: 'Foto atualizada', description: 'Original + versão Ezpoint geradas.' });
-      onUploaded?.({ fotoUrl: u1.publicUrl, fotoEzpointUrl: u2.publicUrl });
+      onUploaded?.({ fotoUrl: originalPath, fotoEzpointUrl: ezpointPath });
     } catch (err: any) {
       toast({ title: 'Erro ao enviar foto', description: err?.message || 'Tente novamente', variant: 'destructive' });
     } finally {

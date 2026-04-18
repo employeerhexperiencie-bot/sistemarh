@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileSpreadsheet, Check, AlertCircle, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { setPIIData, getPIIData, removePIIData } from '@/lib/piiStorage';
 
 export default function CarregarDadosAdicionais() {
   const [loadingASO, setLoadingASO] = useState(false);
@@ -16,11 +17,11 @@ export default function CarregarDadosAdicionais() {
 
   // Carregar status dos dados ao montar o componente
   useState(() => {
-    const asoData = localStorage.getItem('dadosASO');
-    const beneficiosData = localStorage.getItem('dadosBeneficios');
-    const asoTime = localStorage.getItem('dadosASO_timestamp');
-    const beneficiosTime = localStorage.getItem('dadosBeneficios_timestamp');
-    
+    const asoData = getPIIData<unknown[]>('dadosASO');
+    const beneficiosData = getPIIData<unknown[]>('dadosBeneficios');
+    const asoTime = getPIIData<string>('dadosASO_timestamp');
+    const beneficiosTime = getPIIData<string>('dadosBeneficios_timestamp');
+
     if (asoData) {
       setStatusASO('loaded');
       setTimestampASO(asoTime);
@@ -95,9 +96,11 @@ export default function CarregarDadosAdicionais() {
       console.log('Registros ASO processados:', dadosASO.length);
       console.log('Exemplo de registro:', dadosASO[0]);
       
-      localStorage.setItem('dadosASO', JSON.stringify(dadosASO));
-      localStorage.setItem('dadosASO_timestamp', new Date().toISOString());
+      const ts = new Date().toISOString();
+      setPIIData('dadosASO', dadosASO);
+      setPIIData('dadosASO_timestamp', ts);
       setStatusASO('loaded');
+      setTimestampASO(ts);
       toast.success(`✅ ${dadosASO.length} registros de ASO carregados com sucesso!`);
     } catch (error) {
       console.error('Erro ao carregar ASO:', error);
@@ -182,9 +185,11 @@ export default function CarregarDadosAdicionais() {
       console.log('Registros Benefícios processados:', dadosBeneficios.length);
       console.log('Exemplo de registro:', dadosBeneficios[0]);
       
-      localStorage.setItem('dadosBeneficios', JSON.stringify(dadosBeneficios));
-      localStorage.setItem('dadosBeneficios_timestamp', new Date().toISOString());
+      const ts = new Date().toISOString();
+      setPIIData('dadosBeneficios', dadosBeneficios);
+      setPIIData('dadosBeneficios_timestamp', ts);
       setStatusBeneficios('loaded');
+      setTimestampBeneficios(ts);
       toast.success(`✅ ${dadosBeneficios.length} registros de Benefícios carregados com sucesso!`);
     } catch (error) {
       console.error('Erro ao carregar Benefícios:', error);
@@ -201,10 +206,17 @@ export default function CarregarDadosAdicionais() {
   };
 
   const limparDados = () => {
+    removePIIData('dadosASO');
+    removePIIData('dadosASO_timestamp');
+    removePIIData('dadosBeneficios');
+    removePIIData('dadosBeneficios_timestamp');
+    // Limpa também eventuais resquícios em localStorage
     localStorage.removeItem('dadosASO');
     localStorage.removeItem('dadosBeneficios');
     setStatusASO('idle');
     setStatusBeneficios('idle');
+    setTimestampASO(null);
+    setTimestampBeneficios(null);
     toast.success('Dados adicionais removidos');
   };
 
