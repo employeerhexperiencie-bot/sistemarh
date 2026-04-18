@@ -653,6 +653,25 @@ export const CadastroProfissionais: React.FC = () => {
         operacao: formData.operacao || null,
       };
 
+      // Buscar tenant_id do usuário atual (RLS exige esse campo no insert/update)
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('tenant_id')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      if (!roleData?.tenant_id) {
+        toast({
+          title: "Erro",
+          description: "Tenant não encontrado. Faça login novamente.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      const professionalDataComTenant = { ...professionalData, tenant_id: roleData.tenant_id };
+
       if (editingProfessional) {
         const p = editingProfessional as any;
         // Detectar alterações salariais separadamente
@@ -666,7 +685,7 @@ export const CadastroProfissionais: React.FC = () => {
 
         const { error } = await supabase
           .from('profissionais')
-          .update(professionalData)
+          .update(professionalDataComTenant)
           .eq('id', editingProfessional.id);
 
         if (error) throw error;
@@ -734,7 +753,7 @@ export const CadastroProfissionais: React.FC = () => {
 
         const { error } = await supabase
           .from('profissionais')
-          .insert([professionalData]);
+          .insert([professionalDataComTenant]);
 
         if (error) throw error;
 
