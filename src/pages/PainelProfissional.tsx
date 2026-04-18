@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, TrendingUp, FileText, Filter, CreditCard, DollarSign, FolderOpen, History, Loader2, ArrowLeft, Calendar, Bus, Utensils, ShoppingBasket, Banknote, Clock } from 'lucide-react';
 import { EmprestimosTimeline } from '@/components/EmprestimosTimeline';
 import { ProfissionalTimeline } from '@/components/ProfissionalTimeline';
+import { FeriasProfissional } from '@/components/profissional/FeriasProfissional';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -353,6 +354,9 @@ export default function PainelProfissional() {
 
         {/* Empréstimos - Timeline Específica */}
         <EmprestimosTimeline profissionalId={p.id} profissionalNome={p.nome} />
+
+        {/* Férias - Períodos do profissional */}
+        <FeriasProfissional profissionalId={p.id} />
 
         {/* Informações de Contato */}
         <Card>

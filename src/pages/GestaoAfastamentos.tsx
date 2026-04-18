@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUploader } from '@/components/FileUploader';
-import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2, Trash2 } from 'lucide-react';
+import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2, Trash2, Search } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -45,6 +45,8 @@ export default function GestaoAfastamentos() {
   const [editingAfastamento, setEditingAfastamento] = useState<Afastamento | null>(null);
   const [formData, setFormData] = useState<Partial<Afastamento>>({ status: 'ATIVO' });
   const [saving, setSaving] = useState(false);
+  const [filterLoja, setFilterLoja] = useState<string>('todas');
+  const [searchTerm, setSearchTerm] = useState('');
   const { addLog } = useAuditLog();
 
   useEffect(() => {
@@ -267,10 +269,24 @@ export default function GestaoAfastamentos() {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const ativos = afastamentos.filter(a => a.status === 'ATIVO').length;
-  const aguardandoPericia = afastamentos.filter(a => a.status === 'AGUARDANDO_PERICIA').length;
-  const finalizados = afastamentos.filter(a => a.status === 'FINALIZADO').length;
-  const maternidade = afastamentos.filter(a => a.motivo === 'LICENCA_MATERNIDADE' && a.status === 'ATIVO').length;
+  // Lojas únicas para o dropdown de filtro
+  const lojasDisponiveis = Array.from(
+    new Set(afastamentos.map(a => a.loja).filter(l => l && l !== 'Loja não definida'))
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+  // Aplica filtros (loja + busca por nome) a todos os contadores e à listagem
+  const afastamentosFiltrados = afastamentos.filter(a => {
+    const matchLoja = filterLoja === 'todas' || a.loja === filterLoja;
+    const matchSearch = searchTerm.trim() === '' ||
+      a.nome.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+      a.matricula.toLowerCase().includes(searchTerm.toLowerCase().trim());
+    return matchLoja && matchSearch;
+  });
+
+  const ativos = afastamentosFiltrados.filter(a => a.status === 'ATIVO').length;
+  const aguardandoPericia = afastamentosFiltrados.filter(a => a.status === 'AGUARDANDO_PERICIA').length;
+  const finalizados = afastamentosFiltrados.filter(a => a.status === 'FINALIZADO').length;
+  const maternidade = afastamentosFiltrados.filter(a => a.motivo === 'LICENCA_MATERNIDADE' && a.status === 'ATIVO').length;
 
   if (loading) {
     return (
@@ -487,7 +503,38 @@ export default function GestaoAfastamentos() {
         <CardHeader>
           <CardTitle>Controle de Afastamentos</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="space-y-4 overflow-x-auto">
+          {/* Filtros: loja + busca por nome */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1 sm:col-span-1">
+              <Label htmlFor="filtroLoja" className="text-xs">Filtrar por loja</Label>
+              <Select value={filterLoja} onValueChange={setFilterLoja}>
+                <SelectTrigger id="filtroLoja">
+                  <SelectValue placeholder="Todas as lojas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as lojas</SelectItem>
+                  {lojasDisponiveis.map(loja => (
+                    <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="buscaNome" className="text-xs">Buscar por nome ou matrícula</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="buscaNome"
+                  placeholder="Digite para filtrar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
@@ -502,14 +549,16 @@ export default function GestaoAfastamentos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {afastamentos.length === 0 ? (
+              {afastamentosFiltrados.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Nenhum afastamento registrado
+                    {afastamentos.length === 0
+                      ? 'Nenhum afastamento registrado'
+                      : 'Nenhum colaborador encontrado para o filtro selecionado.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                [...afastamentos]
+                [...afastamentosFiltrados]
                   .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'))
                   .map((afastamento) => (
                   <TableRow key={afastamento.id}>
