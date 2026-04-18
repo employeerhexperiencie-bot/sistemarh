@@ -21,8 +21,14 @@ const arredondarValor = (valor: number): number => {
   return centavos >= 0.50 ? Math.ceil(valor) : Math.floor(valor);
 };
 
+// Formato R$ inteiro (sem centavos) - decisão de produto p/ adiantamentos
 const formatCurrency = (value: number): string => {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Math.round(value).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 };
 
 interface ProfissionalAdiantamento {
