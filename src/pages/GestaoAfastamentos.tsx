@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUploader } from '@/components/FileUploader';
-import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2 } from 'lucide-react';
+import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
@@ -173,6 +174,32 @@ export default function GestaoAfastamentos() {
     setEditingAfastamento(afastamento);
     setFormData(afastamento);
     setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (afastamento: Afastamento) => {
+    try {
+      const { error } = await supabase
+        .from('afastamentos')
+        .delete()
+        .eq('id', afastamento.id);
+
+      if (error) throw error;
+
+      addLog({
+        usuario: 'Sistema',
+        acao: 'EXCLUIR',
+        modulo: 'AFASTAMENTOS',
+        entidade: afastamento.nome,
+        detalhes: `Afastamento de "${afastamento.nome}" excluído`,
+        metadata: { id: afastamento.id }
+      });
+
+      toast.success('Afastamento excluído com sucesso!');
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao excluir afastamento:', error);
+      toast.error(error?.message || 'Erro ao excluir afastamento');
+    }
   };
 
   const handleCloseDialog = () => {
@@ -464,9 +491,35 @@ export default function GestaoAfastamentos() {
                     </TableCell>
                     <TableCell>{getStatusBadge(afastamento.status)}</TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => handleEdit(afastamento)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => handleEdit(afastamento)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir afastamento?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. O afastamento de <strong>{afastamento.nome}</strong> ({afastamento.matricula}) será removido permanentemente.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(afastamento)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
