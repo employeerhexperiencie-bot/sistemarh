@@ -107,17 +107,24 @@ export default function Holerites() {
   }, [holerites]);
   
   const holeritesFiltrados = useMemo(() => {
-    return holerites.filter(h => {
-      if (lojaFiltro !== 'todas' && h.loja !== lojaFiltro) return false;
-      if (searchTerm && !h.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !h.matricula.includes(searchTerm)) return false;
-      return true;
-    });
+    return holerites
+      .filter(h => {
+        if (lojaFiltro !== 'todas' && h.loja !== lojaFiltro) return false;
+        if (searchTerm && !h.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !h.matricula.includes(searchTerm)) return false;
+        return true;
+      })
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
   }, [holerites, lojaFiltro, searchTerm]);
   
-  const lojas = useMemo(() => [...new Set(holerites.map(h => h.loja))], [holerites]);
+  const lojas = useMemo(() => [...new Set(holerites.map(h => h.loja))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [holerites]);
   
   const formatCurrency = (value: number): string => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return Math.round(value).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
   };
 
   const exportarGerencialCSV = () => {
@@ -139,14 +146,28 @@ export default function Holerites() {
         escape(h.matricula),
         escape(h.nome),
         escape(h.loja),
-        h.salario.toFixed(2).replace('.', ','),
-        dia20.toFixed(2).replace('.', ','),
-        dia5.toFixed(2).replace('.', ','),
-        h.salario.toFixed(2).replace('.', ','),
+        Math.round(h.salario).toString(),
+        Math.round(dia20).toString(),
+        Math.round(dia5).toString(),
+        Math.round(h.salario).toString(),
       ].join(';');
     });
 
-    const csv = '\uFEFF' + [headers.join(';'), ...linhas].join('\n');
+    // Linha de totais
+    const totalSalarios = holeritesFiltrados.reduce((s, h) => s + h.salario, 0);
+    const totalDia20 = Math.round(totalSalarios * 0.4);
+    const totalDia5 = totalSalarios - totalDia20;
+    const linhaTotais = [
+      `"TOTAL (${holeritesFiltrados.length} funcionários)"`,
+      '""',
+      '""',
+      Math.round(totalSalarios).toString(),
+      Math.round(totalDia20).toString(),
+      Math.round(totalDia5).toString(),
+      Math.round(totalSalarios).toString(),
+    ].join(';');
+
+    const csv = '\uFEFF' + [headers.join(';'), ...linhas, linhaTotais].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
