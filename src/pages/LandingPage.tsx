@@ -12,6 +12,11 @@ import {
   DashboardMockup, FolhaMockup, CadastroMockup, BeneficiosMockup,
 } from '@/components/landing/SystemMockup';
 
+import gestoraRH from '@/assets/landing-gestora-rh.jpg';
+import equipeVarejo from '@/assets/landing-equipe-varejo.jpg';
+import suporteHumano from '@/assets/landing-suporte-humano.jpg';
+import empresariaAliviada from '@/assets/landing-empresaria-aliviada.jpg';
+
 // ============ CONSTANTS ============
 const WHATSAPP_NUMBER = '5511953340284';
 const WHATSAPP_MESSAGE = encodeURIComponent(
@@ -588,6 +593,91 @@ function Modules() {
   );
 }
 
+// ============ HUMAN STORIES (relacionamento + identidade) ============
+function HumanStories() {
+  const stories = [
+    {
+      img: gestoraRH,
+      eyebrow: 'Gestores de RH',
+      title: 'Mais tempo com gente. Menos com planilha.',
+      desc: 'Quem cuida do RH não foi contratado para fechar 14 abas do Excel. Devolvemos as horas — e a tranquilidade — para quem realmente importa.',
+      stat: '–95%',
+      statLabel: 'tempo gasto com folha',
+    },
+    {
+      img: equipeVarejo,
+      eyebrow: 'Equipes de loja',
+      title: 'Ponto, holerite e benefícios na palma da mão.',
+      desc: 'O colaborador da ponta não precisa ligar para o RH. Bate o ponto facial, recebe o holerite no app e acompanha tudo com clareza.',
+      stat: '0',
+      statLabel: 'fila no RH no dia 5',
+    },
+    {
+      img: empresariaAliviada,
+      eyebrow: 'Donos & sócios',
+      title: 'Folha sob controle. Dorme em paz.',
+      desc: 'Você sabe, em tempo real, quanto vai sair, para quem, quando — e o que pode pegar fogo na conformidade. Sem surpresa no dia 30.',
+      stat: '24h',
+      statLabel: 'pra começar a usar',
+    },
+  ];
+
+  return (
+    <section className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border relative overflow-hidden">
+      <div className="absolute -top-20 right-0 w-[40vw] h-[400px] bg-primary/15 rounded-full blur-[140px] pointer-events-none" />
+      <div className="max-w-6xl mx-auto relative">
+        <SectionHeader
+          eyebrow="Feito para gente"
+          title={<>Por trás de cada folha,<br/><span className="landing-text-gradient">pessoas reais.</span></>}
+          subtitle="Não vendemos software. Devolvemos tempo, tranquilidade e clareza para quem cuida de pessoas todos os dias."
+        />
+
+        <div className="mt-16 space-y-10">
+          {stories.map((s, i) => (
+            <div
+              key={i}
+              className={`grid lg:grid-cols-12 gap-8 items-center ${
+                i % 2 === 1 ? 'lg:[&>*:first-child]:order-2' : ''
+              }`}
+            >
+              {/* Image */}
+              <div className="lg:col-span-6">
+                <div className="relative landing-border-gradient rounded-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent z-10 pointer-events-none" />
+                  <img
+                    src={s.img}
+                    alt={s.title}
+                    loading="lazy"
+                    width={1280}
+                    height={1280}
+                    className="w-full h-[360px] sm:h-[440px] object-cover"
+                  />
+                  {/* Floating stat */}
+                  <div className="absolute bottom-4 left-4 landing-glass rounded-xl px-4 py-3 z-20">
+                    <p className="text-2xl font-semibold text-foreground tracking-tight">{s.stat}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.statLabel}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Text */}
+              <div className="lg:col-span-6">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-primary mb-3">{s.eyebrow}</p>
+                <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-tight">{s.title}</h3>
+                <p className="mt-4 text-base text-muted-foreground leading-relaxed">{s.desc}</p>
+                <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  Validado com clientes do varejo brasileiro
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ============ HOW IT WORKS ============
 function HowItWorks() {
   const steps = [
@@ -604,14 +694,44 @@ function HowItWorks() {
           title={<>De planilha para sistema <br /> em <span className="landing-text-gradient">24 horas.</span></>}
         />
 
-        <div className="mt-14 grid md:grid-cols-3 gap-4">
-          {steps.map((s, i) => (
-            <div key={i} className="relative landing-glass rounded-2xl p-7">
-              <div className="text-5xl font-semibold text-primary/30 tracking-tight mb-4">{s.n}</div>
-              <h3 className="text-lg font-semibold">{s.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+        <div className="mt-14 grid lg:grid-cols-12 gap-8 items-center">
+          {/* Steps */}
+          <div className="lg:col-span-7 grid sm:grid-cols-1 gap-3">
+            {steps.map((s, i) => (
+              <div key={i} className="relative landing-glass rounded-2xl p-6 flex gap-5 items-start">
+                <div className="text-4xl font-semibold text-primary/30 tracking-tight shrink-0 w-14">{s.n}</div>
+                <div>
+                  <h3 className="text-lg font-semibold">{s.title}</h3>
+                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Human support image */}
+          <div className="lg:col-span-5">
+            <div className="relative landing-border-gradient rounded-2xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent z-10 pointer-events-none" />
+              <img
+                src={suporteHumano}
+                alt="Suporte humano por WhatsApp respondendo em minutos"
+                loading="lazy"
+                width={1280}
+                height={1280}
+                className="w-full h-[420px] object-cover"
+              />
+              <div className="absolute bottom-5 left-5 right-5 z-20">
+                <div className="landing-glass rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                    <p className="text-[10px] uppercase tracking-wider text-success">Online agora</p>
+                  </div>
+                  <p className="text-sm font-medium text-foreground">Gente de verdade no WhatsApp.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Sem bot, sem URA, sem ticket que some.</p>
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
 
         <div className="mt-10 flex justify-center">
@@ -852,6 +972,7 @@ export default function LandingPage() {
         <Plataforma />
         <FeaturesBento />
         <Differentiators />
+        <HumanStories />
         <Modules />
         <HowItWorks />
         <StatsBar />
