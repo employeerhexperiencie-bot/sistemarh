@@ -240,15 +240,15 @@ function LiveMockupCarousel() {
         </div>
 
         {/* Stack of mockups, cross-fading */}
-        <div className="relative aspect-[16/10]" style={{ background: 'hsl(220 16% 96%)' }}>
+        <div className="relative aspect-[4/3] sm:aspect-[16/10]" style={{ background: 'hsl(220 16% 96%)' }}>
           {screens.map((Screen, i) => (
             <div
               key={i}
               className="landing-mockup-frame"
               style={{ animationDelay: `${i * 4}s`, animationDuration: '16s' }}
             >
-              <div className="absolute inset-0 p-3 sm:p-4">
-                <div className="w-full h-full rounded-xl overflow-hidden">
+              <div className="absolute inset-0 p-2 sm:p-4">
+                <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden">
                   <Screen />
                 </div>
               </div>
