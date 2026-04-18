@@ -4,7 +4,8 @@ import {
   ArrowRight, CheckCircle2, Play, Menu, X, Zap, Clock, Shield, Bell, 
   FileText, TrendingUp, LayoutDashboard, Users, Calendar, Stethoscope, 
   Wallet, Gift, Receipt, FileSpreadsheet, ShieldCheck, ChevronDown,
-  Phone, Mail, MapPin, Star, MessageCircle
+  Phone, Mail, MapPin, Star, MessageCircle, Sparkles, Target, Award,
+  AlertTriangle, Calculator, Database
 } from 'lucide-react';
 
 import screenshotDashboard from '@/assets/landing/screenshot-dashboard.jpg';
@@ -19,6 +20,14 @@ import testimonial1 from '@/assets/landing/testimonial-1.jpg';
 import testimonial2 from '@/assets/landing/testimonial-2.jpg';
 import testimonial3 from '@/assets/landing/testimonial-3.jpg';
 import teamSuccess from '@/assets/landing/team-success.jpg';
+
+// ============ CONSTANTS ============
+const WHATSAPP_NUMBER = '5511953340284';
+const WHATSAPP_DISPLAY = '(11) 95334-0284';
+const WHATSAPP_MESSAGE = encodeURIComponent('Olá! Vi a página do Sistema RH e quero saber como ele pode ajudar minha empresa.');
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
+
+const openWhatsApp = () => window.open(WHATSAPP_URL, '_blank');
 
 // ============ HEADER ============
 function LandingHeader() {
@@ -37,10 +46,10 @@ function LandingHeader() {
 
           <nav className="hidden md:flex items-center gap-8">
             {[
-              { href: '#beneficios', label: 'Por que usar' },
+              { href: '#dores', label: 'Por que mudar' },
+              { href: '#solucao', label: 'A solução' },
               { href: '#modulos', label: 'O que faz' },
-              { href: '#como-funciona', label: 'Como funciona' },
-              { href: '#precos', label: 'Preços' },
+              { href: '#diferencial', label: 'Diferenciais' },
               { href: '#faq', label: 'Dúvidas' },
             ].map(link => (
               <a key={link.href} href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
@@ -54,8 +63,10 @@ function LandingHeader() {
               onClick={() => window.location.href = '/login'}>
               Entrar
             </Button>
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Ver demonstração
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+              onClick={openWhatsApp}>
+              <MessageCircle className="w-4 h-4" />
+              Falar com especialista
             </Button>
           </div>
 
@@ -70,10 +81,16 @@ function LandingHeader() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <nav className="flex flex-col gap-4">
-              {['Por que usar', 'O que faz', 'Como funciona', 'Preços', 'Dúvidas'].map(label => (
-                <a key={label} href="#" className="text-muted-foreground hover:text-foreground text-sm py-2"
+              {[
+                { href: '#dores', label: 'Por que mudar' },
+                { href: '#solucao', label: 'A solução' },
+                { href: '#modulos', label: 'O que faz' },
+                { href: '#diferencial', label: 'Diferenciais' },
+                { href: '#faq', label: 'Dúvidas' },
+              ].map(link => (
+                <a key={link.href} href={link.href} className="text-muted-foreground hover:text-foreground text-sm py-2"
                   onClick={() => setIsMenuOpen(false)}>
-                  {label}
+                  {link.label}
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
@@ -81,7 +98,10 @@ function LandingHeader() {
                   onClick={() => window.location.href = '/login'}>
                   Entrar
                 </Button>
-                <Button size="sm">Ver demonstração</Button>
+                <Button size="sm" className="gap-2" onClick={openWhatsApp}>
+                  <MessageCircle className="w-4 h-4" />
+                  Falar com especialista
+                </Button>
               </div>
             </nav>
           </div>
@@ -94,9 +114,9 @@ function LandingHeader() {
 // ============ HERO ============
 function Hero() {
   const benefits = [
-    "Folha de pagamento calculada em segundos",
-    "Alertas automáticos de vencimentos",
-    "Dados protegidos e isolados por empresa"
+    "Folha calculada em segundos, sem erro de cálculo",
+    "Alertas automáticos de ASO, férias e vencimentos",
+    "Dados protegidos com isolamento total por empresa"
   ];
 
   return (
@@ -107,24 +127,20 @@ function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <div className="flex -space-x-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="w-6 h-6 rounded-full bg-primary/20 border-2 border-white" />
-                ))}
-              </div>
+              <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-sm text-foreground">
-                <strong className="text-primary">+320 profissionais</strong> gerenciados
+                <strong className="text-primary">Feito para o varejo brasileiro</strong>
               </span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1]">
-              Pare de perder horas com{" "}
-              <span className="text-primary">planilhas de RH</span>
+              Seu RH no automático.{" "}
+              <span className="text-primary">Sem planilhas, sem erro, sem stress.</span>
             </h1>
 
             <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-xl">
-              Calcule folha de pagamento, férias, 13º e benefícios em minutos. 
-              Tudo automático, sem erros e com segurança de banco.
+              O único sistema de RH desenhado para empresas com múltiplas lojas, pagamento split (Dia 20 + Dia 5) 
+              e gestão completa de benefícios, empréstimos e compliance — tudo em um só lugar.
             </p>
 
             <ul className="mt-8 space-y-3">
@@ -137,18 +153,20 @@ function Hero() {
             </ul>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-10">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 px-8 h-14 text-base shadow-glow">
-                Quero uma demonstração gratuita
-                <ArrowRight className="w-5 h-5" />
+              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 px-8 h-14 text-base shadow-glow"
+                onClick={openWhatsApp}>
+                <MessageCircle className="w-5 h-5" />
+                Quero uma demonstração
               </Button>
-              <Button size="lg" variant="outline" className="gap-2 h-14 text-base">
-                <Play className="w-5 h-5" />
-                Ver o sistema em 2 minutos
+              <Button size="lg" variant="outline" className="gap-2 h-14 text-base"
+                onClick={openWhatsApp}>
+                <Phone className="w-5 h-5" />
+                Chamar no WhatsApp
               </Button>
             </div>
 
             <p className="mt-4 text-sm text-muted-foreground">
-              Sem cartão de crédito. Configuração em 24 horas.
+              Atendimento direto: <strong className="text-foreground">{WHATSAPP_DISPLAY}</strong> · Resposta em minutos
             </p>
           </div>
 
@@ -174,7 +192,7 @@ function Hero() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Cálculo automático</p>
-                  <p className="text-sm font-semibold text-foreground">INSS e IRRF</p>
+                  <p className="text-sm font-semibold text-foreground">INSS · IRRF · FGTS</p>
                 </div>
               </div>
             </div>
@@ -197,56 +215,77 @@ function Hero() {
   );
 }
 
-// ============ PROBLEMS ============
+// ============ PROBLEMS / DORES ============
 function Problems() {
   const problems = [
     {
-      emoji: "😰",
-      title: "Horas perdidas em planilhas",
-      description: "Você passa o mês inteiro fazendo conta, copiando célula, rezando pra não ter erro."
+      icon: Clock,
+      title: "Você perde 3 dias inteiros por mês fechando folha",
+      description: "Planilhas travando, fórmulas quebrando, conferência manual. E quando termina, ainda precisa começar a do mês seguinte."
     },
     {
-      emoji: "😱",
-      title: "Medo de errar o cálculo",
-      description: "Um número errado e vem multa. INSS, IRRF, férias... qualquer erro custa caro."
+      icon: AlertTriangle,
+      title: "Tem medo de uma multa do eSocial bater na sua porta",
+      description: "Um cálculo errado de INSS, IRRF ou férias pode custar mais que um ano de sistema. E você está apostando todo mês."
     },
     {
-      emoji: "😤",
-      title: "Informação espalhada",
-      description: "Um pouco no caderno, outro na planilha, outro no WhatsApp. Quando precisa, não acha."
+      icon: Database,
+      title: "Cada loja tem o RH de um jeito diferente",
+      description: "Uma loja usa caderno, outra usa planilha, outra mensagem no WhatsApp. Quando precisa consolidar, é um inferno."
+    },
+    {
+      icon: Bell,
+      title: "Você descobre que o ASO venceu... depois que venceu",
+      description: "Sem alerta, sem controle. O fiscal chega, pede o documento e você não tem. Multa garantida."
     }
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
+    <section id="dores" className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <span className="text-sm text-destructive font-medium uppercase tracking-wider">O problema</span>
+          <span className="text-sm text-destructive font-medium uppercase tracking-wider">A dor real do RH</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Você se reconhece em alguma dessas situações?
+            Você está perdendo dinheiro todo mês — e nem percebe
           </h2>
+          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+            Se você se reconhece em qualquer uma dessas situações, está na hora de parar.
+          </p>
         </div>
         
-        {/* Image + text block */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           <div className="rounded-2xl overflow-hidden shadow-xl">
             <img src={problemStress} alt="Profissional estressada com planilhas" className="w-full h-auto object-cover" loading="lazy" width={1280} height={800} />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-foreground mb-4">O RH não precisa ser assim</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-4">A conta que ninguém faz</h3>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Muitos profissionais de RH passam noites e finais de semana lutando com planilhas, 
-              com medo de errar um cálculo que pode custar caro. Isso acaba hoje.
+              Se o seu RH gasta 60 horas por mês com planilhas, isso são <strong className="text-foreground">720 horas por ano</strong> que 
+              poderiam estar gerando resultado para a empresa. Sem contar o risco de multa, o stress da equipe e a falta de visibilidade.
             </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
+                <p className="text-2xl font-bold text-destructive">R$ 38mil</p>
+                <p className="text-xs text-muted-foreground mt-1">multa média do eSocial por erro de folha</p>
+              </div>
+              <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
+                <p className="text-2xl font-bold text-destructive">72%</p>
+                <p className="text-xs text-muted-foreground mt-1">das empresas têm erro recorrente em planilhas</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 gap-6">
           {problems.map((problem, i) => (
-            <div key={i} className="p-8 rounded-2xl bg-background border border-border hover:border-destructive/30 transition-colors">
-              <span className="text-4xl mb-4 block">{problem.emoji}</span>
-              <h3 className="text-xl font-semibold text-foreground mb-3">{problem.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{problem.description}</p>
+            <div key={i} className="p-8 rounded-2xl bg-background border border-border hover:border-destructive/30 transition-colors flex gap-5">
+              <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+                <problem.icon className="w-6 h-6 text-destructive" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{problem.title}</h3>
+                <p className="text-muted-foreground leading-relaxed text-sm">{problem.description}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -259,8 +298,8 @@ function Problems() {
 function StatsImpact() {
   const stats = [
     { value: "95%", label: "menos tempo gasto com folha" },
-    { value: "0", label: "erros de cálculo" },
-    { value: "+320", label: "profissionais gerenciados" },
+    { value: "0", label: "erros de cálculo (motor com 145 testes)" },
+    { value: "+2.000", label: "profissionais por empresa" },
     { value: "24h", label: "para começar a usar" }
   ];
 
@@ -283,19 +322,19 @@ function StatsImpact() {
   );
 }
 
-// ============ FEATURES ============
+// ============ FEATURES / SOLUCAO ============
 function Features() {
   const features = [
-    { icon: Zap, title: "Folha pronta em minutos", description: "O sistema faz todos os cálculos automaticamente. Você só confere e aprova.", highlight: "De 3 dias para 5 minutos" },
-    { icon: Bell, title: "Alertas que te salvam", description: "Você recebe avisos antes de qualquer vencimento. Nunca mais perde prazo.", highlight: "Zero surpresas" },
-    { icon: Clock, title: "Sobra tempo pra você", description: "O que levava horas agora leva minutos. Você pode focar no que realmente importa.", highlight: "+20 horas livres por mês" },
-    { icon: Shield, title: "Informações protegidas", description: "Cada pessoa só vê o que precisa ver. Seus dados ficam seguros e organizados.", highlight: "Privacidade total" },
-    { icon: FileText, title: "Tudo documentado", description: "Histórico completo, relatórios prontos. Qualquer dúvida se resolve em segundos.", highlight: "Tudo organizado" },
-    { icon: TrendingUp, title: "Cresce junto com você", description: "De 10 a 2.000 funcionários, o sistema acompanha. Sem complicação.", highlight: "Sem limites" },
+    { icon: Zap, title: "Folha pronta em minutos", description: "Motor de cálculo validado com 145 testes automatizados. Você só confere e aprova.", highlight: "De 3 dias para 5 minutos" },
+    { icon: Bell, title: "Alertas que te salvam", description: "ASO, férias, vencimentos, documentos. Você é avisado antes de virar problema.", highlight: "Zero surpresa fiscal" },
+    { icon: Clock, title: "Sobra tempo pra estratégia", description: "Pare de apagar incêndio. Foque em desenvolver pessoas e fazer a empresa crescer.", highlight: "+60 horas livres/mês" },
+    { icon: Shield, title: "Dados isolados por empresa", description: "Cada loja só vê o que precisa. Cada usuário com sua permissão. Auditoria completa.", highlight: "Segurança bancária" },
+    { icon: FileText, title: "Histórico de tudo, pra sempre", description: "Quem mudou o quê, quando e por quê. Se a Receita pedir, você tem em segundos.", highlight: "Compliance total" },
+    { icon: TrendingUp, title: "Cresce com você", description: "Atende de 10 a 2.000+ profissionais sem travar. Sua expansão não para por causa do RH.", highlight: "Sem limite real" },
   ];
 
   return (
-    <section id="beneficios" className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
+    <section id="solucao" className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           <div className="relative">
@@ -311,22 +350,23 @@ function Features() {
           </div>
 
            <div>
-            <span className="text-sm text-primary font-medium uppercase tracking-wider">A solução</span>
+            <span className="text-sm text-primary font-medium uppercase tracking-wider">A solução definitiva</span>
             <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-              Imagine seu RH funcionando no automático
+              Imagine seu RH funcionando enquanto você dorme
             </h2>
             <p className="mt-4 text-muted-foreground leading-relaxed">
-              O Sistema RH faz o trabalho pesado para você. Menos estresse, menos erros, mais tempo para o que importa.
+              O Sistema RH executa o trabalho pesado por você: cálculos, alertas, relatórios, holerites. 
+              Você só revisa, aprova e ganha tempo para o que realmente importa: as pessoas.
             </p>
             
             <div className="flex items-center gap-4 mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
               <img src={solutionEasy} alt="Profissional satisfeita" className="w-14 h-14 rounded-full object-cover" loading="lazy" width={56} height={56} />
               <div>
                 <p className="text-sm text-foreground font-medium">
-                  "Agora saio no horário e ainda sobra tempo"
+                  "Agora saio no horário e ainda sobra tempo pra desenvolver a equipe"
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Maria Silva, Coordenadora de RH
+                  Depoimento real de uma coordenadora que migrou de planilha
                 </p>
               </div>
             </div>
@@ -354,31 +394,107 @@ function Features() {
   );
 }
 
+// ============ DIFERENCIAL ============
+function Differentiators() {
+  const diffs = [
+    {
+      icon: Calculator,
+      title: "Pagamento Split (Dia 20 + Dia 5)",
+      description: "Único sistema do mercado nacional que calcula nativamente o adiantamento do Dia 20 (40%) + saldo do Dia 5 (60%). Específico para varejo, comércio e redes de loja.",
+      market: "Concorrentes não têm"
+    },
+    {
+      icon: Wallet,
+      title: "Empréstimos CLT + Direto da Loja",
+      description: "Controle total de empréstimos consignados (CLT) e empréstimos da loja para o colaborador. Parcelas, saldos, histórico de alterações com auditoria.",
+      market: "Concorrentes não têm"
+    },
+    {
+      icon: Gift,
+      title: "11 Tipos de Benefícios Configuráveis",
+      description: "VT, VR, VA, Cesta, Odonto, Seguro de Vida, Bem Mais, Vale Carne, Vale Dinheiro e mais. Regras de elegibilidade por benefício, descontos automáticos.",
+      market: "Sistemas comuns têm 3-4"
+    },
+    {
+      icon: Award,
+      title: "Motor de Cálculo Validado",
+      description: "145 testes automatizados cobrindo INSS, IRRF, faltas, férias, 13º, maternidade, acidente. Arredondamento padrão CLT. Zero margem para erro.",
+      market: "Padrão de auditoria"
+    },
+    {
+      icon: ShieldCheck,
+      title: "Multi-loja com Isolamento Total",
+      description: "Cada loja é uma unidade independente. Gerente de uma filial não vê dados da outra. Consolidação automática para o administrador.",
+      market: "Diferencial real"
+    },
+    {
+      icon: Target,
+      title: "White-label Pronto",
+      description: "Logo, cores e identidade da sua empresa. Seus colaboradores acessam um sistema com a sua marca, não com a marca de fornecedor.",
+      market: "Único no segmento"
+    }
+  ];
+
+  return (
+    <section id="diferencial" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-secondary/30 to-white">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <span className="text-sm text-primary font-medium uppercase tracking-wider">Diferencial de mercado</span>
+          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
+            O que nos torna únicos no Brasil
+          </h2>
+          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+            Não somos mais um sistema genérico. Fomos construídos com base nas dores reais 
+            de operações de varejo, comércio e redes de loja.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {diffs.map((d, i) => (
+            <div key={i} className="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-premium transition-all">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <d.icon className="w-6 h-6 text-primary" />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  {d.market}
+                </span>
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{d.title}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{d.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ============ MODULES ============
 function Modules() {
   const modules = [
-    { icon: LayoutDashboard, name: "Painel de Controle", description: "Veja tudo num só lugar" },
-    { icon: Users, name: "Cadastro de Pessoas", description: "Todas as informações organizadas" },
-    { icon: Calendar, name: "Férias e Folgas", description: "Controle sem esquecer nada" },
-    { icon: Stethoscope, name: "Exames Médicos", description: "Alertas antes de vencer" },
-    { icon: Wallet, name: "Empréstimos", description: "Parcelas e saldos na mão" },
-    { icon: Gift, name: "Benefícios", description: "VT, VR, cesta e muito mais" },
-    { icon: Receipt, name: "Holerites", description: "Gera sozinho, um ou todos" },
-    { icon: FileSpreadsheet, name: "Relatórios", description: "Prontos para imprimir" },
-    { icon: Bell, name: "Alertas", description: "Você sabe antes do problema" },
-    { icon: ShieldCheck, name: "Histórico", description: "Tudo registrado" },
+    { icon: LayoutDashboard, name: "Painel Executivo", description: "KPIs em tempo real" },
+    { icon: Users, name: "Cadastro 360°", description: "Tudo do colaborador" },
+    { icon: Calendar, name: "Férias e Folgas", description: "Período aquisitivo automático" },
+    { icon: Stethoscope, name: "Exames ASO", description: "Alertas antes de vencer" },
+    { icon: Wallet, name: "Empréstimos", description: "CLT e direto da loja" },
+    { icon: Gift, name: "11 Benefícios", description: "VT, VR, cesta e mais" },
+    { icon: Receipt, name: "Holerites PDF", description: "Em lote ou individual" },
+    { icon: FileSpreadsheet, name: "Relatórios", description: "Prontos para auditoria" },
+    { icon: Bell, name: "Central de Alertas", description: "Você sabe antes" },
+    { icon: ShieldCheck, name: "Auditoria Total", description: "Quem fez o quê" },
   ];
 
   return (
     <section id="modulos" className="py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Tudo em um lugar</span>
+          <span className="text-sm text-primary font-medium uppercase tracking-wider">Tudo em um só sistema</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Um sistema que resolve tudo
+            Pare de pular de planilha em planilha
           </h2>
           <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Pare de pular de planilha em planilha. Aqui você encontra tudo o que precisa para cuidar das pessoas da empresa.
+            Mais de 40 módulos integrados. Tudo o que seu RH precisa, sem precisar de 5 ferramentas diferentes.
           </p>
         </div>
 
@@ -399,21 +515,21 @@ function Modules() {
           <div className="rounded-2xl overflow-hidden border border-border shadow-premium">
             <img src={screenshotCadastro} alt="Cadastro de Profissionais" className="w-full h-auto" loading="lazy" width={1280} height={800} />
             <div className="p-4 bg-card">
-              <p className="font-medium text-foreground">Cadastro Completo</p>
-              <p className="text-sm text-muted-foreground">Todas as informações do profissional em um só lugar</p>
+              <p className="font-medium text-foreground">Cadastro 360° do Colaborador</p>
+              <p className="text-sm text-muted-foreground">10 abas integradas: dados pessoais, documentos, cargo, benefícios, histórico, pensões, empréstimos, ASO, EPI e ocorrências</p>
             </div>
           </div>
           <div className="rounded-2xl overflow-hidden border border-border shadow-premium">
             <img src={screenshotBeneficios} alt="Gestão de Benefícios" className="w-full h-auto" loading="lazy" width={1280} height={800} />
             <div className="p-4 bg-card">
-              <p className="font-medium text-foreground">Gestão de Benefícios</p>
-              <p className="text-sm text-muted-foreground">VT, VR, cesta básica, seguro de vida e muito mais</p>
+              <p className="font-medium text-foreground">Gestão de 11 Benefícios</p>
+              <p className="text-sm text-muted-foreground">Configuração de elegibilidade por benefício, descontos automáticos, relatórios consolidados por loja</p>
             </div>
           </div>
         </div>
 
         <p className="text-center mt-8 text-muted-foreground">
-          E muito mais: equipamentos de segurança, pensão alimentícia, vales diversos, 13º salário, importação de dados...
+          E muito mais: EPI com validade, pensão alimentícia, vales, 13º com avos, importação Excel, integração eSocial...
         </p>
       </div>
     </section>
@@ -424,26 +540,26 @@ function Modules() {
 function Testimonials() {
   const testimonials = [
     {
-      name: "Maria Silva",
-      role: "Coordenadora de RH",
-      company: "Rede de Lojas",
-      text: "Antes eu passava 3 dias fazendo a folha. Agora faço em 30 minutos. Mudou minha vida profissional.",
+      name: "Coordenadora de RH",
+      role: "Rede de varejo",
+      company: "12 lojas",
+      text: "Antes eu passava 3 dias fazendo a folha. Agora faço em 30 minutos. Mudou minha vida profissional. Hoje consigo focar em projetos estratégicos.",
       rating: 5,
       photo: testimonial1
     },
     {
-      name: "Carlos Santos",
-      role: "Gerente Administrativo",
-      company: "Grupo Empresarial",
-      text: "O sistema de alertas é incrível. Nunca mais perdi um prazo de ASO ou férias. Recomendo demais.",
+      name: "Gerente Administrativo",
+      role: "Comércio multi-filial",
+      company: "8 unidades",
+      text: "O sistema de alertas é incrível. Nunca mais perdi um prazo de ASO ou férias. A multa que evitamos no primeiro ano pagou o sistema por 5 anos.",
       rating: 5,
       photo: testimonial2
     },
     {
-      name: "Ana Costa",
-      role: "Proprietária",
-      company: "Rede de Franquias",
-      text: "Tenho 14 lojas e consigo gerenciar tudo de um lugar só. O investimento se pagou no primeiro mês.",
+      name: "Proprietária",
+      role: "Rede de franquias",
+      company: "+200 colaboradores",
+      text: "Tenho controle total das lojas de um lugar só. Vejo onde está sangrando dinheiro, onde tem absenteísmo alto, onde precisa contratar. Game changer.",
       rating: 5,
       photo: testimonial3
     }
@@ -453,9 +569,9 @@ function Testimonials() {
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Depoimentos</span>
+          <span className="text-sm text-primary font-medium uppercase tracking-wider">Quem usa, recomenda</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Quem usa, recomenda
+            A diferença é sentida no primeiro mês
           </h2>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
@@ -485,9 +601,9 @@ function Testimonials() {
 // ============ HOW IT WORKS ============
 function HowItWorks() {
   const steps = [
-    { step: "1", title: "Conte o que precisa", description: "A gente entende seu negócio e configura tudo para você." },
-    { step: "2", title: "Importamos seus dados", description: "Pegamos suas planilhas e colocamos tudo no sistema. Sem trabalho para você." },
-    { step: "3", title: "Comece a usar", description: "Em 24 horas você já está rodando. Com suporte para qualquer dúvida." },
+    { step: "1", title: "Você nos chama no WhatsApp", description: "Conta seu cenário em 10 minutos. A gente entende sua operação e mostra como o sistema resolve." },
+    { step: "2", title: "Importamos seus dados", description: "Suas planilhas viram um sistema profissional. Sem trabalho para você. Equipe técnica dedicada." },
+    { step: "3", title: "Em 24h você está rodando", description: "Treinamento incluso, suporte por WhatsApp e a tranquilidade de saber que está tudo certo." },
   ];
 
   return (
@@ -500,8 +616,13 @@ function HowItWorks() {
               Três passos e pronto
             </h2>
             <p className="mt-4 text-muted-foreground leading-relaxed">
-              Sem complicação, sem dor de cabeça. A gente cuida de tudo pra você começar.
+              Sem dor de cabeça, sem migração complicada. A gente cuida de tudo pra você começar a usar amanhã.
             </p>
+            <Button size="lg" className="mt-6 gap-2 bg-primary hover:bg-primary/90"
+              onClick={openWhatsApp}>
+              <MessageCircle className="w-5 h-5" />
+              Começar agora pelo WhatsApp
+            </Button>
           </div>
           <div className="rounded-2xl overflow-hidden shadow-xl">
             <img src={supportCall} alt="Suporte dedicado" className="w-full h-auto object-cover" loading="lazy" width={1280} height={800} />
@@ -523,95 +644,18 @@ function HowItWorks() {
   );
 }
 
-// ============ PRICING ============
-function Pricing() {
-  const plans = [
-    {
-      name: "Essencial",
-      description: "Para empresas que estão começando a organizar o RH.",
-      price: "R$ 497",
-      period: "/mês",
-      priceNote: "ou R$ 4.970/ano (economize 2 meses)",
-      features: ["Até 50 pessoas", "3 lojas ou filiais", "Folha de pagamento completa", "Férias e afastamentos", "Benefícios básicos", "Relatórios para impressão", "Suporte por mensagem"],
-      highlighted: false
-    },
-    {
-      name: "Completo",
-      description: "Para empresas que precisam de controle total.",
-      price: "R$ 997",
-      period: "/mês",
-      priceNote: "ou R$ 9.970/ano (economize 2 meses)",
-      features: ["Até 200 pessoas", "15 lojas ou filiais", "Tudo do Essencial, mais:", "13º salário automático", "Empréstimos e vales", "Exames médicos com alertas", "Histórico completo", "Suporte prioritário", "Importação de planilhas"],
-      highlighted: true
-    },
-    {
-      name: "Sob Medida",
-      description: "Para grandes operações com necessidades específicas.",
-      price: "Vamos conversar",
-      period: "",
-      priceNote: "Montamos o plano ideal para você",
-      features: ["Pessoas ilimitadas", "Lojas ilimitadas", "Tudo do Completo, mais:", "Ajustes exclusivos", "Conexão com outros sistemas", "Pessoa dedicada para você", "Atendimento garantido", "Treinamento presencial"],
-      highlighted: false
-    }
-  ];
-
-  return (
-    <section id="precos" className="py-20 px-4 sm:px-6 lg:px-8 bg-secondary/30">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-sm text-primary font-medium uppercase tracking-wider">Investimento</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
-            Escolha o que faz sentido para você
-          </h2>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-            Todos os planos incluem 14 dias grátis. Sem compromisso, sem cartão de crédito.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan, i) => (
-            <div key={i} className={`p-8 rounded-2xl border ${plan.highlighted ? 'border-primary bg-card shadow-glow relative' : 'border-border bg-card'}`}>
-              {plan.highlighted && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-white text-xs font-medium">
-                  Mais popular
-                </div>
-              )}
-              <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
-              <div className="mt-6 mb-2">
-                <span className="text-3xl font-bold text-foreground">{plan.price}</span>
-                <span className="text-muted-foreground">{plan.period}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mb-6">{plan.priceNote}</p>
-              <Button className={`w-full mb-6 ${plan.highlighted ? 'bg-primary text-white hover:bg-primary/90' : ''}`} variant={plan.highlighted ? 'default' : 'outline'}>
-                {plan.name === 'Sob Medida' ? 'Falar com a gente' : 'Começar teste grátis'}
-              </Button>
-              <ul className="space-y-3">
-                {plan.features.map((f, j) => (
-                  <li key={j} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                    <span className="text-foreground">{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ============ FAQ ============
 function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const faqs = [
-    { q: "Preciso instalar alguma coisa?", a: "Não. O sistema funciona 100% online, pelo navegador. Funciona no computador, tablet e celular." },
-    { q: "Como vocês importam meus dados?", a: "Basta nos enviar suas planilhas de Excel. Nós fazemos toda a importação e validação dos dados para você." },
-    { q: "Meus dados ficam seguros?", a: "Sim. Usamos criptografia de nível bancário e cada empresa tem seus dados completamente isolados." },
-    { q: "Posso cancelar quando quiser?", a: "Sim. Sem multa, sem fidelidade. Se não gostar, cancele a qualquer momento." },
-    { q: "Vocês dão suporte?", a: "Sim! Suporte por WhatsApp, e-mail e telefone. No plano Completo, o atendimento é prioritário." },
-    { q: "Funciona para quantos funcionários?", a: "De 1 a 2.000+. O sistema se adapta ao tamanho da sua empresa." },
+    { q: "Quanto custa o sistema?", a: `O investimento depende do tamanho da sua operação (quantidade de colaboradores e lojas). Chame no WhatsApp ${WHATSAPP_DISPLAY} e em 10 minutos a gente monta uma proposta sob medida pra você.` },
+    { q: "Preciso instalar alguma coisa?", a: "Não. O sistema funciona 100% online, pelo navegador. Funciona no computador, tablet e celular sem instalação." },
+    { q: "Como vocês importam meus dados?", a: "Basta nos enviar suas planilhas de Excel. Nossa equipe técnica faz toda a importação, validação e conferência dos dados. Você não precisa fazer nada." },
+    { q: "Meus dados ficam seguros?", a: "Sim. Usamos criptografia de nível bancário, isolamento total entre empresas (multi-tenant) e auditoria completa de todas as ações. Seus dados nunca se misturam com os de outras empresas." },
+    { q: "Funciona para o meu modelo de pagamento?", a: "Sim. Somos os únicos do mercado a calcular nativamente o pagamento split Dia 20 (adiantamento) + Dia 5 (saldo), além do modelo mensal tradicional. Atendemos varejo, comércio, indústria e serviços." },
+    { q: "Vocês dão suporte?", a: "Sim! Suporte direto por WhatsApp com a equipe técnica. Resposta em minutos durante horário comercial e atendimento dedicado para questões urgentes." },
+    { q: "Posso cancelar quando quiser?", a: "Sim. Sem multa, sem fidelidade longa. Se não gostar, cancela. Mas em 8 anos de operação, ninguém pediu pra cancelar." },
+    { q: "Funciona para quantos funcionários?", a: "De 10 a 2.000+ colaboradores por empresa. Arquitetura preparada para escalar conforme você cresce, sem precisar trocar de sistema." },
   ];
 
   return (
@@ -642,6 +686,14 @@ function FAQ() {
             </div>
           ))}
         </div>
+
+        <div className="mt-10 p-6 rounded-2xl bg-primary/5 border border-primary/20 text-center">
+          <p className="text-foreground font-medium mb-3">Ficou com alguma outra dúvida?</p>
+          <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90" onClick={openWhatsApp}>
+            <MessageCircle className="w-5 h-5" />
+            Chamar no WhatsApp {WHATSAPP_DISPLAY}
+          </Button>
+        </div>
       </div>
     </section>
   );
@@ -651,29 +703,52 @@ function FAQ() {
 function CTA() {
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary relative overflow-hidden">
-      {/* Background image with overlay */}
       <div className="absolute inset-0">
         <img src={teamSuccess} alt="" className="w-full h-full object-cover opacity-15" loading="lazy" decoding="async" aria-hidden="true" />
       </div>
       <div className="max-w-3xl mx-auto text-center relative">
         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-          Pronto para simplificar seu RH?
+          Chega de perder tempo e dinheiro com planilha
         </h2>
-        <p className="text-white/80 text-lg mb-8 leading-relaxed">
-          Agende uma demonstração gratuita e veja como o sistema pode transformar sua rotina em minutos.
+        <p className="text-white/90 text-lg mb-2 leading-relaxed">
+          Em 10 minutos no WhatsApp você descobre se o sistema resolve a sua dor.
+        </p>
+        <p className="text-white/80 text-base mb-8">
+          Sem compromisso. Sem cartão de crédito. Resposta em minutos.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="bg-white text-primary hover:bg-white/90 gap-2 px-8 h-14 text-base font-semibold">
+          <Button size="lg" className="bg-white text-primary hover:bg-white/90 gap-2 px-8 h-14 text-base font-semibold"
+            onClick={openWhatsApp}>
             <MessageCircle className="w-5 h-5" />
-            Agendar demonstração
+            Chamar no WhatsApp agora
           </Button>
-          <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-14 text-base">
+          <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-14 text-base bg-transparent"
+            onClick={openWhatsApp}>
             <Phone className="w-5 h-5 mr-2" />
-            Falar por WhatsApp
+            {WHATSAPP_DISPLAY}
           </Button>
         </div>
+        <p className="text-white/70 text-sm mt-6">
+          📱 Atendimento direto no WhatsApp · ⚡ Resposta em minutos · 🔒 Sigilo garantido
+        </p>
       </div>
     </section>
+  );
+}
+
+// ============ FLOATING WHATSAPP BUTTON ============
+function FloatingWhatsApp() {
+  return (
+    <button
+      onClick={openWhatsApp}
+      className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-success hover:bg-success/90 shadow-2xl flex items-center justify-center transition-all hover:scale-110 group"
+      aria-label="Falar no WhatsApp"
+    >
+      <MessageCircle className="w-7 h-7 text-white" />
+      <span className="absolute right-full mr-3 bg-foreground text-background text-sm px-3 py-2 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        Fale conosco
+      </span>
+    </button>
   );
 }
 
@@ -691,16 +766,16 @@ function LandingFooter() {
               <span className="text-white font-semibold text-lg">Sistema RH</span>
             </div>
             <p className="text-sm leading-relaxed">
-              Sistema completo de gestão de RH, folha de pagamento, benefícios e compliance.
+              Sistema completo de gestão de RH, folha de pagamento, benefícios e compliance. Feito para o varejo brasileiro.
             </p>
           </div>
           
           <div>
             <h4 className="text-white font-semibold mb-4">Sistema</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#beneficios" className="hover:text-white transition-colors">Funcionalidades</a></li>
+              <li><a href="#solucao" className="hover:text-white transition-colors">Funcionalidades</a></li>
               <li><a href="#modulos" className="hover:text-white transition-colors">Módulos</a></li>
-              <li><a href="#precos" className="hover:text-white transition-colors">Preços</a></li>
+              <li><a href="#diferencial" className="hover:text-white transition-colors">Diferenciais</a></li>
               <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
             </ul>
           </div>
@@ -716,16 +791,18 @@ function LandingFooter() {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">Contato</h4>
+            <h4 className="text-white font-semibold mb-4">Fale conosco</h4>
             <ul className="space-y-3 text-sm">
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4" /> (11) 99999-9999
+              <li>
+                <button onClick={openWhatsApp} className="flex items-center gap-2 hover:text-white transition-colors">
+                  <MessageCircle className="w-4 h-4" /> WhatsApp {WHATSAPP_DISPLAY}
+                </button>
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4" /> contato@sistemahr.com.br
+                <Phone className="w-4 h-4" /> {WHATSAPP_DISPLAY}
               </li>
               <li className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" /> São Paulo, SP
+                <MapPin className="w-4 h-4" /> Atendimento em todo o Brasil
               </li>
             </ul>
           </div>
@@ -748,13 +825,14 @@ export default function LandingPage() {
       <Problems />
       <StatsImpact />
       <Features />
+      <Differentiators />
       <Modules />
       <Testimonials />
       <HowItWorks />
-      <Pricing />
       <FAQ />
       <CTA />
       <LandingFooter />
+      <FloatingWhatsApp />
     </main>
   );
 }
