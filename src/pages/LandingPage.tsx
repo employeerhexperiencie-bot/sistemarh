@@ -12,6 +12,11 @@ import {
   DashboardMockup, FolhaMockup, CadastroMockup, BeneficiosMockup,
 } from '@/components/landing/SystemMockup';
 
+import gestoraRH from '@/assets/landing-gestora-rh.jpg';
+import equipeVarejo from '@/assets/landing-equipe-varejo.jpg';
+import suporteHumano from '@/assets/landing-suporte-humano.jpg';
+import empresariaAliviada from '@/assets/landing-empresaria-aliviada.jpg';
+
 // ============ CONSTANTS ============
 const WHATSAPP_NUMBER = '5511953340284';
 const WHATSAPP_MESSAGE = encodeURIComponent(
