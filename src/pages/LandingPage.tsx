@@ -140,44 +140,44 @@ function LandingHeader() {
 // ============ HERO ============
 function Hero() {
   return (
-    <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <section className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
       {/* Background grid */}
       <div className="absolute inset-0 landing-grid-bg pointer-events-none" />
       {/* Top glow */}
-      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[80vw] h-[600px] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[90vw] sm:w-[80vw] h-[400px] sm:h-[600px] bg-primary/20 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none" />
 
       <div className="max-w-6xl mx-auto relative">
         {/* Announcement pill */}
-        <div className="flex justify-center mb-8 landing-rise">
+        <div className="flex justify-center mb-6 sm:mb-8 landing-rise px-2">
           <a
             href="#plataforma"
-            className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full landing-glass text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full landing-glass text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors max-w-full"
           >
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
-              <Sparkles className="w-3 h-3" /> Novo
+            <span className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium shrink-0">
+              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Novo
             </span>
-            <span>Ponto facial + Folha + Diário em uma plataforma</span>
-            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+            <span className="truncate">Ponto facial + Folha + Diário em uma plataforma</span>
+            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform shrink-0" />
           </a>
         </div>
 
         {/* Headline */}
-        <h1 className="text-center text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.02] landing-rise" style={{ animationDelay: '60ms' }}>
+        <h1 className="text-center text-[2.25rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight sm:leading-[1.02] landing-rise px-2" style={{ animationDelay: '60ms' }}>
           Toda a gestão de RH<br />
           <span className="landing-text-gradient">em um único sistema.</span>
         </h1>
 
-        <p className="mt-7 text-center text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed landing-rise" style={{ animationDelay: '120ms' }}>
+        <p className="mt-5 sm:mt-7 text-center text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed landing-rise px-2" style={{ animationDelay: '120ms' }}>
           Pare de orquestrar 5 ferramentas diferentes. Folha, ponto facial,
           benefícios, ASO, férias e diário operacional —{' '}
           <span className="text-foreground">conversando entre si, em tempo real.</span>
         </p>
 
         {/* CTAs */}
-        <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center landing-rise" style={{ animationDelay: '180ms' }}>
+        <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row gap-3 justify-center landing-rise px-2" style={{ animationDelay: '180ms' }}>
           <Button
             size="lg"
-            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-6 text-[15px] font-medium"
+            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-6 text-[15px] font-medium w-full sm:w-auto"
             onClick={openWhatsApp}
           >
             <MessageCircle className="w-4 h-4" />
@@ -186,7 +186,7 @@ function Hero() {
           <Button
             size="lg"
             variant="outline"
-            className="gap-2 h-12 px-6 text-[15px] border-border bg-card hover:bg-muted text-foreground"
+            className="gap-2 h-12 px-6 text-[15px] border-border bg-card hover:bg-muted text-foreground w-full sm:w-auto"
             onClick={() => document.getElementById('plataforma')?.scrollIntoView({ behavior: 'smooth' })}
           >
             Ver a plataforma
@@ -195,12 +195,12 @@ function Hero() {
         </div>
 
         {/* Trust line */}
-        <p className="mt-6 text-center text-xs text-muted-foreground landing-rise" style={{ animationDelay: '240ms' }}>
-          Setup em 24h · Sem cartão de crédito · Suporte humano por WhatsApp
+        <p className="mt-5 sm:mt-6 text-center text-[11px] sm:text-xs text-muted-foreground landing-rise px-2" style={{ animationDelay: '240ms' }}>
+          Setup em 24h · Sem cartão · Suporte humano no WhatsApp
         </p>
 
         {/* Live mockup */}
-        <div className="mt-16 relative landing-rise" style={{ animationDelay: '320ms' }}>
+        <div className="mt-10 sm:mt-16 relative landing-rise" style={{ animationDelay: '320ms' }}>
           <LiveMockupCarousel />
         </div>
       </div>
