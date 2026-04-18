@@ -529,9 +529,9 @@ function Differentiators() {
           subtitle="Construído com base nas dores reais de redes de varejo, comércio e franquias."
         />
 
-        <div className="mt-14 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {diffs.map((d, i) => (
-            <div key={i} className="landing-glass rounded-2xl p-6 hover:border-primary/40 transition-all group">
+            <div key={i} className="landing-glass rounded-2xl p-5 sm:p-6 hover:border-primary/40 transition-all group">
               <div className="flex items-start justify-between mb-4">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/30 to-accent/20 text-primary flex items-center justify-center">
                   <d.icon className="w-5 h-5" />
@@ -568,20 +568,20 @@ function Modules() {
   ];
 
   return (
-    <section id="modulos" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
+    <section id="modulos" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
       <div className="max-w-6xl mx-auto">
         <SectionHeader
           eyebrow="Módulos"
           title={<>40+ módulos.<br/><span className="text-muted-foreground">Uma única plataforma.</span></>}
         />
 
-        <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="mt-10 sm:mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           {modules.map((m, i) => (
-            <div key={i} className="landing-glass rounded-xl p-5 text-center hover:border-primary/40 hover:translate-y-[-2px] transition-all">
-              <div className="w-10 h-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mx-auto mb-3">
-                <m.icon className="w-5 h-5" />
+            <div key={i} className="landing-glass rounded-xl p-3 sm:p-5 text-center hover:border-primary/40 hover:translate-y-[-2px] transition-all">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                <m.icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <p className="text-xs font-medium text-foreground">{m.name}</p>
+              <p className="text-[11px] sm:text-xs font-medium text-foreground">{m.name}</p>
             </div>
           ))}
         </div>
@@ -623,7 +623,7 @@ function HumanStories() {
   ];
 
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border relative overflow-hidden">
+    <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-t border-border relative overflow-hidden">
       <div className="absolute -top-20 right-0 w-[40vw] h-[400px] bg-primary/15 rounded-full blur-[140px] pointer-events-none" />
       <div className="max-w-6xl mx-auto relative">
         <SectionHeader
@@ -632,11 +632,11 @@ function HumanStories() {
           subtitle="Não vendemos software. Devolvemos tempo, tranquilidade e clareza para quem cuida de pessoas todos os dias."
         />
 
-        <div className="mt-16 space-y-10">
+        <div className="mt-12 sm:mt-16 space-y-12 sm:space-y-10">
           {stories.map((s, i) => (
             <div
               key={i}
-              className={`grid lg:grid-cols-12 gap-8 items-center ${
+              className={`grid lg:grid-cols-12 gap-6 sm:gap-8 items-center ${
                 i % 2 === 1 ? 'lg:[&>*:first-child]:order-2' : ''
               }`}
             >
@@ -650,22 +650,22 @@ function HumanStories() {
                     loading="lazy"
                     width={1280}
                     height={1280}
-                    className="w-full h-[360px] sm:h-[440px] object-cover"
+                    className="w-full h-[260px] sm:h-[440px] object-cover"
                   />
                   {/* Floating stat */}
-                  <div className="absolute bottom-4 left-4 landing-glass rounded-xl px-4 py-3 z-20">
-                    <p className="text-2xl font-semibold text-foreground tracking-tight">{s.stat}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.statLabel}</p>
+                  <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 landing-glass rounded-xl px-3 py-2 sm:px-4 sm:py-3 z-20">
+                    <p className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">{s.stat}</p>
+                    <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">{s.statLabel}</p>
                   </div>
                 </div>
               </div>
 
               {/* Text */}
               <div className="lg:col-span-6">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-primary mb-3">{s.eyebrow}</p>
-                <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-tight">{s.title}</h3>
-                <p className="mt-4 text-base text-muted-foreground leading-relaxed">{s.desc}</p>
-                <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-primary mb-2 sm:mb-3">{s.eyebrow}</p>
+                <h3 className="text-xl sm:text-3xl font-semibold tracking-tight leading-tight">{s.title}</h3>
+                <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">{s.desc}</p>
+                <div className="mt-5 sm:mt-6 flex items-center gap-2 text-[11px] sm:text-xs text-muted-foreground">
                   <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                   Validado com clientes do varejo brasileiro
                 </div>
@@ -687,21 +687,21 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="como" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
+    <section id="como" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
       <div className="max-w-6xl mx-auto">
         <SectionHeader
           eyebrow="Como funciona"
           title={<>De planilha para sistema <br /> em <span className="landing-text-gradient">24 horas.</span></>}
         />
 
-        <div className="mt-14 grid lg:grid-cols-12 gap-8 items-center">
+        <div className="mt-10 sm:mt-14 grid lg:grid-cols-12 gap-6 sm:gap-8 items-center">
           {/* Steps */}
           <div className="lg:col-span-7 grid sm:grid-cols-1 gap-3">
             {steps.map((s, i) => (
-              <div key={i} className="relative landing-glass rounded-2xl p-6 flex gap-5 items-start">
-                <div className="text-4xl font-semibold text-primary/30 tracking-tight shrink-0 w-14">{s.n}</div>
+              <div key={i} className="relative landing-glass rounded-2xl p-5 sm:p-6 flex gap-4 sm:gap-5 items-start">
+                <div className="text-3xl sm:text-4xl font-semibold text-primary/30 tracking-tight shrink-0 w-12 sm:w-14">{s.n}</div>
                 <div>
-                  <h3 className="text-lg font-semibold">{s.title}</h3>
+                  <h3 className="text-base sm:text-lg font-semibold">{s.title}</h3>
                   <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
                 </div>
               </div>
@@ -718,10 +718,10 @@ function HowItWorks() {
                 loading="lazy"
                 width={1280}
                 height={1280}
-                className="w-full h-[420px] object-cover"
+                className="w-full h-[300px] sm:h-[420px] object-cover"
               />
-              <div className="absolute bottom-5 left-5 right-5 z-20">
-                <div className="landing-glass rounded-xl p-4">
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5 z-20">
+                <div className="landing-glass rounded-xl p-3 sm:p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                     <p className="text-[10px] uppercase tracking-wider text-success">Online agora</p>
@@ -734,10 +734,10 @@ function HowItWorks() {
           </div>
         </div>
 
-        <div className="mt-10 flex justify-center">
+        <div className="mt-8 sm:mt-10 flex justify-center px-2">
           <Button
             size="lg"
-            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-6 text-[15px]"
+            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-6 text-[14px] sm:text-[15px] w-full sm:w-auto"
             onClick={openWhatsApp}
           >
             <MessageCircle className="w-4 h-4" />
@@ -759,14 +759,14 @@ function StatsBar() {
   ];
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 border-t border-border relative overflow-hidden">
+    <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 border-t border-border relative overflow-hidden">
       <div className="absolute inset-0 landing-grid-bg opacity-50 pointer-events-none" />
       <div className="max-w-6xl mx-auto relative">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {stats.map((s, i) => (
             <div key={i} className="text-center">
-              <p className="text-4xl sm:text-5xl font-semibold tracking-tight text-foreground">{s.value}</p>
-              <p className="mt-2 text-xs sm:text-sm text-muted-foreground">{s.label}</p>
+              <p className="text-3xl sm:text-5xl font-semibold tracking-tight text-foreground">{s.value}</p>
+              <p className="mt-2 text-[11px] sm:text-sm text-muted-foreground leading-tight">{s.label}</p>
             </div>
           ))}
         </div>
@@ -788,14 +788,14 @@ function FAQ() {
   ];
 
   return (
-    <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
+    <section id="faq" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-t border-border">
       <div className="max-w-3xl mx-auto">
         <SectionHeader
           eyebrow="Perguntas frequentes"
           title={<>Tudo que você quer <br/> saber antes de falar com a gente.</>}
         />
 
-        <div className="mt-12 space-y-2">
+        <div className="mt-10 sm:mt-12 space-y-2">
           {faqs.map((faq, i) => (
             <div
               key={i}
@@ -803,15 +803,15 @@ function FAQ() {
             >
               <button
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors"
+                className="w-full flex items-center justify-between gap-3 p-4 sm:p-5 text-left hover:bg-muted/30 transition-colors"
               >
-                <span className="text-[15px] font-medium text-foreground">{faq.q}</span>
+                <span className="text-sm sm:text-[15px] font-medium text-foreground">{faq.q}</span>
                 <ChevronDown
-                  className={`w-4 h-4 text-muted-foreground transition-transform ${openIndex === i ? 'rotate-180' : ''}`}
+                  className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${openIndex === i ? 'rotate-180' : ''}`}
                 />
               </button>
               {openIndex === i && (
-                <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">
+                <div className="px-4 sm:px-5 pb-4 sm:pb-5 text-sm text-muted-foreground leading-relaxed">
                   {faq.a}
                 </div>
               )}
@@ -826,22 +826,22 @@ function FAQ() {
 // ============ CTA FINAL ============
 function CTA() {
   return (
-    <section className="relative py-28 px-4 sm:px-6 lg:px-8 overflow-hidden border-t border-border">
+    <section className="relative py-20 sm:py-28 px-4 sm:px-6 lg:px-8 overflow-hidden border-t border-border">
       <div className="absolute inset-0 landing-grid-bg pointer-events-none opacity-50" />
-      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[60vw] h-[400px] bg-primary/30 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[80vw] sm:w-[60vw] h-[300px] sm:h-[400px] bg-primary/30 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none" />
 
       <div className="relative max-w-3xl mx-auto text-center">
-        <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
+        <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight leading-tight">
           Tudo que seu RH precisa.<br />
           <span className="landing-text-gradient">Em um único lugar.</span>
         </h2>
-        <p className="mt-6 text-base text-muted-foreground max-w-xl mx-auto">
+        <p className="mt-5 sm:mt-6 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
           10 minutos no WhatsApp. Sem compromisso. Você decide se faz sentido para sua empresa.
         </p>
-        <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 justify-center">
           <Button
             size="lg"
-            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-7 text-[15px] font-medium"
+            className="bg-foreground text-background hover:bg-foreground/90 gap-2 h-12 px-7 text-[15px] font-medium w-full sm:w-auto"
             onClick={openWhatsApp}
           >
             <MessageCircle className="w-4 h-4" />
@@ -850,13 +850,13 @@ function CTA() {
           <Button
             size="lg"
             variant="outline"
-            className="gap-2 h-12 px-7 text-[15px] border-border bg-card hover:bg-muted text-foreground"
+            className="gap-2 h-12 px-7 text-[15px] border-border bg-card hover:bg-muted text-foreground w-full sm:w-auto"
             onClick={() => (window.location.href = '/login')}
           >
             Já sou cliente, entrar
           </Button>
         </div>
-        <p className="mt-6 text-xs text-muted-foreground">
+        <p className="mt-5 sm:mt-6 text-[11px] sm:text-xs text-muted-foreground">
           Resposta em minutos · Sigilo garantido · Sem cartão de crédito
         </p>
       </div>
@@ -869,11 +869,11 @@ function FloatingWhatsApp() {
   return (
     <button
       onClick={openWhatsApp}
-      className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-success hover:bg-success/90 shadow-2xl flex items-center justify-center transition-transform hover:scale-110 group"
+      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-success hover:bg-success/90 shadow-2xl flex items-center justify-center transition-transform hover:scale-110 group"
       aria-label="Falar no WhatsApp"
     >
       <span className="absolute inset-0 rounded-full landing-pulse-ring" />
-      <MessageCircle className="w-6 h-6 text-success-foreground relative" />
+      <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-success-foreground relative" />
     </button>
   );
 }
@@ -881,9 +881,9 @@ function FloatingWhatsApp() {
 // ============ FOOTER ============
 function LandingFooter() {
   return (
-    <footer className="py-16 px-4 sm:px-6 lg:px-8 border-t border-border">
+    <footer className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 border-t border-border pb-24 sm:pb-16">
       <div className="max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
@@ -927,7 +927,7 @@ function LandingFooter() {
           </div>
         </div>
 
-        <div className="border-t border-border mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+        <div className="border-t border-border mt-10 sm:mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground text-center sm:text-left">
           <p>© {new Date().getFullYear()} Sistema RH · eazdev.com</p>
           <p>Feito com cuidado para quem cuida de pessoas.</p>
         </div>
@@ -947,13 +947,13 @@ function SectionHeader({
   subtitle?: string;
 }) {
   return (
-    <div className="text-center max-w-3xl mx-auto">
-      <p className="text-[11px] uppercase tracking-[0.18em] text-primary mb-4">{eyebrow}</p>
-      <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
+    <div className="text-center max-w-3xl mx-auto px-2">
+      <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-primary mb-3 sm:mb-4">{eyebrow}</p>
+      <h2 className="text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.15]">
         {title}
       </h2>
       {subtitle && (
-        <p className="mt-5 text-base text-muted-foreground leading-relaxed">
+        <p className="mt-4 sm:mt-5 text-sm sm:text-base text-muted-foreground leading-relaxed">
           {subtitle}
         </p>
       )}
