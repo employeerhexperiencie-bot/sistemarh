@@ -20,8 +20,7 @@ import teamSuccess from '@/assets/landing/team-success.jpg';
 
 // ============ CONSTANTS ============
 const WHATSAPP_NUMBER = '5511953340284';
-const WHATSAPP_DISPLAY = '(11) 95334-0284';
-const WHATSAPP_MESSAGE = encodeURIComponent('Olá! Vi a página do Sistema RH e quero saber como ele pode ajudar minha empresa.');
+const WHATSAPP_MESSAGE = encodeURIComponent('Olá! 👋 Vim pelo site do Sistema RH (eazdev.com) e quero saber como pode ajudar minha empresa.');
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
 const openWhatsApp = () => window.open(WHATSAPP_URL, '_blank');
@@ -163,7 +162,7 @@ function Hero() {
             </div>
 
             <p className="mt-4 text-sm text-muted-foreground">
-              Atendimento direto: <strong className="text-foreground">{WHATSAPP_DISPLAY}</strong> · Resposta em minutos
+              Atendimento humano direto no WhatsApp · Resposta em minutos
             </p>
           </div>
 
@@ -669,7 +668,7 @@ function HowItWorks() {
 function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const faqs = [
-    { q: "Quanto custa o sistema?", a: `O investimento depende do tamanho da sua operação (quantidade de colaboradores e lojas). Chame no WhatsApp ${WHATSAPP_DISPLAY} e em 10 minutos a gente monta uma proposta sob medida pra você.` },
+    { q: "Quanto custa o sistema?", a: "O investimento depende do tamanho da sua operação (quantidade de colaboradores e lojas). Chame no WhatsApp e em 10 minutos a gente monta uma proposta sob medida pra você." },
     { q: "Preciso instalar alguma coisa?", a: "Não. O sistema funciona 100% online, pelo navegador. Funciona no computador, tablet e celular sem instalação." },
     { q: "Como vocês importam meus dados?", a: "Basta nos enviar suas planilhas de Excel. Nossa equipe técnica faz toda a importação, validação e conferência dos dados. Você não precisa fazer nada." },
     { q: "Meus dados ficam seguros?", a: "Sim. Usamos criptografia de nível bancário, isolamento total entre empresas (multi-tenant) e auditoria completa de todas as ações. Seus dados nunca se misturam com os de outras empresas." },
@@ -712,7 +711,7 @@ function FAQ() {
           <p className="text-foreground font-medium mb-3">Ficou com alguma outra dúvida?</p>
           <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90" onClick={openWhatsApp}>
             <MessageCircle className="w-5 h-5" />
-            Chamar no WhatsApp {WHATSAPP_DISPLAY}
+            Chamar no WhatsApp
           </Button>
         </div>
       </div>
@@ -743,10 +742,10 @@ function CTA() {
             <MessageCircle className="w-5 h-5" />
             Chamar no WhatsApp agora
           </Button>
-          <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-14 text-base bg-transparent"
+          <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-14 text-base bg-transparent gap-2"
             onClick={openWhatsApp}>
-            <Phone className="w-5 h-5 mr-2" />
-            {WHATSAPP_DISPLAY}
+            <Phone className="w-5 h-5" />
+            Falar com especialista
           </Button>
         </div>
         <p className="text-white/70 text-sm mt-6">
@@ -816,11 +815,13 @@ function LandingFooter() {
             <ul className="space-y-3 text-sm">
               <li>
                 <button onClick={openWhatsApp} className="flex items-center gap-2 hover:text-white transition-colors">
-                  <MessageCircle className="w-4 h-4" /> WhatsApp {WHATSAPP_DISPLAY}
+                  <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
                 </button>
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4" /> {WHATSAPP_DISPLAY}
+              <li>
+                <button onClick={openWhatsApp} className="flex items-center gap-2 hover:text-white transition-colors">
+                  <Phone className="w-4 h-4" /> Solicitar contato
+                </button>
               </li>
               <li className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" /> Atendimento em todo o Brasil
