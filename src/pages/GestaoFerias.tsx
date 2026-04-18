@@ -432,7 +432,26 @@ export default function GestaoFerias() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Controle de Férias</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle>Controle de Férias</CardTitle>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={filterLoja} onValueChange={setFilterLoja}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <SelectValue placeholder="Filtrar por loja" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as lojas</SelectItem>
+                  {lojasDisponiveis.map(loja => (
+                    <SelectItem key={loja} value={loja}>{loja}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {filteredVacations.length} de {vacations.length}
+              </span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -449,14 +468,16 @@ export default function GestaoFerias() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vacations.length === 0 ? (
+              {filteredVacations.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Nenhum registro de férias encontrado
+                    {vacations.length === 0
+                      ? 'Nenhum registro de férias encontrado'
+                      : `Nenhum registro encontrado para a loja "${filterLoja}"`}
                   </TableCell>
                 </TableRow>
               ) : (
-                vacations.map((vacation) => (
+                filteredVacations.map((vacation) => (
                   <TableRow key={vacation.id}>
                     <TableCell className="font-mono">{vacation.matricula}</TableCell>
                     <TableCell className="font-medium">{vacation.nome}</TableCell>
