@@ -742,10 +742,10 @@ function CTA() {
             <MessageCircle className="w-5 h-5" />
             Chamar no WhatsApp agora
           </Button>
-          <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-14 text-base bg-transparent"
+          <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-14 text-base bg-transparent gap-2"
             onClick={openWhatsApp}>
-            <Phone className="w-5 h-5 mr-2" />
-            {WHATSAPP_DISPLAY}
+            <Phone className="w-5 h-5" />
+            Falar com especialista
           </Button>
         </div>
         <p className="text-white/70 text-sm mt-6">
