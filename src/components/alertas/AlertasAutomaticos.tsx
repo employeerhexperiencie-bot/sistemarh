@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { DelegarAlertaModal, DelegarAlertaData } from './DelegarAlertaModal';
+import { ProfissionalAvatar } from '@/components/profissional/ProfissionalAvatar';
 
 export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento' | 'emprestimo';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
@@ -39,6 +40,7 @@ export interface Alerta {
   loja: string;
   profissional?: string;
   matricula?: string;
+  fotoUrl?: string | null;
   acaoUrl?: string;
   lido: boolean;
   resolvido: boolean;
@@ -319,7 +321,7 @@ export function CentralAlertas() {
         .from('alertas_sistema')
         .select(`
           *,
-          profissionais:profissional_id (nome, matricula),
+          profissionais:profissional_id (nome, matricula, foto_url),
           lojas:loja_id (nome)
         `)
         .order('created_at', { ascending: false });
