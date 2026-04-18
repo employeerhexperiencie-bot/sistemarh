@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2, Filter } from 'lucide-react';
+import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2, Filter, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
