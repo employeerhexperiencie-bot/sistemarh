@@ -439,7 +439,7 @@ function PillarCard({
 // ============ FEATURES BENTO ============
 function FeaturesBento() {
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8">
+    <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <SectionHeader
           eyebrow="Por que escolher"
