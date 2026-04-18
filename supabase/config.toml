@@ -1,31 +1,31 @@
 project_id = "yupdlssiyebcunznwhjc"
 
 [functions.migrate-excel-data]
-verify_jwt = false
+verify_jwt = true
 
 [functions.n8n-proxy]
 verify_jwt = false
 
 [functions.admin-update-user-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-recovery-email]
 verify_jwt = false
 
 [functions.invite-user]
-verify_jwt = false
+verify_jwt = true
 
 [functions.update-user-password]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-super-admin]
-verify_jwt = false
+verify_jwt = true
 
 [functions.provision-tenant-admin]
-verify_jwt = false
+verify_jwt = true
 
 [functions.update-tenant-data]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ezpoint-proxy]
 verify_jwt = false
