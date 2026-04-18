@@ -13,6 +13,7 @@ import screenshotCadastro from '@/assets/landing/screenshot-cadastro.jpg';
 import screenshotFolha from '@/assets/landing/screenshot-folha.jpg';
 import screenshotBeneficios from '@/assets/landing/screenshot-beneficios.jpg';
 import heroTeam from '@/assets/landing/hero-team.jpg';
+import heroRhPonto from '@/assets/landing/hero-rh-ponto.jpg';
 import problemStress from '@/assets/landing/problem-stress.jpg';
 import solutionEasy from '@/assets/landing/solution-easy.jpg';
 import supportCall from '@/assets/landing/support-call.jpg';
