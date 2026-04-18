@@ -35,6 +35,7 @@ const PainelLoja = lazy(() => import("@/pages/PainelLoja"));
 const PainelProfissional = lazy(() => import("@/pages/PainelProfissional"));
 const HistoricoProfissional = lazy(() => import("@/pages/HistoricoProfissional"));
 const CadastroProfissionais = lazy(() => import("@/pages/CadastroProfissionais").then(m => ({ default: m.CadastroProfissionais })));
+const UploadFotosLote = lazy(() => import("@/pages/UploadFotosLote"));
 const GestaoASO = lazy(() => import("@/pages/GestaoASO"));
 const GestaoFerias = lazy(() => import("@/pages/GestaoFerias"));
 const GestaoEPI = lazy(() => import("@/pages/GestaoEPI"));
@@ -187,6 +188,7 @@ const App = () => (
                     <Route path="/painel-profissional/:id" element={<ProtectedLayout><PainelProfissional /></ProtectedLayout>} />
                     <Route path="/historico-profissional" element={<ProtectedLayout><HistoricoProfissional /></ProtectedLayout>} />
                     <Route path="/cadastro-profissionais" element={<ProtectedLayout><CadastroProfissionais /></ProtectedLayout>} />
+                    <Route path="/upload-fotos-lote" element={<ProtectedLayout><UploadFotosLote /></ProtectedLayout>} />
                     <Route path="/gestao-aso" element={<ProtectedLayout><GestaoASO /></ProtectedLayout>} />
                     <Route path="/gestao-ferias" element={<ProtectedLayout><GestaoFerias /></ProtectedLayout>} />
                     <Route path="/gestao-epi" element={<ProtectedLayout><GestaoEPI /></ProtectedLayout>} />
