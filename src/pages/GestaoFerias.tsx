@@ -300,7 +300,18 @@ export default function GestaoFerias() {
                   label="Profissional"
                   placeholder="Digite nome ou matrícula"
                   disabled={!!editingVacation}
+                  incluirInativos={incluirDesligados}
                 />
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch
+                    id="incluirDesligadosForm"
+                    checked={incluirDesligados}
+                    onCheckedChange={setIncluirDesligados}
+                  />
+                  <Label htmlFor="incluirDesligadosForm" className="text-xs cursor-pointer">
+                    Incluir desligados (rescisão com férias proporcionais)
+                  </Label>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
