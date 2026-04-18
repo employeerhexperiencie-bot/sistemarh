@@ -20,6 +20,7 @@ interface Vacation {
   matricula: string;
   nome: string;
   loja: string;
+  desligado?: boolean;
   periodoAquisitivo: {
     inicio: string;
     fim: string;
@@ -46,6 +47,7 @@ export default function GestaoFerias() {
   const [selectedProfissionalId, setSelectedProfissionalId] = useState<string | undefined>(undefined);
   const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
+  const [incluirDesligados, setIncluirDesligados] = useState(false);
   const { addLog } = useAuditLog();
 
   useEffect(() => {
