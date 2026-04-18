@@ -130,7 +130,7 @@ export default function Fechamentos() {
   const [reopenLoja, setReopenLoja] = useState<Loja | null>(null);
   
   // Loja summary cache (pre-calculated totals for list view)
-  const [lojaSummaries, setLojaSummaries] = useState<Record<string, { totalProf: number; totalValor: number; loading: boolean }>>({});
+  const [lojaSummaries, setLojaSummaries] = useState<Record<string, { totalProf: number; totalValor: number; totalDescontos: number; profComDesconto: number; loading: boolean }>>({});
 
   const competencias = getCompetenciasDisponiveis(6, 1);
 
