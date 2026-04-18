@@ -243,27 +243,45 @@ export function ImportModuleCard({ config, history, onImportComplete }: ImportMo
     return { resolved, errors };
   };
 
-  /** Resolve _loja_atuacao / _loja_registro names to loja_id / loja_registro_id */
+  /** Resolve _loja_atuacao / _loja_registro names to loja_id / loja_registro_id (fuzzy match tolerante) */
   const resolveLojaIds = async (rows: any[]): Promise<any[]> => {
     const lojaNames = new Set<string>();
     rows.forEach(r => {
-      if (r._loja_atuacao) lojaNames.add(r._loja_atuacao.toUpperCase().trim());
-      if (r._loja_registro) lojaNames.add(r._loja_registro.toUpperCase().trim());
+      if (r._loja_atuacao) lojaNames.add(String(r._loja_atuacao).toUpperCase().trim());
+      if (r._loja_registro) lojaNames.add(String(r._loja_registro).toUpperCase().trim());
     });
     if (lojaNames.size === 0) return rows;
 
     const { data: lojas } = await supabase.from("lojas").select("id, nome");
+    // Normalização: remove acentos, espaços extras, prefixos comuns
+    const normalize = (s: string) => s
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/\s+/g, ' ')
+      .replace(/^LOJA\s+/, '')
+      .trim();
+
     const lojaMap = new Map<string, string>();
-    (lojas || []).forEach(l => lojaMap.set(l.nome.toUpperCase().trim(), l.id));
+    (lojas || []).forEach(l => {
+      const norm = normalize(l.nome);
+      lojaMap.set(norm, l.id);
+      lojaMap.set(l.nome.toUpperCase().trim(), l.id);
+    });
+
+    const findLojaId = (raw: string): string | undefined => {
+      const norm = normalize(raw);
+      return lojaMap.get(raw.toUpperCase().trim()) || lojaMap.get(norm);
+    };
 
     return rows.map(row => {
       const { _loja_atuacao, _loja_registro, ...rest } = row;
       if (_loja_atuacao) {
-        const id = lojaMap.get(_loja_atuacao.toUpperCase().trim());
+        const id = findLojaId(_loja_atuacao);
         if (id) rest.loja_id = id;
       }
       if (_loja_registro) {
-        const id = lojaMap.get(_loja_registro.toUpperCase().trim());
+        const id = findLojaId(_loja_registro);
         if (id) rest.loja_registro_id = id;
       }
       return rest;
