@@ -521,7 +521,7 @@ function Differentiators() {
   ];
 
   return (
-    <section id="diferencial" className="py-24 px-4 sm:px-6 lg:px-8 relative">
+    <section id="diferencial" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-6xl mx-auto">
         <SectionHeader
           eyebrow="Diferenciais"
