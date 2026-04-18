@@ -9,6 +9,32 @@ import {
  * para garantir representação real (sem texto quebrado de IA).
  */
 
+/**
+ * Wrapper que escala o mockup proporcionalmente para caber em qualquer
+ * container, mantendo o design real do desktop e centralizando no mobile.
+ * Renderiza em uma "viewport" fixa de 880x420 e escala via CSS para preencher.
+ */
+const MockupViewport = ({ children }: { children: React.ReactNode }) => (
+  <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-slate-50">
+    <div
+      className="origin-center"
+      style={{
+        width: '880px',
+        height: '420px',
+        transform: 'scale(var(--mockup-scale, 1))',
+      }}
+    >
+      {children}
+    </div>
+    <style>{`
+      .mockup-host { --mockup-scale: 1; }
+      @media (max-width: 1023px) { .mockup-host { --mockup-scale: 0.78; } }
+      @media (max-width: 767px)  { .mockup-host { --mockup-scale: 0.55; } }
+      @media (max-width: 480px)  { .mockup-host { --mockup-scale: 0.42; } }
+    `}</style>
+  </div>
+);
+
 const SidebarMock = ({ active = 'Dashboard' }: { active?: string }) => {
   const items = [
     { icon: LayoutDashboard, label: 'Dashboard' },
