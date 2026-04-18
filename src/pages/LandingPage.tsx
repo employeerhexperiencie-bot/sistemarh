@@ -246,47 +246,6 @@ function Hero() {
   );
 }
 
-// ============ SOCIAL PROOF (logos + ratings strip) ============
-function SocialProof() {
-  return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-card border-y border-border">
-      <div className="max-w-7xl mx-auto">
-        <p className="text-center text-sm text-muted-foreground mb-8 uppercase tracking-wider">
-          Empresas que pararam de perder tempo com planilhas
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-center">
-          {[
-            { name: 'Tennessee Steak House', initials: 'TSH' },
-            { name: 'Tennessee Prime', initials: 'TP' },
-            { name: 'Rede Varejo', initials: 'RV' },
-            { name: 'Comércio Brasil', initials: 'CB' },
-            { name: 'Lojas Unidas', initials: 'LU' },
-            { name: 'Grupo Multi', initials: 'GM' },
-          ].map((c, i) => (
-            <div key={i} className="flex flex-col items-center justify-center px-3 py-4 rounded-lg bg-background border border-border opacity-80 hover:opacity-100 hover:border-primary/30 transition-all">
-              <span className="font-bold text-foreground text-base tracking-wider">{c.initials}</span>
-              <span className="mt-1 text-[10px] text-muted-foreground text-center leading-tight">{c.name}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-10 grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {[
-            { value: '4.9/5', label: 'avaliação dos clientes' },
-            { value: '+278', label: 'profissionais gerenciados' },
-            { value: '99.9%', label: 'uptime garantido' },
-          ].map((s, i) => (
-            <div key={i} className="text-center p-4 rounded-xl bg-background border border-border">
-              <p className="text-3xl font-bold text-primary">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ============ COMPARISON TABLE (vs concorrentes) ============
 function Comparison() {
   const features = [
@@ -972,7 +931,6 @@ export default function LandingPage() {
     <main className="min-h-screen bg-background">
       <LandingHeader />
       <Hero />
-      <SocialProof />
       <Problems />
       <StatsImpact />
       <Features />
