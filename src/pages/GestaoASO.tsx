@@ -223,42 +223,77 @@ export default function GestaoASO() {
       const nomeProfissional = profSelecionado?.nome || 'Profissional';
 
       const { status } = calculateStatus(formData.data_proximo_exame);
-      const { data: insertedData, error } = await supabase.from('exames_aso').insert({
+
+      // Verificar se já existe um exame ASO para esse profissional
+      const { data: existente, error: checkError } = await supabase
+        .from('exames_aso')
+        .select('id')
+        .eq('profissional_id', formData.profissional_id)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      const payload = {
         profissional_id: formData.profissional_id,
         tipo_exame: formData.tipo_exame,
         data_ultimo_exame: formData.data_ultimo_exame,
         data_proximo_exame: formData.data_proximo_exame || null,
         periodicidade: formData.periodicidade,
         status: status.toLowerCase(),
-      }).select().single();
+      };
 
-      if (error) throw error;
+      let savedId: string | undefined;
+      let acao: 'CRIAR' | 'EDITAR' = 'CRIAR';
+
+      if (existente?.id) {
+        // UPDATE: já existe ASO para esse profissional
+        const { data: updatedData, error: updateError } = await supabase
+          .from('exames_aso')
+          .update(payload)
+          .eq('id', existente.id)
+          .select()
+          .single();
+        if (updateError) throw updateError;
+        savedId = updatedData?.id;
+        acao = 'EDITAR';
+      } else {
+        // INSERT: novo ASO
+        const { data: insertedData, error: insertError } = await supabase
+          .from('exames_aso')
+          .insert(payload)
+          .select()
+          .single();
+        if (insertError) throw insertError;
+        savedId = insertedData?.id;
+      }
 
       // Registrar atividade
       addLog({
         usuario: 'Sistema',
-        acao: 'CRIAR',
+        acao,
         modulo: 'ASO',
         entidade: nomeProfissional,
-        detalhes: `Exame ASO "${formData.tipo_exame}" cadastrado para ${nomeProfissional}`,
+        detalhes: `Exame ASO "${formData.tipo_exame}" ${acao === 'EDITAR' ? 'atualizado' : 'cadastrado'} para ${nomeProfissional}`,
         metadata: { 
-          id: insertedData?.id,
+          id: savedId,
           dados_novos: formData
         }
       });
 
       toast({
         title: "Sucesso",
-        description: "Exame ASO cadastrado com sucesso"
+        description: acao === 'EDITAR'
+          ? "Exame ASO atualizado com sucesso"
+          : "Exame ASO cadastrado com sucesso"
       });
 
       handleCloseDialog();
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar:', error);
       toast({
         title: "Erro",
-        description: "Erro ao cadastrar exame",
+        description: error?.message || "Erro ao cadastrar exame",
         variant: "destructive"
       });
     } finally {

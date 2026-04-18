@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,19 @@ export function AdiantamentoSalario() {
   const [lojaFiltro, setLojaFiltro] = useState('todas');
   const [mostrarInelegiveis, setMostrarInelegiveis] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Carrega o percentual configurado no banco (configuracoes_sistema.percentual_adiantamento)
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('configuracoes_sistema')
+        .select('valor')
+        .eq('chave', 'percentual_adiantamento')
+        .maybeSingle();
+      const valor = Number(data?.valor);
+      if (!isNaN(valor) && valor > 0) setPercentualPadrao(valor);
+    })();
+  }, []);
   
   const profissionais = useMemo(() => {
     if (supabaseData.isLoading || supabaseData.totalProfissionais === 0) {

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, calcularFolhaProfissional, type ResultadoCalculo, type ProfissionalInput } from '@/lib/payrollCalculator';
 import { getCompetenciaAtual, getCompetenciaAnterior, getCompetenciasDisponiveis, formatCompetencia } from '@/lib/competencia';
-import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, carregarTributosCLT, type DadosCompetencia } from '@/lib/buildProfissionalInput';
+import { carregarDadosCompetenciaFromDB, buildProfissionalInput, getDefaultConfig, carregarTributosCLT, carregarPercentualAdiantamento, type DadosCompetencia } from '@/lib/buildProfissionalInput';
 import type { TributosCLT } from '@/lib/payrollCalculator';
 import { TRIBUTOS_CLT_PADRAO } from '@/lib/payrollCalculator';
 import { gerarHoleritePDF, gerarHoleriteDia20, gerarHoleriteDia5, gerarHoleriteVT } from '@/components/folha/HoleritePDF';
@@ -121,7 +121,7 @@ export default function Fechamentos() {
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [editOverrides, setEditOverrides] = useState<EditOverrides>({});
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  const [globalPercentualDia20, setGlobalPercentualDia20] = useState(50);
+  const [globalPercentualDia20, setGlobalPercentualDia20] = useState(40);
   const [sortBy, setSortBy] = useState<'nome' | 'matricula' | 'salario' | 'dia20'>('nome');
   const [tributosCLT, setTributosCLT] = useState<TributosCLT>(TRIBUTOS_CLT_PADRAO);
   
@@ -207,6 +207,7 @@ export default function Fechamentos() {
 
   useEffect(() => { loadData(); }, [loadData]);
   useEffect(() => { carregarTributosCLT().then(setTributosCLT); }, []);
+  useEffect(() => { carregarPercentualAdiantamento().then(setGlobalPercentualDia20); }, []);
   useEffect(() => { if (!isLoading && lojas.length > 0) loadLojaSummaries(); }, [isLoading, lojas, loadLojaSummaries]);
 
   const getFechamentoLoja = (lojaId: string): Fechamento | undefined => {

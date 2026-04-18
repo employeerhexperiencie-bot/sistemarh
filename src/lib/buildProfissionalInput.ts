@@ -247,8 +247,23 @@ export function getDefaultConfig(competencia: string): ConfiguracaoFolha {
     diasUteis6x1: calcularDiasUteisMes(competencia, '6x1'),
     diasUteis5x2: calcularDiasUteisMes(competencia, '5x2'),
     valorVR: 25,
-    percentualDia20: 50,
+    percentualDia20: 40,
     valorCestaBasica: 180,
     competencia,
   };
+}
+
+/**
+ * Carrega o percentual de adiantamento configurado no banco (configuracoes_sistema)
+ * Fallback: 40% (padrão da CLT)
+ */
+export async function carregarPercentualAdiantamento(): Promise<number> {
+  const { data } = await supabase
+    .from('configuracoes_sistema')
+    .select('valor')
+    .eq('chave', 'percentual_adiantamento')
+    .maybeSingle();
+
+  const valor = Number(data?.valor);
+  return isNaN(valor) || valor <= 0 ? 40 : valor;
 }
