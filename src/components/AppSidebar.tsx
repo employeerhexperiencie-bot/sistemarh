@@ -68,6 +68,7 @@ const navSections = [
     items: [
       { title: 'Lojas', url: '/cadastro-lojas', icon: Store },
       { title: 'Profissionais', url: '/cadastro-profissionais', icon: Users },
+      { title: 'Fotos em Lote', url: '/upload-fotos-lote', icon: ImageIcon },
       { title: 'Importar Dados', url: '/central-importacao', icon: FileSpreadsheet },
     ],
   },
