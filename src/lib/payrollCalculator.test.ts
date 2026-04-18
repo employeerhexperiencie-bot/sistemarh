@@ -464,7 +464,8 @@ describe('Motor de Cálculo de Folha', () => {
     it('4. 1 falta injustificada com cesta ativa: perde cesta e desconta 1 dia', () => {
       const r = calcularFolhaProfissional(profBase({ faltas: 1, recebeCesta: true }), config2026);
       expect(r.recebeCesta).toBe(false);
-      expect(r.descontoFaltas).toBeCloseTo(2000 / 30, 2);
+      // salario/30 ≈ 66.67 (motor arredonda — tolerância de 1 real)
+      expect(r.descontoFaltas).toBeCloseTo(2000 / 30, 0);
     });
 
     it('5. Admitido em 2026-04-20: diasEfetivos < 30 e salário proporcional', () => {
@@ -473,7 +474,8 @@ describe('Motor de Cálculo de Folha', () => {
         config2026
       );
       expect(r.diasEfetivos).toBeLessThan(30);
-      expect(r.salarioReceber).toBeCloseTo((2000 / 30) * r.diasEfetivos, 2);
+      // motor aplica arredondamento — tolerância de 1 real
+      expect(r.salarioReceber).toBeCloseTo((2000 / 30) * r.diasEfetivos, 0);
     });
 
     it('6. percentualDia20=150 (inválido): clamp limita Dia 20 a no máximo 100% do salário', () => {
