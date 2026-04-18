@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FileSpreadsheet, Download, Users, Building2, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { setPIIData, getPIIData } from '@/lib/piiStorage';
 
 interface Profissional {
   matricula: string;
@@ -155,15 +156,15 @@ export default function AnalisarAtivos() {
 
   useEffect(() => {
     carregarArquivo();
-    
-    // Após carregar, automaticamente popular o sistema se ainda não foi feito
-    const jaPopulado = localStorage.getItem('profissionaisImportados');
+
+    // Após carregar, popular o cofre temporário (sessionStorage com TTL)
+    // se ainda não foi feito nesta sessão
+    const jaPopulado = getPIIData<unknown[]>('profissionaisImportados');
     if (!jaPopulado) {
-      // Aguarda um pouco para garantir que os dados foram carregados
       setTimeout(() => {
         if (dados && dados.profissionais.length > 0) {
-          localStorage.setItem('profissionaisImportados', JSON.stringify(dados.profissionais));
-          localStorage.setItem('lojasImportadas', JSON.stringify(dados.lojas));
+          setPIIData('profissionaisImportados', dados.profissionais);
+          setPIIData('lojasImportadas', dados.lojas);
         }
       }, 1000);
     }
@@ -171,11 +172,11 @@ export default function AnalisarAtivos() {
 
   const popularSistema = () => {
     if (!dados) return;
-    
-    // Salvar dados no localStorage
-    localStorage.setItem('profissionaisImportados', JSON.stringify(dados.profissionais));
-    localStorage.setItem('lojasImportadas', JSON.stringify(dados.lojas));
-    
+
+    // Cofre temporário com TTL: dados expiram em 30min e somem ao fechar a aba
+    setPIIData('profissionaisImportados', dados.profissionais);
+    setPIIData('lojasImportadas', dados.lojas);
+
     toast.success(`${dados.profissionais.length} profissionais e ${dados.lojas.length} lojas importadas para o sistema!`, {
       description: 'Acesse "Cadastro de Profissionais" para visualizar os dados importados.'
     });
