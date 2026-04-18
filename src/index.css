@@ -660,11 +660,7 @@
   50%      { transform: translate(-30%, -60%) scale(1.15); }
 }
 
-/* Garante que conteúdo principal fique acima do bg animado */
-.landing-theme > *:not(.landing-animated-bg) {
-  position: relative;
-  z-index: 1;
-}
+/* Animated bg fica atrás de tudo (z-index: 0 já definido acima) */
 
 /* Respeita preferências de reduced motion */
 @media (prefers-reduced-motion: reduce) {
