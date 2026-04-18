@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Camera, Upload, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { convertToEzpoint, validatePhotoFile } from '@/lib/ezpointPhoto';
 import { ProfissionalAvatar } from './ProfissionalAvatar';
 
@@ -22,21 +21,28 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   onUploaded,
   onRemoved,
 }) => {
-  const { tenantId } = useAuth();
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
   const handleFile = async (file: File) => {
     const v = validatePhotoFile(file);
-    if (!v.ok) {
+    if (v.ok === false) {
       toast({ title: 'Foto inválida', description: v.error, variant: 'destructive' });
       return;
     }
-    if (!tenantId) {
-      toast({ title: 'Erro', description: 'Tenant não identificado', variant: 'destructive' });
+
+    // Buscar tenant_id do profissional (mais seguro que do contexto)
+    const { data: prof, error: pErr } = await supabase
+      .from('profissionais')
+      .select('tenant_id')
+      .eq('id', profissionalId)
+      .maybeSingle();
+    if (pErr || !prof?.tenant_id) {
+      toast({ title: 'Erro', description: 'Profissional não encontrado', variant: 'destructive' });
       return;
     }
+    const tenantId = prof.tenant_id;
 
     setUploading(true);
     try {
