@@ -972,9 +972,11 @@ export default function LandingPage() {
     <main className="min-h-screen bg-background">
       <LandingHeader />
       <Hero />
+      <SocialProof />
       <Problems />
       <StatsImpact />
       <Features />
+      <Comparison />
       <Differentiators />
       <Modules />
       <Commitments />
