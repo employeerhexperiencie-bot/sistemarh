@@ -567,21 +567,21 @@ export const CadastroProfissionais: React.FC = () => {
       return;
     }
 
-    // Validação de campos obrigatórios (NOT NULL no banco: nome, matricula, tenant_id)
+    // Validação: nome é obrigatório (NOT NULL no banco)
     const nomeNorm = (formData.nome || '').trim();
-    const matriculaNorm = (formData.matricula || '').trim();
-
-    if (!nomeNorm || !matriculaNorm) {
+    if (!nomeNorm) {
       toast({
-        title: "Campos obrigatórios faltando",
-        description: !nomeNorm && !matriculaNorm
-          ? "Preencha Nome e Matrícula antes de salvar."
-          : !nomeNorm
-            ? "O campo Nome é obrigatório."
-            : "O campo Matrícula é obrigatório. Informe um identificador único do colaborador.",
+        title: "Campo obrigatório faltando",
+        description: "O campo Nome é obrigatório.",
         variant: "destructive"
       });
       return;
+    }
+
+    // Matrícula: se vazia, gera automaticamente (evita falha de NOT NULL)
+    let matriculaNorm = (formData.matricula || '').trim();
+    if (!matriculaNorm) {
+      matriculaNorm = `AUTO-${Date.now().toString(36).toUpperCase()}`;
     }
 
     setLoading(true);
