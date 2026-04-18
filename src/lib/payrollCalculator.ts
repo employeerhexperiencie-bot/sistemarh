@@ -188,6 +188,7 @@ export function calcularFolhaProfissional(
   // 1. Configurações base
   const diasUteis = profissional.escala === '6x1' ? config.diasUteis6x1 : config.diasUteis5x2;
   const valorDia = profissional.salario / 30;
+  const percentualDia20Validado = Math.min(Math.max(config.percentualDia20 ?? 40, 0), 100);
   
   detalhes.push(`Salário base: R$ ${profissional.salario.toFixed(2)}`);
   detalhes.push(`Escala: ${profissional.escala} (${diasUteis} dias úteis)`);
@@ -298,27 +299,27 @@ export function calcularFolhaProfissional(
     detalhes.push('Dia 20: BLOQUEADO - Afastado por doença');
   } else if (profissional.status === 'licenca_maternidade') {
     // Licença maternidade recebe Dia 20 proporcionalmente
-    valorDia20 = arredondarValor(profissional.salario * 0.40 * (config.percentualDia20 / 100));
+    valorDia20 = arredondarValor(profissional.salario * 0.40 * (percentualDia20Validado / 100));
     motivoDia20 = 'Maternidade (40% proporcional)';
-    detalhes.push(`Dia 20: Maternidade - R$ ${valorDia20.toFixed(2)} (40% do salário × ${config.percentualDia20}%)`);
+    detalhes.push(`Dia 20: Maternidade - R$ ${valorDia20.toFixed(2)} (40% do salário × ${percentualDia20Validado}%)`);
   } else if (profissional.faltas >= 10) {
     recebeDia20 = false;
     motivoDia20 = '+10 faltas';
     detalhes.push('Dia 20: BLOQUEADO - Mais de 10 faltas no mês');
   } else if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() > 10) {
     // Admitido após dia 10 do mês de competência - recebe percentual configurado
-    valorDia20 = arredondarValor(profissional.salario * (config.percentualDia20 / 100));
-    motivoDia20 = `Admitido após dia 10 (${config.percentualDia20}%)`;
-    detalhes.push(`Dia 20: Admitido após dia 10 - ${config.percentualDia20}% = R$ ${valorDia20.toFixed(2)}`);
+    valorDia20 = arredondarValor(profissional.salario * (percentualDia20Validado / 100));
+    motivoDia20 = `Admitido após dia 10 (${percentualDia20Validado}%)`;
+    detalhes.push(`Dia 20: Admitido após dia 10 - ${percentualDia20Validado}% = R$ ${valorDia20.toFixed(2)}`);
   } else if (mesmaCompetencia && dataAdmissao && dataAdmissao.getDate() <= 10) {
-    valorDia20 = arredondarValor(profissional.salario * (config.percentualDia20 / 100));
-    motivoDia20 = `Admitido no mês (${config.percentualDia20}%)`;
-    detalhes.push(`Dia 20: Admitido até dia 10 - ${config.percentualDia20}% = R$ ${valorDia20.toFixed(2)}`);
+    valorDia20 = arredondarValor(profissional.salario * (percentualDia20Validado / 100));
+    motivoDia20 = `Admitido no mês (${percentualDia20Validado}%)`;
+    detalhes.push(`Dia 20: Admitido até dia 10 - ${percentualDia20Validado}% = R$ ${valorDia20.toFixed(2)}`);
   } else {
     // Caso padrão - usar percentual configurado
-    valorDia20 = arredondarValor(profissional.salario * (config.percentualDia20 / 100));
-    motivoDia20 = `${config.percentualDia20}%`;
-    detalhes.push(`Dia 20: Padrão ${config.percentualDia20}% - R$ ${valorDia20.toFixed(2)}`);
+    valorDia20 = arredondarValor(profissional.salario * (percentualDia20Validado / 100));
+    motivoDia20 = `${percentualDia20Validado}%`;
+    detalhes.push(`Dia 20: Padrão ${percentualDia20Validado}% - R$ ${valorDia20.toFixed(2)}`);
   }
   
   // 5. Calcular VT (APENAS para controle de quanto PAGAR ao profissional)
