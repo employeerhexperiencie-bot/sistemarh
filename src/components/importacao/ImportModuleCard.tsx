@@ -158,30 +158,86 @@ export function ImportModuleCard({ config, history, onImportComplete }: ImportMo
   };
 
   const resolveProfissionalIds = async (rows: any[]): Promise<{ resolved: any[]; errors: string[] }> => {
-    const matriculas = [...new Set(rows.filter(r => r._matricula).map(r => r._matricula))];
-    if (matriculas.length === 0) return { resolved: rows, errors: [] };
+    // Coleta matrículas e CPFs candidatos (suporta fallback por CPF)
+    const matriculasRaw = [...new Set(rows.filter(r => r._matricula).map(r => String(r._matricula).trim()))];
+    const cpfsRaw = [...new Set(rows.filter(r => r._cpf).map(r => String(r._cpf).replace(/\D/g, '')))];
 
-    const { data: profs } = await supabase
-      .from("profissionais")
-      .select("id, matricula")
-      .in("matricula", matriculas);
+    if (matriculasRaw.length === 0 && cpfsRaw.length === 0) return { resolved: rows, errors: [] };
 
-    const map = new Map((profs || []).map(p => [p.matricula, p.id]));
+    // Buscar todas as variações possíveis de matrícula (sem padding, com padding 4 e 6 dígitos)
+    const matriculasVariations = new Set<string>();
+    matriculasRaw.forEach(m => {
+      const clean = m.replace(/\s+/g, '');
+      matriculasVariations.add(clean);
+      // tenta versão sem zeros à esquerda
+      const noPad = clean.replace(/^0+/, '');
+      if (noPad) matriculasVariations.add(noPad);
+      // tenta com padding 4 e 6 dígitos
+      if (/^\d+$/.test(clean)) {
+        matriculasVariations.add(clean.padStart(4, '0'));
+        matriculasVariations.add(clean.padStart(6, '0'));
+      }
+    });
+
+    const { data: profsByMat } = matriculasVariations.size > 0
+      ? await supabase.from("profissionais").select("id, matricula, cpf, nome").in("matricula", [...matriculasVariations])
+      : { data: [] as any[] };
+
+    const { data: profsByCpf } = cpfsRaw.length > 0
+      ? await supabase.from("profissionais").select("id, matricula, cpf, nome").in("cpf", cpfsRaw)
+      : { data: [] as any[] };
+
+    // Mapas de busca tolerantes
+    const matMap = new Map<string, { id: string; nome: string }>();
+    (profsByMat || []).forEach(p => {
+      const m = String(p.matricula || '').trim();
+      matMap.set(m, { id: p.id, nome: p.nome });
+      const noPad = m.replace(/^0+/, '');
+      if (noPad) matMap.set(noPad, { id: p.id, nome: p.nome });
+    });
+
+    const cpfMap = new Map<string, { id: string; nome: string }>();
+    [...(profsByMat || []), ...(profsByCpf || [])].forEach(p => {
+      const cpfClean = String(p.cpf || '').replace(/\D/g, '');
+      if (cpfClean) cpfMap.set(cpfClean, { id: p.id, nome: p.nome });
+    });
+
     const resolved: any[] = [];
     const errors: string[] = [];
 
     rows.forEach((row, idx) => {
-      if (row._matricula) {
-        const profId = map.get(row._matricula);
-        if (!profId) {
-          errors.push(`Linha ${idx + 2}: matrícula "${row._matricula}" não encontrada`);
-          return;
-        }
-        const { _matricula, ...rest } = row;
-        resolved.push({ ...rest, profissional_id: profId });
-      } else {
+      const hasMatricula = !!row._matricula;
+      const hasCpf = !!row._cpf;
+
+      if (!hasMatricula && !hasCpf) {
         resolved.push(row);
+        return;
       }
+
+      // Tenta por matrícula em múltiplas variações
+      let prof: { id: string; nome: string } | undefined;
+      if (hasMatricula) {
+        const m = String(row._matricula).trim();
+        prof = matMap.get(m)
+          || matMap.get(m.replace(/^0+/, ''))
+          || matMap.get(m.padStart(4, '0'))
+          || matMap.get(m.padStart(6, '0'));
+      }
+
+      // Fallback: tenta por CPF
+      if (!prof && hasCpf) {
+        const cpfClean = String(row._cpf).replace(/\D/g, '');
+        prof = cpfMap.get(cpfClean);
+      }
+
+      if (!prof) {
+        const ref = hasMatricula ? `matrícula "${row._matricula}"` : `CPF "${row._cpf}"`;
+        errors.push(`Linha ${idx + 2}: profissional não encontrado (${ref})`);
+        return;
+      }
+
+      const { _matricula, _cpf, ...rest } = row;
+      resolved.push({ ...rest, profissional_id: prof.id });
     });
 
     return { resolved, errors };
