@@ -139,12 +139,14 @@ export function AdiantamentoSalario() {
   }, [supabaseData, competencia, percentualPadrao]);
   
   const profissionaisFiltrados = useMemo(() => {
-    return profissionais.filter(p => {
-      if (lojaFiltro !== 'todas' && p.loja !== lojaFiltro) return false;
-      if (!mostrarInelegiveis && !p.elegivel) return false;
-      if (searchTerm && !p.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !p.matricula.includes(searchTerm)) return false;
-      return true;
-    });
+    return profissionais
+      .filter(p => {
+        if (lojaFiltro !== 'todas' && p.loja !== lojaFiltro) return false;
+        if (!mostrarInelegiveis && !p.elegivel) return false;
+        if (searchTerm && !p.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !p.matricula.includes(searchTerm)) return false;
+        return true;
+      })
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
   }, [profissionais, lojaFiltro, mostrarInelegiveis, searchTerm]);
   
   const totais = useMemo(() => {
