@@ -541,6 +541,20 @@ export function TenantManagement() {
                             <p className="font-medium">{m?.folhas || 0}</p>
                           </div>
                           <div>
+                            <p className="text-muted-foreground">Alertas Pendentes</p>
+                            <p className={`font-medium ${(m?.alertas_pendentes || 0) > 50 ? 'text-warning' : ''}`}>
+                              {m?.alertas_pendentes || 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Ocorrências Abertas</p>
+                            <p className="font-medium">{m?.ocorrencias_abertas || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Empréstimos Ativos</p>
+                            <p className="font-medium">{m?.emprestimos || 0}</p>
+                          </div>
+                          <div>
                             <p className="text-muted-foreground">Cliente Desde</p>
                             <p className="font-medium">
                               {tenant.created_at ? format(new Date(tenant.created_at), "dd/MM/yyyy", { locale: ptBR }) : '—'}
