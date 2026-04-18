@@ -239,6 +239,11 @@ export function ProfissionalAutocomplete({
                     <span className="text-xs font-mono text-muted-foreground">
                       #{profissional.matricula}
                     </span>
+                    {profissional.status && profissional.status !== 'ativo' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium uppercase">
+                        {profissional.status}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
                     {profissional.cargo || 'Sem cargo'} • {profissional.loja?.nome || 'Sem loja'}
