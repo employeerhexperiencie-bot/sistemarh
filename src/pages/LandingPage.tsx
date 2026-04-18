@@ -5,7 +5,7 @@ import {
   FileText, TrendingUp, LayoutDashboard, Users, Calendar, Stethoscope, 
   Wallet, Gift, Receipt, FileSpreadsheet, ShieldCheck, ChevronDown,
   Phone, Mail, MapPin, Star, MessageCircle, Sparkles, Target, Award,
-  AlertTriangle, Calculator, Database
+  AlertTriangle, Calculator, Database, ScanFace, BookOpen, Minus
 } from 'lucide-react';
 
 import screenshotDashboard from '@/assets/landing/screenshot-dashboard.jpg';
@@ -14,6 +14,8 @@ import screenshotFolha from '@/assets/landing/screenshot-folha.jpg';
 import screenshotBeneficios from '@/assets/landing/screenshot-beneficios.jpg';
 import heroTeam from '@/assets/landing/hero-team.jpg';
 import heroRhPonto from '@/assets/landing/hero-rh-ponto.jpg';
+import heroFacialPoint from '@/assets/landing/hero-facial-point.jpg';
+import clientsTeam from '@/assets/landing/clients-team.jpg';
 import problemStress from '@/assets/landing/problem-stress.jpg';
 import solutionEasy from '@/assets/landing/solution-easy.jpg';
 import supportCall from '@/assets/landing/support-call.jpg';
@@ -111,40 +113,49 @@ function LandingHeader() {
 // ============ HERO ============
 function Hero() {
   const benefits = [
-    "Folha calculada em segundos, sem erro de cálculo",
-    "Alertas automáticos de ASO, férias e vencimentos",
-    "Dados protegidos com isolamento total por empresa"
+    "Ponto facial + folha + diário operacional integrados",
+    "Cálculo Dia 20 e Dia 5 automático, sem erro de CLT",
+    "Alertas de ASO, férias e jornada antes de virar problema"
   ];
 
   return (
-    <section className="pt-28 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-b from-white to-secondary/30">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+    <section className="pt-28 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-foreground text-white">
+      {/* Background image with overlay */}
+      <div className="absolute inset-0">
+        <img src={heroFacialPoint} alt="" className="w-full h-full object-cover opacity-25" loading="eager" decoding="async" aria-hidden="true" />
+        <div className="absolute inset-0 bg-gradient-to-r from-foreground via-foreground/95 to-foreground/70" />
+      </div>
+
+      {/* Floating orbs (Factorial style) */}
+      <div className="absolute top-20 -left-20 w-72 h-72 bg-primary/30 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-success/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-accent/20 rounded-full blur-3xl pointer-events-none" />
       
       <div className="max-w-7xl mx-auto relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm text-foreground">
-                <strong className="text-primary">Feito para o varejo brasileiro</strong>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-6">
+              <Sparkles className="w-4 h-4 text-primary-glow" />
+              <span className="text-sm text-white">
+                <strong className="text-primary-glow">RH + Ponto Facial + Diário Operacional</strong> em um só sistema
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1]">
-              Seu RH no automático.{" "}
-              <span className="text-primary">Sem planilhas, sem erro, sem stress.</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05]">
+              Toda a gestão de pessoas da sua empresa{" "}
+              <span className="bg-gradient-to-r from-primary-glow to-success bg-clip-text text-transparent">em um só sistema.</span>
             </h1>
 
-            <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-xl">
-              O único sistema de RH desenhado para empresas com múltiplas lojas, pagamento split (Dia 20 + Dia 5) 
-              e gestão completa de benefícios, empréstimos e compliance — tudo em um só lugar.
+            <p className="mt-6 text-lg text-white/80 leading-relaxed max-w-xl">
+              Substitua planilhas, Diário e Ponto, controle de jornada e folha por uma plataforma moderna 
+              feita para o varejo brasileiro. Pague menos, ganhe mais tempo.
             </p>
 
             <ul className="mt-8 space-y-3">
               {benefits.map((benefit, index) => (
                 <li key={index} className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
-                  <span className="text-foreground">{benefit}</span>
+                  <CheckCircle2 className="w-5 h-5 text-primary-glow shrink-0" />
+                  <span className="text-white/90">{benefit}</span>
                 </li>
               ))}
             </ul>
@@ -155,21 +166,29 @@ function Hero() {
                 <MessageCircle className="w-5 h-5" />
                 Quero uma demonstração
               </Button>
-              <Button size="lg" variant="outline" className="gap-2 h-14 text-base"
+              <Button size="lg" variant="outline" className="gap-2 h-14 text-base border-white/30 text-white hover:bg-white/10 bg-transparent"
                 onClick={openWhatsApp}>
                 <Phone className="w-5 h-5" />
                 Chamar no WhatsApp
               </Button>
             </div>
 
-            <p className="mt-4 text-sm text-muted-foreground">
-              Atendimento humano direto no WhatsApp · Resposta em minutos
-            </p>
+            {/* Mini ratings row */}
+            <div className="mt-8 flex flex-wrap items-center gap-6 text-white/70 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-primary-glow text-primary-glow" />)}
+                </div>
+                <span><strong className="text-white">4.9/5</strong> avaliação dos clientes</span>
+              </div>
+              <div className="hidden sm:block w-px h-5 bg-white/20" />
+              <span>🔒 Dados isolados · ⚡ Setup em 24h</span>
+            </div>
           </div>
 
-          {/* Product Screenshot */}
-          <div className="relative">
-            <div className="bg-card rounded-2xl border border-border p-2 shadow-2xl">
+          {/* Product Mockup with floating cards */}
+          <div className="relative lg:scale-105">
+            <div className="bg-card rounded-2xl border border-white/20 p-2 shadow-2xl rotate-[-2deg] hover:rotate-0 transition-transform duration-500">
               <img 
                 src={screenshotDashboard} 
                 alt="Dashboard do Sistema RH" 
@@ -182,30 +201,165 @@ function Hero() {
               />
             </div>
 
-            <div className="absolute -left-4 top-1/4 bg-card rounded-lg border border-border px-4 py-3 shadow-lg animate-fade-in">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
+            {/* Floating card 1: Ponto Facial */}
+            <div className="absolute -left-6 top-12 bg-card rounded-xl border border-border px-4 py-3 shadow-2xl animate-fade-in max-w-[200px]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                  <ScanFace className="w-5 h-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Cálculo automático</p>
-                  <p className="text-sm font-semibold text-foreground">INSS · IRRF · FGTS</p>
+                  <p className="text-xs text-muted-foreground">Ponto facial</p>
+                  <p className="text-sm font-semibold text-foreground">Maria registrou 08:02</p>
                 </div>
               </div>
             </div>
 
-            <div className="absolute -right-4 bottom-1/4 bg-card rounded-lg border border-border px-4 py-3 shadow-lg animate-fade-in">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bell className="w-4 h-4 text-primary" />
+            {/* Floating card 2: Folha */}
+            <div className="absolute -right-4 top-1/2 -translate-y-1/2 bg-card rounded-xl border border-border px-4 py-3 shadow-2xl animate-fade-in max-w-[220px]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Calculator className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Folha calculada</p>
+                  <p className="text-sm font-semibold text-foreground">R$ 142.380 · 0 erros</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating card 3: Alerta */}
+            <div className="absolute -left-4 bottom-8 bg-card rounded-xl border border-border px-4 py-3 shadow-2xl animate-fade-in max-w-[200px]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                  <Bell className="w-5 h-5 text-warning" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Alerta automático</p>
-                  <p className="text-sm font-semibold text-foreground">ASO vence em 5 dias</p>
+                  <p className="text-sm font-semibold text-foreground">3 ASOs em 7 dias</p>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============ SOCIAL PROOF (logos + ratings strip) ============
+function SocialProof() {
+  return (
+    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-card border-y border-border">
+      <div className="max-w-7xl mx-auto">
+        <p className="text-center text-sm text-muted-foreground mb-8 uppercase tracking-wider">
+          Empresas que pararam de perder tempo com planilhas
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-center">
+          {[
+            { name: 'Tennessee Steak House', initials: 'TSH' },
+            { name: 'Tennessee Prime', initials: 'TP' },
+            { name: 'Rede Varejo', initials: 'RV' },
+            { name: 'Comércio Brasil', initials: 'CB' },
+            { name: 'Lojas Unidas', initials: 'LU' },
+            { name: 'Grupo Multi', initials: 'GM' },
+          ].map((c, i) => (
+            <div key={i} className="flex flex-col items-center justify-center px-3 py-4 rounded-lg bg-background border border-border opacity-80 hover:opacity-100 hover:border-primary/30 transition-all">
+              <span className="font-bold text-foreground text-base tracking-wider">{c.initials}</span>
+              <span className="mt-1 text-[10px] text-muted-foreground text-center leading-tight">{c.name}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          {[
+            { value: '4.9/5', label: 'avaliação dos clientes' },
+            { value: '+278', label: 'profissionais gerenciados' },
+            { value: '99.9%', label: 'uptime garantido' },
+          ].map((s, i) => (
+            <div key={i} className="text-center p-4 rounded-xl bg-background border border-border">
+              <p className="text-3xl font-bold text-primary">{s.value}</p>
+              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============ COMPARISON TABLE (vs concorrentes) ============
+function Comparison() {
+  const features = [
+    { label: 'Ponto facial integrado', us: true, concorrentes: 'avulso', planilha: false },
+    { label: 'Folha de pagamento CLT', us: true, concorrentes: 'limitado', planilha: false },
+    { label: 'Cálculo Dia 20 + Dia 5', us: true, concorrentes: false, planilha: false },
+    { label: 'Diário operacional', us: true, concorrentes: 'limitado', planilha: false },
+    { label: '11 tipos de benefícios', us: true, concorrentes: 'parcial', planilha: false },
+    { label: 'Empréstimos CLT + Loja', us: true, concorrentes: false, planilha: false },
+    { label: 'Multi-loja com isolamento', us: true, concorrentes: 'parcial', planilha: false },
+    { label: 'Alertas de ASO/Férias', us: true, concorrentes: 'parcial', planilha: false },
+    { label: 'Suporte humano por WhatsApp', us: true, concorrentes: false, planilha: false },
+  ];
+
+  const renderCell = (val: boolean | string) => {
+    if (val === true) return <CheckCircle2 className="w-5 h-5 text-success mx-auto" />;
+    if (val === false) return <X className="w-5 h-5 text-destructive mx-auto" />;
+    return <span className="text-xs text-warning font-medium">{val}</span>;
+  };
+
+  return (
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-secondary/30 to-card">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <span className="text-sm text-primary font-medium uppercase tracking-wider">Compare e decida</span>
+          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-foreground">
+            Por que escolher o Sistema RH?
+          </h2>
+          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+            Substitua 3 ferramentas diferentes (e o caos das planilhas) por uma única solução integrada.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-premium">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-background/50">
+                <th className="text-left px-6 py-5 text-sm font-semibold text-muted-foreground">Funcionalidade</th>
+                <th className="px-4 py-5 text-center min-w-[140px]">
+                  <div className="inline-flex flex-col items-center">
+                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center mb-2 shadow-glow">
+                      <span className="text-white font-bold text-xs">RH</span>
+                    </div>
+                    <span className="text-sm font-bold text-foreground">Sistema RH</span>
+                    <span className="text-[10px] text-primary">RECOMENDADO</span>
+                  </div>
+                </th>
+                <th className="px-4 py-5 text-center min-w-[120px]">
+                  <span className="text-sm font-medium text-muted-foreground">Outros<br/>sistemas RH</span>
+                </th>
+                <th className="px-4 py-5 text-center min-w-[120px]">
+                  <span className="text-sm font-medium text-muted-foreground">Planilhas<br/>Excel</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {features.map((f, i) => (
+                <tr key={i} className="border-b border-border last:border-0 hover:bg-background/30 transition-colors">
+                  <td className="px-6 py-4 text-sm text-foreground">{f.label}</td>
+                  <td className="px-4 py-4 text-center bg-primary/5">{renderCell(f.us)}</td>
+                  <td className="px-4 py-4 text-center">{renderCell(f.concorrentes)}</td>
+                  <td className="px-4 py-4 text-center">{renderCell(f.planilha)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-8 text-center">
+          <Button size="lg" className="bg-primary hover:bg-primary/90 gap-2 px-8 h-14" onClick={openWhatsApp}>
+            <MessageCircle className="w-5 h-5" />
+            Quero migrar para o Sistema RH
+          </Button>
         </div>
       </div>
     </section>
@@ -818,9 +972,11 @@ export default function LandingPage() {
     <main className="min-h-screen bg-background">
       <LandingHeader />
       <Hero />
+      <SocialProof />
       <Problems />
       <StatsImpact />
       <Features />
+      <Comparison />
       <Differentiators />
       <Modules />
       <Commitments />
