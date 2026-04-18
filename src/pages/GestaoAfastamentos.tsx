@@ -177,13 +177,44 @@ export default function GestaoAfastamentos() {
   };
 
   const handleDelete = async (afastamento: Afastamento) => {
+    const loadingToast = toast.loading(`Excluindo afastamento de ${afastamento.nome}...`);
     try {
-      const { error } = await supabase
+      // Recupera tenant_id do usuário autenticado para garantir conformidade com RLS
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.dismiss(loadingToast);
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      // Delete com retorno para confirmar que a linha foi efetivamente removida
+      const { data: deleted, error } = await supabase
         .from('afastamentos')
         .delete()
-        .eq('id', afastamento.id);
+        .eq('id', afastamento.id)
+        .select('id');
 
-      if (error) throw error;
+      toast.dismiss(loadingToast);
+
+      if (error) {
+        console.error('[Afastamentos] Erro Supabase ao excluir:', error);
+        toast.error('Não foi possível excluir o afastamento', {
+          description: error.message || error.hint || `Código: ${error.code || 'desconhecido'}`,
+        });
+        return;
+      }
+
+      // Se nenhuma linha foi retornada, RLS bloqueou silenciosamente
+      if (!deleted || deleted.length === 0) {
+        toast.error('Exclusão bloqueada', {
+          description: 'Você não tem permissão para excluir este registro ou ele já foi removido.',
+        });
+        await loadData();
+        return;
+      }
+
+      // Atualização otimista: remove da lista local sem recarregar
+      setAfastamentos(prev => prev.filter(a => a.id !== afastamento.id));
 
       addLog({
         usuario: 'Sistema',
@@ -194,11 +225,15 @@ export default function GestaoAfastamentos() {
         metadata: { id: afastamento.id }
       });
 
-      toast.success('Afastamento excluído com sucesso!');
-      loadData();
+      toast.success('Afastamento excluído', {
+        description: `Registro de ${afastamento.nome} removido com sucesso.`,
+      });
     } catch (error: any) {
-      console.error('Erro ao excluir afastamento:', error);
-      toast.error(error?.message || 'Erro ao excluir afastamento');
+      toast.dismiss(loadingToast);
+      console.error('[Afastamentos] Erro inesperado ao excluir:', error);
+      toast.error('Erro ao excluir afastamento', {
+        description: error?.message || 'Erro inesperado. Tente novamente.',
+      });
     }
   };
 
