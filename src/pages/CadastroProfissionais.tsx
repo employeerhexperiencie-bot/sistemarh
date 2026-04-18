@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, AlertCircle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -721,6 +721,10 @@ export const CadastroProfissionais: React.FC = () => {
 
       const professionalDataComTenant = { ...professionalData, tenant_id: roleData.tenant_id };
 
+      // Detectar mudança de status para demissão (para feedback ao usuário)
+      const statusAnterior = editingProfessional?.status || 'ativo';
+      const virouDemitido = computedStatus === 'demitido' && statusAnterior !== 'demitido';
+
       if (editingProfessional) {
         const p = editingProfessional as any;
         // Detectar alterações salariais separadamente
@@ -783,11 +787,20 @@ export const CadastroProfissionais: React.FC = () => {
         });
         
         toast({
-          title: "Sucesso",
-          description: detalhes.length > 0 
-            ? `Profissional atualizado. Alteração salarial registrada: ${detalhes.join('; ')}`
-            : "Profissional atualizado com sucesso"
+          title: virouDemitido ? "Demissão registrada" : "Sucesso",
+          description: virouDemitido
+            ? `${formData.nome} foi marcado como DEMITIDO em ${formData.data_demissao.split('-').reverse().join('/')}.${detalhes.length > 0 ? ` Alteração salarial: ${detalhes.join('; ')}` : ''}`
+            : (detalhes.length > 0 
+              ? `Profissional atualizado. Alteração salarial registrada: ${detalhes.join('; ')}`
+              : "Profissional atualizado com sucesso")
         });
+
+        // Atualização otimista da lista (reflete antes do reload completo)
+        setProfessionals(prev => prev.map(prof =>
+          prof.id === editingProfessional.id
+            ? { ...prof, status: computedStatus, data_demissao: professionalData.data_demissao || undefined }
+            : prof
+        ));
       } else {
         // Verificar limite do tenant antes de inserir
         if (!canAddProfissional()) {
@@ -2190,6 +2203,14 @@ export const CadastroProfissionais: React.FC = () => {
 
                   {/* DEMISSÃO */}
                   <TabsContent value="demissao" className="space-y-4">
+                    {formData.data_demissao && (
+                      <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <strong>Atenção:</strong> Ao salvar com a data de demissão preenchida, o status do profissional será automaticamente alterado para <strong>DEMITIDO</strong>.
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="data_demissao">Data Demissão</Label>
