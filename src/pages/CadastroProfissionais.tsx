@@ -721,6 +721,10 @@ export const CadastroProfissionais: React.FC = () => {
 
       const professionalDataComTenant = { ...professionalData, tenant_id: roleData.tenant_id };
 
+      // Detectar mudança de status para demissão (para feedback ao usuário)
+      const statusAnterior = editingProfessional?.status || 'ativo';
+      const virouDemitido = computedStatus === 'demitido' && statusAnterior !== 'demitido';
+
       if (editingProfessional) {
         const p = editingProfessional as any;
         // Detectar alterações salariais separadamente
