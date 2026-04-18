@@ -578,6 +578,24 @@ export const CadastroProfissionais: React.FC = () => {
 
     setLoading(true);
     try {
+      // Normaliza qualquer valor de data para YYYY-MM-DD ou null.
+      // Aceita: "", "DD/MM/YYYY", "YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss", Date.
+      const toDateOnly = (raw: any): string | null => {
+        if (raw === null || raw === undefined) return null;
+        const s = String(raw).trim();
+        if (!s) return null;
+        // DD/MM/YYYY → YYYY-MM-DD
+        const br = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+        // YYYY-MM-DD (com possível Thh:mm) → corta no T
+        const iso = s.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (iso) return iso[1];
+        // Fallback: tenta Date
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return null;
+        return d.toISOString().split('T')[0];
+      };
+
       // Auto-definir status como demitido se data_demissao preenchida
       const computedStatus = formData.data_demissao ? 'demitido' : formData.status;
 
@@ -595,18 +613,18 @@ export const CadastroProfissionais: React.FC = () => {
         ultimo_salario: parseCurrencyToCentavos(formData.ultimo_salario) || null,
         insalubridade: formData.insalubridade,
         status: computedStatus,
-        data_admissao: formData.data_admissao || null,
-        data_demissao: formData.data_demissao || null,
+        data_admissao: toDateOnly(formData.data_admissao),
+        data_demissao: toDateOnly(formData.data_demissao),
         motivo_demissao: formData.motivo_demissao || null,
         aviso_trabalhado: formData.aviso_trabalhado || null,
-        data_homologacao: formData.data_homologacao || null,
+        data_homologacao: toDateOnly(formData.data_homologacao),
         local_homologacao: formData.local_homologacao || null,
-        data_cumprir_aviso: formData.data_cumprir_aviso || null,
+        data_cumprir_aviso: toDateOnly(formData.data_cumprir_aviso),
         // Dados Pessoais
         nome_mae: formData.nome_mae || null,
         nome_pai: formData.nome_pai || null,
         cor_etnia: formData.cor || null,
-        data_nascimento: formData.data_nascimento || null,
+        data_nascimento: toDateOnly(formData.data_nascimento),
         sexo: formData.sexo || null,
         estado_civil: formData.estado_civil || null,
         escolaridade: formData.escolaridade || null,
@@ -616,7 +634,7 @@ export const CadastroProfissionais: React.FC = () => {
         cracha: formData.cracha_numero || null,
         cnh: formData.cnh_numero || null,
         categoria_cnh: formData.cnh_categoria || null,
-        validade_cnh: formData.cnh_validade || null,
+        validade_cnh: toDateOnly(formData.cnh_validade),
         departamento: formData.departamento || null,
         setor: formData.setor || null,
         // Jornada
@@ -626,7 +644,7 @@ export const CadastroProfissionais: React.FC = () => {
         horario_saida: (formData as any).horario_saida || null,
         dia_folga: (formData as any).dia_folga || null,
         gestor: (formData as any).gestor || null,
-        data_inicio_loja: (formData as any).data_inicio_loja || null,
+        data_inicio_loja: toDateOnly((formData as any).data_inicio_loja),
         tem_dependentes: !!(formData as any).tem_dependentes,
         // Benefícios
         pensao_alimenticia: formData.pensao_alimenticia ? 1 : null,
@@ -777,11 +795,18 @@ export const CadastroProfissionais: React.FC = () => {
     } catch (error: any) {
       console.error('Save professional error:', error);
       const isRLS = error?.message?.includes('row-level security') || error?.code === '42501';
+      // Mensagem completa do Postgres para diagnóstico (code + details + hint)
+      const detalhes = [
+        error?.message,
+        error?.details,
+        error?.hint,
+        error?.code ? `(código ${error.code})` : null,
+      ].filter(Boolean).join(' — ');
       toast({
-        title: "Erro",
-        description: isRLS 
+        title: "Erro ao salvar profissional",
+        description: isRLS
           ? "Você não tem permissão para realizar esta ação. Solicite acesso ao administrador."
-          : String(error?.message || "Erro ao salvar profissional"),
+          : (detalhes || "Erro desconhecido ao salvar profissional"),
         variant: "destructive"
       });
     } finally {
