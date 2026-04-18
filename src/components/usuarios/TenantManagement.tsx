@@ -452,6 +452,11 @@ export function TenantManagement() {
                           ) : (
                             <Badge variant="destructive"><PowerOff className="h-3 w-3 mr-1" />Bloqueado</Badge>
                           )}
+                          {(m?.alertas_pendentes || 0) > 0 && (
+                            <Badge variant="outline" className="border-warning text-warning" title="Alertas não lidos">
+                              <AlertTriangle className="h-3 w-3 mr-1" />{m.alertas_pendentes}
+                            </Badge>
+                          )}
                         </div>
                         {tenant.email && <p className="text-xs text-muted-foreground mt-0.5">{tenant.email}</p>}
                       </div>
