@@ -53,6 +53,7 @@ export default function GestaoASO() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [filterTipoExame, setFilterTipoExame] = useState<string>('todos');
+  const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
   const [showSemASO, setShowSemASO] = useState(false);
   const [formData, setFormData] = useState({
