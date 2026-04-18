@@ -238,18 +238,25 @@ export default function GestaoFerias() {
     new Set(vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'))
   ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
-  // Aplicar filtros (loja + busca por nome) na listagem e nos contadores
+  // Aplicar filtros (loja + busca por nome + desligados) na listagem e nos contadores
   const filteredVacations = vacations.filter(v => {
     const matchesLoja = filterLoja === 'todas' || v.loja === filterLoja;
     const matchesSearch = searchTerm.trim() === '' ||
       v.nome.toLowerCase().includes(searchTerm.toLowerCase().trim());
-    return matchesLoja && matchesSearch;
+    const matchesAtivo = incluirDesligados || !v.desligado;
+    return matchesLoja && matchesSearch && matchesAtivo;
   });
 
   const pendentes = filteredVacations.filter(v => v.status === 'PENDENTE').length;
   const agendados = filteredVacations.filter(v => v.status === 'AGENDADO').length;
   const emFerias = filteredVacations.filter(v => v.status === 'EM_FERIAS').length;
   const vencendo = filteredVacations.filter(v => v.status === 'VENCENDO').length;
+
+  // Lista detalhada de vencimentos (para o card de alertas com nomes)
+  const listaVencendo = filteredVacations
+    .filter(v => v.status === 'VENCENDO')
+    .map(v => ({ ...v, diasRestantes: calculateDaysRemaining(v) }))
+    .sort((a, b) => a.diasRestantes - b.diasRestantes);
 
   if (loading) {
     return (
