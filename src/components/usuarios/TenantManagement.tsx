@@ -113,7 +113,24 @@ export function TenantManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editTenant, setEditTenant] = useState<Tenant | null>(null);
 
+  const [recalculando, setRecalculando] = useState(false);
+
   useEffect(() => { loadTenants(); }, []);
+
+  const recalcularMetricas = async () => {
+    setRecalculando(true);
+    try {
+      const { error } = await supabase.rpc('atualizar_todas_tenant_metrics' as any);
+      if (error) throw error;
+      toast.success('Métricas mensais recalculadas e salvas');
+      await loadTenants();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao recalcular métricas');
+    } finally {
+      setRecalculando(false);
+    }
+  };
 
   const loadTenants = async () => {
     setIsLoading(true);
@@ -402,6 +419,9 @@ export function TenantManagement() {
               <CardDescription>Gerencie clientes, limites e pagamentos</CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={recalcularMetricas} disabled={recalculando}>
+                <BarChart3 className={`h-4 w-4 mr-2 ${recalculando ? 'animate-spin' : ''}`} />Recalcular Métricas
+              </Button>
               <Button variant="outline" size="sm" onClick={loadTenants} disabled={isLoading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />Atualizar
               </Button>
