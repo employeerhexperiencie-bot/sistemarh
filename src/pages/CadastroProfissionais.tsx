@@ -1535,11 +1535,11 @@ export const CadastroProfissionais: React.FC = () => {
                             fotoUrl={(editingProfessional as any).foto_url}
                             onUploaded={({ fotoUrl }) => {
                               setEditingProfessional({ ...editingProfessional, foto_url: fotoUrl } as any);
-                              loadData();
+                              loadProfessionals();
                             }}
                             onRemoved={() => {
                               setEditingProfessional({ ...editingProfessional, foto_url: null } as any);
-                              loadData();
+                              loadProfessionals();
                             }}
                           />
                         </CardContent>
