@@ -434,6 +434,16 @@
   background: var(--landing-bg);
   color: hsl(var(--foreground));
   color-scheme: dark;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Previne overflow horizontal em mobile na landing */
+.landing-theme img,
+.landing-theme video {
+  max-width: 100%;
+  height: auto;
 }
 
 .landing-theme ::selection {
