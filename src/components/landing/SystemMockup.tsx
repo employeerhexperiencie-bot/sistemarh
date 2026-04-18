@@ -28,9 +28,10 @@ const MockupViewport = ({ children }: { children: React.ReactNode }) => (
     </div>
     <style>{`
       .mockup-host { --mockup-scale: 1; }
-      @media (max-width: 1023px) { .mockup-host { --mockup-scale: 0.78; } }
-      @media (max-width: 767px)  { .mockup-host { --mockup-scale: 0.55; } }
-      @media (max-width: 480px)  { .mockup-host { --mockup-scale: 0.42; } }
+      @media (min-width: 1280px) { .mockup-host { --mockup-scale: 1.15; } }
+      @media (max-width: 1023px) { .mockup-host { --mockup-scale: 0.92; } }
+      @media (max-width: 767px)  { .mockup-host { --mockup-scale: 0.78; } }
+      @media (max-width: 480px)  { .mockup-host { --mockup-scale: 0.62; } }
     `}</style>
   </div>
 );
