@@ -96,64 +96,68 @@ export function DashboardMockup() {
   ];
 
   return (
-    <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex h-[420px] text-slate-900">
-      <SidebarMock active="Dashboard" />
-      <div className="flex-1 flex flex-col">
-        <HeaderMock title="Painel Executivo · Outubro 2025" />
-        <div className="p-4 flex-1 overflow-hidden bg-slate-50">
-          {/* KPIs */}
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            {kpis.map((k) => (
-              <div key={k.label} className="bg-white rounded-lg border border-slate-200 p-3">
-                <p className="text-[10px] text-slate-500 uppercase tracking-wide">{k.label}</p>
-                <p className="text-xl font-bold text-slate-900 mt-1">{k.value}</p>
-                <p className={`text-[10px] font-medium mt-0.5 ${k.color}`}>{k.trend}</p>
-              </div>
-            ))}
-          </div>
-          {/* Chart + alerts */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 bg-white rounded-lg border border-slate-200 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-slate-900">Evolução da Folha</p>
-                <TrendingUp className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <div className="flex items-end justify-between gap-2 h-32">
-                {[40, 55, 48, 70, 65, 85, 78].map((h, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div 
-                      className="w-full rounded-t bg-gradient-to-t from-primary to-primary-glow" 
-                      style={{ height: `${h}%` }} 
-                    />
-                    <span className="text-[9px] text-slate-400">
-                      {['Abr','Mai','Jun','Jul','Ago','Set','Out'][i]}
-                    </span>
+    <div className="mockup-host w-full h-full relative">
+      <MockupViewport>
+        <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex w-full h-full text-slate-900">
+          <SidebarMock active="Dashboard" />
+          <div className="flex-1 flex flex-col">
+            <HeaderMock title="Painel Executivo · Outubro 2025" />
+            <div className="p-4 flex-1 overflow-hidden bg-slate-50">
+              {/* KPIs */}
+              <div className="grid grid-cols-4 gap-3 mb-4">
+                {kpis.map((k) => (
+                  <div key={k.label} className="bg-white rounded-lg border border-slate-200 p-3">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wide">{k.label}</p>
+                    <p className="text-xl font-bold text-slate-900 mt-1">{k.value}</p>
+                    <p className={`text-[10px] font-medium mt-0.5 ${k.color}`}>{k.trend}</p>
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="bg-white rounded-lg border border-slate-200 p-3">
-              <p className="text-xs font-semibold text-slate-900 mb-3">Próximos vencimentos</p>
-              <div className="space-y-2.5">
-                {[
-                  { icon: Stethoscope, t: 'ASO · Maria S.', d: 'em 3 dias', c: 'text-destructive' },
-                  { icon: Calendar, t: 'Férias · João S.', d: 'em 7 dias', c: 'text-warning' },
-                  { icon: FileText, t: 'CNH · Pedro L.', d: 'em 12 dias', c: 'text-warning' },
-                  { icon: Stethoscope, t: 'ASO · Ana C.', d: 'em 18 dias', c: 'text-success' },
-                ].map((a, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <a.icon className={`w-3.5 h-3.5 ${a.c} shrink-0`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-medium text-slate-900 truncate">{a.t}</p>
-                      <p className="text-[9px] text-slate-500">{a.d}</p>
-                    </div>
+              {/* Chart + alerts */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2 bg-white rounded-lg border border-slate-200 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold text-slate-900">Evolução da Folha</p>
+                    <TrendingUp className="w-3.5 h-3.5 text-primary" />
                   </div>
-                ))}
+                  <div className="flex items-end justify-between gap-2 h-32">
+                    {[40, 55, 48, 70, 65, 85, 78].map((h, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div 
+                          className="w-full rounded-t bg-gradient-to-t from-primary to-primary-glow" 
+                          style={{ height: `${h}%` }} 
+                        />
+                        <span className="text-[9px] text-slate-400">
+                          {['Abr','Mai','Jun','Jul','Ago','Set','Out'][i]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs font-semibold text-slate-900 mb-3">Próximos vencimentos</p>
+                  <div className="space-y-2.5">
+                    {[
+                      { icon: Stethoscope, t: 'ASO · Maria S.', d: 'em 3 dias', c: 'text-destructive' },
+                      { icon: Calendar, t: 'Férias · João S.', d: 'em 7 dias', c: 'text-warning' },
+                      { icon: FileText, t: 'CNH · Pedro L.', d: 'em 12 dias', c: 'text-warning' },
+                      { icon: Stethoscope, t: 'ASO · Ana C.', d: 'em 18 dias', c: 'text-success' },
+                    ].map((a, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <a.icon className={`w-3.5 h-3.5 ${a.c} shrink-0`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-medium text-slate-900 truncate">{a.t}</p>
+                          <p className="text-[9px] text-slate-500">{a.d}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </MockupViewport>
     </div>
   );
 }
