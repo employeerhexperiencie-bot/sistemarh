@@ -371,7 +371,7 @@ function Plataforma() {
           subtitle="Cada módulo conversa com o próximo. O ponto vira folha, a folha vira holerite, o holerite vira diário operacional. Sem exportar, sem colar, sem retrabalho."
         />
 
-        <div className="mt-16 grid lg:grid-cols-12 gap-6">
+        <div className="mt-10 sm:mt-16 grid lg:grid-cols-12 gap-4 sm:gap-6">
           {/* Big card 1 */}
           <PillarCard
             className="lg:col-span-7"
