@@ -627,6 +627,43 @@ export const CadastroProfissionais: React.FC = () => {
         return d.toISOString().split('T')[0];
       };
 
+      // Normaliza horários para 'HH:MM'. Aceita 'HH:MM', 'HH:MM:SS', 'H:M', 'HHhMM'.
+      // Retorna null para vazio. Lança erro com mensagem amigável se inválido.
+      const toTimeOnly = (raw: any, label: string): string | null => {
+        if (raw === null || raw === undefined) return null;
+        const s = String(raw).trim();
+        if (!s) return null;
+        // HH:MM ou HH:MM:SS
+        const m = s.match(/^(\d{1,2})[:hH](\d{1,2})(?::\d{1,2})?$/);
+        if (!m) {
+          throw new Error(`${label} inválido: use o formato HH:MM (ex: 08:00). Recebido: "${s}".`);
+        }
+        const h = parseInt(m[1], 10);
+        const min = parseInt(m[2], 10);
+        if (h < 0 || h > 23 || min < 0 || min > 59) {
+          throw new Error(`${label} fora do intervalo válido (00:00 a 23:59). Recebido: "${s}".`);
+        }
+        return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+      };
+
+      // Valida e normaliza horários antes de montar o payload
+      let horarioEntradaNorm: string | null;
+      let horarioIntervaloNorm: string | null;
+      let horarioSaidaNorm: string | null;
+      try {
+        horarioEntradaNorm = toTimeOnly((formData as any).horario_entrada, 'Horário de entrada');
+        horarioIntervaloNorm = toTimeOnly((formData as any).horario_intervalo, 'Horário de intervalo');
+        horarioSaidaNorm = toTimeOnly((formData as any).horario_saida, 'Horário de saída');
+      } catch (timeErr: any) {
+        toast({
+          title: "Horário inválido",
+          description: timeErr?.message || 'Verifique os horários informados (formato HH:MM).',
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
       // Auto-definir status como demitido se data_demissao preenchida
       const computedStatus = formData.data_demissao ? 'demitido' : formData.status;
 
