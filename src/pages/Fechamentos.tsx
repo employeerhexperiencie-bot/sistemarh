@@ -130,7 +130,7 @@ export default function Fechamentos() {
   const [reopenLoja, setReopenLoja] = useState<Loja | null>(null);
   
   // Loja summary cache (pre-calculated totals for list view)
-  const [lojaSummaries, setLojaSummaries] = useState<Record<string, { totalProf: number; totalValor: number; loading: boolean }>>({});
+  const [lojaSummaries, setLojaSummaries] = useState<Record<string, { totalProf: number; totalValor: number; totalDescontos: number; profComDesconto: number; loading: boolean }>>({});
 
   const competencias = getCompetenciasDisponiveis(6, 1);
 
@@ -169,7 +169,7 @@ export default function Fechamentos() {
     try {
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
       const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
-      const summaries: Record<string, { totalProf: number; totalValor: number; loading: boolean }> = {};
+      const summaries: Record<string, { totalProf: number; totalValor: number; totalDescontos: number; profComDesconto: number; loading: boolean }> = {};
 
       for (const loja of openLojas) {
         const { data: profs } = await supabase
@@ -179,7 +179,7 @@ export default function Fechamentos() {
           .not('status', 'in', '("demitido","inativo")');
 
         if (!profs || profs.length === 0) {
-          summaries[loja.id] = { totalProf: 0, totalValor: 0, loading: false };
+          summaries[loja.id] = { totalProf: 0, totalValor: 0, totalDescontos: 0, profComDesconto: 0, loading: false };
           continue;
         }
 
@@ -196,7 +196,10 @@ export default function Fechamentos() {
           case 'beneficios': total = resultados.reduce((s, r) => s + r.valorVR + r.valorCesta, 0); break;
         }
 
-        summaries[loja.id] = { totalProf: profs.length, totalValor: total, loading: false };
+        const totalDescontos = resultados.reduce((s, r) => s + (r.totalDescontos || 0), 0);
+        const profComDesconto = resultados.filter(r => (r.totalDescontos || 0) > 0).length;
+
+        summaries[loja.id] = { totalProf: profs.length, totalValor: total, totalDescontos, profComDesconto, loading: false };
       }
 
       setLojaSummaries(summaries);
@@ -1465,7 +1468,7 @@ export default function Fechamentos() {
                                     <span className="text-xs text-muted-foreground">v{fechamento.versao}</span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                                <div className="flex items-center gap-x-4 gap-y-1 text-xs text-muted-foreground flex-wrap">
                                   <span className="flex items-center gap-1">
                                     <Users className="h-3 w-3" />
                                     {status !== 'fechado' && !summary ? (
@@ -1480,6 +1483,16 @@ export default function Fechamentos() {
                                   {totalValor > 0 && (
                                     <span className="font-semibold text-success text-sm">
                                       Prévia: {formatCurrency(totalValor)}
+                                    </span>
+                                  )}
+                                  {summary && summary.totalDescontos > 0 && (
+                                    <span className="inline-flex items-center gap-1 text-destructive">
+                                      <span className="font-medium">
+                                        − {formatCurrency(summary.totalDescontos)}
+                                      </span>
+                                      <span className="text-muted-foreground">
+                                        ({summary.profComDesconto} c/ desconto)
+                                      </span>
                                     </span>
                                   )}
                                   {fechamento?.fechado_em && (
