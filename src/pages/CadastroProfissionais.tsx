@@ -795,11 +795,18 @@ export const CadastroProfissionais: React.FC = () => {
     } catch (error: any) {
       console.error('Save professional error:', error);
       const isRLS = error?.message?.includes('row-level security') || error?.code === '42501';
+      // Mensagem completa do Postgres para diagnóstico (code + details + hint)
+      const detalhes = [
+        error?.message,
+        error?.details,
+        error?.hint,
+        error?.code ? `(código ${error.code})` : null,
+      ].filter(Boolean).join(' — ');
       toast({
-        title: "Erro",
-        description: isRLS 
+        title: "Erro ao salvar profissional",
+        description: isRLS
           ? "Você não tem permissão para realizar esta ação. Solicite acesso ao administrador."
-          : String(error?.message || "Erro ao salvar profissional"),
+          : (detalhes || "Erro desconhecido ao salvar profissional"),
         variant: "destructive"
       });
     } finally {
