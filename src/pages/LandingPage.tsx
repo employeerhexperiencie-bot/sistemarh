@@ -601,9 +601,9 @@ function Commitments() {
 // ============ HOW IT WORKS ============
 function HowItWorks() {
   const steps = [
-    { step: "1", title: "Você nos chama no WhatsApp", description: "Conta seu cenário em 10 minutos. A gente entende sua operação e mostra como o sistema resolve." },
-    { step: "2", title: "Importamos seus dados", description: "Suas planilhas viram um sistema profissional. Sem trabalho para você. Equipe técnica dedicada." },
-    { step: "3", title: "Em 24h você está rodando", description: "Treinamento incluso, suporte por WhatsApp e a tranquilidade de saber que está tudo certo." },
+    { step: "1", title: "Você nos chama no WhatsApp", description: "Conta seu cenário em 10 minutos." },
+    { step: "2", title: "Importamos seus dados", description: "Suas planilhas viram sistema. Sem trabalho pra você." },
+    { step: "3", title: "Em 24h você está rodando", description: "Treinamento incluso e suporte por WhatsApp." },
   ];
 
   return (
@@ -616,7 +616,7 @@ function HowItWorks() {
               Três passos e pronto
             </h2>
             <p className="mt-4 text-muted-foreground leading-relaxed">
-              Sem dor de cabeça, sem migração complicada. A gente cuida de tudo pra você começar a usar amanhã.
+              Sem migração complicada. A gente cuida de tudo pra você começar amanhã.
             </p>
             <Button size="lg" className="mt-6 gap-2 bg-primary hover:bg-primary/90"
               onClick={openWhatsApp}>
@@ -648,14 +648,10 @@ function HowItWorks() {
 function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const faqs = [
-    { q: "Quanto custa o sistema?", a: "O investimento depende do tamanho da sua operação (quantidade de colaboradores e lojas). Chame no WhatsApp e em 10 minutos a gente monta uma proposta sob medida pra você." },
-    { q: "Preciso instalar alguma coisa?", a: "Não. O sistema funciona 100% online, pelo navegador. Funciona no computador, tablet e celular sem instalação." },
-    { q: "Como vocês importam meus dados?", a: "Basta nos enviar suas planilhas de Excel. Nossa equipe técnica faz toda a importação, validação e conferência dos dados. Você não precisa fazer nada." },
-    { q: "Meus dados ficam seguros?", a: "Sim. Usamos criptografia de nível bancário, isolamento total entre empresas (multi-tenant) e auditoria completa de todas as ações. Seus dados nunca se misturam com os de outras empresas." },
-    { q: "Funciona para o meu modelo de pagamento?", a: "Sim. Somos os únicos do mercado a calcular nativamente o pagamento split Dia 20 (adiantamento) + Dia 5 (saldo), além do modelo mensal tradicional. Atendemos varejo, comércio, indústria e serviços." },
-    { q: "Vocês dão suporte?", a: "Sim! Suporte direto por WhatsApp com a equipe técnica. Resposta em minutos durante horário comercial e atendimento dedicado para questões urgentes." },
-    { q: "Posso cancelar quando quiser?", a: "Sim. Sem multa, sem fidelidade longa. Se não gostar, cancela. Mas em 8 anos de operação, ninguém pediu pra cancelar." },
-    { q: "Funciona para quantos funcionários?", a: "De 10 a 2.000+ colaboradores por empresa. Arquitetura preparada para escalar conforme você cresce, sem precisar trocar de sistema." },
+    { q: "Quanto custa o sistema?", a: "Depende do tamanho da sua operação. Chame no WhatsApp e em 10 minutos montamos uma proposta sob medida." },
+    { q: "Meus dados ficam seguros?", a: "Sim. Criptografia de nível bancário, isolamento total entre empresas e auditoria completa." },
+    { q: "Como vocês importam meus dados?", a: "Você envia suas planilhas e nossa equipe técnica faz toda a importação e validação." },
+    { q: "Posso cancelar quando quiser?", a: "Sim, sem multa, sem fidelidade. Garantia de 30 dias com devolução do investimento." },
   ];
 
   return (
@@ -710,11 +706,8 @@ function CTA() {
         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
           Chega de perder tempo e dinheiro com planilha
         </h2>
-        <p className="text-white/90 text-lg mb-2 leading-relaxed">
-          Em 10 minutos no WhatsApp você descobre se o sistema resolve a sua dor.
-        </p>
-        <p className="text-white/80 text-base mb-8">
-          Sem compromisso. Sem cartão de crédito. Resposta em minutos.
+        <p className="text-white/90 text-lg mb-8 leading-relaxed">
+          Em 10 minutos no WhatsApp você descobre se o sistema resolve a sua dor. Sem compromisso.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button size="lg" className="bg-white text-primary hover:bg-white/90 gap-2 px-8 h-14 text-base font-semibold"
