@@ -578,6 +578,24 @@ export const CadastroProfissionais: React.FC = () => {
 
     setLoading(true);
     try {
+      // Normaliza qualquer valor de data para YYYY-MM-DD ou null.
+      // Aceita: "", "DD/MM/YYYY", "YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss", Date.
+      const toDateOnly = (raw: any): string | null => {
+        if (raw === null || raw === undefined) return null;
+        const s = String(raw).trim();
+        if (!s) return null;
+        // DD/MM/YYYY → YYYY-MM-DD
+        const br = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+        // YYYY-MM-DD (com possível Thh:mm) → corta no T
+        const iso = s.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (iso) return iso[1];
+        // Fallback: tenta Date
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return null;
+        return d.toISOString().split('T')[0];
+      };
+
       // Auto-definir status como demitido se data_demissao preenchida
       const computedStatus = formData.data_demissao ? 'demitido' : formData.status;
 
