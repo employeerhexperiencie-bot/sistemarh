@@ -43,6 +43,7 @@ export default function GestaoFerias() {
   });
   const [saving, setSaving] = useState(false);
   const [selectedProfissionalId, setSelectedProfissionalId] = useState<string | undefined>(undefined);
+  const [filterLoja, setFilterLoja] = useState<string>('todas');
   const { addLog } = useAuditLog();
 
   useEffect(() => {
