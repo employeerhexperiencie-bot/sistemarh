@@ -359,6 +359,7 @@ export function CentralAlertas() {
           loja: a.lojas?.nome || 'Sistema',
           profissional: a.profissionais?.nome,
           matricula: a.profissionais?.matricula,
+          fotoUrl: a.profissionais?.foto_url,
           acaoUrl: a.acao_url,
           lido: a.lido || false,
           resolvido: false, // Alertas do BD são sempre pendentes se existem
@@ -373,6 +374,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
@@ -402,6 +404,7 @@ export function CentralAlertas() {
           loja: e.profissionais?.lojas?.nome || 'N/A',
           profissional: e.profissionais?.nome,
           matricula: e.profissionais?.matricula,
+          fotoUrl: e.profissionais?.foto_url,
           acaoUrl: '/gestao-aso',
           lido: false,
           resolvido: false,
@@ -416,6 +419,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
@@ -444,6 +448,7 @@ export function CentralAlertas() {
           loja: f.profissionais?.lojas?.nome || 'N/A',
           profissional: f.profissionais?.nome,
           matricula: f.profissionais?.matricula,
+          fotoUrl: f.profissionais?.foto_url,
           acaoUrl: '/gestao-ferias',
           lido: false,
           resolvido: false,
@@ -458,6 +463,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
@@ -492,6 +498,7 @@ export function CentralAlertas() {
           loja: a.profissionais?.lojas?.nome || 'N/A',
           profissional: a.profissionais?.nome,
           matricula: a.profissionais?.matricula,
+          fotoUrl: a.profissionais?.foto_url,
           acaoUrl: '/gestao-afastamentos',
           lido: false,
           resolvido: false,
@@ -506,6 +513,7 @@ export function CentralAlertas() {
           matricula,
           nome,
           status,
+          foto_url,
           lojas:lojas!profissionais_loja_id_fkey (nome)
         `)
         .in('status', ['afastado_acidente', 'licenca_maternidade', 'afastado_doenca', 'afastado']);
@@ -539,6 +547,7 @@ export function CentralAlertas() {
             loja: p.lojas?.nome || 'N/A',
             profissional: p.nome,
             matricula: p.matricula,
+            fotoUrl: p.foto_url,
             acaoUrl: '/gestao-afastamentos',
             lido: false,
             resolvido: false,
@@ -554,6 +563,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
@@ -582,6 +592,7 @@ export function CentralAlertas() {
             loja: e.profissionais?.lojas?.nome || 'N/A',
             profissional: e.profissionais?.nome,
             matricula: e.profissionais?.matricula,
+            fotoUrl: e.profissionais?.foto_url,
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,
@@ -602,6 +613,7 @@ export function CentralAlertas() {
             loja: e.profissionais?.lojas?.nome || 'N/A',
             profissional: e.profissionais?.nome,
             matricula: e.profissionais?.matricula,
+            fotoUrl: e.profissionais?.foto_url,
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,
@@ -618,6 +630,7 @@ export function CentralAlertas() {
           profissionais:profissional_id (
             matricula,
             nome,
+            foto_url,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `)
@@ -643,6 +656,7 @@ export function CentralAlertas() {
             loja: e.profissionais?.lojas?.nome || 'N/A',
             profissional: e.profissionais?.nome,
             matricula: e.profissionais?.matricula,
+            fotoUrl: e.profissionais?.foto_url,
             acaoUrl: '/gestao-emprestimos',
             lido: false,
             resolvido: false,
