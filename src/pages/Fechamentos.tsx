@@ -169,7 +169,7 @@ export default function Fechamentos() {
     try {
       const dadosComp = await carregarDadosCompetenciaFromDB(competencia);
       const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
-      const summaries: Record<string, { totalProf: number; totalValor: number; loading: boolean }> = {};
+      const summaries: Record<string, { totalProf: number; totalValor: number; totalDescontos: number; profComDesconto: number; loading: boolean }> = {};
 
       for (const loja of openLojas) {
         const { data: profs } = await supabase
@@ -179,7 +179,7 @@ export default function Fechamentos() {
           .not('status', 'in', '("demitido","inativo")');
 
         if (!profs || profs.length === 0) {
-          summaries[loja.id] = { totalProf: 0, totalValor: 0, loading: false };
+          summaries[loja.id] = { totalProf: 0, totalValor: 0, totalDescontos: 0, profComDesconto: 0, loading: false };
           continue;
         }
 
@@ -196,7 +196,10 @@ export default function Fechamentos() {
           case 'beneficios': total = resultados.reduce((s, r) => s + r.valorVR + r.valorCesta, 0); break;
         }
 
-        summaries[loja.id] = { totalProf: profs.length, totalValor: total, loading: false };
+        const totalDescontos = resultados.reduce((s, r) => s + (r.totalDescontos || 0), 0);
+        const profComDesconto = resultados.filter(r => (r.totalDescontos || 0) > 0).length;
+
+        summaries[loja.id] = { totalProf: profs.length, totalValor: total, totalDescontos, profComDesconto, loading: false };
       }
 
       setLojaSummaries(summaries);
