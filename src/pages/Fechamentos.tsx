@@ -207,6 +207,7 @@ export default function Fechamentos() {
 
   useEffect(() => { loadData(); }, [loadData]);
   useEffect(() => { carregarTributosCLT().then(setTributosCLT); }, []);
+  useEffect(() => { carregarPercentualAdiantamento().then(setGlobalPercentualDia20); }, []);
   useEffect(() => { if (!isLoading && lojas.length > 0) loadLojaSummaries(); }, [isLoading, lojas, loadLojaSummaries]);
 
   const getFechamentoLoja = (lojaId: string): Fechamento | undefined => {
