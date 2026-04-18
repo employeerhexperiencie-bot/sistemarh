@@ -21,8 +21,14 @@ const arredondarValor = (valor: number): number => {
   return centavos >= 0.50 ? Math.ceil(valor) : Math.floor(valor);
 };
 
+// Formato R$ inteiro (sem centavos) - decisão de produto p/ adiantamentos
 const formatCurrency = (value: number): string => {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Math.round(value).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 };
 
 interface ProfissionalAdiantamento {
@@ -133,12 +139,14 @@ export function AdiantamentoSalario() {
   }, [supabaseData, competencia, percentualPadrao]);
   
   const profissionaisFiltrados = useMemo(() => {
-    return profissionais.filter(p => {
-      if (lojaFiltro !== 'todas' && p.loja !== lojaFiltro) return false;
-      if (!mostrarInelegiveis && !p.elegivel) return false;
-      if (searchTerm && !p.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !p.matricula.includes(searchTerm)) return false;
-      return true;
-    });
+    return profissionais
+      .filter(p => {
+        if (lojaFiltro !== 'todas' && p.loja !== lojaFiltro) return false;
+        if (!mostrarInelegiveis && !p.elegivel) return false;
+        if (searchTerm && !p.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !p.matricula.includes(searchTerm)) return false;
+        return true;
+      })
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
   }, [profissionais, lojaFiltro, mostrarInelegiveis, searchTerm]);
   
   const totais = useMemo(() => {

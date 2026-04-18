@@ -36,7 +36,14 @@ interface ConfigRelatorio {
   geradoPor?: string;
 }
 
-const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+// Formato R$ inteiro (sem centavos) - decisão de produto p/ relatórios e holerites
+const formatCurrency = (v: number) =>
+  Math.round(v).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString('pt-BR') : '-';
 
 const PRIMARY: [number, number, number] = [10, 132, 255];
