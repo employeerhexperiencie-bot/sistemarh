@@ -65,6 +65,8 @@ const Fechamentos = lazy(() => import("@/pages/Fechamentos"));
 const PainelUso = lazy(() => import("@/pages/PainelUso"));
 const CentralImportacao = lazy(() => import("@/pages/CentralImportacao"));
 const GestaoPonto = lazy(() => import("@/pages/GestaoPonto"));
+const Marketplace = lazy(() => import("@/pages/Marketplace"));
+const ModuloPage = lazy(() => import("@/pages/ModuloPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 
@@ -221,6 +223,8 @@ const App = () => (
                     <Route path="/minha-equipe" element={<ProtectedLayout><MinhaEquipe /></ProtectedLayout>} />
                     <Route path="/central-importacao" element={<ProtectedLayout><CentralImportacao /></ProtectedLayout>} />
                     <Route path="/gestao-ponto" element={<ProtectedLayout><GestaoPonto /></ProtectedLayout>} />
+                    <Route path="/marketplace" element={<ProtectedLayout><Marketplace /></ProtectedLayout>} />
+                    <Route path="/modulos/:slug" element={<ProtectedLayout><ModuloPage /></ProtectedLayout>} />
                     
                     {/* Catch-all - Redireciona para 404 */}
                     <Route path="*" element={<NotFound />} />
