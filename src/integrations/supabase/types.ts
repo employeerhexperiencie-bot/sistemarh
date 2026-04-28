@@ -1672,6 +1672,231 @@ export type Database = {
           },
         ]
       }
+      partner_entity_map: {
+        Row: {
+          cpf_anchor: string | null
+          created_at: string
+          entidade_id_externo: string
+          entidade_id_local: string
+          entidade_tipo: string
+          id: string
+          metadata: Json | null
+          partner_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          cpf_anchor?: string | null
+          created_at?: string
+          entidade_id_externo: string
+          entidade_id_local: string
+          entidade_tipo: string
+          id?: string
+          metadata?: Json | null
+          partner_id: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          cpf_anchor?: string | null
+          created_at?: string
+          entidade_id_externo?: string
+          entidade_id_local?: string
+          entidade_tipo?: string
+          id?: string
+          metadata?: Json | null
+          partner_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_entity_map_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_modules: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          descricao: string | null
+          documentacao_url: string | null
+          embed_url_template: string | null
+          eventos_consumidos: Json | null
+          eventos_emitidos: Json | null
+          icone: string | null
+          id: string
+          nome: string
+          partner_id: string
+          scopes_requeridos: Json | null
+          slug: string
+          status: string
+          updated_at: string
+          versao: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          documentacao_url?: string | null
+          embed_url_template?: string | null
+          eventos_consumidos?: Json | null
+          eventos_emitidos?: Json | null
+          icone?: string | null
+          id?: string
+          nome: string
+          partner_id: string
+          scopes_requeridos?: Json | null
+          slug: string
+          status?: string
+          updated_at?: string
+          versao?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          documentacao_url?: string | null
+          embed_url_template?: string | null
+          eventos_consumidos?: Json | null
+          eventos_emitidos?: Json | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          partner_id?: string
+          scopes_requeridos?: Json | null
+          slug?: string
+          status?: string
+          updated_at?: string
+          versao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_modules_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_webhook_logs: {
+        Row: {
+          created_at: string
+          direcao: string
+          error_message: string | null
+          evento: string
+          headers: Json | null
+          id: string
+          partner_id: string
+          payload: Json | null
+          processed_at: string | null
+          proxima_tentativa: string | null
+          response_body: string | null
+          response_code: number | null
+          status: string
+          tenant_id: string | null
+          tentativas: number
+        }
+        Insert: {
+          created_at?: string
+          direcao: string
+          error_message?: string | null
+          evento: string
+          headers?: Json | null
+          id?: string
+          partner_id: string
+          payload?: Json | null
+          processed_at?: string | null
+          proxima_tentativa?: string | null
+          response_body?: string | null
+          response_code?: number | null
+          status?: string
+          tenant_id?: string | null
+          tentativas?: number
+        }
+        Update: {
+          created_at?: string
+          direcao?: string
+          error_message?: string | null
+          evento?: string
+          headers?: Json | null
+          id?: string
+          partner_id?: string
+          payload?: Json | null
+          processed_at?: string | null
+          proxima_tentativa?: string | null
+          response_body?: string | null
+          response_code?: number | null
+          status?: string
+          tenant_id?: string | null
+          tentativas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_webhook_logs_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          api_base_url: string | null
+          ativo: boolean
+          contato_email: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+          slug: string
+          sso_public_key: string | null
+          tipo: string
+          updated_at: string
+          webhook_secret: string | null
+          website: string | null
+        }
+        Insert: {
+          api_base_url?: string | null
+          ativo?: boolean
+          contato_email?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          logo_url?: string | null
+          nome: string
+          slug: string
+          sso_public_key?: string | null
+          tipo?: string
+          updated_at?: string
+          webhook_secret?: string | null
+          website?: string | null
+        }
+        Update: {
+          api_base_url?: string | null
+          ativo?: boolean
+          contato_email?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          slug?: string
+          sso_public_key?: string | null
+          tipo?: string
+          updated_at?: string
+          webhook_secret?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       pendencias: {
         Row: {
           alerta_critico_enviado: boolean | null
@@ -2352,6 +2577,53 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_modules: {
+        Row: {
+          ativado_em: string | null
+          ativado_por: string | null
+          ativo: boolean
+          configuracao: Json | null
+          created_at: string
+          desativado_em: string | null
+          id: string
+          partner_module_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativado_em?: string | null
+          ativado_por?: string | null
+          ativo?: boolean
+          configuracao?: Json | null
+          created_at?: string
+          desativado_em?: string | null
+          id?: string
+          partner_module_id: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          ativado_em?: string | null
+          ativado_por?: string | null
+          ativo?: boolean
+          configuracao?: Json | null
+          created_at?: string
+          desativado_em?: string | null
+          id?: string
+          partner_module_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_modules_partner_module_id_fkey"
+            columns: ["partner_module_id"]
+            isOneToOne: false
+            referencedRelation: "partner_modules"
             referencedColumns: ["id"]
           },
         ]
