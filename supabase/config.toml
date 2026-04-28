@@ -29,3 +29,9 @@ verify_jwt = true
 
 [functions.ezpoint-proxy]
 verify_jwt = false
+
+[functions.partner-webhook]
+verify_jwt = false
+
+[functions.partner-sync-profissionais]
+verify_jwt = true
