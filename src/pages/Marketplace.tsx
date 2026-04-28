@@ -11,6 +11,7 @@ import {
   toggleTenantModule,
 } from '@/hooks/useTenantModules';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Package,
   Users,
@@ -19,6 +20,7 @@ import {
   CreditCard,
   Sparkles,
   ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 
 const ICONS: Record<string, any> = {
@@ -41,9 +43,32 @@ export default function Marketplace() {
   const { data: modules, isLoading } = useAvailableModules();
   const { data: active } = useActiveTenantModules();
   const [toggling, setToggling] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState<string | null>(null);
 
   const isActive = (moduleId: string) =>
     active?.some((tm) => tm.partner_module_id === moduleId && tm.ativo) ?? false;
+
+  const syncProfissionais = async (partnerSlug: string, partnerName: string) => {
+    setSyncing(partnerSlug);
+    try {
+      const { data, error } = await supabase.functions.invoke('partner-sync-profissionais', {
+        body: { partner_slug: partnerSlug },
+      });
+      if (error) throw error;
+      toast({
+        title: `Sincronização ${partnerName} concluída`,
+        description: `Total: ${data.total} · Sincronizados: ${data.synced} · Ignorados: ${data.skipped}`,
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Falha na sincronização',
+        description: e.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncing(null);
+    }
+  };
 
   const handleToggle = async (moduleId: string, nome: string, ativo: boolean) => {
     setToggling(moduleId);
@@ -140,6 +165,24 @@ export default function Marketplace() {
                       </Button>
                     )}
                   </div>
+                  {active && mod.partner?.slug && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full"
+                      disabled={syncing === mod.partner.slug}
+                      onClick={() =>
+                        syncProfissionais(mod.partner!.slug, mod.partner!.nome)
+                      }
+                    >
+                      <RefreshCw
+                        className={`h-3 w-3 mr-2 ${
+                          syncing === mod.partner.slug ? 'animate-spin' : ''
+                        }`}
+                      />
+                      Sincronizar profissionais
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
