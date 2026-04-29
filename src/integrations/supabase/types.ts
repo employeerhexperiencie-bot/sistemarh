@@ -1518,6 +1518,42 @@ export type Database = {
           },
         ]
       }
+      lgpd_solicitacoes: {
+        Row: {
+          concluida_em: string | null
+          created_at: string
+          id: string
+          observacoes: string | null
+          profissional_id: string
+          solicitante_id: string
+          status: string
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          concluida_em?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          profissional_id: string
+          solicitante_id: string
+          status?: string
+          tenant_id?: string
+          tipo: string
+        }
+        Update: {
+          concluida_em?: string | null
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          profissional_id?: string
+          solicitante_id?: string
+          status?: string
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       loja_documents: {
         Row: {
           created_at: string | null
@@ -3038,6 +3074,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      anonimizar_profissional: {
+        Args: { profissional_uuid: string }
+        Returns: boolean
+      }
       atualizar_tenant_metrics: {
         Args: { _tenant_id: string }
         Returns: undefined
