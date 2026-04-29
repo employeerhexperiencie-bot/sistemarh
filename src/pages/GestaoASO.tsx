@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuditLog } from '@/contexts/AuditLogContext';
+import { useDeepLinkProfissional } from '@/hooks/useDeepLinkProfissional';
 interface ASOExam {
   id: string;
   matricula: string;
@@ -55,6 +56,7 @@ export default function GestaoASO() {
   const [filterTipoExame, setFilterTipoExame] = useState<string>('todos');
   const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
+  useDeepLinkProfissional(setSearchTerm);
   const [showSemASO, setShowSemASO] = useState(false);
   const [formData, setFormData] = useState({
     profissional_id: '',

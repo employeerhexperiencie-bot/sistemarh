@@ -682,3 +682,15 @@
   0%, 100% { box-shadow: 0 0 0 3px hsl(var(--warning) / 0.35); }
   50%      { box-shadow: 0 0 0 6px hsl(var(--warning) / 0.55); }
 }
+
+/* Destaque de linha de tabela para deep-link de alertas (ex.: clicou
+   num alerta de ASO -> rola até a linha do profissional e pulsa). */
+.row-highlight {
+  animation: row-highlight-pulse 1.2s ease-in-out 0s 3;
+  background-color: hsl(var(--warning) / 0.18) !important;
+  box-shadow: inset 4px 0 0 hsl(var(--warning));
+}
+@keyframes row-highlight-pulse {
+  0%, 100% { background-color: hsl(var(--warning) / 0.18); }
+  50%      { background-color: hsl(var(--warning) / 0.35); }
+}
