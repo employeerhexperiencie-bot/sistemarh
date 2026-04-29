@@ -1150,14 +1150,31 @@ export const CadastroProfissionais: React.FC = () => {
 
   // Abrir automaticamente se veio matrícula via URL
   useEffect(() => {
-    if (matriculaParam && professionals.length > 0) {
-      const professional = professionals.find(p => p.matricula === matriculaParam);
-      if (professional) {
-        setSelectedProfessionalId(professional.id);
-        setActiveTab('historico'); // Abre direto na aba de histórico
+    if (!matriculaParam || professionals.length === 0) return;
+    const professional = professionals.find(p => p.matricula === matriculaParam);
+    if (!professional) return;
+
+    // Deep-link vindo de alerta: abrir o MODAL DE EDIÇÃO direto no campo
+    // que precisa ser corrigido (ex.: "sem CPF" -> aba Pessoais, foco em #cpf).
+    if (editParam === '1') {
+      // posiciona a aba do modal antes de abrir, para que o input já esteja montado
+      if (campoParam && CAMPO_TO_TAB[campoParam]) {
+        setEditTab(CAMPO_TO_TAB[campoParam]);
+      } else {
+        setEditTab('pessoais');
       }
+      handleEdit(professional);
+      // Após o modal montar, foca/destaca o campo
+      if (campoParam) {
+        setTimeout(() => focusAndHighlightField(campoParam), 350);
+      }
+      return;
     }
-  }, [matriculaParam, professionals]);
+
+    // Comportamento legado: abre a "Pasta do Profissional"
+    setSelectedProfessionalId(professional.id);
+    setActiveTab('historico');
+  }, [matriculaParam, editParam, campoParam, professionals]);
 
   // Memoizar contagens para evitar recalculo a cada render
   const { activeProfessionals, dismissedProfessionals, uniqueStores } = useMemo(() => ({
