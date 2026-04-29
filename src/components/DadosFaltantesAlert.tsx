@@ -208,6 +208,22 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       acao: 'Completar Dados',
       quantidade: dados.profissionais.semDataAdmissao + dados.profissionais.semCpf + dados.profissionais.semSalario,
       critico: dados.profissionais.semDataAdmissao > 0 || dados.profissionais.semCpf > 0 || dados.profissionais.semSalario > 0
+    },
+    {
+      tipo: 'pessoais',
+      titulo: 'Dados pessoais faltantes',
+      descricao: `${dados.profissionais.semRg} sem RG · ${dados.profissionais.semDataNascimento} sem nascimento · ${dados.profissionais.semNomeMae + dados.profissionais.semNomePai} sem filiação · ${dados.profissionais.semCorEtnia} sem cor`,
+      icone: Users,
+      rota: '/cadastro-profissionais',
+      acao: 'Completar Dados Pessoais',
+      quantidade:
+        dados.profissionais.semRg +
+        dados.profissionais.semDataNascimento +
+        dados.profissionais.semSexo +
+        dados.profissionais.semCorEtnia +
+        dados.profissionais.semNomeMae +
+        dados.profissionais.semNomePai,
+      critico: false,
     }
   ].filter(a => a.quantidade > 0 || a.info);
 
