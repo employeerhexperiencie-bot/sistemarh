@@ -36,6 +36,7 @@ interface Vacation {
 
 export default function GestaoFerias() {
   const [vacations, setVacations] = useState<Vacation[]>([]);
+  const [todasLojas, setTodasLojas] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVacation, setEditingVacation] = useState<Vacation | null>(null);
