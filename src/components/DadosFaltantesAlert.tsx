@@ -71,7 +71,7 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       ] = await Promise.all([
         supabase
           .from('profissionais')
-          .select('id, nome, matricula, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario')
+          .select('id, nome, matricula, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario, rg, data_nascimento, sexo, cor_etnia, nome_mae, nome_pai')
           .eq('status', 'ativo'),
         supabase
           .from('ferias')
@@ -105,6 +105,12 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       );
       const semCargoList = profissionais.filter(p => !p.cargo);
       const semLojaList = profissionais.filter(p => !p.loja_id);
+      const semRgList = profissionais.filter((p: any) => !p.rg || String(p.rg).trim() === '');
+      const semDataNascList = profissionais.filter((p: any) => !p.data_nascimento);
+      const semSexoList = profissionais.filter((p: any) => !p.sexo || String(p.sexo).trim() === '');
+      const semCorList = profissionais.filter((p: any) => !p.cor_etnia || String(p.cor_etnia).trim() === '');
+      const semMaeList = profissionais.filter((p: any) => !p.nome_mae || String(p.nome_mae).trim() === '');
+      const semPaiList = profissionais.filter((p: any) => !p.nome_pai || String(p.nome_pai).trim() === '');
 
       const toRef = (p: any): ProfRef => ({ id: p.id, nome: p.nome, matricula: p.matricula });
 
@@ -116,12 +122,24 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
           semDataAdmissao: semDataAdmissaoList.length,
           semCpf: semCpfList.length,
           semSalario: semSalarioList.length,
+          semRg: semRgList.length,
+          semDataNascimento: semDataNascList.length,
+          semSexo: semSexoList.length,
+          semCorEtnia: semCorList.length,
+          semNomeMae: semMaeList.length,
+          semNomePai: semPaiList.length,
           listas: {
             semCpf: semCpfList.slice(0, 20).map(toRef),
             semDataAdmissao: semDataAdmissaoList.slice(0, 20).map(toRef),
             semSalario: semSalarioList.slice(0, 20).map(toRef),
             semCargo: semCargoList.slice(0, 20).map(toRef),
             semLoja: semLojaList.slice(0, 20).map(toRef),
+            semRg: semRgList.slice(0, 20).map(toRef),
+            semDataNascimento: semDataNascList.slice(0, 20).map(toRef),
+            semSexo: semSexoList.slice(0, 20).map(toRef),
+            semCorEtnia: semCorList.slice(0, 20).map(toRef),
+            semNomeMae: semMaeList.slice(0, 20).map(toRef),
+            semNomePai: semPaiList.slice(0, 20).map(toRef),
           },
         },
         ferias: {
