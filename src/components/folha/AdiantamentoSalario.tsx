@@ -73,23 +73,24 @@ export function AdiantamentoSalario() {
 
   // Carrega faltas injustificadas da competência atual para regra de elegibilidade
   useEffect(() => {
-    const [ano, mes] = competencia.split('-').map(Number);
-    const inicioMes = `${competencia}-01`;
-    const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
+    (async () => {
+      const [ano, mes] = competencia.split('-').map(Number);
+      const inicioMes = `${competencia}-01`;
+      const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
 
-    (supabase
-      .from('faltas')
-      .select('profissional_id, tipo_falta')
-      .gte('data_falta', inicioMes)
-      .lte('data_falta', fimMes)
-      .eq('tipo_falta', 'injustificada') as any)
-      .then(({ data }) => {
-        const mapa: Record<string, number> = {};
-        (data || []).forEach((f: any) => {
-          mapa[f.profissional_id] = (mapa[f.profissional_id] || 0) + 1;
-        });
-        setFaltasPorProfissional(mapa);
+      const { data } = await (supabase as any)
+        .from('faltas')
+        .select('profissional_id, tipo_falta')
+        .gte('data_falta', inicioMes)
+        .lte('data_falta', fimMes)
+        .eq('tipo_falta', 'injustificada');
+
+      const mapa: Record<string, number> = {};
+      (data || []).forEach((f: any) => {
+        mapa[f.profissional_id] = (mapa[f.profissional_id] || 0) + 1;
       });
+      setFaltasPorProfissional(mapa);
+    })();
   }, [competencia]);
   
   const profissionais = useMemo(() => {
