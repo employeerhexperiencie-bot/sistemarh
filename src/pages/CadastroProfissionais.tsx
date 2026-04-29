@@ -2527,7 +2527,9 @@ export const CadastroProfissionais: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle>Profissionais Cadastrados</CardTitle>
             <div className="text-sm text-muted-foreground">
-              {filteredProfessionals.length} de {professionals.length} profissionais
+              {totalCount !== null
+                ? `Mostrando ${professionals.length} de ${totalCount} profissionais`
+                : `${professionals.length} profissionais`}
             </div>
           </div>
           
@@ -2702,6 +2704,31 @@ export const CadastroProfissionais: React.FC = () => {
             </TableBody>
           </Table>
         </CardContent>
+          {/* Paginação server-side */}
+          <div className="flex items-center justify-between gap-2 px-6 py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Página {page + 1}
+              {totalCount !== null && ` de ${Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}`}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                Página anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!hasMore}
+              >
+                Próxima página
+              </Button>
+            </div>
+          </div>
       </Card>
       <ReajusteSalarialModal
         open={!!reajusteTarget}
