@@ -56,6 +56,7 @@ export function AdiantamentoSalario() {
   const [lojaFiltro, setLojaFiltro] = useState('todas');
   const [mostrarInelegiveis, setMostrarInelegiveis] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [faltasPorProfissional, setFaltasPorProfissional] = useState<Record<string, number>>({});
 
   // Carrega o percentual configurado no banco (configuracoes_sistema.percentual_adiantamento)
   useEffect(() => {
@@ -69,6 +70,27 @@ export function AdiantamentoSalario() {
       if (!isNaN(valor) && valor > 0) setPercentualPadrao(valor);
     })();
   }, []);
+
+  // Carrega faltas injustificadas da competência atual para regra de elegibilidade
+  useEffect(() => {
+    const [ano, mes] = competencia.split('-').map(Number);
+    const inicioMes = `${competencia}-01`;
+    const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
+
+    supabase
+      .from('faltas')
+      .select('profissional_id, tipo_falta')
+      .gte('data_falta', inicioMes)
+      .lte('data_falta', fimMes)
+      .eq('tipo_falta', 'injustificada')
+      .then(({ data }) => {
+        const mapa: Record<string, number> = {};
+        (data || []).forEach((f: any) => {
+          mapa[f.profissional_id] = (mapa[f.profissional_id] || 0) + 1;
+        });
+        setFaltasPorProfissional(mapa);
+      });
+  }, [competencia]);
   
   const profissionais = useMemo(() => {
     if (supabaseData.isLoading || supabaseData.totalProfissionais === 0) {
