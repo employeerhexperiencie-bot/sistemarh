@@ -460,6 +460,16 @@ export const CadastroProfissionais: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [usingImportedData, setUsingImportedData] = useState(false);
   const { toast } = useToast();
+
+  // Fluxo de demissão estruturado
+  const [demissaoDialogOpen, setDemissaoDialogOpen] = useState(false);
+  const [demissaoLoading, setDemissaoLoading] = useState(false);
+  const [formDemissao, setFormDemissao] = useState({
+    data_demissao: new Date().toISOString().split('T')[0],
+    tipo_demissao: 'sem_justa_causa',
+    aviso_previo: 'trabalhado',
+    observacoes: '',
+  });
   const { addLog } = useAuditLog();
   const { canAddProfissional, limits } = useTenantLimits();
   const { user } = useAuth();
