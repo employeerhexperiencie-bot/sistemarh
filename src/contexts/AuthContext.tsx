@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { clearAllPIIData } from '@/lib/piiStorage';
@@ -37,6 +37,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFirstUser, setIsFirstUser] = useState(false);
+
+  // SECURITY: Auto-logout por inatividade (60 min) — protege dispositivos compartilhados
+  const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
+  const inactivityRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const logoutRef = useRef<(() => Promise<void>) | null>(null);
+
+  const clearInactivityTimer = useCallback(() => {
+    if (inactivityRef.current) {
+      clearTimeout(inactivityRef.current);
+      inactivityRef.current = null;
+    }
+  }, []);
+
+  const resetInactivityTimer = useCallback(() => {
+    clearInactivityTimer();
+    inactivityRef.current = setTimeout(() => {
+      logoutRef.current?.();
+    }, INACTIVITY_TIMEOUT_MS);
+  }, [clearInactivityTimer, INACTIVITY_TIMEOUT_MS]);
 
   // Verificar se é o primeiro usuário do sistema
   const checkIsFirstUser = useCallback(async (): Promise<boolean> => {
@@ -140,8 +159,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setTimeout(() => {
             processSession(currentSession);
           }, 0);
+          // Inicia/reinicia timer de inatividade ao logar
+          resetInactivityTimer();
         } else {
           setUser(null);
+          clearInactivityTimer();
         }
         
         setIsLoading(false);
@@ -152,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       if (currentSession) {
         processSession(currentSession);
+        resetInactivityTimer();
       }
       setIsLoading(false);
     });
@@ -159,10 +182,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Verificar se é primeiro usuário
     checkIsFirstUser();
 
+    // Listeners de atividade do usuário
+    const activityEvents: Array<keyof WindowEventMap> = [
+      'mousemove',
+      'mousedown',
+      'keypress',
+      'touchstart',
+      'scroll',
+    ];
+    const handleActivity = () => {
+      // Só reinicia se houver sessão ativa
+      if (inactivityRef.current !== null) {
+        resetInactivityTimer();
+      }
+    };
+    activityEvents.forEach((evt) =>
+      window.addEventListener(evt, handleActivity, { passive: true })
+    );
+
     return () => {
       subscription.unsubscribe();
+      activityEvents.forEach((evt) =>
+        window.removeEventListener(evt, handleActivity)
+      );
+      clearInactivityTimer();
     };
-  }, [processSession, checkIsFirstUser]);
+  }, [processSession, checkIsFirstUser, resetInactivityTimer, clearInactivityTimer]);
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     if (!email || !password) {
@@ -273,6 +318,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [checkIsFirstUser]);
 
   const logout = useCallback(async () => {
+    clearInactivityTimer();
     // SECURITY: limpa todo PII em armazenamento local + cache de URLs assinadas
     clearAllPIIData();
     clearPhotoUrlCache();
@@ -280,7 +326,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
-  }, []);
+  }, [clearInactivityTimer]);
+
+  // Mantém ref atualizada para uso no setTimeout sem causar dependência cíclica
+  useEffect(() => {
+    logoutRef.current = logout;
+  }, [logout]);
 
   const updateUser = useCallback((updates: Partial<User>) => {
     setUser(prev => {
