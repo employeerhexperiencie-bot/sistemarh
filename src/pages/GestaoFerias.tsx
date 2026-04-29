@@ -247,9 +247,15 @@ export default function GestaoFerias() {
     return Math.max(0, diffDays);
   };
 
-  // Lista única de lojas presentes nos registros (para o filtro)
+  // Lista de lojas no filtro: união entre TODAS as lojas do tenant e
+  // lojas que aparecem nos registros de férias. Isto garante que lojas
+  // sem nenhum registro de férias ainda apareçam no filtro (ex.:
+  // COMERCIAL, LAJEADO, SAO BERNARDO).
   const lojasDisponiveis = Array.from(
-    new Set(vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'))
+    new Set([
+      ...todasLojas,
+      ...vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'),
+    ])
   ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
   // Aplicar filtros (loja + busca por nome + desligados) na listagem e nos contadores
