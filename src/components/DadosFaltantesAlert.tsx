@@ -30,12 +30,24 @@ interface DadosFaltantes {
     semDataAdmissao: number;
     semCpf: number;
     semSalario: number;
+    semRg: number;
+    semDataNascimento: number;
+    semSexo: number;
+    semCorEtnia: number;
+    semNomeMae: number;
+    semNomePai: number;
     listas: {
       semCpf: ProfRef[];
       semDataAdmissao: ProfRef[];
       semSalario: ProfRef[];
       semCargo: ProfRef[];
       semLoja: ProfRef[];
+      semRg: ProfRef[];
+      semDataNascimento: ProfRef[];
+      semSexo: ProfRef[];
+      semCorEtnia: ProfRef[];
+      semNomeMae: ProfRef[];
+      semNomePai: ProfRef[];
     };
   };
 }
