@@ -103,7 +103,7 @@ export function AdiantamentoSalario() {
       const salario = p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0;
       const loja = supabaseData.lojas.find((l: any) => l.id === p.loja_id);
       const status = p.status === 'ativo' ? 'ativo' : 'afastado';
-      const faltas = 0; // TODO: buscar da tabela de faltas
+      const faltas = faltasPorProfissional[p.id] || 0;
 
       // Verificar elegibilidade
       let elegivel = true;
@@ -158,7 +158,7 @@ export function AdiantamentoSalario() {
         percentual,
       };
     });
-  }, [supabaseData, competencia, percentualPadrao]);
+  }, [supabaseData, competencia, percentualPadrao, faltasPorProfissional]);
   
   const profissionaisFiltrados = useMemo(() => {
     return profissionais
