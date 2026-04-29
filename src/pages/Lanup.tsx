@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Loader2, AlertCircle, ExternalLink, Lock, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanupAccess } from '@/hooks/useLanupAccess';
 
 interface Partner {
   id: string;
@@ -23,6 +24,7 @@ export default function LanupPage() {
   const { user } = useAuth();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
+  const { data: hasAccess, isLoading: checkingAccess } = useLanupAccess();
 
   const { data: partner, isLoading } = useQuery({
     queryKey: ['partner-lanup'],
@@ -80,6 +82,39 @@ export default function LanupPage() {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Aguardando verificação de permissão
+  if (checkingAccess) {
+    return (
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Acesso bloqueado: tenant não tem a chave Lanup ligada
+  if (!hasAccess) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <div className="border rounded-xl p-10 flex flex-col items-center text-center gap-4 bg-card">
+          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold">Acesso à Lanup não liberado</h1>
+          <p className="text-muted-foreground max-w-md">
+            Sua empresa ainda não tem o acesso ao sistema <strong>Lanup</strong> habilitado.
+            Entre em contato com o administrador para solicitar a liberação.
+          </p>
+          <Button variant="outline" asChild>
+            <a href="mailto:contato@eaz.com.br?subject=Solicitação%20de%20acesso%20Lanup">
+              <Mail className="h-4 w-4 mr-2" />
+              Falar com o administrador
+            </a>
+          </Button>
+        </div>
       </div>
     );
   }
