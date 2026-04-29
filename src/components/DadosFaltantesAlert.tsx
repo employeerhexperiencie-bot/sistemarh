@@ -16,18 +16,27 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { buildEditCampoUrl } from '@/lib/profissionalDeepLink';
 
+interface ProfRef { id: string; nome: string; matricula: string }
 interface DadosFaltantes {
   ferias: { total: number; pendentes: number };
   faltas: { total: number; mesAtual: number };
   aso: { total: number; vencidos: number; semExame: number };
-  profissionais: { 
-    total: number; 
-    semLoja: number; 
-    semCargo: number; 
+  profissionais: {
+    total: number;
+    semLoja: number;
+    semCargo: number;
     semDataAdmissao: number;
     semCpf: number;
     semSalario: number;
+    listas: {
+      semCpf: ProfRef[];
+      semDataAdmissao: ProfRef[];
+      semSalario: ProfRef[];
+      semCargo: ProfRef[];
+      semLoja: ProfRef[];
+    };
   };
 }
 
@@ -50,7 +59,7 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       ] = await Promise.all([
         supabase
           .from('profissionais')
-          .select('id, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario')
+          .select('id, nome, matricula, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario')
           .eq('status', 'ativo'),
         supabase
           .from('ferias')
@@ -75,18 +84,33 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       const profissionaisComASO = new Set(aso.map(a => a.profissional_id));
       const profissionaisSemASO = profissionais.filter(p => !profissionaisComASO.has(p.id)).length;
 
+      const semCpfList = profissionais.filter(p => !p.cpf || p.cpf === '');
+      const semDataAdmissaoList = profissionais.filter(p => !p.data_admissao);
+      const semSalarioList = profissionais.filter(p =>
+        (!p.salario_nominal || p.salario_nominal === 0) &&
+        (!p.ultimo_salario || p.ultimo_salario === 0) &&
+        (!p.primeiro_salario || p.primeiro_salario === 0)
+      );
+      const semCargoList = profissionais.filter(p => !p.cargo);
+      const semLojaList = profissionais.filter(p => !p.loja_id);
+
+      const toRef = (p: any): ProfRef => ({ id: p.id, nome: p.nome, matricula: p.matricula });
+
       setDados({
         profissionais: {
           total: profissionais.length,
-          semLoja: profissionais.filter(p => !p.loja_id).length,
-          semCargo: profissionais.filter(p => !p.cargo).length,
-          semDataAdmissao: profissionais.filter(p => !p.data_admissao).length,
-          semCpf: profissionais.filter(p => !p.cpf || p.cpf === '').length,
-          semSalario: profissionais.filter(p => 
-            (!p.salario_nominal || p.salario_nominal === 0) && 
-            (!p.ultimo_salario || p.ultimo_salario === 0) && 
-            (!p.primeiro_salario || p.primeiro_salario === 0)
-          ).length
+          semLoja: semLojaList.length,
+          semCargo: semCargoList.length,
+          semDataAdmissao: semDataAdmissaoList.length,
+          semCpf: semCpfList.length,
+          semSalario: semSalarioList.length,
+          listas: {
+            semCpf: semCpfList.slice(0, 20).map(toRef),
+            semDataAdmissao: semDataAdmissaoList.slice(0, 20).map(toRef),
+            semSalario: semSalarioList.slice(0, 20).map(toRef),
+            semCargo: semCargoList.slice(0, 20).map(toRef),
+            semLoja: semLojaList.slice(0, 20).map(toRef),
+          },
         },
         ferias: {
           total: ferias.length,
@@ -260,7 +284,69 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
             </div>
           </div>
         ))}
+
+        {/* Lista expandida: profissionais individuais com cada pendência,
+            cada um com link direto para o campo no modal de edição. */}
+        {(dados.profissionais.semCpf > 0 ||
+          dados.profissionais.semDataAdmissao > 0 ||
+          dados.profissionais.semSalario > 0 ||
+          dados.profissionais.semCargo > 0 ||
+          dados.profissionais.semLoja > 0) && (
+          <div className="pt-2">
+            <ProfissionaisPendenciasList listas={dados.profissionais.listas} />
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Lista profissionais com cadastro incompleto, agrupados por campo.
+ * Cada item leva direto ao input no modal de edição via deep-link.
+ */
+function ProfissionaisPendenciasList({
+  listas,
+}: {
+  listas: NonNullable<DadosFaltantes['profissionais']>['listas'];
+}) {
+  const grupos: { campo: string; titulo: string; itens: ProfRef[] }[] = [
+    { campo: 'cpf', titulo: 'Sem CPF', itens: listas.semCpf },
+    { campo: 'data_admissao', titulo: 'Sem data de admissão', itens: listas.semDataAdmissao },
+    { campo: 'salario_nominal', titulo: 'Sem salário', itens: listas.semSalario },
+    { campo: 'cargo', titulo: 'Sem cargo', itens: listas.semCargo },
+    { campo: 'loja_id', titulo: 'Sem loja', itens: listas.semLoja },
+  ].filter(g => g.itens.length > 0);
+
+  if (grupos.length === 0) return null;
+
+  return (
+    <div className="space-y-3 border-t border-warning/20 pt-3">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        Resolver pendência por profissional
+      </p>
+      {grupos.map(g => (
+        <div key={g.campo} className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">{g.titulo}</Badge>
+            <span className="text-xs text-muted-foreground">{g.itens.length} profissional(is)</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {g.itens.map(p => (
+              <Link key={p.id} to={buildEditCampoUrl(p.matricula, g.campo)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs border border-border hover:bg-warning/10 hover:border-warning/50"
+                >
+                  {p.nome}
+                  <ExternalLink className="h-3 w-3 ml-1.5" />
+                </Button>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

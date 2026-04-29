@@ -1,89 +1,67 @@
-# Plano de Execução — Frente 1: Infraestrutura Modular
-
 ## Objetivo
-Criar a fundação de banco de dados que permite o EAZ:
-1. **Receber módulos** de parceiros (Lanup BID, Admissão, Convocação, Pagamento)
-2. **Ser embarcado** como módulo em outros sistemas (Lanup, etc.)
 
-Sem essa fundação, nenhuma das frentes seguintes (SSO, Iframe, Webhooks, Marketplace) funciona.
+Quando o usuário clicar em um alerta ligado a um profissional (ex.: "sem CPF", "sem data de admissão", "sem salário", "sem cargo", "sem loja"), o sistema deve:
 
----
+1. Abrir a página `Cadastro de Profissionais` já filtrada/posicionada no profissional certo;
+2. Abrir automaticamente o **modal de edição** (não a "Pasta do Profissional"), que é onde os campos podem ser preenchidos;
+3. Selecionar a **aba correta** dentro do modal (Dados, Salário, Documentação, etc.);
+4. **Rolar até o campo** específico e destacá-lo visualmente (borda + foco) por alguns segundos.
 
-## O que será criado
+Hoje o link de "Dados incompletos" leva apenas para `/cadastro-profissionais` sem filtrar nem abrir nada — o usuário precisa procurar o profissional na lista e clicar em Editar manualmente. Vamos eliminar esse atrito.
 
-### 5 novas tabelas
+## Como será o novo fluxo (exemplo CPF)
 
-**1. `partners`** — Cadastro de parceiros (Lanup, EzPoint, etc.)
-- `id`, `nome`, `slug`, `tipo` (provider/consumer/both)
-- `webhook_secret` (HMAC para validar webhooks recebidos)
-- `api_base_url`, `sso_public_key`, `logo_url`
-- `ativo`, `created_at`
-
-**2. `partner_modules`** — Catálogo de módulos disponíveis
-- `id`, `partner_id`, `nome`, `slug` (ex: `bid`, `admissao`, `convocacao`)
-- `descricao`, `categoria`, `icone`
-- `embed_url_template` (URL base do iframe)
-- `eventos_emitidos` (jsonb — ex: `["admission.completed"]`)
-- `scopes_requeridos` (jsonb)
-- `status` (disponivel/beta/em_desenvolvimento)
-
-**3. `tenant_modules`** — Módulos ativados por cada tenant
-- `id`, `tenant_id`, `partner_module_id`
-- `ativado_em`, `ativado_por`
-- `configuracao` (jsonb — credenciais/parâmetros específicos)
-- `ativo`
-
-**4. `partner_entity_map`** — Mapeamento de IDs entre EAZ e parceiros (ancorado em CPF)
-- `id`, `tenant_id`, `partner_id`
-- `entidade_tipo` (profissional/loja)
-- `entidade_id_local` (UUID interno EAZ)
-- `entidade_id_externo` (ID do parceiro)
-- `cpf_anchor` (chave de reconciliação)
-
-**5. `partner_webhook_logs`** — Auditoria de eventos
-- `id`, `tenant_id`, `partner_id`
-- `direcao` (inbound/outbound)
-- `evento`, `payload` (jsonb)
-- `status` (sucesso/falhou/retry)
-- `tentativas`, `proxima_tentativa`
-- `response_code`, `response_body`
-
-### RLS Multi-tenant
-Todas as tabelas terão policy padrão:
-```sql
-USING ((tenant_id = get_user_tenant_id(auth.uid())) OR is_super_admin(auth.uid()))
+```text
+[Alerta]  "João Silva — sem CPF"
+   │ click
+   ▼
+/cadastro-profissionais?matricula=12345&edit=1&campo=cpf
+   │
+   ▼
+- Lista filtra/encontra "João Silva"
+- Modal "Editar Profissional" abre automaticamente
+- Aba "Dados Pessoais" ativa
+- Campo CPF recebe foco, scroll até ele e fica com
+  ring amarelo pulsante por ~3s
+- Tooltip discreto: "Preencha o CPF aqui"
 ```
 
-Exceção: `partners` e `partner_modules` são **globais** (catálogo compartilhado) — apenas super_admin pode escrever, todos autenticados podem ler.
+## Mudanças por arquivo
 
-### Seed inicial
-Cadastrar Lanup e EzPoint na tabela `partners` + 5 módulos no catálogo:
-- BID (Lanup) — em desenvolvimento
-- Admissão (Lanup) — em desenvolvimento
-- Convocação (Lanup) — disponível
-- Ponto (EzPoint) — disponível
-- Gestão de Pagamento (EAZ-nativo) — em breve
+### 1. `src/pages/CadastroProfissionais.tsx`
+- Ler novos query params: `edit` (1 = abrir modal de edição) e `campo` (nome do campo a destacar).
+- Adicionar mapa `campo → aba` (ex.: `cpf → dados`, `data_admissao → dados`, `salario_nominal → salario`, `cargo → dados`, `loja_id → dados`, `pis → documentos`, `ctps → documentos`).
+- Quando `matricula` + `edit=1` chegam: localizar o profissional, chamar `handleEdit(professional)` automaticamente (em vez de só abrir a Pasta).
+- Após o modal abrir, mudar para a aba correspondente ao `campo` e:
+  - dar `scrollIntoView({ block: 'center' })` no input;
+  - chamar `.focus()`;
+  - aplicar classe temporária (`ring-2 ring-warning animate-pulse`) por 3s via `setTimeout`.
+- Adicionar `id`/`ref` nos campos relevantes (`cpf`, `data_admissao`, `salario_nominal`, `cargo`, `loja_id`, etc.). Usar IDs estáveis tipo `field-cpf`.
 
----
+### 2. `src/components/DadosFaltantesAlert.tsx`
+Hoje o card "Dados incompletos" só linka para `/cadastro-profissionais`. Vamos transformá-lo em uma **lista expansível** dos profissionais afetados, cada linha com um botão "Resolver" que leva direto ao campo:
+
+- Para cada categoria com pendência (`semCpf`, `semDataAdmissao`, `semSalario`, `semCargo`, `semLoja`), buscar a lista de profissionais correspondentes (já temos no `profissionais` resultado).
+- Renderizar até N (ex.: 10) profissionais por categoria, cada um com link:
+  `/cadastro-profissionais?matricula=${matricula}&edit=1&campo=${campo}`.
+- Manter o resumo agregado como hoje, mas adicionar o "ver lista" ao expandir.
+
+### 3. `src/components/alertas/AlertasAutomaticos.tsx`
+- Para alertas tipo `cadastro_incompleto` vindos de `alertas_sistema`, garantir que o `acao_url` seja construído com `?matricula=...&edit=1&campo=...`. Hoje o `acao_url` vem do banco, então:
+  - Se já vier preenchido, respeitar.
+  - Senão, construir a URL no front quando `a.entidade_relacionada_tipo === 'profissional'` e a mensagem indicar o campo (mapear título → campo via dicionário simples).
+- Para os alertas gerados dinamicamente que estão ligados a um profissional (ex.: "Afastamento sem Registro"), continuar levando para `/gestao-afastamentos`, mas **adicionar `?profissional=ID`** para que essas páginas (em iteração futura) possam pré-selecionar.
+- Garantir que clique no item da lista (não só o ícone do olho) navegue, mantendo o comportamento atual do `compact`.
 
 ## Detalhes técnicos
 
-- Usar `gen_random_uuid()` como PK
-- Indexar `tenant_id`, `partner_id`, `cpf_anchor`
-- Constraint UNIQUE em `(tenant_id, partner_module_id)` em `tenant_modules`
-- Trigger `update_updated_at_column` em todas
-- Sem foreign keys diretas para `auth.users` (padrão do projeto)
+- O destaque visual usa Tailwind: aplicar `data-highlight="true"` no input e usar uma classe utilitária no globals (ou inline) `ring-2 ring-warning ring-offset-2 animate-pulse`.
+- Para o foco funcionar, o modal precisa estar montado antes do `setTimeout` (~300ms após abrir).
+- A troca de aba do modal de edição usa o `Tabs` interno (já existe `value`/`onValueChange`); precisamos expor um setter para o param `campo`.
+- Não alterar regras de negócio nem o schema do banco.
+- Não tocar em outras páginas de gestão (ASO, Férias etc.) nesta iteração — apenas o fluxo profissional+campo.
 
-## O que NÃO entra nesta Frente
-- UI do Marketplace (Frente 2)
-- Edge functions de SSO/Webhook (Frente 2/3)
-- Refatoração do AppSidebar (Frente 2)
-- API pública (Frente 3)
+## Fora de escopo (proposta para próxima iteração)
 
-## Próximos passos após aprovação
-1. Executar migration com as 5 tabelas + RLS + índices
-2. Inserir seed (Lanup, EzPoint, 5 módulos)
-3. Atualizar memória do projeto registrando a nova arquitetura
-4. Reportar conclusão e propor Frente 2
-
-**Tempo estimado:** ~30 min de execução real.
+- Replicar o mesmo padrão para alertas de ASO/Férias abrindo o modal correspondente já posicionado no profissional.
+- Botão "Resolver agora" inline no próprio alerta (preencher o campo sem sair da Central de Alertas).

@@ -31,6 +31,7 @@ import { ReajusteSalarialModal } from '@/components/folha/ReajusteSalarialModal'
 import { PhotoUploader } from '@/components/profissional/PhotoUploader';
 import { ProfissionalNomeAvatar } from '@/components/profissional/ProfissionalAvatar';
 import { Link } from 'react-router-dom';
+import { CAMPO_TO_TAB, focusAndHighlightField } from '@/lib/profissionalDeepLink';
 
 interface Professional {
   id: string;
@@ -476,10 +477,15 @@ export const CadastroProfissionais: React.FC = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState<number | null>(null);
-  
-  // Verificar se veio matrícula via URL
+
+  // Verificar se veio matrícula/campo via URL (deep-link de alertas)
   const searchParams = new URLSearchParams(window.location.search);
   const matriculaParam = searchParams.get('matricula');
+  const editParam = searchParams.get('edit');
+  const campoParam = searchParams.get('campo');
+
+  // Aba ativa controlada do modal de edição (Pessoais/Endereço/Profissional/...)
+  const [editTab, setEditTab] = useState<string>('pessoais');
 
   // Função para converter dados importados para o formato Professional
   const convertImportedToProfessional = (imported: any): Professional => {
@@ -1145,14 +1151,31 @@ export const CadastroProfissionais: React.FC = () => {
 
   // Abrir automaticamente se veio matrícula via URL
   useEffect(() => {
-    if (matriculaParam && professionals.length > 0) {
-      const professional = professionals.find(p => p.matricula === matriculaParam);
-      if (professional) {
-        setSelectedProfessionalId(professional.id);
-        setActiveTab('historico'); // Abre direto na aba de histórico
+    if (!matriculaParam || professionals.length === 0) return;
+    const professional = professionals.find(p => p.matricula === matriculaParam);
+    if (!professional) return;
+
+    // Deep-link vindo de alerta: abrir o MODAL DE EDIÇÃO direto no campo
+    // que precisa ser corrigido (ex.: "sem CPF" -> aba Pessoais, foco em #cpf).
+    if (editParam === '1') {
+      // posiciona a aba do modal antes de abrir, para que o input já esteja montado
+      if (campoParam && CAMPO_TO_TAB[campoParam]) {
+        setEditTab(CAMPO_TO_TAB[campoParam]);
+      } else {
+        setEditTab('pessoais');
       }
+      handleEdit(professional);
+      // Após o modal montar, foca/destaca o campo
+      if (campoParam) {
+        setTimeout(() => focusAndHighlightField(campoParam), 350);
+      }
+      return;
     }
-  }, [matriculaParam, professionals]);
+
+    // Comportamento legado: abre a "Pasta do Profissional"
+    setSelectedProfessionalId(professional.id);
+    setActiveTab('historico');
+  }, [matriculaParam, editParam, campoParam, professionals]);
 
   // Memoizar contagens para evitar recalculo a cada render
   const { activeProfessionals, dismissedProfessionals, uniqueStores } = useMemo(() => ({
@@ -1554,7 +1577,7 @@ export const CadastroProfissionais: React.FC = () => {
             
             <ScrollArea className="max-h-[calc(95vh-180px)]">
               <div className="p-6 pt-4">
-                  <Tabs defaultValue="pessoais" className="w-full">
+                  <Tabs value={editTab} onValueChange={setEditTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto mb-4">
                     <TabsTrigger value="pessoais" className="text-xs py-2">Pessoais</TabsTrigger>
                     <TabsTrigger value="endereco" className="text-xs py-2">Endereço</TabsTrigger>
