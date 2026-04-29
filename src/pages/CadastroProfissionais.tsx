@@ -470,6 +470,12 @@ export const CadastroProfissionais: React.FC = () => {
   const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [reajusteTarget, setReajusteTarget] = useState<Professional | null>(null);
+
+  // 📄 PAGINAÇÃO server-side
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   
   // Verificar se veio matrícula via URL
   const searchParams = new URLSearchParams(window.location.search);
@@ -500,18 +506,37 @@ export const CadastroProfissionais: React.FC = () => {
 
   const loadProfessionals = async () => {
     try {
-      // Carregar dados do Supabase como fonte principal
-      const { data, error } = await supabase
+      // Carregar apenas colunas necessárias para a listagem,
+      // com filtros e paginação no banco (não em memória).
+      let q = supabase
         .from('profissionais')
-        .select(`
-          *,
-          loja:lojas!profissionais_loja_id_fkey(nome),
-          loja_registro:lojas!profissionais_loja_registro_id_fkey(nome)
-        `)
+        .select(
+          `id, nome, matricula, cpf, cargo, salario_nominal, primeiro_salario,
+           loja_id, loja_registro_id, status, foto_url,
+           loja:lojas!profissionais_loja_id_fkey(nome),
+           loja_registro:lojas!profissionais_loja_registro_id_fkey(nome)`,
+          { count: 'exact' }
+        )
         .order('nome', { ascending: true });
 
+      if (filterLoja !== 'todas') {
+        q = q.eq('loja_id', filterLoja);
+      }
+      if (filterStatus !== 'todos') {
+        q = q.eq('status', filterStatus);
+      }
+      if (searchTerm.trim() !== '') {
+        q = q.ilike('nome', `%${searchTerm.trim()}%`);
+      }
+
+      q = q.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+      const { data, error, count } = await q;
+
       if (error) throw error;
-      setProfessionals((data || []) as Professional[]);
+      setProfessionals((data || []) as unknown as Professional[]);
+      setTotalCount(typeof count === 'number' ? count : null);
+      setHasMore((data?.length || 0) === PAGE_SIZE);
       setUsingImportedData(false);
       
       // Carregar lojas do Supabase
@@ -1099,6 +1124,25 @@ export const CadastroProfissionais: React.FC = () => {
     loadLojas();
   }, []);
 
+  // Recarregar ao mudar página
+  useEffect(() => {
+    loadProfessionals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  // Resetar para a primeira página e recarregar quando filtros/busca mudarem (debounce na busca)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (page !== 0) {
+        setPage(0);
+      } else {
+        loadProfessionals();
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, filterLoja, filterStatus]);
+
   // Abrir automaticamente se veio matrícula via URL
   useEffect(() => {
     if (matriculaParam && professionals.length > 0) {
@@ -1117,25 +1161,8 @@ export const CadastroProfissionais: React.FC = () => {
     uniqueStores: new Set(professionals.map(p => p.loja?.nome).filter(Boolean)).size,
   }), [professionals]);
 
-  // 🔍 PROFISSIONAIS FILTRADOS (ordenação alfabética por nome)
-  const filteredProfessionals = useMemo(() => {
-    return professionals
-      .filter(p => {
-        // Filtro por busca (nome ou matrícula)
-        const matchesSearch = searchTerm === '' || 
-          p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.matricula.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        // Filtro por loja
-        const matchesLoja = filterLoja === 'todas' || p.loja_id === filterLoja;
-        
-        // Filtro por status
-        const matchesStatus = filterStatus === 'todos' || p.status === filterStatus;
-        
-        return matchesSearch && matchesLoja && matchesStatus;
-      })
-      .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
-  }, [professionals, searchTerm, filterLoja, filterStatus]);
+  // Filtros e busca já são aplicados no banco; usamos a lista vinda do servidor.
+  const filteredProfessionals = professionals;
 
   // Função para capitalizar nomes (Primeira Letra Maiúscula)
   const capitalizeWords = (str: string) => {
@@ -2500,7 +2527,9 @@ export const CadastroProfissionais: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle>Profissionais Cadastrados</CardTitle>
             <div className="text-sm text-muted-foreground">
-              {filteredProfessionals.length} de {professionals.length} profissionais
+              {totalCount !== null
+                ? `Mostrando ${professionals.length} de ${totalCount} profissionais`
+                : `${professionals.length} profissionais`}
             </div>
           </div>
           
@@ -2675,6 +2704,31 @@ export const CadastroProfissionais: React.FC = () => {
             </TableBody>
           </Table>
         </CardContent>
+          {/* Paginação server-side */}
+          <div className="flex items-center justify-between gap-2 px-6 py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Página {page + 1}
+              {totalCount !== null && ` de ${Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}`}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                Página anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!hasMore}
+              >
+                Próxima página
+              </Button>
+            </div>
+          </div>
       </Card>
       <ReajusteSalarialModal
         open={!!reajusteTarget}
