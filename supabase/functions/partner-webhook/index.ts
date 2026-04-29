@@ -74,25 +74,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verificar HMAC se houver secret cadastrado
-    if (partner.webhook_secret) {
-      const ok = await verifyHmac(partner.webhook_secret, rawBody, signature);
-      if (!ok) {
-        await supabase.from('partner_webhook_logs').insert({
-          partner_id: partner.id,
-          tenant_id: tenantIdHeader,
-          direcao: 'inbound',
-          evento: 'invalid_signature',
-          payload: { raw: rawBody.slice(0, 500) },
-          status: 'falhou',
-          error_message: 'HMAC inválido',
-          response_code: 401,
-        });
-        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+    // webhook_secret é obrigatório
+    if (!partner.webhook_secret) {
+      return new Response(JSON.stringify({ error: 'Partner não configurado para webhooks' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verificar HMAC (sempre obrigatório)
+    const ok = await verifyHmac(partner.webhook_secret, rawBody, signature);
+    if (!ok) {
+      await supabase.from('partner_webhook_logs').insert({
+        partner_id: partner.id,
+        tenant_id: tenantIdHeader,
+        direcao: 'inbound',
+        evento: 'invalid_signature',
+        payload: { raw: rawBody.slice(0, 500) },
+        status: 'falhou',
+        error_message: 'HMAC inválido',
+        response_code: 401,
+      });
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     let body: any = {};
