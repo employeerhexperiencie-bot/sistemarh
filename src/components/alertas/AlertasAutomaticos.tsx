@@ -177,7 +177,12 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, onD
   }
   
   return (
-    <TableRow className={`${alerta.lido ? 'opacity-70' : ''} ${alerta.resolvido ? 'opacity-50 bg-success/5' : ''} hover:bg-muted/50`}>
+    <TableRow
+      className={`${alerta.lido ? 'opacity-70' : ''} ${alerta.resolvido ? 'opacity-50 bg-success/5' : ''} hover:bg-muted/50 ${alerta.acaoUrl ? 'cursor-pointer' : ''}`}
+      onClick={() => {
+        if (alerta.acaoUrl) navigate(alerta.acaoUrl);
+      }}
+    >
       <TableCell>
         <div className="flex items-center gap-2">
           <TipoIcon className={`h-4 w-4 ${tipoConfig.color}`} />
@@ -222,7 +227,7 @@ export function AlertaItem({ alerta, onMarcarLido, onResolver, onAcaoRapida, onD
         )}
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
           {/* Ações rápidas */}
           {acoesRapidas.length > 0 && onAcaoRapida && !alerta.resolvido && (
             acoesRapidas.map((ar, idx) => (
