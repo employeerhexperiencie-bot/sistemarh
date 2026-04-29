@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { DelegarAlertaModal, DelegarAlertaData } from './DelegarAlertaModal';
 import { ProfissionalAvatar } from '@/components/profissional/ProfissionalAvatar';
+import { buildEditCampoUrl } from '@/lib/profissionalDeepLink';
 
 export type TipoAlerta = 'aso' | 'ferias' | 'documento' | 'epi' | 'afastamento' | 'emprestimo';
 export type NivelAlerta = 'critico' | 'urgente' | 'atencao' | 'info';
@@ -354,6 +355,32 @@ export function CentralAlertas() {
           'emprestimo': 'emprestimo'
         };
 
+        // Para alertas de cadastro incompleto vinculados a um profissional,
+        // construir um deep-link que abra o modal de edição direto no campo
+        // que está faltando (ex.: "CPF não cadastrado" -> ?campo=cpf).
+        let acaoUrl: string | undefined = a.acao_url;
+        if (
+          a.tipo === 'cadastro_incompleto' &&
+          a.entidade_relacionada_tipo === 'profissional' &&
+          a.profissionais?.matricula
+        ) {
+          const titulo = (a.titulo || '').toLowerCase();
+          let campo: string | null = null;
+          if (titulo.includes('cpf')) campo = 'cpf';
+          else if (titulo.includes('admiss')) campo = 'data_admissao';
+          else if (titulo.includes('sal')) campo = 'salario_nominal';
+          else if (titulo.includes('cargo')) campo = 'cargo';
+          else if (titulo.includes('loja')) campo = 'loja_id';
+          else if (titulo.includes('pis')) campo = 'pis';
+          else if (titulo.includes('ctps')) campo = 'ctps';
+          else if (titulo.includes('rg')) campo = 'rg';
+          else if (titulo.includes('telefone') || titulo.includes('celular')) campo = 'celular';
+
+          if (campo) {
+            acaoUrl = buildEditCampoUrl(a.profissionais.matricula, campo);
+          }
+        }
+
         alertasGerados.push({
           id: `db-${a.id}`,
           tipo: tipoMapping[a.tipo] || 'documento',
@@ -366,7 +393,7 @@ export function CentralAlertas() {
           profissional: a.profissionais?.nome,
           matricula: a.profissionais?.matricula,
           fotoUrl: a.profissionais?.foto_url,
-          acaoUrl: a.acao_url,
+          acaoUrl,
           lido: a.lido || false,
           resolvido: false, // Alertas do BD são sempre pendentes se existem
         });
