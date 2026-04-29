@@ -67,6 +67,8 @@ interface ExcelProfissional {
   status?: string;
   nomeMae?: string;
   nomePai?: string;
+  corEtnia?: string;
+  raca?: string;
   banco?: string;
   agencia?: string;
   conta?: string;
