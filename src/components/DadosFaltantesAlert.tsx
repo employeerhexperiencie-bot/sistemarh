@@ -30,12 +30,24 @@ interface DadosFaltantes {
     semDataAdmissao: number;
     semCpf: number;
     semSalario: number;
+    semRg: number;
+    semDataNascimento: number;
+    semSexo: number;
+    semCorEtnia: number;
+    semNomeMae: number;
+    semNomePai: number;
     listas: {
       semCpf: ProfRef[];
       semDataAdmissao: ProfRef[];
       semSalario: ProfRef[];
       semCargo: ProfRef[];
       semLoja: ProfRef[];
+      semRg: ProfRef[];
+      semDataNascimento: ProfRef[];
+      semSexo: ProfRef[];
+      semCorEtnia: ProfRef[];
+      semNomeMae: ProfRef[];
+      semNomePai: ProfRef[];
     };
   };
 }
@@ -59,7 +71,7 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       ] = await Promise.all([
         supabase
           .from('profissionais')
-          .select('id, nome, matricula, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario')
+          .select('id, nome, matricula, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario, rg, data_nascimento, sexo, cor_etnia, nome_mae, nome_pai')
           .eq('status', 'ativo'),
         supabase
           .from('ferias')
@@ -93,6 +105,12 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       );
       const semCargoList = profissionais.filter(p => !p.cargo);
       const semLojaList = profissionais.filter(p => !p.loja_id);
+      const semRgList = profissionais.filter((p: any) => !p.rg || String(p.rg).trim() === '');
+      const semDataNascList = profissionais.filter((p: any) => !p.data_nascimento);
+      const semSexoList = profissionais.filter((p: any) => !p.sexo || String(p.sexo).trim() === '');
+      const semCorList = profissionais.filter((p: any) => !p.cor_etnia || String(p.cor_etnia).trim() === '');
+      const semMaeList = profissionais.filter((p: any) => !p.nome_mae || String(p.nome_mae).trim() === '');
+      const semPaiList = profissionais.filter((p: any) => !p.nome_pai || String(p.nome_pai).trim() === '');
 
       const toRef = (p: any): ProfRef => ({ id: p.id, nome: p.nome, matricula: p.matricula });
 
@@ -104,12 +122,24 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
           semDataAdmissao: semDataAdmissaoList.length,
           semCpf: semCpfList.length,
           semSalario: semSalarioList.length,
+          semRg: semRgList.length,
+          semDataNascimento: semDataNascList.length,
+          semSexo: semSexoList.length,
+          semCorEtnia: semCorList.length,
+          semNomeMae: semMaeList.length,
+          semNomePai: semPaiList.length,
           listas: {
             semCpf: semCpfList.slice(0, 20).map(toRef),
             semDataAdmissao: semDataAdmissaoList.slice(0, 20).map(toRef),
             semSalario: semSalarioList.slice(0, 20).map(toRef),
             semCargo: semCargoList.slice(0, 20).map(toRef),
             semLoja: semLojaList.slice(0, 20).map(toRef),
+            semRg: semRgList.slice(0, 20).map(toRef),
+            semDataNascimento: semDataNascList.slice(0, 20).map(toRef),
+            semSexo: semSexoList.slice(0, 20).map(toRef),
+            semCorEtnia: semCorList.slice(0, 20).map(toRef),
+            semNomeMae: semMaeList.slice(0, 20).map(toRef),
+            semNomePai: semPaiList.slice(0, 20).map(toRef),
           },
         },
         ferias: {
@@ -178,6 +208,22 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       acao: 'Completar Dados',
       quantidade: dados.profissionais.semDataAdmissao + dados.profissionais.semCpf + dados.profissionais.semSalario,
       critico: dados.profissionais.semDataAdmissao > 0 || dados.profissionais.semCpf > 0 || dados.profissionais.semSalario > 0
+    },
+    {
+      tipo: 'pessoais',
+      titulo: 'Dados pessoais faltantes',
+      descricao: `${dados.profissionais.semRg} sem RG · ${dados.profissionais.semDataNascimento} sem nascimento · ${dados.profissionais.semNomeMae + dados.profissionais.semNomePai} sem filiação · ${dados.profissionais.semCorEtnia} sem cor`,
+      icone: Users,
+      rota: '/cadastro-profissionais',
+      acao: 'Completar Dados Pessoais',
+      quantidade:
+        dados.profissionais.semRg +
+        dados.profissionais.semDataNascimento +
+        dados.profissionais.semSexo +
+        dados.profissionais.semCorEtnia +
+        dados.profissionais.semNomeMae +
+        dados.profissionais.semNomePai,
+      critico: false,
     }
   ].filter(a => a.quantidade > 0 || a.info);
 
@@ -291,7 +337,13 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
           dados.profissionais.semDataAdmissao > 0 ||
           dados.profissionais.semSalario > 0 ||
           dados.profissionais.semCargo > 0 ||
-          dados.profissionais.semLoja > 0) && (
+          dados.profissionais.semLoja > 0 ||
+          dados.profissionais.semRg > 0 ||
+          dados.profissionais.semDataNascimento > 0 ||
+          dados.profissionais.semSexo > 0 ||
+          dados.profissionais.semCorEtnia > 0 ||
+          dados.profissionais.semNomeMae > 0 ||
+          dados.profissionais.semNomePai > 0) && (
           <div className="pt-2">
             <ProfissionaisPendenciasList listas={dados.profissionais.listas} />
           </div>
@@ -316,6 +368,12 @@ function ProfissionaisPendenciasList({
     { campo: 'salario_nominal', titulo: 'Sem salário', itens: listas.semSalario },
     { campo: 'cargo', titulo: 'Sem cargo', itens: listas.semCargo },
     { campo: 'loja_id', titulo: 'Sem loja', itens: listas.semLoja },
+    { campo: 'rg', titulo: 'Sem RG', itens: listas.semRg },
+    { campo: 'data_nascimento', titulo: 'Sem data de nascimento', itens: listas.semDataNascimento },
+    { campo: 'sexo', titulo: 'Sem sexo', itens: listas.semSexo },
+    { campo: 'cor_etnia', titulo: 'Sem cor/etnia', itens: listas.semCorEtnia },
+    { campo: 'nome_mae', titulo: 'Sem nome da mãe', itens: listas.semNomeMae },
+    { campo: 'nome_pai', titulo: 'Sem nome do pai', itens: listas.semNomePai },
   ].filter(g => g.itens.length > 0);
 
   if (grupos.length === 0) return null;

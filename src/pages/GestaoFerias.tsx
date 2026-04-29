@@ -36,6 +36,7 @@ interface Vacation {
 
 export default function GestaoFerias() {
   const [vacations, setVacations] = useState<Vacation[]>([]);
+  const [todasLojas, setTodasLojas] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVacation, setEditingVacation] = useState<Vacation | null>(null);
@@ -59,7 +60,10 @@ export default function GestaoFerias() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: ferias, error: feriasError } = await supabase
+      // Buscar todas as lojas do tenant em paralelo (para popular o filtro
+      // mesmo quando uma loja ainda não tem registros de férias)
+      const [feriasRes, lojasRes] = await Promise.all([
+        supabase
         .from('ferias')
         .select(`
           *,
@@ -69,9 +73,17 @@ export default function GestaoFerias() {
             status,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
-        `);
+        `),
+        supabase.from('lojas').select('nome').order('nome', { ascending: true }),
+      ]);
 
+      const { data: ferias, error: feriasError } = feriasRes;
       if (feriasError) throw feriasError;
+
+      const lojasNomes = (lojasRes.data || [])
+        .map((l: any) => l?.nome)
+        .filter((n: string | null | undefined): n is string => !!n);
+      setTodasLojas(lojasNomes);
 
       const vacationsData: Vacation[] = (ferias || []).map((f: any) => {
         const hoje = new Date();
@@ -235,9 +247,15 @@ export default function GestaoFerias() {
     return Math.max(0, diffDays);
   };
 
-  // Lista única de lojas presentes nos registros (para o filtro)
+  // Lista de lojas no filtro: união entre TODAS as lojas do tenant e
+  // lojas que aparecem nos registros de férias. Isto garante que lojas
+  // sem nenhum registro de férias ainda apareçam no filtro (ex.:
+  // COMERCIAL, LAJEADO, SAO BERNARDO).
   const lojasDisponiveis = Array.from(
-    new Set(vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'))
+    new Set([
+      ...todasLojas,
+      ...vacations.map(v => v.loja).filter(l => l && l !== 'Loja não definida'),
+    ])
   ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
   // Aplicar filtros (loja + busca por nome + desligados) na listagem e nos contadores
