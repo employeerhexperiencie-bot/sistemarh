@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { toastError } from '@/lib/toastError';
 
 interface Batida {
   nomeFuncionario: string;
@@ -75,7 +76,7 @@ export default function GestaoPonto() {
       setFuncionarios(data.listaDeFuncionarios || []);
       toast.success(`${(data.listaDeFuncionarios || []).length} funcionários carregados do EzPoint`);
     } catch (err: any) {
-      toast.error(err.message);
+      toastError(err, err?.message || 'Erro ao carregar funcionários');
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,7 @@ export default function GestaoPonto() {
       setBatidas(data.listaDeBatidas || []);
       toast.success(`${(data.listaDeBatidas || []).length} batidas encontradas`);
     } catch (err: any) {
-      toast.error(err.message);
+      toastError(err, err?.message || 'Erro ao consultar batidas');
     } finally {
       setLoading(false);
     }
@@ -110,7 +111,7 @@ export default function GestaoPonto() {
       });
       toast.success("Espelho de ponto carregado");
     } catch (err: any) {
-      toast.error(err.message);
+      toastError(err, err?.message || 'Erro ao consultar espelho');
     } finally {
       setLoading(false);
     }

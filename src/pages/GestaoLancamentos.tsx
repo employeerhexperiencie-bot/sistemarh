@@ -18,6 +18,7 @@ import {
   AlertTriangle, CheckCircle2, Loader2, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toastError } from '@/lib/toastError';
 
 interface Vale {
   id: string;
@@ -130,7 +131,7 @@ export default function GestaoLancamentos() {
       setBeneficios((beneficiosRes.data as BeneficioAdicional[]) || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar lançamentos');
+      toastError(error, 'Erro ao carregar lançamentos');
     } finally {
       setIsLoading(false);
     }
@@ -192,7 +193,7 @@ export default function GestaoLancamentos() {
       carregarDados();
     } catch (error: any) {
       console.error('Erro ao salvar vale:', error);
-      toast.error(error.message || 'Erro ao salvar vale');
+      toastError(error, error?.message || 'Erro ao salvar vale');
     } finally {
       setIsSaving(false);
     }
@@ -228,7 +229,7 @@ export default function GestaoLancamentos() {
       carregarDados();
     } catch (error: any) {
       console.error('Erro ao salvar lançamento:', error);
-      toast.error(error.message || 'Erro ao salvar lançamento');
+      toastError(error, error?.message || 'Erro ao salvar lançamento');
     } finally {
       setIsSaving(false);
     }
@@ -296,7 +297,7 @@ export default function GestaoLancamentos() {
       carregarDados();
     } catch (error: any) {
       console.error('Erro ao salvar benefícios:', error);
-      toast.error(error.message || 'Erro ao salvar benefícios');
+      toastError(error, error?.message || 'Erro ao salvar benefícios');
     } finally {
       setIsSaving(false);
     }
@@ -312,7 +313,7 @@ export default function GestaoLancamentos() {
       toast.success('Vale excluído');
       carregarDados();
     } catch (error: any) {
-      toast.error('Erro ao excluir');
+      toastError(error, 'Erro ao excluir vale');
     }
   };
   
@@ -326,7 +327,7 @@ export default function GestaoLancamentos() {
       toast.success('Lançamento excluído');
       carregarDados();
     } catch (error: any) {
-      toast.error('Erro ao excluir');
+      toastError(error, 'Erro ao excluir lançamento');
     }
   };
   
