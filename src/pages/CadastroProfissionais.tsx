@@ -1327,6 +1327,25 @@ export const CadastroProfissionais: React.FC = () => {
                   </p>
                 </div>
               </CardContent>
+              {selectedProfessional?.status === 'ativo' && canEditProfessionals && (
+                <CardContent className="pt-0">
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      setFormDemissao({
+                        data_demissao: new Date().toISOString().split('T')[0],
+                        tipo_demissao: 'sem_justa_causa',
+                        aviso_previo: 'trabalhado',
+                        observacoes: '',
+                      });
+                      setDemissaoDialogOpen(true);
+                    }}
+                  >
+                    <UserX className="h-4 w-4 mr-2" />
+                    Registrar Demissão
+                  </Button>
+                </CardContent>
+              )}
             </Card>
           </TabsContent>
 
