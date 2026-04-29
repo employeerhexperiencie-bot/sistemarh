@@ -31,6 +31,7 @@ import { ReajusteSalarialModal } from '@/components/folha/ReajusteSalarialModal'
 import { PhotoUploader } from '@/components/profissional/PhotoUploader';
 import { ProfissionalNomeAvatar } from '@/components/profissional/ProfissionalAvatar';
 import { Link } from 'react-router-dom';
+import { CAMPO_TO_TAB, focusAndHighlightField } from '@/lib/profissionalDeepLink';
 
 interface Professional {
   id: string;
