@@ -507,6 +507,13 @@ export function TenantManagement() {
                         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openPaymentDialog(tenant); }} title="Registrar pagamento">
                           <CreditCard className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost" size="icon"
+                          onClick={(e) => { e.stopPropagation(); handleToggleLanup(tenant); }}
+                          title={tenant.lanup_habilitado ? 'Lanup liberado — clique para desativar' : 'Lanup bloqueado — clique para liberar'}
+                        >
+                          <Sparkles className={`h-4 w-4 ${tenant.lanup_habilitado ? 'text-success' : 'text-muted-foreground'}`} />
+                        </Button>
                         <Button 
                           variant="ghost" size="icon" 
                           onClick={(e) => { e.stopPropagation(); handleToggleTenant(tenant); }}
