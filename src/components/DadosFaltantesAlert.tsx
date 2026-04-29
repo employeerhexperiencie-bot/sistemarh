@@ -16,18 +16,27 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { buildEditCampoUrl } from '@/lib/profissionalDeepLink';
 
+interface ProfRef { id: string; nome: string; matricula: string }
 interface DadosFaltantes {
   ferias: { total: number; pendentes: number };
   faltas: { total: number; mesAtual: number };
   aso: { total: number; vencidos: number; semExame: number };
-  profissionais: { 
-    total: number; 
-    semLoja: number; 
-    semCargo: number; 
+  profissionais: {
+    total: number;
+    semLoja: number;
+    semCargo: number;
     semDataAdmissao: number;
     semCpf: number;
     semSalario: number;
+    listas: {
+      semCpf: ProfRef[];
+      semDataAdmissao: ProfRef[];
+      semSalario: ProfRef[];
+      semCargo: ProfRef[];
+      semLoja: ProfRef[];
+    };
   };
 }
 
@@ -50,7 +59,7 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       ] = await Promise.all([
         supabase
           .from('profissionais')
-          .select('id, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario')
+          .select('id, nome, matricula, loja_id, cargo, data_admissao, cpf, salario_nominal, ultimo_salario, primeiro_salario')
           .eq('status', 'ativo'),
         supabase
           .from('ferias')
@@ -75,18 +84,33 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       const profissionaisComASO = new Set(aso.map(a => a.profissional_id));
       const profissionaisSemASO = profissionais.filter(p => !profissionaisComASO.has(p.id)).length;
 
+      const semCpfList = profissionais.filter(p => !p.cpf || p.cpf === '');
+      const semDataAdmissaoList = profissionais.filter(p => !p.data_admissao);
+      const semSalarioList = profissionais.filter(p =>
+        (!p.salario_nominal || p.salario_nominal === 0) &&
+        (!p.ultimo_salario || p.ultimo_salario === 0) &&
+        (!p.primeiro_salario || p.primeiro_salario === 0)
+      );
+      const semCargoList = profissionais.filter(p => !p.cargo);
+      const semLojaList = profissionais.filter(p => !p.loja_id);
+
+      const toRef = (p: any): ProfRef => ({ id: p.id, nome: p.nome, matricula: p.matricula });
+
       setDados({
         profissionais: {
           total: profissionais.length,
-          semLoja: profissionais.filter(p => !p.loja_id).length,
-          semCargo: profissionais.filter(p => !p.cargo).length,
-          semDataAdmissao: profissionais.filter(p => !p.data_admissao).length,
-          semCpf: profissionais.filter(p => !p.cpf || p.cpf === '').length,
-          semSalario: profissionais.filter(p => 
-            (!p.salario_nominal || p.salario_nominal === 0) && 
-            (!p.ultimo_salario || p.ultimo_salario === 0) && 
-            (!p.primeiro_salario || p.primeiro_salario === 0)
-          ).length
+          semLoja: semLojaList.length,
+          semCargo: semCargoList.length,
+          semDataAdmissao: semDataAdmissaoList.length,
+          semCpf: semCpfList.length,
+          semSalario: semSalarioList.length,
+          listas: {
+            semCpf: semCpfList.slice(0, 20).map(toRef),
+            semDataAdmissao: semDataAdmissaoList.slice(0, 20).map(toRef),
+            semSalario: semSalarioList.slice(0, 20).map(toRef),
+            semCargo: semCargoList.slice(0, 20).map(toRef),
+            semLoja: semLojaList.slice(0, 20).map(toRef),
+          },
         },
         ferias: {
           total: ferias.length,
