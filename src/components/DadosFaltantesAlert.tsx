@@ -150,11 +150,11 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
       tipo: 'faltas',
       titulo: 'Faltas do mês',
       descricao: dados.faltas.total === 0 
-        ? 'Nenhuma falta registrada no sistema' 
+        ? 'Nenhuma falta lançada — presume-se presença completa. Lance manualmente, importe planilha ou solicite atualização.'
         : `${dados.faltas.mesAtual} faltas registradas este mês`,
       icone: FileX,
       rota: '/faltas',
-      acao: 'Ver Faltas',
+      acao: dados.faltas.total === 0 ? 'Lançar / Importar Faltas' : 'Ver Faltas',
       quantidade: dados.faltas.mesAtual,
       critico: false,
       info: dados.faltas.total === 0
