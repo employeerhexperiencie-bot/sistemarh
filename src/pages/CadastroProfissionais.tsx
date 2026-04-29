@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, AlertCircle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp, Camera, Images } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, AlertCircle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp, Camera, Images, Info } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -460,6 +460,16 @@ export const CadastroProfissionais: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [usingImportedData, setUsingImportedData] = useState(false);
   const { toast } = useToast();
+
+  // Fluxo de demissão estruturado
+  const [demissaoDialogOpen, setDemissaoDialogOpen] = useState(false);
+  const [demissaoLoading, setDemissaoLoading] = useState(false);
+  const [formDemissao, setFormDemissao] = useState({
+    data_demissao: new Date().toISOString().split('T')[0],
+    tipo_demissao: 'sem_justa_causa',
+    aviso_previo: 'trabalhado',
+    observacoes: '',
+  });
   const { addLog } = useAuditLog();
   const { canAddProfissional, limits } = useTenantLimits();
   const { user } = useAuth();
@@ -1317,6 +1327,25 @@ export const CadastroProfissionais: React.FC = () => {
                   </p>
                 </div>
               </CardContent>
+              {selectedProfessional?.status === 'ativo' && canEditProfessionals && (
+                <CardContent className="pt-0">
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      setFormDemissao({
+                        data_demissao: new Date().toISOString().split('T')[0],
+                        tipo_demissao: 'sem_justa_causa',
+                        aviso_previo: 'trabalhado',
+                        observacoes: '',
+                      });
+                      setDemissaoDialogOpen(true);
+                    }}
+                  >
+                    <UserX className="h-4 w-4 mr-2" />
+                    Registrar Demissão
+                  </Button>
+                </CardContent>
+              )}
             </Card>
           </TabsContent>
 
@@ -1524,6 +1553,185 @@ export const CadastroProfissionais: React.FC = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Dialog: Registrar Demissão */}
+        <Dialog open={demissaoDialogOpen} onOpenChange={setDemissaoDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Registrar Demissão</DialogTitle>
+              <DialogDescription>
+                {selectedProfessional?.nome} — {selectedProfessional?.matricula}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="dem-data">Data de demissão *</Label>
+                <Input
+                  id="dem-data"
+                  type="date"
+                  value={formDemissao.data_demissao}
+                  onChange={(e) => setFormDemissao({ ...formDemissao, data_demissao: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label>Tipo de demissão *</Label>
+                <Select
+                  value={formDemissao.tipo_demissao}
+                  onValueChange={(v) => setFormDemissao({ ...formDemissao, tipo_demissao: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sem_justa_causa">Sem justa causa</SelectItem>
+                    <SelectItem value="justa_causa">Justa causa</SelectItem>
+                    <SelectItem value="pedido_demissao">Pedido de demissão</SelectItem>
+                    <SelectItem value="acordo_mutuo">Acordo mútuo</SelectItem>
+                    <SelectItem value="termino_contrato">Término de contrato</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Aviso prévio *</Label>
+                <Select
+                  value={formDemissao.aviso_previo}
+                  onValueChange={(v) => setFormDemissao({ ...formDemissao, aviso_previo: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="trabalhado">Trabalhado</SelectItem>
+                    <SelectItem value="indenizado">Indenizado</SelectItem>
+                    <SelectItem value="nao_aplicavel">Não aplicável</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="dem-obs">Observações</Label>
+                <Textarea
+                  id="dem-obs"
+                  value={formDemissao.observacoes}
+                  onChange={(e) => setFormDemissao({ ...formDemissao, observacoes: e.target.value })}
+                  placeholder="Detalhes adicionais (opcional)"
+                />
+              </div>
+
+              {/* Resumo informativo de verbas rescisórias estimadas */}
+              {(() => {
+                const salario = Number(selectedProfessional?.salario_nominal) || 0;
+                const dataDem = formDemissao.data_demissao
+                  ? new Date(`${formDemissao.data_demissao}T12:00:00`)
+                  : new Date();
+                const dataAdm = selectedProfessional?.data_admissao
+                  ? new Date(`${selectedProfessional.data_admissao}T12:00:00`)
+                  : null;
+
+                // 13º proporcional: meses trabalhados no ano da demissão (≥15 dias = mês cheio)
+                let mesesAno13 = dataDem.getMonth() + 1;
+                if (dataDem.getDate() < 15) mesesAno13 = Math.max(0, mesesAno13 - 1);
+                if (dataAdm && dataAdm.getFullYear() === dataDem.getFullYear()) {
+                  let inicio = dataAdm.getMonth() + 1;
+                  if (dataAdm.getDate() > 15) inicio += 1;
+                  mesesAno13 = Math.max(0, mesesAno13 - inicio + 1);
+                }
+                const decimoTerceiro = (salario / 12) * mesesAno13;
+
+                // Férias proporcionais: meses desde último período aquisitivo (simplificado: desde admissão no ano)
+                let mesesFerias = 0;
+                if (dataAdm) {
+                  const diffMeses =
+                    (dataDem.getFullYear() - dataAdm.getFullYear()) * 12 +
+                    (dataDem.getMonth() - dataAdm.getMonth());
+                  mesesFerias = Math.min(12, diffMeses % 12);
+                  if (dataDem.getDate() >= 15) mesesFerias += 1;
+                  mesesFerias = Math.min(12, mesesFerias);
+                }
+                const ferias = (salario / 12) * mesesFerias;
+                const tercoFerias = ferias / 3;
+
+                const avisoIndenizado =
+                  formDemissao.aviso_previo === 'indenizado' ? salario : 0;
+
+                const total = decimoTerceiro + ferias + tercoFerias + avisoIndenizado;
+
+                const fmt = (v: number) =>
+                  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                return (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Verbas rescisórias estimadas</AlertTitle>
+                    <AlertDescription>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
+                        <span className="text-muted-foreground">13º proporcional:</span>
+                        <span className="text-right font-medium">{fmt(decimoTerceiro)}</span>
+                        <span className="text-muted-foreground">Férias proporcionais:</span>
+                        <span className="text-right font-medium">{fmt(ferias)}</span>
+                        <span className="text-muted-foreground">1/3 sobre férias:</span>
+                        <span className="text-right font-medium">{fmt(tercoFerias)}</span>
+                        {avisoIndenizado > 0 && (
+                          <>
+                            <span className="text-muted-foreground">Aviso prévio indenizado:</span>
+                            <span className="text-right font-medium">{fmt(avisoIndenizado)}</span>
+                          </>
+                        )}
+                        <span className="font-semibold border-t pt-1 mt-1">Total estimado:</span>
+                        <span className="text-right font-semibold border-t pt-1 mt-1">{fmt(total)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Valores informativos. O cálculo definitivo deve ser validado no fechamento.
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                );
+              })()}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDemissaoDialogOpen(false)}
+                  disabled={demissaoLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={demissaoLoading || !formDemissao.data_demissao}
+                  onClick={async () => {
+                    if (!selectedProfessional) return;
+                    setDemissaoLoading(true);
+                    const { error } = await supabase
+                      .from('profissionais')
+                      .update({
+                        status: 'demitido',
+                        data_demissao: formDemissao.data_demissao,
+                        motivo_demissao: formDemissao.tipo_demissao,
+                        aviso_trabalhado: formDemissao.aviso_previo === 'trabalhado',
+                        updated_at: new Date().toISOString(),
+                      })
+                      .eq('id', selectedProfessional.id);
+                    setDemissaoLoading(false);
+                    if (!error) {
+                      toast({ title: 'Demissão registrada com sucesso' });
+                      loadProfessionals();
+                      setDemissaoDialogOpen(false);
+                    } else {
+                      toast({
+                        title: 'Erro ao registrar demissão',
+                        description: String(error.message || error),
+                        variant: 'destructive',
+                      });
+                    }
+                  }}
+                >
+                  <UserX className="h-4 w-4 mr-2" />
+                  Confirmar demissão
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
