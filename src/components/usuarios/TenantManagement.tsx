@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Building2, Power, PowerOff, Loader2, AlertTriangle, Users, Plus, RefreshCw,
   Mail, UserPlus, DollarSign, TrendingUp, Calendar, BarChart3, Eye,
-  CreditCard, Receipt, ChevronDown, ChevronUp
+  CreditCard, Receipt, ChevronDown, ChevronUp, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -55,6 +55,7 @@ interface Tenant {
   data_bloqueio: string | null;
   motivo_bloqueio: string | null;
   created_at: string | null;
+  lanup_habilitado?: boolean | null;
 }
 
 interface TenantMetrics {
