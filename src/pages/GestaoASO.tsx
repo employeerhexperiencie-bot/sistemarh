@@ -55,6 +55,7 @@ export default function GestaoASO() {
   const [filterTipoExame, setFilterTipoExame] = useState<string>('todos');
   const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
+  useDeepLinkProfissional(setSearchTerm);
   const [showSemASO, setShowSemASO] = useState(false);
   const [formData, setFormData] = useState({
     profissional_id: '',

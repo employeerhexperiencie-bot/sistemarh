@@ -47,6 +47,7 @@ export default function GestaoAfastamentos() {
   const [saving, setSaving] = useState(false);
   const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
+  useDeepLinkProfissional(setSearchTerm);
   const { addLog } = useAuditLog();
 
   useEffect(() => {

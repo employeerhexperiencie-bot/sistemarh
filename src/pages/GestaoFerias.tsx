@@ -47,6 +47,7 @@ export default function GestaoFerias() {
   const [selectedProfissionalId, setSelectedProfissionalId] = useState<string | undefined>(undefined);
   const [filterLoja, setFilterLoja] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
+  useDeepLinkProfissional(setSearchTerm);
   const [incluirDesligados, setIncluirDesligados] = useState(false);
   const { addLog } = useAuditLog();
 
