@@ -60,7 +60,10 @@ export default function GestaoFerias() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: ferias, error: feriasError } = await supabase
+      // Buscar todas as lojas do tenant em paralelo (para popular o filtro
+      // mesmo quando uma loja ainda não tem registros de férias)
+      const [feriasRes, lojasRes] = await Promise.all([
+        supabase
         .from('ferias')
         .select(`
           *,
@@ -70,9 +73,17 @@ export default function GestaoFerias() {
             status,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
-        `);
+        `),
+        supabase.from('lojas').select('nome').order('nome', { ascending: true }),
+      ]);
 
+      const { data: ferias, error: feriasError } = feriasRes;
       if (feriasError) throw feriasError;
+
+      const lojasNomes = (lojasRes.data || [])
+        .map((l: any) => l?.nome)
+        .filter((n: string | null | undefined): n is string => !!n);
+      setTodasLojas(lojasNomes);
 
       const vacationsData: Vacation[] = (ferias || []).map((f: any) => {
         const hoje = new Date();
