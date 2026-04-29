@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Building2, Power, PowerOff, Loader2, AlertTriangle, Users, Plus, RefreshCw,
   Mail, UserPlus, DollarSign, TrendingUp, Calendar, BarChart3, Eye,
-  CreditCard, Receipt, ChevronDown, ChevronUp
+  CreditCard, Receipt, ChevronDown, ChevronUp, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -55,6 +55,7 @@ interface Tenant {
   data_bloqueio: string | null;
   motivo_bloqueio: string | null;
   created_at: string | null;
+  lanup_habilitado?: boolean | null;
 }
 
 interface TenantMetrics {
@@ -206,6 +207,24 @@ export function TenantManagement() {
     setSelectedTenant(tenant);
     setMotivoBloqueio('');
     setIsBlockDialogOpen(true);
+  };
+
+  const handleToggleLanup = async (tenant: Tenant) => {
+    const novoEstado = !tenant.lanup_habilitado;
+    try {
+      const { error } = await supabase.from('tenants').update({
+        lanup_habilitado: novoEstado,
+      } as any).eq('id', tenant.id);
+      if (error) throw error;
+      toast.success(
+        novoEstado
+          ? `Acesso Lanup liberado para "${tenant.nome}"`
+          : `Acesso Lanup removido de "${tenant.nome}"`
+      );
+      loadTenants();
+    } catch (e) {
+      toast.error('Erro ao alterar acesso Lanup');
+    }
   };
 
   const confirmToggle = async () => {
@@ -487,6 +506,13 @@ export function TenantManagement() {
                         </Button>
                         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openPaymentDialog(tenant); }} title="Registrar pagamento">
                           <CreditCard className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon"
+                          onClick={(e) => { e.stopPropagation(); handleToggleLanup(tenant); }}
+                          title={tenant.lanup_habilitado ? 'Lanup liberado — clique para desativar' : 'Lanup bloqueado — clique para liberar'}
+                        >
+                          <Sparkles className={`h-4 w-4 ${tenant.lanup_habilitado ? 'text-success' : 'text-muted-foreground'}`} />
                         </Button>
                         <Button 
                           variant="ghost" size="icon" 
