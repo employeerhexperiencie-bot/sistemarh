@@ -1577,7 +1577,7 @@ export const CadastroProfissionais: React.FC = () => {
             
             <ScrollArea className="max-h-[calc(95vh-180px)]">
               <div className="p-6 pt-4">
-                  <Tabs defaultValue="pessoais" className="w-full">
+                  <Tabs value={editTab} onValueChange={setEditTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto mb-4">
                     <TabsTrigger value="pessoais" className="text-xs py-2">Pessoais</TabsTrigger>
                     <TabsTrigger value="endereco" className="text-xs py-2">Endereço</TabsTrigger>
