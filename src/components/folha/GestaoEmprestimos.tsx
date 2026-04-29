@@ -594,6 +594,11 @@ export function GestaoEmprestimos() {
   const [registrando, setRegistrando] = useState(false);
   const [emprestimos, setEmprestimos] = useState<Emprestimo[]>([]);
   const [lojas, setLojas] = useState<string[]>([]);
+
+  // Paginação (server-side) — 50 registros por página
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   
   // Estado para edição
   const [editandoEmprestimo, setEditandoEmprestimo] = useState<Emprestimo | null>(null);
@@ -682,7 +687,11 @@ export function GestaoEmprestimos() {
     setLoading(true);
     try {
       const [empResult, profData, lojasResult] = await Promise.all([
-        supabase.from('emprestimos').select('*'),
+        supabase
+          .from('emprestimos')
+          .select('id, profissional_id, tipo, valor_total, valor_parcela, numero_parcelas, parcelas_pagas, status, data_inicio, data_previsao_termino, observacoes, saldo_devedor')
+          .order('data_inicio', { ascending: false })
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
         fetchAllPaginated(() =>
           supabase.from('profissionais').select('id, nome, matricula, loja_id')
         ),
@@ -690,6 +699,8 @@ export function GestaoEmprestimos() {
       ]);
 
       if (empResult.error) throw empResult.error;
+
+      setHasMore((empResult.data || []).length === PAGE_SIZE);
 
       const lojasMap: Record<string, string> = {};
       (lojasResult.data || []).forEach((l: any) => {
@@ -767,7 +778,7 @@ export function GestaoEmprestimos() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page]);
 
   const handleRegistrarParcela = async (id: string) => {
     setRegistrando(true);
