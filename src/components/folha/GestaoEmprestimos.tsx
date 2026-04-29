@@ -1315,6 +1315,31 @@ export function GestaoEmprestimos() {
               </ScrollArea>
             </CardContent>
           </Card>
+
+          {/* Paginação */}
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">
+              Página {page + 1}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
+              >
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!hasMore || loading}
+              >
+                Próxima
+              </Button>
+            </div>
+          </div>
         </>
       )}
       
