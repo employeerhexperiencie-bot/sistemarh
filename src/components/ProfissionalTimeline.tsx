@@ -71,13 +71,13 @@ export function ProfissionalTimeline({ profissionalId, profissionalNome, dataAdm
 
       // Buscar dados em paralelo
       const [advertenciasRes, emprestimosRes, episRes, feriasRes, afastamentosRes, historicoRes, asoRes] = await Promise.all([
-        supabase.from('advertencias').select('*').eq('profissional_id', profissionalId),
-        supabase.from('emprestimos').select('*').eq('profissional_id', profissionalId),
-        supabase.from('epis').select('*').eq('profissional_id', profissionalId),
-        supabase.from('ferias').select('*').eq('profissional_id', profissionalId),
-        supabase.from('afastamentos').select('*').eq('profissional_id', profissionalId),
-        supabase.from('historico_salarios').select('*').eq('profissional_id', profissionalId),
-        supabase.from('exames_aso').select('*').eq('profissional_id', profissionalId)
+        supabase.from('advertencias').select('id, tipo, data, motivo, descricao, created_at').eq('profissional_id', profissionalId),
+        supabase.from('emprestimos').select('id, tipo, valor_total, valor_parcela, numero_parcelas, parcelas_pagas, saldo_devedor, status, data_inicio, data_previsao_termino, observacoes').eq('profissional_id', profissionalId),
+        supabase.from('epis').select('id, nome, ca, data_entrega, data_validade, status').eq('profissional_id', profissionalId),
+        supabase.from('ferias').select('id, periodo_aquisitivo_inicio, periodo_aquisitivo_fim, periodo_gozo_inicio, periodo_gozo_fim, dias_direito, dias_gozados, status').eq('profissional_id', profissionalId),
+        supabase.from('afastamentos').select('id, tipo, motivo, data_inicio, data_fim, data_prevista_retorno, status, observacoes').eq('profissional_id', profissionalId),
+        supabase.from('historico_salarios').select('id, salario_anterior, salario_novo, data_alteracao, motivo, usuario_id').eq('profissional_id', profissionalId),
+        supabase.from('exames_aso').select('id, tipo_exame, data_realizacao, data_proximo_exame, status, observacoes, medico, clinica').eq('profissional_id', profissionalId)
       ]);
 
       // Advertências
