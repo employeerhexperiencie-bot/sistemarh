@@ -9,10 +9,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Clock, Activity, Users, BarChart3, RefreshCw, TrendingUp,
-  CheckCircle, XCircle, Monitor, FileText, Loader2
+  CheckCircle, XCircle, Monitor, FileText, Loader2, RotateCw
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface UserSessionSummary {
   user_id: string;
@@ -255,6 +256,27 @@ export default function PainelUso() {
               <SelectItem value="90d">Últimos 90 dias</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              const t = toast.loading('Processando retries de webhooks...');
+              const { data, error } = await supabase.functions.invoke('webhook-retry', {
+                method: 'POST',
+              });
+              toast.dismiss(t);
+              if (error) {
+                toast.error('Erro ao processar retries', { description: String(error.message || error) });
+              } else {
+                toast.success(
+                  `Retries processados: ${data?.processed ?? 0} de ${data?.checked ?? 0}`,
+                );
+              }
+            }}
+          >
+            <RotateCw className="h-4 w-4 mr-2" />
+            Processar Retries
+          </Button>
           <Button variant="outline" size="icon" onClick={fetchData}>
             <RefreshCw className="h-4 w-4" />
           </Button>
