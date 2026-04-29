@@ -209,6 +209,24 @@ export function TenantManagement() {
     setIsBlockDialogOpen(true);
   };
 
+  const handleToggleLanup = async (tenant: Tenant) => {
+    const novoEstado = !tenant.lanup_habilitado;
+    try {
+      const { error } = await supabase.from('tenants').update({
+        lanup_habilitado: novoEstado,
+      } as any).eq('id', tenant.id);
+      if (error) throw error;
+      toast.success(
+        novoEstado
+          ? `Acesso Lanup liberado para "${tenant.nome}"`
+          : `Acesso Lanup removido de "${tenant.nome}"`
+      );
+      loadTenants();
+    } catch (e) {
+      toast.error('Erro ao alterar acesso Lanup');
+    }
+  };
+
   const confirmToggle = async () => {
     if (!selectedTenant) return;
     const newStatus = !selectedTenant.ativo;
