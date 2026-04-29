@@ -670,3 +670,15 @@
     animation: none;
   }
 }
+
+/* Destaque de campo para deep-link de alertas (ex.: "sem CPF") */
+.field-highlight {
+  animation: field-highlight-pulse 1.2s ease-in-out 0s 3;
+  border-color: hsl(var(--warning)) !important;
+  box-shadow: 0 0 0 3px hsl(var(--warning) / 0.35) !important;
+  border-radius: 0.5rem;
+}
+@keyframes field-highlight-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px hsl(var(--warning) / 0.35); }
+  50%      { box-shadow: 0 0 0 6px hsl(var(--warning) / 0.55); }
+}
