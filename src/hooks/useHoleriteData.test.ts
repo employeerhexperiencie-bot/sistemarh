@@ -110,10 +110,12 @@ describe('useHoleriteData', () => {
     tableResults['faltas'] = { data: [], error: null };
     tableResults['adiantamentos'] = { data: null, error: null };
 
-    // Suprime o unhandledrejection do RangeError esperado para não poluir o output.
-    const swallow = (e: PromiseRejectionEvent) => e.preventDefault();
+    // Suprime o unhandledrejection do RangeError esperado (node + jsdom).
+    const swallowNode = (_reason: unknown) => {};
+    const swallowWin = (e: PromiseRejectionEvent) => e.preventDefault();
+    process.on('unhandledRejection', swallowNode);
     if (typeof window !== 'undefined') {
-      window.addEventListener('unhandledrejection', swallow);
+      window.addEventListener('unhandledrejection', swallowWin);
     }
 
     const { result } = renderHook(() => useHoleriteData('prof-1', 'invalido'));
@@ -127,8 +129,9 @@ describe('useHoleriteData', () => {
     expect(result.current.faltas).toEqual([]);
     expect(result.current.adiantamento).toBeNull();
 
+    process.off('unhandledRejection', swallowNode);
     if (typeof window !== 'undefined') {
-      window.removeEventListener('unhandledrejection', swallow);
+      window.removeEventListener('unhandledrejection', swallowWin);
     }
   });
 });
