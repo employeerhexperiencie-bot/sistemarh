@@ -415,3 +415,90 @@ export function exportarCSV(profs: ProfissionalRelatorio[], tipo: string, config
 }
 
 export type { ProfissionalRelatorio, ConfigRelatorio };
+
+// ========== TERMO DE RESCISÃO ==========
+export function gerarRelatorioRescisao(profissional: {
+  nome: string;
+  matricula: string;
+  cpf: string;
+  cargo: string;
+  loja: string;
+  salario: number;
+  dataAdmissao: string;
+  dataDemissao: string;
+  motivoDemissao: string;
+  avisoPrevio: string;
+}): void {
+  const doc = new jsPDF();
+  const hoje = new Date().toLocaleDateString('pt-BR');
+
+  // Cabeçalho
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TERMO DE RESCISÃO DE CONTRATO', 105, 20, { align: 'center' });
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Emitido em: ${hoje}`, 195, 28, { align: 'right' });
+
+  // Dados do profissional
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('DADOS DO COLABORADOR', 14, 40);
+
+  const dados = [
+    ['Nome:', profissional.nome],
+    ['Matrícula:', profissional.matricula],
+    ['CPF:', profissional.cpf],
+    ['Cargo:', profissional.cargo],
+    ['Loja:', profissional.loja],
+    ['Salário:', `R$ ${profissional.salario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+    ['Data Admissão:', profissional.dataAdmissao],
+    ['Data Demissão:', profissional.dataDemissao],
+    ['Motivo:', profissional.motivoDemissao],
+    ['Aviso Prévio:', profissional.avisoPrevio],
+  ];
+
+  // Calcular verbas (estimativas)
+  const dataAdm = new Date(profissional.dataAdmissao + 'T12:00:00');
+  const dataDem = new Date(profissional.dataDemissao + 'T12:00:00');
+  const mesesTrabalhados = Math.max(
+    0,
+    Math.floor((dataDem.getTime() - dataAdm.getTime()) / (1000 * 60 * 60 * 24 * 30))
+  );
+  const avos = Math.min(12, Math.floor((dataDem.getMonth() - dataAdm.getMonth() + 12) % 12) || 12);
+  const decimoProporional = (profissional.salario / 12) * avos;
+  const feriasProporcionais = (profissional.salario / 12) * Math.min(12, mesesTrabalhados % 12 || 12);
+  const umTercoFerias = feriasProporcionais / 3;
+
+  autoTable(doc, {
+    startY: 45,
+    body: dados,
+    theme: 'plain',
+    styles: { fontSize: 10 },
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 } },
+  });
+
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+
+  // Verbas rescisórias estimadas
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('VERBAS RESCISÓRIAS ESTIMADAS', 14, finalY);
+
+  autoTable(doc, {
+    startY: finalY + 5,
+    head: [['Verba', 'Valor Estimado']],
+    body: [
+      ['13º Salário Proporcional', `R$ ${decimoProporional.toFixed(2)}`],
+      ['Férias Proporcionais', `R$ ${feriasProporcionais.toFixed(2)}`],
+      ['1/3 Constitucional sobre Férias', `R$ ${umTercoFerias.toFixed(2)}`],
+      ['TOTAL ESTIMADO', `R$ ${(decimoProporional + feriasProporcionais + umTercoFerias).toFixed(2)}`],
+    ],
+    theme: 'striped',
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [41, 128, 185] },
+  });
+
+  doc.save(`rescisao_${profissional.matricula}_${profissional.dataDemissao}.pdf`);
+}
