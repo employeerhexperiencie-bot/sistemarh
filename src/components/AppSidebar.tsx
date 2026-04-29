@@ -38,7 +38,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useActiveTenantModules } from '@/hooks/useTenantModules';
 import {
   Sidebar,
   SidebarContent,
@@ -168,34 +167,28 @@ export function AppSidebar() {
   const { user } = useAuth();
   const currentPath = location.pathname;
   const collapsed = state === 'collapsed';
-  const { data: activeModules } = useActiveTenantModules();
   
   // IMPORTANTE: Apenas super_admin vê as telas de administração
   // Admin comum (clientes) veem apenas o Painel de Uso
   const isSuperAdmin = user?.role === 'super_admin';
   const isAdmin = user?.role === 'admin';
 
-  // Seção dinâmica de Módulos de Parceiros (Marketplace + módulos ativos)
-  const modulosSection = {
-    label: 'Módulos',
+  // Item fixo de acesso ao sistema Lanup (parceiro externo embutido em iframe)
+  const lanupSection = {
+    label: 'Lanup',
     icon: Puzzle,
-    defaultOpen: (activeModules?.length ?? 0) > 0,
+    defaultOpen: false,
     items: [
-      { title: 'Marketplace', url: '/marketplace', icon: Sparkles },
-      ...(activeModules?.map((tm) => ({
-        title: tm.module?.nome ?? 'Módulo',
-        url: `/modulos/${tm.module?.slug}`,
-        icon: Puzzle,
-      })) ?? []),
+      { title: 'Acessar Lanup', url: '/lanup', icon: Sparkles },
     ],
   };
 
   // Combine sections based on user role
   const allSections = isSuperAdmin 
-    ? [...navSections, modulosSection, ...clientAdminSections, ...adminSections]
+    ? [...navSections, lanupSection, ...clientAdminSections, ...adminSections]
     : isAdmin 
-      ? [...navSections, modulosSection, ...clientAdminSections]
-      : [...navSections, modulosSection];
+      ? [...navSections, lanupSection, ...clientAdminSections]
+      : [...navSections, lanupSection];
 
   const isActive = (path: string) => currentPath === path;
   

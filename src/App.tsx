@@ -65,8 +65,7 @@ const Fechamentos = lazy(() => import("@/pages/Fechamentos"));
 const PainelUso = lazy(() => import("@/pages/PainelUso"));
 const CentralImportacao = lazy(() => import("@/pages/CentralImportacao"));
 const GestaoPonto = lazy(() => import("@/pages/GestaoPonto"));
-const Marketplace = lazy(() => import("@/pages/Marketplace"));
-const ModuloPage = lazy(() => import("@/pages/ModuloPage"));
+const LanupPage = lazy(() => import("@/pages/Lanup"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 
@@ -223,8 +222,10 @@ const App = () => (
                     <Route path="/minha-equipe" element={<ProtectedLayout><MinhaEquipe /></ProtectedLayout>} />
                     <Route path="/central-importacao" element={<ProtectedLayout><CentralImportacao /></ProtectedLayout>} />
                     <Route path="/gestao-ponto" element={<ProtectedLayout><GestaoPonto /></ProtectedLayout>} />
-                    <Route path="/marketplace" element={<ProtectedLayout><Marketplace /></ProtectedLayout>} />
-                    <Route path="/modulos/:slug" element={<ProtectedLayout><ModuloPage /></ProtectedLayout>} />
+                    <Route path="/lanup" element={<ProtectedLayout><LanupPage /></ProtectedLayout>} />
+                    {/* Compatibilidade com URLs antigas */}
+                    <Route path="/marketplace" element={<Navigate to="/lanup" replace />} />
+                    <Route path="/modulos/:slug" element={<Navigate to="/lanup" replace />} />
                     
                     {/* Catch-all - Redireciona para 404 */}
                     <Route path="*" element={<NotFound />} />
