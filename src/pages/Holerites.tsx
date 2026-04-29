@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { toastError } from '@/lib/toastError';
 import { 
   gerarHoleritePDF, 
   gerarHoleriteDia20, 
@@ -294,11 +295,7 @@ export default function Holerites() {
       setSelecionadosDia20(new Set());
     } catch (error) {
       console.error('Erro ao gerar ZIP:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao gerar o arquivo ZIP.',
-        variant: 'destructive',
-      });
+      toastError(error, 'Erro ao gerar o arquivo ZIP.');
     } finally {
       setGerando(false);
     }
@@ -436,11 +433,7 @@ export default function Holerites() {
       setSelecionadosDia5(new Set());
     } catch (error) {
       console.error('Erro ao gerar ZIP:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao gerar o arquivo ZIP.',
-        variant: 'destructive',
-      });
+      toastError(error, 'Erro ao gerar o arquivo ZIP.');
     } finally {
       setGerando(false);
     }
@@ -615,11 +608,7 @@ export default function Holerites() {
       setSelecionadosVT(new Set());
     } catch (error) {
       console.error('Erro ao gerar ZIP:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao gerar o arquivo ZIP.',
-        variant: 'destructive',
-      });
+      toastError(error, 'Erro ao gerar o arquivo ZIP.');
     } finally {
       setGerando(false);
     }
