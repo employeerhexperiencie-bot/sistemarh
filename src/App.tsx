@@ -104,10 +104,30 @@ function LoginRoute() {
   }
   
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <Login />;
+}
+
+// Rota raiz: visitantes não autenticados veem a LandingPage,
+// usuários autenticados são redirecionados para o dashboard.
+function RootRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <LandingPage />;
 }
 
 // Componente para setup inicial
@@ -165,17 +185,20 @@ const App = () => (
                 <OnboardingWrapper />
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
-                    {/* Rota Pública - Landing Page */}
+                    {/* Rota raiz - Landing Page para visitantes / Dashboard para autenticados */}
+                    <Route path="/" element={<RootRoute />} />
+
+                    {/* Rota Pública - Landing Page (alias) */}
                     <Route path="/site" element={<LandingPage />} />
                     
                     {/* Rotas Públicas */}
                     <Route path="/login" element={<LoginRoute />} />
+                    <Route path="/entrar" element={<LoginRoute />} />
                     <Route path="/setup" element={<SetupRoute />} />
                     <Route path="/recuperar-senha" element={<RecuperarSenha />} />
                     <Route path="/redefinir-senha" element={<RedefinirSenha />} />
                     
                     {/* Rotas Protegidas */}
-                    <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
                     <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
                     <Route path="/lancamentos" element={<ProtectedLayout><Lancamentos /></ProtectedLayout>} />
                     <Route path="/gestao-lancamentos" element={<ProtectedLayout><GestaoLancamentos /></ProtectedLayout>} />
