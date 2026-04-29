@@ -703,7 +703,18 @@ export function CentralAlertas() {
         }
       });
 
-      setAlertas(alertasGerados.sort((a, b) => {
+      // Enriquecer acaoUrl: para alertas vinculados a um profissional,
+      // anexar `?matricula=` para que a tela de destino abra com o
+      // filtro já aplicado e destaque a linha (deep-link).
+      // Mantém URLs que já tenham query string (ex.: cadastro_incompleto
+      // já vem com ?matricula=&edit=1&campo=...).
+      const enriched = alertasGerados.map(a => {
+        if (!a.acaoUrl || !a.matricula) return a;
+        if (a.acaoUrl.includes('?')) return a;
+        return { ...a, acaoUrl: `${a.acaoUrl}?matricula=${encodeURIComponent(a.matricula)}` };
+      });
+
+      setAlertas(enriched.sort((a, b) => {
         // Prioridade: críticos primeiro, depois por dias restantes
         const nivelOrder = { critico: 0, urgente: 1, atencao: 2, info: 3 };
         if (nivelOrder[a.nivel] !== nivelOrder[b.nivel]) {
