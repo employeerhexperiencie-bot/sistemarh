@@ -337,7 +337,13 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
           dados.profissionais.semDataAdmissao > 0 ||
           dados.profissionais.semSalario > 0 ||
           dados.profissionais.semCargo > 0 ||
-          dados.profissionais.semLoja > 0) && (
+          dados.profissionais.semLoja > 0 ||
+          dados.profissionais.semRg > 0 ||
+          dados.profissionais.semDataNascimento > 0 ||
+          dados.profissionais.semSexo > 0 ||
+          dados.profissionais.semCorEtnia > 0 ||
+          dados.profissionais.semNomeMae > 0 ||
+          dados.profissionais.semNomePai > 0) && (
           <div className="pt-2">
             <ProfissionaisPendenciasList listas={dados.profissionais.listas} />
           </div>
