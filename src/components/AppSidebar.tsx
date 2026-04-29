@@ -38,7 +38,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useActiveTenantModules } from '@/hooks/useTenantModules';
 import {
   Sidebar,
   SidebarContent,
