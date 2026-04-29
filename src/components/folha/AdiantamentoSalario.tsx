@@ -77,12 +77,12 @@ export function AdiantamentoSalario() {
     const inicioMes = `${competencia}-01`;
     const fimMes = new Date(ano, mes, 0).toISOString().split('T')[0];
 
-    supabase
+    (supabase
       .from('faltas')
       .select('profissional_id, tipo_falta')
       .gte('data_falta', inicioMes)
       .lte('data_falta', fimMes)
-      .eq('tipo_falta', 'injustificada')
+      .eq('tipo_falta', 'injustificada') as any)
       .then(({ data }) => {
         const mapa: Record<string, number> = {};
         (data || []).forEach((f: any) => {
