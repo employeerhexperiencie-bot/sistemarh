@@ -476,10 +476,15 @@ export const CadastroProfissionais: React.FC = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState<number | null>(null);
-  
-  // Verificar se veio matrícula via URL
+
+  // Verificar se veio matrícula/campo via URL (deep-link de alertas)
   const searchParams = new URLSearchParams(window.location.search);
   const matriculaParam = searchParams.get('matricula');
+  const editParam = searchParams.get('edit');
+  const campoParam = searchParams.get('campo');
+
+  // Aba ativa controlada do modal de edição (Pessoais/Endereço/Profissional/...)
+  const [editTab, setEditTab] = useState<string>('pessoais');
 
   // Função para converter dados importados para o formato Professional
   const convertImportedToProfessional = (imported: any): Professional => {
