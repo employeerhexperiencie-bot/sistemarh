@@ -486,6 +486,8 @@ Deno.serve(async (req) => {
             data_cumprir_aviso: parseExcelDate(prof.dataCumprirAviso),
             status: prof.status || 'ativo',
             nome_mae: prof.nomeMae || null,
+            nome_pai: prof.nomePai || null,
+            cor_etnia: prof.corEtnia || prof.raca || null,
             banco: bancoVal,
             agencia: agenciaVal,
             conta: contaFinal,
