@@ -362,6 +362,12 @@ function ProfissionaisPendenciasList({
     { campo: 'salario_nominal', titulo: 'Sem salário', itens: listas.semSalario },
     { campo: 'cargo', titulo: 'Sem cargo', itens: listas.semCargo },
     { campo: 'loja_id', titulo: 'Sem loja', itens: listas.semLoja },
+    { campo: 'rg', titulo: 'Sem RG', itens: listas.semRg },
+    { campo: 'data_nascimento', titulo: 'Sem data de nascimento', itens: listas.semDataNascimento },
+    { campo: 'sexo', titulo: 'Sem sexo', itens: listas.semSexo },
+    { campo: 'cor_etnia', titulo: 'Sem cor/etnia', itens: listas.semCorEtnia },
+    { campo: 'nome_mae', titulo: 'Sem nome da mãe', itens: listas.semNomeMae },
+    { campo: 'nome_pai', titulo: 'Sem nome do pai', itens: listas.semNomePai },
   ].filter(g => g.itens.length > 0);
 
   if (grupos.length === 0) return null;
