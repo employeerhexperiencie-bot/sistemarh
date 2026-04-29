@@ -2640,6 +2640,7 @@ export type Database = {
           email: string | null
           endereco: string | null
           id: string
+          lanup_habilitado: boolean
           limite_profissionais: number | null
           limite_storage_mb: number | null
           limite_usuarios: number | null
@@ -2664,6 +2665,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           id?: string
+          lanup_habilitado?: boolean
           limite_profissionais?: number | null
           limite_storage_mb?: number | null
           limite_usuarios?: number | null
@@ -2688,6 +2690,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           id?: string
+          lanup_habilitado?: boolean
           limite_profissionais?: number | null
           limite_storage_mb?: number | null
           limite_usuarios?: number | null
