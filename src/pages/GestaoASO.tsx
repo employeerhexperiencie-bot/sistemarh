@@ -222,120 +222,76 @@ export default function GestaoASO() {
 
   const handleSave = async () => {
     if (!formData.profissional_id || !formData.data_ultimo_exame) {
-      toast({
-        title: "Erro",
-        description: "Preencha os campos obrigatórios",
-        variant: "destructive"
-      });
+      toast({ title: "Erro", description: "Preencha os campos obrigatórios", variant: "destructive" });
       return;
     }
 
     setLoading(true);
     try {
-      // Encontrar nome do profissional selecionado
       const profSelecionado = profissionais.find(p => p.id === formData.profissional_id);
       const nomeProfissional = profSelecionado?.nome || 'Profissional';
 
       const { status } = calculateStatus(formData.data_proximo_exame);
 
-      // Verificar se já existe um exame ASO para esse profissional
-      const { data: existente, error: checkError } = await supabase
-        .from('exames_aso')
-        .select('id')
-        .eq('profissional_id', formData.profissional_id)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      // Normaliza para YYYY-MM-DD (sem componente de hora/timezone)
-      const toDateOnly = (raw: string): string | null => {
-        if (!raw) return null;
-        const m = String(raw).trim().match(/^(\d{4}-\d{2}-\d{2})/);
-        return m ? m[1] : null;
-      };
-
-      const dataUltimoNorm = toDateOnly(formData.data_ultimo_exame);
-      const dataProximoNorm = toDateOnly(formData.data_proximo_exame);
-
-      const payload = {
+      const asoData = {
         profissional_id: formData.profissional_id,
         tipo_exame: formData.tipo_exame,
-        data_ultimo_exame: dataUltimoNorm,
-        data_proximo_exame: dataProximoNorm,
+        data_ultimo_exame: formData.data_ultimo_exame,
+        data_proximo_exame: formData.data_proximo_exame || null,
         periodicidade: formData.periodicidade,
         status: status.toLowerCase(),
       };
 
-      let savedId: string | undefined;
-      let acao: 'CRIAR' | 'EDITAR' = 'CRIAR';
+      // Verificar se já existe ASO desse tipo para o profissional
+      const { data: existing } = await supabase
+        .from('exames_aso')
+        .select('id')
+        .eq('profissional_id', formData.profissional_id)
+        .eq('tipo_exame', formData.tipo_exame)
+        .maybeSingle();
 
-      if (existente?.id) {
-        // UPDATE: já existe ASO para esse profissional
-        const { data: updatedData, error: updateError } = await supabase
+      let resultId: string | undefined;
+
+      if (existing?.id) {
+        const { data: updated, error } = await supabase
           .from('exames_aso')
-          .update(payload)
-          .eq('id', existente.id)
+          .update(asoData)
+          .eq('id', existing.id)
           .select()
           .single();
-        if (updateError) throw updateError;
-        savedId = updatedData?.id;
-        acao = 'EDITAR';
-
-        // Atualização otimista: refletir na lista antes do reload completo
-        const { status: novoStatus, diasRestantes } = calculateStatus(dataProximoNorm);
-        setExams(prev => prev.map(e =>
-          e.id === existente.id
-            ? {
-                ...e,
-                dataUltimoExame: dataUltimoNorm,
-                dataProximoExame: dataProximoNorm,
-                tipoExame: formData.tipo_exame,
-                periodicidade: formData.periodicidade,
-                status: novoStatus,
-                diasRestantes,
-              }
-            : e
-        ));
+        if (error) throw error;
+        resultId = updated?.id;
       } else {
-        // INSERT: novo ASO
-        const { data: insertedData, error: insertError } = await supabase
+        const { data: inserted, error } = await supabase
           .from('exames_aso')
-          .insert(payload)
+          .insert(asoData)
           .select()
           .single();
-        if (insertError) throw insertError;
-        savedId = insertedData?.id;
+        if (error) throw error;
+        resultId = inserted?.id;
       }
 
-      // Registrar atividade
       addLog({
         usuario: 'Sistema',
-        acao,
+        acao: existing?.id ? 'EDITAR' : 'CRIAR',
         modulo: 'ASO',
         entidade: nomeProfissional,
-        detalhes: `Exame ASO "${formData.tipo_exame}" ${acao === 'EDITAR' ? 'atualizado' : 'cadastrado'} para ${nomeProfissional}`,
-        metadata: {
-          id: savedId,
-          dados_novos: formData
-        }
+        detalhes: `Exame ASO "${formData.tipo_exame}" ${existing?.id ? 'atualizado' : 'cadastrado'} para ${nomeProfissional}`,
+        metadata: { id: resultId, dados_novos: formData }
       });
 
       toast({
         title: "Sucesso",
-        description: acao === 'EDITAR'
-          ? `Exame ASO atualizado. Novo status: ${status}`
-          : `Exame ASO cadastrado. Status: ${status}`
+        description: existing?.id ? "Exame ASO atualizado com sucesso" : "Exame ASO cadastrado com sucesso"
       });
 
       handleCloseDialog();
-      await loadData();
+      loadData();
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
-      const detalhes = [error?.message, error?.details, error?.hint, error?.code ? `(código ${error.code})` : null]
-        .filter(Boolean).join(' — ');
       toast({
-        title: "Erro ao salvar exame ASO",
-        description: detalhes || "Erro desconhecido ao cadastrar exame",
+        title: "Erro ao salvar ASO",
+        description: String(error?.message || "Erro desconhecido. Tente novamente."),
         variant: "destructive"
       });
     } finally {
