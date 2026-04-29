@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuditLog } from '@/contexts/AuditLogContext';
+import { useDeepLinkProfissional } from '@/hooks/useDeepLinkProfissional';
 interface ASOExam {
   id: string;
   matricula: string;

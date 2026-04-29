@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
 import { ProfissionalAutocomplete } from '@/components/ProfissionalAutocomplete';
+import { useDeepLinkProfissional } from '@/hooks/useDeepLinkProfissional';
 
 interface Vacation {
   id: string;
