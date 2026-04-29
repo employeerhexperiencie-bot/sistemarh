@@ -14,10 +14,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, AlertCircle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp, Camera, Images, Info } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, AlertCircle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp, Camera, Images, Info, Download } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { gerarRelatorioRescisao } from '@/lib/relatoriosPDF';
 import { DocumentUploader } from '@/components/DocumentUploader';
 import { ValesManager } from '@/components/ValesManager';
 import { ValeTransporteManager } from '@/components/ValeTransporteManager';
@@ -1694,6 +1695,41 @@ export const CadastroProfissionais: React.FC = () => {
                   disabled={demissaoLoading}
                 >
                   Cancelar
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={!formDemissao.data_demissao || !selectedProfessional}
+                  onClick={() => {
+                    if (!selectedProfessional) return;
+                    const p: any = selectedProfessional;
+                    const tipoLabel: Record<string, string> = {
+                      sem_justa_causa: 'Sem justa causa',
+                      com_justa_causa: 'Com justa causa',
+                      pedido: 'Pedido de demissão',
+                      acordo: 'Acordo (CLT 484-A)',
+                      termino_contrato: 'Término de contrato',
+                    };
+                    const avisoLabel: Record<string, string> = {
+                      trabalhado: 'Trabalhado',
+                      indenizado: 'Indenizado',
+                      nao_aplicavel: 'N/A',
+                    };
+                    gerarRelatorioRescisao({
+                      nome: p.nome || '',
+                      matricula: p.matricula || '',
+                      cpf: p.cpf || '',
+                      cargo: p.cargo || '',
+                      loja: p.loja?.nome || '-',
+                      salario: Number(p.salario_nominal || p.salario_base || 0),
+                      dataAdmissao: p.data_admissao || '',
+                      dataDemissao: formDemissao.data_demissao,
+                      motivoDemissao: tipoLabel[formDemissao.tipo_demissao] || formDemissao.tipo_demissao,
+                      avisoPrevio: avisoLabel[formDemissao.aviso_previo] || formDemissao.aviso_previo,
+                    });
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar termo (PDF)
                 </Button>
                 <Button
                   variant="destructive"
