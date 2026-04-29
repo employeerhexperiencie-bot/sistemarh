@@ -284,7 +284,69 @@ export function DadosFaltantesAlert({ variant = 'compact' }: { variant?: 'compac
             </div>
           </div>
         ))}
+
+        {/* Lista expandida: profissionais individuais com cada pendência,
+            cada um com link direto para o campo no modal de edição. */}
+        {(dados.profissionais.semCpf > 0 ||
+          dados.profissionais.semDataAdmissao > 0 ||
+          dados.profissionais.semSalario > 0 ||
+          dados.profissionais.semCargo > 0 ||
+          dados.profissionais.semLoja > 0) && (
+          <div className="pt-2">
+            <ProfissionaisPendenciasList listas={dados.profissionais.listas} />
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Lista profissionais com cadastro incompleto, agrupados por campo.
+ * Cada item leva direto ao input no modal de edição via deep-link.
+ */
+function ProfissionaisPendenciasList({
+  listas,
+}: {
+  listas: NonNullable<DadosFaltantes['profissionais']>['listas'];
+}) {
+  const grupos: { campo: string; titulo: string; itens: ProfRef[] }[] = [
+    { campo: 'cpf', titulo: 'Sem CPF', itens: listas.semCpf },
+    { campo: 'data_admissao', titulo: 'Sem data de admissão', itens: listas.semDataAdmissao },
+    { campo: 'salario_nominal', titulo: 'Sem salário', itens: listas.semSalario },
+    { campo: 'cargo', titulo: 'Sem cargo', itens: listas.semCargo },
+    { campo: 'loja_id', titulo: 'Sem loja', itens: listas.semLoja },
+  ].filter(g => g.itens.length > 0);
+
+  if (grupos.length === 0) return null;
+
+  return (
+    <div className="space-y-3 border-t border-warning/20 pt-3">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        Resolver pendência por profissional
+      </p>
+      {grupos.map(g => (
+        <div key={g.campo} className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">{g.titulo}</Badge>
+            <span className="text-xs text-muted-foreground">{g.itens.length} profissional(is)</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {g.itens.map(p => (
+              <Link key={p.id} to={buildEditCampoUrl(p.matricula, g.campo)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs border border-border hover:bg-warning/10 hover:border-warning/50"
+                >
+                  {p.nome}
+                  <ExternalLink className="h-3 w-3 ml-1.5" />
+                </Button>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
