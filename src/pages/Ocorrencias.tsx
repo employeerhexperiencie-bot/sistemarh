@@ -21,7 +21,7 @@ export default function Ocorrencias() {
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [filtroPrioridade, setFiltroPrioridade] = useState<string>('todos');
   const [filtroExecutor, setFiltroExecutor] = useState<string>('todos');
-  const [ocorrenciaDetalhes, setOcorrenciaDetalhes] = useState(null);
+  const [ocorrenciaDetalhes, setOcorrenciaDetalhes] = useState<Ocorrencia | null>(null);
   
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
