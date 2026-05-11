@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') ?? 'https://eazrh.com.br',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -16,10 +16,11 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 
     // Autorização: somente super_admin pode invocar manualmente.
-    // Aceita também chamada do cron interno via header X-Cron-Secret = SERVICE_ROLE_KEY.
+    // Cron: header X-Cron-Secret deve igualar WEBHOOK_RETRY_CRON_SECRET (definido nos Secrets do projeto).
     const authHeader = req.headers.get('Authorization') ?? '';
     const cronSecret = req.headers.get('X-Cron-Secret') ?? '';
-    const isCron = cronSecret && cronSecret === serviceKey;
+    const expectedSecret = Deno.env.get('WEBHOOK_RETRY_CRON_SECRET') ?? '';
+    const isCron = expectedSecret.length > 0 && cronSecret === expectedSecret;
 
     if (!isCron) {
       if (!authHeader.startsWith('Bearer ')) {
