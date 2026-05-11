@@ -9,6 +9,7 @@ import { useOcorrencias, Ocorrencia, OcorrenciaStatus } from '@/hooks/useOcorren
 import { OcorrenciasKanban } from '@/components/ocorrencias/OcorrenciasKanban';
 import { NovaOcorrenciaModal } from '@/components/ocorrencias/NovaOcorrenciaModal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useUsuariosTenant } from '@/hooks/useUsuariosTenant';
@@ -20,6 +21,7 @@ export default function Ocorrencias() {
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [filtroPrioridade, setFiltroPrioridade] = useState<string>('todos');
   const [filtroExecutor, setFiltroExecutor] = useState<string>('todos');
+  const [ocorrenciaDetalhes, setOcorrenciaDetalhes] = useState(null);
   
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -40,8 +42,7 @@ export default function Ocorrencias() {
   };
 
   const handleViewDetails = (ocorrencia: Ocorrencia) => {
-    // TODO: Implementar modal de detalhes
-    console.log('Ver detalhes:', ocorrencia);
+    setOcorrenciaDetalhes(ocorrencia);
   };
 
   const filteredOcorrencias = ocorrencias.filter(o => {
@@ -282,6 +283,81 @@ export default function Ocorrencias() {
         onOpenChange={setShowNovaModal}
         onSubmit={createOcorrencia}
       />
+
+      <Dialog open={!!ocorrenciaDetalhes} onOpenChange={(open) => { if (!open) setOcorrenciaDetalhes(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Ocorrência</DialogTitle>
+          </DialogHeader>
+
+          {ocorrenciaDetalhes && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">Título</div>
+                  <div className="font-medium">{ocorrenciaDetalhes.titulo}</div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">Status</div>
+                  <div>{ocorrenciaDetalhes.status}</div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">Prioridade</div>
+                  <Badge variant="outline">{ocorrenciaDetalhes.prioridade}</Badge>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">Módulo</div>
+                  <div>{ocorrenciaDetalhes.tipo || '—'}</div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">Criado em</div>
+                  <div>
+                    {format(new Date(ocorrenciaDetalhes.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </div>
+                </div>
+
+                {ocorrenciaDetalhes.data_prazo && (
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">Prazo</div>
+                    <div>{format(new Date(ocorrenciaDetalhes.data_prazo), "dd/MM/yyyy", { locale: ptBR })}</div>
+                  </div>
+                )}
+              </div>
+
+              {ocorrenciaDetalhes.descricao && (
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-muted-foreground">Descrição</div>
+                  <div className="whitespace-pre-wrap">{ocorrenciaDetalhes.descricao}</div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  {(['pendente', 'em_andamento', 'concluida'] as OcorrenciaStatus[]).map(s => (
+                    <Button
+                      key={s}
+                      size="sm"
+                      variant={ocorrenciaDetalhes.status === s ? 'default' : 'outline'}
+                      onClick={() => {
+                        handleStatusChange(ocorrenciaDetalhes.id, s);
+                        setOcorrenciaDetalhes(prev => prev ? { ...prev, status: s } : null);
+                      }}
+                    >
+                      {s === 'pendente' ? 'Pendente' : s === 'em_andamento' ? 'Em andamento' : 'Concluída'}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button variant="outline" onClick={() => setOcorrenciaDetalhes(null)}>Fechar</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

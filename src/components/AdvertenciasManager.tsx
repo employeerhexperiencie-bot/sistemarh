@@ -20,13 +20,11 @@ interface AdvertenciasManagerProps {
 
 interface Advertencia {
   id: string;
-  professional_id: string;
-  data: string;
+  profissional_id: string;
+  data_ocorrencia: string;
   tipo: 'verbal' | 'escrita' | 'suspensao';
   motivo: string;
   descricao: string;
-  testemunhas?: string;
-  aplicada_por: string;
   documento_id?: string;
   created_at: string;
 }
@@ -43,26 +41,20 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
     tipo: 'verbal' as 'verbal' | 'escrita' | 'suspensao',
     motivo: '',
     descricao: '',
-    testemunhas: '',
-    aplicada_por: '',
   });
   const { toast } = useToast();
   const { addLog } = useAuditLog();
 
   const loadAdvertencias = async () => {
     try {
-      // TODO: Implementar quando a tabela advertencias estiver criada no banco
-      // const { data, error } = await supabase
-      //   .from('advertencias')
-      //   .select('*')
-      //   .eq('professional_id', professionalId)
-      //   .order('data', { ascending: false });
-      //
-      // if (error) throw error;
-      // setAdvertencias(data || []);
-      
-      // Por enquanto, usando dados mock
-      setAdvertencias([]);
+      const { data, error } = await supabase
+        .from('advertencias')
+        .select('*')
+        .eq('profissional_id', professionalId)
+        .order('data_ocorrencia', { ascending: false });
+
+      if (error) throw error;
+      setAdvertencias(data || []);
     } catch (error) {
       console.error('Load advertencias error:', error);
     }
@@ -80,37 +72,22 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
 
     setLoading(true);
     try {
-      // TODO: Implementar quando a tabela advertencias estiver criada no banco
-      // const advertenciaData = {
-      //   professional_id: professionalId,
-      //   data: formData.data,
-      //   tipo: formData.tipo,
-      //   motivo: formData.motivo,
-      //   descricao: formData.descricao,
-      //   testemunhas: formData.testemunhas || null,
-      //   aplicada_por: formData.aplicada_por,
-      // };
-      //
-      // const { error } = await supabase
-      //   .from('advertencias')
-      //   .insert([advertenciaData]);
-      //
-      // if (error) throw error;
-
-      // Simulação de sucesso
-      const novaAdvertencia: Advertencia = {
-        id: `temp-${Date.now()}`,
-        professional_id: professionalId,
-        data: formData.data,
+      const advertenciaData = {
+        profissional_id: professionalId,
+        data_ocorrencia: formData.data,
         tipo: formData.tipo,
         motivo: formData.motivo,
         descricao: formData.descricao,
-        testemunhas: formData.testemunhas || undefined,
-        aplicada_por: formData.aplicada_por,
-        created_at: new Date().toISOString(),
       };
-      
-      setAdvertencias(prev => [novaAdvertencia, ...prev]);
+
+      const { data: inserted, error } = await supabase
+        .from('advertencias')
+        .insert([advertenciaData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      loadAdvertencias();
 
       addLog({
         usuario: 'Sistema',
@@ -130,8 +107,8 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
     } catch (error) {
       console.error('Save advertencia error:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao salvar advertência",
+        title: "Erro ao salvar advertência",
+        description: String((error as { message?: string })?.message || 'Erro desconhecido'),
         variant: "destructive"
       });
     } finally {
@@ -143,16 +120,13 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
     if (!confirm('Tem certeza que deseja excluir esta advertência?')) return;
 
     try {
-      // TODO: Implementar quando a tabela advertencias estiver criada no banco
-      // const { error } = await supabase
-      //   .from('advertencias')
-      //   .delete()
-      //   .eq('id', id);
-      //
-      // if (error) throw error;
+      const { error } = await supabase
+        .from('advertencias')
+        .delete()
+        .eq('id', id);
 
-      // Simulação de sucesso
-      setAdvertencias(prev => prev.filter(adv => adv.id !== id));
+      if (error) throw error;
+      loadAdvertencias();
 
       addLog({
         usuario: 'Sistema',
@@ -184,8 +158,6 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
       tipo: 'verbal',
       motivo: '',
       descricao: '',
-      testemunhas: '',
-      aplicada_por: '',
     });
   };
 
@@ -340,26 +312,6 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="testemunhas">Testemunhas</Label>
-                <Input
-                  id="testemunhas"
-                  value={formData.testemunhas}
-                  onChange={(e) => setFormData({ ...formData, testemunhas: e.target.value })}
-                  placeholder="Nomes das testemunhas, se houver"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="aplicada_por">Aplicada Por</Label>
-                <Input
-                  id="aplicada_por"
-                  value={formData.aplicada_por}
-                  onChange={(e) => setFormData({ ...formData, aplicada_por: e.target.value })}
-                  placeholder="Nome do responsável pela advertência"
-                />
-              </div>
-
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={handleCloseDialog}>
                   Cancelar
@@ -390,7 +342,6 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
                     <TableHead>Tipo</TableHead>
                     <TableHead>Motivo</TableHead>
                     <TableHead>Descrição</TableHead>
-                    <TableHead>Aplicada Por</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -398,14 +349,13 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
                   {advertencias.map((adv) => (
                     <TableRow key={adv.id}>
                       <TableCell>
-                        {new Date(adv.data).toLocaleDateString('pt-BR')}
+                        {new Date(adv.data_ocorrencia).toLocaleDateString('pt-BR')}
                       </TableCell>
                       <TableCell>{getTipoBadge(adv.tipo)}</TableCell>
                       <TableCell className="font-medium">{adv.motivo}</TableCell>
                       <TableCell className="max-w-xs truncate" title={adv.descricao}>
                         {adv.descricao}
                       </TableCell>
-                      <TableCell>{adv.aplicada_por || '-'}</TableCell>
                       <TableCell className="text-center">
                         <Button
                           variant="outline"

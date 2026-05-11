@@ -80,10 +80,10 @@ export function AdiantamentoSalario() {
 
       const { data } = await (supabase as any)
         .from('faltas')
-        .select('profissional_id, tipo_falta')
+        .select('profissional_id, tipo')
         .gte('data_falta', inicioMes)
         .lte('data_falta', fimMes)
-        .eq('tipo_falta', 'injustificada');
+        .eq('tipo', 'injustificada');
 
       const mapa: Record<string, number> = {};
       (data || []).forEach((f: any) => {
