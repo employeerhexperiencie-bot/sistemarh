@@ -1352,7 +1352,9 @@ export default function Holerites() {
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Dias Úteis (6x1)</p>
+                    <p className="text-xs text-muted-foreground">
+                      {temSnapshotVtOficial ? 'Dias úteis (fechamento)' : 'Dias Úteis (6x1)'}
+                    </p>
                     <p className="text-2xl font-bold">
                       {temSnapshotVtOficial
                         ? (() => {
@@ -1427,8 +1429,12 @@ export default function Holerites() {
                       <TableHead className="w-20">Mat.</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead>Loja</TableHead>
-                      <TableHead className="text-right">Valor Diário</TableHead>
-                      <TableHead className="text-right">VT Estimado</TableHead>
+                      <TableHead className="text-right">
+                        {temSnapshotVtOficial ? 'Valor diário (snapshot)' : 'Valor Diário'}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {temSnapshotVtOficial ? 'Total VT (oficial)' : 'VT Estimado'}
+                      </TableHead>
                       <TableHead className="w-24 text-center">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1496,8 +1502,17 @@ export default function Holerites() {
                 <div>
                   <p className="font-medium text-sm">Holerite de Vale Transporte</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Calculado com base nos dias úteis do mês (escala 6x1). 
-                    Descontos automáticos por faltas, atestados e férias.
+                    {temSnapshotVtOficial ? (
+                      <>
+                        Valores da aba e totais seguem o <strong>snapshot do fechamento VT oficial</strong> (mesma base
+                        dos PDFs). Sem fechamento VT na loja, usa-se cadastro e dias úteis do calendário.
+                      </>
+                    ) : (
+                      <>
+                        Calculado com base nos dias úteis do mês (escala 6x1). Descontos automáticos por faltas,
+                        atestados e férias.
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
