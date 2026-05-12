@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { FileText, Mail, CheckCircle, Download, Printer, Eye, Send, AlertTriangle, CheckCircle2, Bus, Calendar, CalendarDays, LayoutGrid, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,7 @@ interface HoleriteItem {
 type GerencialSnapMaps = {
   dia20: Map<string, Map<string, SnapshotResultadoLinha>>;
   dia5: Map<string, Map<string, SnapshotResultadoLinha>>;
+  vt: Map<string, Map<string, SnapshotResultadoLinha>>;
 };
 
 function matriculaSnapshotKey(m: string) {
@@ -93,23 +94,12 @@ function gerencialValoresPorColaborador(h: HoleriteItem, snap: GerencialSnapMaps
   return { salarioBase, dia20, saldoDia5, totalMes };
 }
 
-const gerarHoleritesMock = (): HoleriteItem[] => {
-  const nomes = ['João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Lima', 'Carlos Oliveira'];
-  const lojas = ['Loja 01', 'Loja 02', 'Loja 03'];
-  const cargos = ['Vendedor', 'Caixa', 'Repositor', 'Supervisor'];
-  
-  return Array.from({ length: 20 }, (_, i) => ({
-    id: `hol-${i + 1}`,
-    loja: lojas[Math.floor(Math.random() * lojas.length)],
-    matricula: String(i + 1).padStart(4, '0'),
-    nome: nomes[i % nomes.length],
-    cargo: cargos[Math.floor(Math.random() * cargos.length)],
-    salario: 1800 + Math.floor(Math.random() * 1500),
-    status: 'pendente' as const,
-    recebeVT: Math.random() > 0.3,
-    valorDiarioVT: Math.random() > 0.3 ? 10 + Math.floor(Math.random() * 15) : 0,
-  }));
-};
+function vtSnapshotLine(snap: GerencialSnapMaps, h: HoleriteItem): SnapshotResultadoLinha | undefined {
+  const lojaId = String(h.loja_id ?? '').trim();
+  const mat = matriculaSnapshotKey(h.matricula);
+  if (!lojaId || !mat) return undefined;
+  return snap.vt.get(lojaId)?.get(mat);
+}
 
 export default function Holerites() {
   const { toast } = useToast();
@@ -135,6 +125,7 @@ export default function Holerites() {
   const [gerencialSnapMaps, setGerencialSnapMaps] = useState<GerencialSnapMaps>(() => ({
     dia20: new Map(),
     dia5: new Map(),
+    vt: new Map(),
   }));
 
   const [validacaoDados, setValidacaoDados] = useState({
@@ -194,7 +185,7 @@ export default function Holerites() {
         valorDiarioVT: p.valor_diario_rota || 0,
       }));
     }
-    return gerarHoleritesMock();
+    return [];
   }, [supabaseData.profissionais, supabaseData.totalProfissionais]);
 
   useEffect(() => {
@@ -203,11 +194,13 @@ export default function Holerites() {
       const lojaIds = [...new Set(holerites.map((h) => String(h.loja_id ?? '').trim()).filter(Boolean))];
       const nextD20 = new Map<string, Map<string, SnapshotResultadoLinha>>();
       const nextD5 = new Map<string, Map<string, SnapshotResultadoLinha>>();
+      const nextVT = new Map<string, Map<string, SnapshotResultadoLinha>>();
       await Promise.all(
         lojaIds.map(async (lojaId) => {
-          const [snap20, snap5] = await Promise.all([
+          const [snap20, snap5, snapVT] = await Promise.all([
             getOfficialSnapshotLinesForLojaTipo(supabase, { competenciaUi: competencia, tipo: 'dia_20', lojaId }),
             getOfficialSnapshotLinesForLojaTipo(supabase, { competenciaUi: competencia, tipo: 'dia_5', lojaId }),
+            getOfficialSnapshotLinesForLojaTipo(supabase, { competenciaUi: competencia, tipo: 'vt', lojaId }),
           ]);
           if (snap20?.lines?.length) {
             const m = new Map<string, SnapshotResultadoLinha>();
@@ -225,9 +218,17 @@ export default function Holerites() {
             }
             nextD5.set(lojaId, m);
           }
+          if (snapVT?.lines?.length) {
+            const m = new Map<string, SnapshotResultadoLinha>();
+            for (const line of snapVT.lines) {
+              const k = matriculaSnapshotKey(String(line?.matricula ?? ''));
+              if (k) m.set(k, line);
+            }
+            nextVT.set(lojaId, m);
+          }
         })
       );
-      if (!cancelled) setGerencialSnapMaps({ dia20: nextD20, dia5: nextD5 });
+      if (!cancelled) setGerencialSnapMaps({ dia20: nextD20, dia5: nextD5, vt: nextVT });
     };
     void run();
     return () => {
@@ -236,8 +237,25 @@ export default function Holerites() {
   }, [competencia, holerites]);
 
   const holeritesVT = useMemo(() => {
-    return holerites.filter(h => h.recebeVT && h.valorDiarioVT && h.valorDiarioVT > 0);
-  }, [holerites]);
+    return holerites.filter((h) => {
+      const line = vtSnapshotLine(gerencialSnapMaps, h);
+      if (line && snapshotNumericField(line, 'valorVT', 0) > 0) return true;
+      return Boolean(h.recebeVT && h.valorDiarioVT && h.valorDiarioVT > 0);
+    });
+  }, [holerites, gerencialSnapMaps]);
+
+  /** Soma oficial VT (snapshot) por loja — alinhado ao PDF; vazio se não houver fechamento VT. */
+  const totalVtSnapshotOficial = useMemo(() => {
+    let sum = 0;
+    for (const byMat of gerencialSnapMaps.vt.values()) {
+      for (const line of byMat.values()) {
+        sum += snapshotNumericField(line, 'valorVT', 0);
+      }
+    }
+    return sum;
+  }, [gerencialSnapMaps.vt]);
+
+  const temSnapshotVtOficial = gerencialSnapMaps.vt.size > 0;
   
   const holeritesFiltrados = useMemo(() => {
     return holerites
@@ -1001,7 +1019,19 @@ export default function Holerites() {
         </Alert>
       ) : null}
 
-      {/* Tabs para os 3 tipos de holerite */}
+      {!supabaseData.isLoading && holerites.length === 0 ? (
+        <Alert className="border-muted">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertTitle>Nenhum holerite disponível</AlertTitle>
+          <AlertDescription className="text-sm space-y-2">
+            <p>Nenhum profissional ativo encontrado para montar holerites nesta competência.</p>
+            <p>
+              Cadastre colaboradores em <strong>Cadastro de Profissionais</strong>. Após fechamentos oficiais (Dia 20,
+              Dia 5, VT), os valores desta tela seguem o snapshot registrado em <strong>Fechamentos</strong>.
+            </p>
+          </AlertDescription>
+        </Alert>
+      ) : (
       <Tabs defaultValue="dia20" className="w-full">
         <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="dia20" className="flex items-center gap-2">
@@ -1323,7 +1353,22 @@ export default function Holerites() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Dias Úteis (6x1)</p>
-                    <p className="text-2xl font-bold">{calcularDiasUteis()}</p>
+                    <p className="text-2xl font-bold">
+                      {temSnapshotVtOficial
+                        ? (() => {
+                            for (const byMat of gerencialSnapMaps.vt.values()) {
+                              for (const line of byMat.values()) {
+                                const d = snapshotNumericField(line, 'diasUteis', 0);
+                                if (d > 0) return Math.round(d);
+                              }
+                            }
+                            return calcularDiasUteis();
+                          })()
+                        : calcularDiasUteis()}
+                    </p>
+                    {temSnapshotVtOficial ? (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Prioridade: dias úteis do snapshot VT</p>
+                    ) : null}
                   </div>
                 </div>
               </CardContent>
@@ -1335,9 +1380,18 @@ export default function Holerites() {
                     <CheckCircle className="h-4 w-4 text-success" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Total VT Estimado</p>
+                    <p className="text-xs text-muted-foreground">
+                      {temSnapshotVtOficial ? 'Total VT (fechamento oficial)' : 'Total VT Estimado'}
+                    </p>
                     <p className="text-xl font-bold text-success">
-                      {formatCurrency(holeritesVT.reduce((sum, h) => sum + ((h.valorDiarioVT || 0) * calcularDiasUteis()), 0))}
+                      {formatCurrency(
+                        temSnapshotVtOficial
+                          ? totalVtSnapshotOficial
+                          : holeritesVT.reduce(
+                              (sum, h) => sum + (h.valorDiarioVT || 0) * calcularDiasUteis(),
+                              0
+                            )
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1382,7 +1436,16 @@ export default function Holerites() {
                     {holeritesVT
                       .filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro)
                       .filter(h => !searchTerm || matchesSearch(searchTerm, [h.nome, h.matricula, h.cpf, h.telefone, h.celular, h.cargo]))
-                      .map((h) => (
+                      .map((h) => {
+                        const lineVt = vtSnapshotLine(gerencialSnapMaps, h);
+                        const diasCal = calcularDiasUteis();
+                        const valorVTSnap = lineVt ? snapshotNumericField(lineVt, 'valorVT', 0) : 0;
+                        const diasTrabSnap = lineVt ? Math.max(1, snapshotNumericField(lineVt, 'diasTrabalhados', 1)) : 1;
+                        const valorDiarioExib =
+                          lineVt && valorVTSnap > 0 ? valorVTSnap / diasTrabSnap : h.valorDiarioVT || 0;
+                        const totalVtExib =
+                          lineVt && valorVTSnap > 0 ? valorVTSnap : (h.valorDiarioVT || 0) * diasCal;
+                        return (
                         <TableRow key={h.id}>
                           <TableCell>
                             <Checkbox
@@ -1395,9 +1458,9 @@ export default function Holerites() {
                           <TableCell>
                             <Badge variant="outline" className="text-xs">{h.loja}</Badge>
                           </TableCell>
-                          <TableCell className="text-right">{formatCurrency(h.valorDiarioVT || 0)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(valorDiarioExib)}</TableCell>
                           <TableCell className="text-right font-bold text-primary">
-                            {formatCurrency((h.valorDiarioVT || 0) * calcularDiasUteis())}
+                            {formatCurrency(totalVtExib)}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-center gap-1">
@@ -1410,7 +1473,8 @@ export default function Holerites() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     {holeritesVT.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
@@ -1580,6 +1644,7 @@ export default function Holerites() {
           </Card>
         </TabsContent>
       </Tabs>
+      )}
     </div>
   );
 }
