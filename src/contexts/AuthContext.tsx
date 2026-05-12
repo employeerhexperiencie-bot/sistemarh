@@ -14,6 +14,8 @@ interface User {
   name: string;
   role: AppRole;
   loja_id?: string;
+  /** Tenant atual (RLS / auditoria). Opcional até carregar `user_roles`. */
+  tenantId?: string;
   avatar?: string;
 }
 
@@ -74,11 +76,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Buscar papel do usuário
-  const fetchUserRole = useCallback(async (userId: string): Promise<{ role: AppRole; loja_id?: string; nome?: string } | null> => {
+  const fetchUserRole = useCallback(async (userId: string): Promise<{ role: AppRole; loja_id?: string; nome?: string; tenant_id?: string } | null> => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
-        .select('role, loja_id, nome')
+        .select('role, loja_id, nome, tenant_id')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -87,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
 
-      return data as { role: AppRole; loja_id?: string; nome?: string } | null;
+      return data as { role: AppRole; loja_id?: string; nome?: string; tenant_id?: string } | null;
     } catch (err) {
       console.error('Erro ao buscar papel:', err);
       return null;
@@ -114,7 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: currentSession.user.email || '',
           name: roleData.nome || currentSession.user.email?.split('@')[0] || 'Usuário',
           role: roleData.role,
-          loja_id: roleData.loja_id || undefined
+          loja_id: roleData.loja_id || undefined,
+          tenantId: roleData.tenant_id || undefined,
         });
       } else {
         // Usuário autenticado mas sem papel - verificar se é primeiro usuário

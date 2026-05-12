@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Utensils, ShoppingBasket, CreditCard, Beef, Info, AlertTriangle, Banknote } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
 
 interface BeneficioConfig {
   valorVR: number;
@@ -20,6 +21,9 @@ interface ProfissionalAlimentacao {
   id: string;
   matricula: string;
   nome: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   loja: string;
   vale_refeicao: boolean;
   cesta_basica: boolean;
@@ -55,7 +59,7 @@ export function BeneficiosAlimentacaoTab() {
       const { data: profsData, error: profsError } = await supabase
         .from('profissionais')
         .select(`
-          id, matricula, nome,
+          id, matricula, nome, cpf, telefone, celular,
           vale_refeicao, cesta_basica, vale_alimentacao, vale_carne,
           valor_vale_alimentacao, valor_vale_carne,
           lojas:lojas!profissionais_loja_id_fkey(nome)
@@ -80,6 +84,9 @@ export function BeneficiosAlimentacaoTab() {
         id: p.id,
         matricula: p.matricula,
         nome: p.nome,
+        cpf: p.cpf,
+        telefone: p.telefone,
+        celular: p.celular,
         loja: p.lojas?.nome || '-',
         vale_refeicao: p.vale_refeicao || false,
         cesta_basica: p.cesta_basica || false,
@@ -98,9 +105,8 @@ export function BeneficiosAlimentacaoTab() {
     }
   };
 
-  const filteredProfissionais = profissionais.filter(p =>
-    p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.matricula.includes(searchTerm)
+  const filteredProfissionais = profissionais.filter((p) =>
+    matchesSearch(searchTerm, [p.nome, p.matricula, p.cpf, p.telefone, p.celular, p.loja])
   );
 
   const totalVR = profissionais.filter(p => p.vale_refeicao).length * config.diasUteis * config.valorVR;

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { toastError } from '@/lib/toastError';
+import { matchesSearch } from '@/lib/searchUtils';
 
 interface Vale {
   id: string;
@@ -334,23 +335,31 @@ export default function GestaoLancamentos() {
   // Filtros
   const valesFiltrados = vales.filter(v => {
     if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return v.profissional?.nome?.toLowerCase().includes(search) ||
-           v.profissional?.matricula?.toLowerCase().includes(search);
+    return matchesSearch(searchTerm, [
+      v.profissional?.nome,
+      v.profissional?.matricula,
+      v.descricao,
+      v.profissional_id,
+    ]);
   });
   
   const lancamentosFiltrados = lancamentos.filter(l => {
     if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return l.profissional?.nome?.toLowerCase().includes(search) ||
-           l.profissional?.matricula?.toLowerCase().includes(search);
+    return matchesSearch(searchTerm, [
+      l.profissional?.nome,
+      l.profissional?.matricula,
+      l.tipo,
+      l.profissional_id,
+    ]);
   });
   
   const beneficiosFiltrados = beneficios.filter(b => {
     if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return b.profissional?.nome?.toLowerCase().includes(search) ||
-           b.profissional?.matricula?.toLowerCase().includes(search);
+    return matchesSearch(searchTerm, [
+      b.profissional?.nome,
+      b.profissional?.matricula,
+      b.profissional_id,
+    ]);
   });
   
   // Totais

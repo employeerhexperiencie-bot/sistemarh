@@ -5,11 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Stethoscope, Heart, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
 
 interface ProfissionalSaude {
   id: string;
   matricula: string;
   nome: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   loja: string;
   odonto: boolean;
   seguro_vida: boolean;
@@ -34,7 +38,7 @@ export function BeneficiosSaudeTab() {
       const { data, error } = await supabase
         .from('profissionais')
         .select(`
-          id, matricula, nome,
+          id, matricula, nome, cpf, telefone, celular,
           odonto, seguro_vida, bem_mais,
           valor_odonto, valor_seguro_vida, valor_bem_mais,
           lojas:lojas!profissionais_loja_id_fkey(nome)
@@ -48,6 +52,9 @@ export function BeneficiosSaudeTab() {
         id: p.id,
         matricula: p.matricula,
         nome: p.nome,
+        cpf: p.cpf,
+        telefone: p.telefone,
+        celular: p.celular,
         loja: p.lojas?.nome || '-',
         odonto: p.odonto || false,
         seguro_vida: p.seguro_vida || false,
@@ -65,9 +72,8 @@ export function BeneficiosSaudeTab() {
     }
   };
 
-  const filteredProfissionais = profissionais.filter(p =>
-    p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.matricula.includes(searchTerm)
+  const filteredProfissionais = profissionais.filter((p) =>
+    matchesSearch(searchTerm, [p.nome, p.matricula, p.cpf, p.telefone, p.celular, p.loja])
   );
 
   const totalOdonto = profissionais.filter(p => p.odonto).reduce((sum, p) => sum + p.valor_odonto, 0);

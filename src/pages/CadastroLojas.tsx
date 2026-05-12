@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { DocumentUploader } from '@/components/DocumentUploader';
 import { useAuditLog } from '@/contexts/AuditLogContext';
+import { matchesSearch } from '@/lib/searchUtils';
 
 interface Loja {
   id: string;
@@ -39,6 +40,7 @@ export const CadastroLojas: React.FC = () => {
     gerente: ''
   });
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const { addLog } = useAuditLog();
 
@@ -46,7 +48,7 @@ export const CadastroLojas: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('lojas')
-        .select('*')
+        .select('id, nome, cnpj, endereco, telefone, email, gerente, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -206,6 +208,13 @@ export const CadastroLojas: React.FC = () => {
   useEffect(() => {
     loadLojas();
   }, []);
+
+  const lojasFiltradas = useMemo(() => {
+    if (!searchTerm.trim()) return lojas;
+    return lojas.filter((loja) =>
+      matchesSearch(searchTerm, [loja.nome, loja.cnpj, loja.telefone, loja.email, loja.gerente, loja.id])
+    );
+  }, [lojas, searchTerm]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -386,6 +395,13 @@ export const CadastroLojas: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle>Lista de Lojas</CardTitle>
+              <div className="pt-2 max-w-md">
+                <Input
+                  placeholder="Buscar (nome, CNPJ, telefone, e-mail, gerente)…"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -400,7 +416,7 @@ export const CadastroLojas: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lojas.map((loja) => (
+                  {lojasFiltradas.map((loja) => (
                     <TableRow key={loja.id}>
                       <TableCell className="font-medium">{loja.nome}</TableCell>
                       <TableCell>{loja.cnpj || '-'}</TableCell>

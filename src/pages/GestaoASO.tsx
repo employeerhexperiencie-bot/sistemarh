@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Heart, AlertTriangle, Calendar, FileText, Plus, Search, Clock, CalendarPlus, MoreHorizontal, RefreshCw } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuditLog } from '@/contexts/AuditLogContext';
 import { useDeepLinkProfissional } from '@/hooks/useDeepLinkProfissional';
@@ -21,6 +22,9 @@ interface ASOExam {
   nome: string;
   loja: string;
   cargo: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   dataUltimoExame: string | null;
   dataProximoExame: string | null;
   tipoExame: string;
@@ -34,6 +38,9 @@ interface Profissional {
   matricula: string;
   nome: string;
   cargo: string | null;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   lojas?: { nome: string } | null;
 }
 
@@ -44,6 +51,9 @@ interface ProfissionalSemASO {
   cargo: string | null;
   loja: string;
   dataAdmissao: string | null;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
 }
 
 export default function GestaoASO() {
@@ -77,7 +87,7 @@ export default function GestaoASO() {
         .from('exames_aso')
         .select(`
           *,
-          profissionais(id, matricula, nome, cargo, lojas:lojas!profissionais_loja_id_fkey(nome))
+          profissionais(id, matricula, nome, cargo, cpf, telefone, celular, lojas:lojas!profissionais_loja_id_fkey(nome))
         `)
         .order('data_proximo_exame', { ascending: true });
 
@@ -86,7 +96,7 @@ export default function GestaoASO() {
       // Carregar profissionais para o formulário
       const { data: profsData, error: profsError } = await supabase
         .from('profissionais')
-        .select('id, matricula, nome, cargo, data_admissao, lojas:lojas!profissionais_loja_id_fkey(nome)')
+        .select('id, matricula, nome, cargo, cpf, telefone, celular, data_admissao, lojas:lojas!profissionais_loja_id_fkey(nome)')
         .eq('status', 'ativo')
         .order('nome');
 
@@ -103,6 +113,9 @@ export default function GestaoASO() {
           matricula: p.matricula,
           nome: p.nome,
           cargo: p.cargo,
+          cpf: p.cpf,
+          telefone: p.telefone,
+          celular: p.celular,
           loja: p.lojas?.nome || 'Sem loja',
           dataAdmissao: p.data_admissao
         }));
@@ -118,6 +131,9 @@ export default function GestaoASO() {
           nome: e.profissionais?.nome || '-',
           loja: e.profissionais?.lojas?.nome || '-',
           cargo: e.profissionais?.cargo || '-',
+          cpf: e.profissionais?.cpf,
+          telefone: e.profissionais?.telefone,
+          celular: e.profissionais?.celular,
           dataUltimoExame: e.data_ultimo_exame,
           dataProximoExame: e.data_proximo_exame,
           tipoExame: e.tipo_exame || 'Periódico',
@@ -191,11 +207,16 @@ export default function GestaoASO() {
     const matchesStatus = filterStatus === 'todos' || exam.status === filterStatus;
     const matchesTipo = filterTipoExame === 'todos' || exam.tipoExame === filterTipoExame;
     const matchesLoja = filterLoja === 'todas' || exam.loja === filterLoja;
-    const matchesSearch = searchTerm === '' || 
-      exam.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exam.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exam.loja.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesTipo && matchesLoja && matchesSearch;
+    const matchesBuscaTexto = matchesSearch(searchTerm, [
+      exam.nome,
+      exam.matricula,
+      exam.loja,
+      exam.cargo,
+      exam.cpf,
+      exam.telefone,
+      exam.celular,
+    ]);
+    return matchesStatus && matchesTipo && matchesLoja && matchesBuscaTexto;
   });
 
   // Função para obter a cor de risco baseada nos dias de atraso

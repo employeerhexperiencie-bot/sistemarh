@@ -21,6 +21,7 @@ import { fetchAllPaginated } from '@/lib/supabasePagination';
 import { toast } from 'sonner';
 import { HistoricoEmprestimos, registrarHistoricoEmprestimo } from './HistoricoEmprestimos';
 import { NovoEmprestimoForm } from './NovoEmprestimoForm';
+import { matchesSearch } from '@/lib/searchUtils';
 
 const formatCurrency = (value: number): string => {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -48,6 +49,7 @@ interface Emprestimo {
   id: string;
   matricula: string;
   nome: string;
+  cpf?: string;
   loja: string;
   lojaId: string;
   tipo: 'empresa' | 'clt';
@@ -693,7 +695,7 @@ export function GestaoEmprestimos() {
           .order('data_inicio', { ascending: false })
           .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
         fetchAllPaginated(() =>
-          supabase.from('profissionais').select('id, nome, matricula, loja_id')
+          supabase.from('profissionais').select('id, nome, matricula, loja_id, cpf')
         ),
         supabase.from('lojas').select('id, nome')
       ]);
@@ -707,13 +709,14 @@ export function GestaoEmprestimos() {
         lojasMap[l.id] = l.nome;
       });
 
-      const profissionaisMap: Record<string, { nome: string; matricula: string; loja: string; lojaId: string }> = {};
+      const profissionaisMap: Record<string, { nome: string; matricula: string; loja: string; lojaId: string; cpf?: string }> = {};
       (profData || []).forEach((p: any) => {
         profissionaisMap[p.id] = {
           nome: p.nome,
           matricula: p.matricula,
           loja: p.loja_id ? (lojasMap[p.loja_id] || 'Sem Loja') : 'Sem Loja',
-          lojaId: p.loja_id || ''
+          lojaId: p.loja_id || '',
+          cpf: p.cpf || '',
         };
       });
 
@@ -740,6 +743,7 @@ export function GestaoEmprestimos() {
           id: e.id,
           matricula: prof?.matricula || '',
           nome: prof?.nome || 'Sem Nome',
+          cpf: prof?.cpf,
           loja: prof?.loja || 'Sem Loja',
           lojaId: prof?.lojaId || '',
           tipo,
@@ -840,7 +844,7 @@ export function GestaoEmprestimos() {
       if (tipoFiltro !== 'todos' && e.tipo !== tipoFiltro) return false;
       if (lojaFiltro !== 'todas' && e.loja !== lojaFiltro) return false;
       if (statusFiltro !== 'todos' && e.status !== statusFiltro) return false;
-      if (searchTerm && !e.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !e.matricula.includes(searchTerm)) return false;
+      if (searchTerm && !matchesSearch(searchTerm, [e.nome, e.matricula, e.cpf, e.loja, e.id])) return false;
       return true;
     });
   }, [emprestimos, tipoFiltro, lojaFiltro, statusFiltro, searchTerm]);

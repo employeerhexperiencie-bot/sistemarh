@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileText, Download, Trash2, Filter, Clock, User, Activity, FileBox, AlertCircle } from 'lucide-react';
 import { useAuditLog } from '@/contexts/AuditLogContext';
+import { matchesSearch } from '@/lib/searchUtils';
 
 export default function AuditLog() {
   const { logs, clearLogs, exportLogs, getLogsByModule } = useAuditLog();
@@ -56,8 +57,7 @@ export default function AuditLog() {
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
       // Filtro de busca
-      if (searchTerm && !log.entidade.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !log.detalhes.toLowerCase().includes(searchTerm.toLowerCase())) {
+      if (searchTerm && !matchesSearch(searchTerm, [log.usuario, log.entidade, log.detalhes, log.modulo, log.acao])) {
         return false;
       }
 

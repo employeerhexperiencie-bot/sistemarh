@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Scale, Plus, Edit, Eye, Banknote } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
 import { toast } from 'sonner';
 
 interface PensaoAlimenticia {
@@ -17,6 +18,10 @@ interface PensaoAlimenticia {
   profissional_id: string;
   profissional_nome: string;
   profissional_matricula: string;
+  /** Incluídos para busca flexível (acentos/máscara) — não alteram regras de negócio. */
+  profissional_cpf?: string | null;
+  profissional_telefone?: string | null;
+  profissional_celular?: string | null;
   loja: string;
   nome_beneficiario: string;
   cpf_beneficiario: string;
@@ -80,7 +85,7 @@ export function PensaoAlimenticiaTab() {
         .select(`
           *,
           profissionais:profissional_id(
-            matricula, nome,
+            matricula, nome, cpf, telefone, celular,
             lojas:lojas!profissionais_loja_id_fkey(nome)
           )
         `)
@@ -94,6 +99,9 @@ export function PensaoAlimenticiaTab() {
         profissional_id: p.profissional_id,
         profissional_nome: p.profissionais?.nome || '-',
         profissional_matricula: p.profissionais?.matricula || '-',
+        profissional_cpf: p.profissionais?.cpf,
+        profissional_telefone: p.profissionais?.telefone,
+        profissional_celular: p.profissionais?.celular,
         loja: p.profissionais?.lojas?.nome || '-',
         nome_beneficiario: p.nome_beneficiario,
         cpf_beneficiario: p.cpf_beneficiario || '',
@@ -229,10 +237,23 @@ export function PensaoAlimenticiaTab() {
     setIsDialogOpen(true);
   };
 
-  const filteredPensoes = pensoes.filter(p =>
-    p.profissional_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.profissional_matricula.includes(searchTerm) ||
-    p.nome_beneficiario.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPensoes = useMemo(
+    () =>
+      pensoes.filter((p) =>
+        matchesSearch(searchTerm, [
+          p.profissional_nome,
+          p.profissional_matricula,
+          p.profissional_cpf,
+          p.profissional_telefone,
+          p.profissional_celular,
+          p.loja,
+          p.nome_beneficiario,
+          p.cpf_beneficiario,
+          p.nome_filho,
+          p.chave_pix,
+        ])
+      ),
+    [pensoes, searchTerm]
   );
 
   const formatCurrency = (value: number) => {

@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Plus, Edit, Trash2, Users, UserCheck, UserX, Building2, FileText, Folder, Car, Briefcase, Heart, Calendar, FileSpreadsheet, Stethoscope, Gift, CheckCircle2, AlertTriangle, AlertCircle, Bus, Utensils, ShoppingBasket, Search, Filter, MoreVertical, Banknote, Undo2, TrendingUp, Camera, Images, Info, Download } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
+import { buildProfissionaisSearchOrFilter } from '@/lib/searchUtils';
 import { useToast } from '@/components/ui/use-toast';
 import { gerarRelatorioRescisao } from '@/lib/relatoriosPDF';
 import { DocumentUploader } from '@/components/DocumentUploader';
@@ -543,7 +544,8 @@ export const CadastroProfissionais: React.FC = () => {
         q = q.eq('status', filterStatus);
       }
       if (searchTerm.trim() !== '') {
-        q = q.ilike('nome', `%${searchTerm.trim()}%`);
+        const orClause = buildProfissionaisSearchOrFilter(searchTerm.trim());
+        if (orClause) q = q.or(orClause);
       }
 
       q = q.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);

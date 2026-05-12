@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { matchesSearch } from "@/lib/searchUtils";
 import { Download, Search, ChevronRight, Building2, User, FileText, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -18,6 +19,9 @@ interface Profissional {
   nome: string;
   matricula: string;
   cargo: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   loja_id: string;
   vale_refeicao: boolean;
   vale_transporte: boolean;
@@ -69,6 +73,7 @@ const GestaoBeneficiosDetalhado = () => {
         .from('profissionais')
         .select(`
           id, nome, matricula, cargo, loja_id,
+          cpf, telefone, celular,
           vale_refeicao, vale_transporte, cesta_basica,
           valor_diario_rota, salario_nominal,
           loja:lojas!profissionais_loja_id_fkey(id, nome)
@@ -241,7 +246,19 @@ const GestaoBeneficiosDetalhado = () => {
   const lojaAtual = lojasAgrupadas.find(l => l.loja_id === selectedLoja);
   
   const beneficiosFiltrados = lojaAtual?.beneficios.filter(b => {
-    if (searchTerm && !b.profissional.nome.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (
+      searchTerm &&
+      !matchesSearch(searchTerm, [
+        b.profissional.nome,
+        b.profissional.matricula,
+        b.profissional.cpf,
+        b.profissional.telefone,
+        b.profissional.celular,
+        b.profissional.cargo,
+        b.profissional.loja?.nome,
+      ])
+    )
+      return false;
     return true;
   }) || [];
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Banknote, Building, Store, ExternalLink, TrendingDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
 import { useNavigate } from 'react-router-dom';
 
 interface Emprestimo {
@@ -14,6 +15,10 @@ interface Emprestimo {
   profissional_id: string;
   profissional_nome: string;
   profissional_matricula: string;
+  /** Campos extras só para busca na listagem — mantém compatibilidade com o restante da tela. */
+  profissional_cpf?: string | null;
+  profissional_telefone?: string | null;
+  profissional_celular?: string | null;
   loja: string;
   tipo: string;
   valor_total: number;
@@ -42,7 +47,7 @@ export function EmprestimosResumoTab() {
         .select(`
           *,
           profissionais:profissional_id(
-            matricula, nome,
+            matricula, nome, cpf, telefone, celular,
             lojas:lojas!profissionais_loja_id_fkey(nome)
           )
         `)
@@ -56,6 +61,9 @@ export function EmprestimosResumoTab() {
         profissional_id: e.profissional_id,
         profissional_nome: e.profissionais?.nome || '-',
         profissional_matricula: e.profissionais?.matricula || '-',
+        profissional_cpf: e.profissionais?.cpf,
+        profissional_telefone: e.profissionais?.telefone,
+        profissional_celular: e.profissionais?.celular,
         loja: e.profissionais?.lojas?.nome || '-',
         tipo: e.tipo,
         valor_total: e.valor_total || 0,
@@ -74,8 +82,43 @@ export function EmprestimosResumoTab() {
     }
   };
 
-  const emprestimosCLT = emprestimos.filter(e => e.tipo === 'CLT' || e.tipo === 'clt');
-  const emprestimosLoja = emprestimos.filter(e => e.tipo === 'empresa' || e.tipo === 'loja' || e.tipo === 'Empresa');
+  const emprestimosCLT = useMemo(
+    () => emprestimos.filter((e) => e.tipo === 'CLT' || e.tipo === 'clt'),
+    [emprestimos]
+  );
+  const emprestimosLoja = useMemo(
+    () => emprestimos.filter((e) => e.tipo === 'empresa' || e.tipo === 'loja' || e.tipo === 'Empresa'),
+    [emprestimos]
+  );
+
+  const emprestimosCLTVisiveis = useMemo(
+    () =>
+      emprestimosCLT.filter((e) =>
+        matchesSearch(searchTerm, [
+          e.profissional_nome,
+          e.profissional_matricula,
+          e.profissional_cpf,
+          e.profissional_telefone,
+          e.profissional_celular,
+          e.loja,
+        ])
+      ),
+    [emprestimosCLT, searchTerm]
+  );
+  const emprestimosLojaVisiveis = useMemo(
+    () =>
+      emprestimosLoja.filter((e) =>
+        matchesSearch(searchTerm, [
+          e.profissional_nome,
+          e.profissional_matricula,
+          e.profissional_cpf,
+          e.profissional_telefone,
+          e.profissional_celular,
+          e.loja,
+        ])
+      ),
+    [emprestimosLoja, searchTerm]
+  );
 
   const totalCLT = emprestimosCLT.reduce((sum, e) => sum + e.saldo_devedor, 0);
   const totalLoja = emprestimosLoja.reduce((sum, e) => sum + e.saldo_devedor, 0);
@@ -84,12 +127,6 @@ export function EmprestimosResumoTab() {
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
-
-  const filteredEmprestimos = (lista: Emprestimo[]) =>
-    lista.filter(e =>
-      e.profissional_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.profissional_matricula.includes(searchTerm)
-    );
 
   const renderTable = (lista: Emprestimo[]) => (
     <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
@@ -112,14 +149,14 @@ export function EmprestimosResumoTab() {
                 Carregando...
               </TableCell>
             </TableRow>
-          ) : filteredEmprestimos(lista).length === 0 ? (
+          ) : lista.length === 0 ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                 Nenhum empréstimo encontrado
               </TableCell>
             </TableRow>
           ) : (
-            filteredEmprestimos(lista).map((e) => (
+            lista.map((e) => (
               <TableRow key={e.id}>
                 <TableCell className="font-mono">{e.profissional_matricula}</TableCell>
                 <TableCell className="font-medium">{e.profissional_nome}</TableCell>
@@ -208,7 +245,7 @@ export function EmprestimosResumoTab() {
 
       {/* Busca */}
       <Input
-        placeholder="Buscar por nome ou matrícula..."
+        placeholder="Buscar por nome, matrícula, CPF, telefone ou loja..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="max-w-sm"
@@ -234,7 +271,7 @@ export function EmprestimosResumoTab() {
               <CardDescription>Empréstimos com desconto automático na folha de pagamento</CardDescription>
             </CardHeader>
             <CardContent>
-              {renderTable(emprestimosCLT)}
+              {renderTable(emprestimosCLTVisiveis)}
             </CardContent>
           </Card>
         </TabsContent>
@@ -246,7 +283,7 @@ export function EmprestimosResumoTab() {
               <CardDescription>Empréstimos concedidos diretamente pela empresa</CardDescription>
             </CardHeader>
             <CardContent>
-              {renderTable(emprestimosLoja)}
+              {renderTable(emprestimosLojaVisiveis)}
             </CardContent>
           </Card>
         </TabsContent>

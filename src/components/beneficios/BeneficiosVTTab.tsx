@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Bus, Calculator, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
 
 interface BeneficioConfig {
   diasUteis6x1: number;
@@ -18,6 +19,9 @@ interface ProfissionalVT {
   id: string;
   matricula: string;
   nome: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   loja: string;
   vale_transporte: boolean;
   valor_diario_rota: number;
@@ -58,7 +62,7 @@ export function BeneficiosVTTab() {
       const { data, error } = await supabase
         .from('profissionais')
         .select(`
-          id, matricula, nome,
+          id, matricula, nome, cpf, telefone, celular,
           vale_transporte, valor_diario_rota,
           lojas:lojas!profissionais_loja_id_fkey(nome)
         `)
@@ -71,6 +75,9 @@ export function BeneficiosVTTab() {
         id: p.id,
         matricula: p.matricula,
         nome: p.nome,
+        cpf: p.cpf,
+        telefone: p.telefone,
+        celular: p.celular,
         loja: p.lojas?.nome || '-',
         vale_transporte: p.vale_transporte || false,
         valor_diario_rota: p.valor_diario_rota || config.valorPassagem * 2,
@@ -96,9 +103,8 @@ export function BeneficiosVTTab() {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  const filteredProfissionais = profissionaisComVT.filter(p =>
-    p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.matricula.includes(searchTerm)
+  const filteredProfissionais = profissionaisComVT.filter((p) =>
+    matchesSearch(searchTerm, [p.nome, p.matricula, p.cpf, p.telefone, p.celular])
   );
 
   return (

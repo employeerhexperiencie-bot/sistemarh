@@ -12,6 +12,7 @@ import { FileUploader } from '@/components/FileUploader';
 import { UserX, Calendar, AlertTriangle, Plus, Edit, FileText, Clock, Loader2, Trash2, Search } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
 import { useDeepLinkProfissional } from '@/hooks/useDeepLinkProfissional';
@@ -20,6 +21,9 @@ interface Afastamento {
   id: string;
   matricula: string;
   nome: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   loja: string;
   motivo: 'ACIDENTE_TRABALHO' | 'ACIDENTE_TRAJETO' | 'DOENCA' | 'LICENCA_MATERNIDADE' | 'LICENCA_PATERNIDADE' | 'OUTROS';
   dataInicio: string;
@@ -65,6 +69,9 @@ export default function GestaoAfastamentos() {
           profissionais:profissional_id (
             matricula,
             nome,
+            cpf,
+            telefone,
+            celular,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
         `);
@@ -75,6 +82,9 @@ export default function GestaoAfastamentos() {
         id: a.id,
         matricula: a.profissionais?.matricula || '',
         nome: a.profissionais?.nome || 'Profissional não encontrado',
+        cpf: a.profissionais?.cpf,
+        telefone: a.profissionais?.telefone,
+        celular: a.profissionais?.celular,
         loja: a.profissionais?.lojas?.nome || 'Loja não definida',
         motivo: (a.tipo?.toUpperCase() || 'OUTROS') as Afastamento['motivo'],
         dataInicio: a.data_inicio,
@@ -279,10 +289,15 @@ export default function GestaoAfastamentos() {
   // Aplica filtros (loja + busca por nome) a todos os contadores e à listagem
   const afastamentosFiltrados = afastamentos.filter(a => {
     const matchLoja = filterLoja === 'todas' || a.loja === filterLoja;
-    const matchSearch = searchTerm.trim() === '' ||
-      a.nome.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-      a.matricula.toLowerCase().includes(searchTerm.toLowerCase().trim());
-    return matchLoja && matchSearch;
+    const matchBusca = matchesSearch(searchTerm, [
+      a.nome,
+      a.matricula,
+      a.cpf,
+      a.telefone,
+      a.celular,
+      a.loja,
+    ]);
+    return matchLoja && matchBusca;
   });
 
   const ativos = afastamentosFiltrados.filter(a => a.status === 'ATIVO').length;

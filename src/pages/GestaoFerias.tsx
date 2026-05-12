@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plane, Calendar, AlertTriangle, Plus, Edit, Clock, Loader2, Filter, Search, UserX } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
 import { toast } from 'sonner';
 import { useAuditLog } from '@/contexts/AuditLogContext';
 import { ProfissionalAutocomplete } from '@/components/ProfissionalAutocomplete';
@@ -20,6 +21,10 @@ interface Vacation {
   profissionalId?: string;
   matricula: string;
   nome: string;
+  /** Campos extras para busca flexível na grade (não alteram regras de status). */
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   loja: string;
   desligado?: boolean;
   periodoAquisitivo: {
@@ -70,6 +75,9 @@ export default function GestaoFerias() {
           profissionais:profissional_id (
             matricula,
             nome,
+            cpf,
+            telefone,
+            celular,
             status,
             lojas:lojas!profissionais_loja_id_fkey (nome)
           )
@@ -102,6 +110,9 @@ export default function GestaoFerias() {
           profissionalId: f.profissional_id || undefined,
           matricula: f.profissionais?.matricula || '',
           nome: f.profissionais?.nome || 'Profissional não encontrado',
+          cpf: f.profissionais?.cpf,
+          telefone: f.profissionais?.telefone,
+          celular: f.profissionais?.celular,
           loja: f.profissionais?.lojas?.nome || 'Loja não definida',
           desligado: f.profissionais?.status && f.profissionais.status !== 'ativo',
           periodoAquisitivo: {
@@ -261,10 +272,16 @@ export default function GestaoFerias() {
   // Aplicar filtros (loja + busca por nome + desligados) na listagem e nos contadores
   const filteredVacations = vacations.filter(v => {
     const matchesLoja = filterLoja === 'todas' || v.loja === filterLoja;
-    const matchesSearch = searchTerm.trim() === '' ||
-      v.nome.toLowerCase().includes(searchTerm.toLowerCase().trim());
+    const matchesBusca = matchesSearch(searchTerm, [
+      v.nome,
+      v.matricula,
+      v.cpf,
+      v.telefone,
+      v.celular,
+      v.loja,
+    ]);
     const matchesAtivo = incluirDesligados || !v.desligado;
-    return matchesLoja && matchesSearch && matchesAtivo;
+    return matchesLoja && matchesBusca && matchesAtivo;
   });
 
   const pendentes = filteredVacations.filter(v => v.status === 'PENDENTE').length;
