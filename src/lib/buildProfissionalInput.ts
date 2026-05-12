@@ -4,7 +4,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import type { ProfissionalInput, ConfiguracaoFolha, TributosCLT } from './payrollCalculator';
-import { TRIBUTOS_CLT_PADRAO } from './payrollCalculator';
+import { diasAfastamentoAteReferencia } from './afastamentoCompetencia';
 
 export interface DadosCompetencia {
   faltas: Record<string, { injustificadas: number; justificadas: number }>;
@@ -29,7 +29,7 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
       .or(`and(periodo_gozo_inicio.lte.${fimMes},periodo_gozo_fim.gte.${inicioMes})`),
     supabase.from('professional_vales').select('profissional_id, valor').gte('data_lancamento', inicioMes).lte('data_lancamento', fimMes).eq('status', 'pendente'),
     supabase.from('emprestimos').select('profissional_id, valor_parcela, tipo').eq('status', 'ativo'),
-    supabase.from('afastamentos').select('profissional_id, tipo, data_inicio').eq('status', 'ativo').lte('data_inicio', fimMes).or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`),
+    supabase.from('afastamentos').select('profissional_id, tipo, data_inicio, data_prevista_retorno').eq('status', 'ativo').lte('data_inicio', fimMes).or(`data_prevista_retorno.is.null,data_prevista_retorno.gte.${inicioMes}`),
     supabase.from('beneficios').select('profissional_id, valor_vale_carne, valor_vale_dinheiro, valor_vale_alimentacao').eq('mes_referencia', inicioMes),
     supabase.from('lancamentos_financeiros').select('profissional_id, tipo, valor').eq('mes_referencia', inicioMes).eq('tipo', 'desconto'),
     supabase.from('pensoes_alimenticias').select('profissional_id, tipo_calculo, percentual, valor_fixo, base_calculo').eq('ativo', true),
@@ -74,13 +74,14 @@ export async function carregarDadosCompetenciaFromDB(competencia: string): Promi
     }
   });
 
-  const hoje = new Date();
   const afastamentosMap: Record<string, { tipo: string; dias: number }> = {};
   afastamentosRes.data?.forEach((a: any) => {
     if (!a.profissional_id) return;
-    // Normalizar data de início do afastamento
-    const dataInicio = a.data_inicio ? new Date(a.data_inicio + 'T12:00:00') : hoje;
-    const diasAfastamento = Math.max(0, Math.ceil((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24)));
+    const diasAfastamento = diasAfastamentoAteReferencia(
+      competencia,
+      a.data_inicio,
+      a.data_prevista_retorno ?? null
+    );
     afastamentosMap[a.profissional_id] = { tipo: a.tipo, dias: diasAfastamento };
   });
 

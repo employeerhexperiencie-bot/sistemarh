@@ -346,6 +346,8 @@ export interface DadosHoleriteReal {
 export interface DadosHoleriteDia20 {
   salarioBase: number;
   percentualAdiantamento?: number; // Default 40%
+  /** Valor exato do fechamento (snapshot); quando presente, substitui salário × % */
+  valorAdiantamentoConformeFolha?: number;
 }
 
 // Interface para dados do holerite dia 5 (saldo final)
@@ -368,15 +370,22 @@ export const gerarHoleriteDia20 = (
   dados: DadosHoleriteDia20
 ): DadosHolerite => {
   const percentual = dados.percentualAdiantamento ?? 40;
-  const valorAdiantamento = Math.round(salarioBase * (percentual / 100));
-  
+  const usouSnapshot =
+    dados.valorAdiantamentoConformeFolha != null && dados.valorAdiantamentoConformeFolha >= 0;
+  const valorAdiantamento = usouSnapshot
+    ? Math.round(dados.valorAdiantamentoConformeFolha!)
+    : Math.round(salarioBase * (percentual / 100));
+  const referencia = usouSnapshot
+    ? 'Conforme fechamento da folha'
+    : `${percentual}% do salário`;
+
   const eventos: EventoFolha[] = [
     { 
       codigo: '001', 
       descricao: 'Adiantamento Salarial', 
       tipo: 'provento', 
       valor: valorAdiantamento,
-      referencia: `${percentual}% do salário`
+      referencia
     },
   ];
   

@@ -46,8 +46,16 @@ interface Profissional {
   cesta_basica: boolean | null;
   pensao_alimenticia: number | null;
   valor_diario_rota: number | null;
+  /** Colunas carregadas para buscas agregadas / holerites (evita `select('*')`). */
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   lojas?: { nome: string } | null;
 }
+
+/** Colunas usadas pelo dashboard/relatórios/holerites — manter alinhado a `Profissional` e consumidores. */
+const SELECT_PROFISSIONAIS_DASHBOARD =
+  'id, matricula, nome, cargo, loja_id, salario_nominal, primeiro_salario, ultimo_salario, data_admissao, status, vale_transporte, vale_refeicao, cesta_basica, pensao_alimenticia, valor_diario_rota, cpf, telefone, celular, lojas:lojas!profissionais_loja_id_fkey(nome)';
 
 interface Loja {
   id: string;
@@ -119,11 +127,9 @@ export const useSupabaseData = () => {
           feriasResult
         ] = await Promise.all([
           fetchAllPaginated(() =>
-            supabase.from('profissionais')
-              .select('*, lojas:lojas!profissionais_loja_id_fkey(nome)')
-              .eq('status', 'ativo')
+            supabase.from('profissionais').select(SELECT_PROFISSIONAIS_DASHBOARD).eq('status', 'ativo')
           ),
-          supabase.from('lojas').select('*'),
+          supabase.from('lojas').select('id, nome'),
           supabase.from('afastamentos')
             .select('*, profissionais(nome, matricula)')
             .eq('status', 'ativo'),

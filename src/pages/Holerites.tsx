@@ -25,18 +25,72 @@ import {
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { buscarDescontosProfissional } from '@/hooks/useHoleriteData';
 import { supabase } from '@/integrations/supabase/client';
+import { matchesSearch } from '@/lib/searchUtils';
+import { FINANCIAL_ORIGIN_LABEL } from '@/domain/folha';
+import type { SnapshotResultadoLinha } from '@/services/financialDocumentService';
+import {
+  competenciaToDbDate,
+  FinancialDocumentMode,
+  getOfficialSnapshotLinesForLojaTipo,
+  resolveDia20PdfContext,
+  resolveDia5PdfContext,
+  resolveVtPdfContext,
+  snapshotNumericField,
+} from '@/services/financialDocumentService';
 import JSZip from 'jszip';
 
 interface HoleriteItem {
   id: string;
   loja: string;
+  /** Necessário para casar fechamento oficial por loja (snapshot). */
+  loja_id?: string | null;
   matricula: string;
   nome: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  celular?: string | null;
   cargo: string;
   salario: number;
   status: 'pendente' | 'gerado' | 'enviado' | 'assinado';
   recebeVT?: boolean;
   valorDiarioVT?: number;
+}
+
+/** Snapshot oficial indexado por loja → matrícula (mesma autoridade dos PDFs). */
+type GerencialSnapMaps = {
+  dia20: Map<string, Map<string, SnapshotResultadoLinha>>;
+  dia5: Map<string, Map<string, SnapshotResultadoLinha>>;
+};
+
+function matriculaSnapshotKey(m: string) {
+  return String(m ?? '').trim();
+}
+
+/** Valores de listagem/resumo/CSV: snapshot quando existir fechamento oficial na loja; senão simulação (cadastro). */
+function gerencialValoresPorColaborador(h: HoleriteItem, snap: GerencialSnapMaps) {
+  const lojaId = String(h.loja_id ?? '').trim();
+  const mat = matriculaSnapshotKey(h.matricula);
+  const lineD20 = lojaId && mat ? snap.dia20.get(lojaId)?.get(mat) : undefined;
+  const lineD5 = lojaId && mat ? snap.dia5.get(lojaId)?.get(mat) : undefined;
+
+  const salarioCadastro = Math.round(h.salario);
+  const salarioBase = lineD5
+    ? Math.round(snapshotNumericField(lineD5, 'salarioBase', salarioCadastro))
+    : lineD20
+      ? Math.round(snapshotNumericField(lineD20, 'salarioBase', salarioCadastro))
+      : salarioCadastro;
+
+  const dia20 = lineD20
+    ? Math.round(snapshotNumericField(lineD20, 'valorDia20', Math.round(salarioCadastro * 0.4)))
+    : Math.round(h.salario * 0.4);
+
+  const saldoDia5 = lineD5
+    ? Math.round(snapshotNumericField(lineD5, 'salarioLiquido', Math.max(0, salarioBase - dia20)))
+    : Math.round(h.salario * 0.6);
+
+  const totalMes = salarioBase;
+
+  return { salarioBase, dia20, saldoDia5, totalMes };
 }
 
 const gerarHoleritesMock = (): HoleriteItem[] => {
@@ -74,6 +128,15 @@ export default function Holerites() {
   
   const [gerando, setGerando] = useState(false);
 
+  /** Tipos de fechamento já oficializados no mês (RLS limita ao tenant). */
+  const [tiposFechamentoOficial, setTiposFechamentoOficial] = useState<string[]>([]);
+
+  /** Linhas de snapshot por loja (última versão fechada) para agregados alinhados ao PDF oficial. */
+  const [gerencialSnapMaps, setGerencialSnapMaps] = useState<GerencialSnapMaps>(() => ({
+    dia20: new Map(),
+    dia5: new Map(),
+  }));
+
   const [validacaoDados, setValidacaoDados] = useState({
     ativosCarregados: false,
   });
@@ -85,14 +148,45 @@ export default function Holerites() {
       });
     }
   }, [supabaseData.isLoading, supabaseData.totalProfissionais]);
-  
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('fechamentos_folha')
+          .select('tipo')
+          .eq('competencia', competenciaToDbDate(competencia))
+          .eq('status', 'fechado');
+        if (cancelled) return;
+        if (error) {
+          console.warn('Holerites: fechamentos oficiais não carregados', error.message);
+          setTiposFechamentoOficial([]);
+          return;
+        }
+        const tipos = [...new Set((data || []).map((r: { tipo: string }) => r.tipo).filter(Boolean))];
+        setTiposFechamentoOficial(tipos);
+      } catch {
+        if (!cancelled) setTiposFechamentoOficial([]);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [competencia]);
+
   const holerites = useMemo(() => {
     if (supabaseData.totalProfissionais > 0) {
       return supabaseData.profissionais.map((p: any) => ({
         id: p.id,
         loja: p.lojas?.nome || '-',
+        loja_id: p.loja_id,
         matricula: p.matricula,
         nome: p.nome,
+        cpf: p.cpf,
+        telefone: p.telefone,
+        celular: p.celular,
         cargo: p.cargo || '-',
         salario: p.salario_nominal || p.ultimo_salario || p.primeiro_salario || 0,
         status: 'pendente' as const,
@@ -103,6 +197,44 @@ export default function Holerites() {
     return gerarHoleritesMock();
   }, [supabaseData.profissionais, supabaseData.totalProfissionais]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const lojaIds = [...new Set(holerites.map((h) => String(h.loja_id ?? '').trim()).filter(Boolean))];
+      const nextD20 = new Map<string, Map<string, SnapshotResultadoLinha>>();
+      const nextD5 = new Map<string, Map<string, SnapshotResultadoLinha>>();
+      await Promise.all(
+        lojaIds.map(async (lojaId) => {
+          const [snap20, snap5] = await Promise.all([
+            getOfficialSnapshotLinesForLojaTipo(supabase, { competenciaUi: competencia, tipo: 'dia_20', lojaId }),
+            getOfficialSnapshotLinesForLojaTipo(supabase, { competenciaUi: competencia, tipo: 'dia_5', lojaId }),
+          ]);
+          if (snap20?.lines?.length) {
+            const m = new Map<string, SnapshotResultadoLinha>();
+            for (const line of snap20.lines) {
+              const k = matriculaSnapshotKey(String(line?.matricula ?? ''));
+              if (k) m.set(k, line);
+            }
+            nextD20.set(lojaId, m);
+          }
+          if (snap5?.lines?.length) {
+            const m = new Map<string, SnapshotResultadoLinha>();
+            for (const line of snap5.lines) {
+              const k = matriculaSnapshotKey(String(line?.matricula ?? ''));
+              if (k) m.set(k, line);
+            }
+            nextD5.set(lojaId, m);
+          }
+        })
+      );
+      if (!cancelled) setGerencialSnapMaps({ dia20: nextD20, dia5: nextD5 });
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [competencia, holerites]);
+
   const holeritesVT = useMemo(() => {
     return holerites.filter(h => h.recebeVT && h.valorDiarioVT && h.valorDiarioVT > 0);
   }, [holerites]);
@@ -111,7 +243,7 @@ export default function Holerites() {
     return holerites
       .filter(h => {
         if (lojaFiltro !== 'todas' && h.loja !== lojaFiltro) return false;
-        if (searchTerm && !h.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !h.matricula.includes(searchTerm)) return false;
+        if (searchTerm && !matchesSearch(searchTerm, [h.nome, h.matricula, h.cpf, h.telefone, h.celular, h.cargo])) return false;
         return true;
       })
       .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
@@ -139,25 +271,36 @@ export default function Holerites() {
     }
 
     const headers = ['Matrícula', 'Nome', 'Loja', 'Salário Base', 'Dia 20', 'Dia 5', 'Total do Mês'];
-    const linhas = holeritesFiltrados.map(h => {
-      const dia20 = Math.round(h.salario * 0.4);
-      const dia5 = h.salario - dia20;
-      const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+    const linhas = holeritesFiltrados.map((h) => {
+      const v = gerencialValoresPorColaborador(h, gerencialSnapMaps);
+      const escape = (val: string) => `"${String(val).replace(/"/g, '""')}"`;
       return [
         escape(h.matricula),
         escape(h.nome),
         escape(h.loja),
-        Math.round(h.salario).toString(),
-        Math.round(dia20).toString(),
-        Math.round(dia5).toString(),
-        Math.round(h.salario).toString(),
+        v.salarioBase.toString(),
+        v.dia20.toString(),
+        v.saldoDia5.toString(),
+        v.totalMes.toString(),
       ].join(';');
     });
 
-    // Linha de totais
-    const totalSalarios = holeritesFiltrados.reduce((s, h) => s + h.salario, 0);
-    const totalDia20 = Math.round(totalSalarios * 0.4);
-    const totalDia5 = totalSalarios - totalDia20;
+    const totalSalarios = holeritesFiltrados.reduce(
+      (s, h) => s + gerencialValoresPorColaborador(h, gerencialSnapMaps).salarioBase,
+      0
+    );
+    const totalDia20 = holeritesFiltrados.reduce(
+      (s, h) => s + gerencialValoresPorColaborador(h, gerencialSnapMaps).dia20,
+      0
+    );
+    const totalDia5 = holeritesFiltrados.reduce(
+      (s, h) => s + gerencialValoresPorColaborador(h, gerencialSnapMaps).saldoDia5,
+      0
+    );
+    const totalMesSum = holeritesFiltrados.reduce(
+      (s, h) => s + gerencialValoresPorColaborador(h, gerencialSnapMaps).totalMes,
+      0
+    );
     const linhaTotais = [
       `"TOTAL (${holeritesFiltrados.length} funcionários)"`,
       '""',
@@ -165,7 +308,7 @@ export default function Holerites() {
       Math.round(totalSalarios).toString(),
       Math.round(totalDia20).toString(),
       Math.round(totalDia5).toString(),
-      Math.round(totalSalarios).toString(),
+      Math.round(totalMesSum).toString(),
     ].join(';');
 
     const csv = '\uFEFF' + [headers.join(';'), ...linhas, linhaTotais].join('\n');
@@ -187,44 +330,59 @@ export default function Holerites() {
 
   // ========== FUNÇÕES DIA 20 (Adiantamento 40%) ==========
   const gerarPDFDia20Individual = async (holerite: HoleriteItem) => {
-    const dadosDia20: DadosHoleriteDia20 = {
-      salarioBase: holerite.salario,
-      percentualAdiantamento: 40,
-    };
-
+    const ctx = await resolveDia20PdfContext(supabase, {
+      competenciaUi: competencia,
+      matricula: holerite.matricula,
+      salarioAtual: holerite.salario,
+      lojaId: holerite.loja_id,
+    });
+    if (ctx.mode === 'BLOCKED') {
+      toast({ title: 'PDF não permitido', description: ctx.message, variant: 'destructive' });
+      return;
+    }
+    const salBaseParaPdf = ctx.mode === FinancialDocumentMode.OFFICIAL ? ctx.dados.salarioBase : holerite.salario;
     const dados = gerarHoleriteDia20(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
-      holerite.salario,
+      salBaseParaPdf,
       competencia,
-      dadosDia20
+      ctx.dados
     );
-    
+
     const doc = gerarHoleritePDF(dados);
     doc.save(`holerite_dia20_${holerite.matricula}_${competencia}.pdf`);
-    
+
     toast({
       title: 'PDF Dia 20 Gerado',
-      description: `Adiantamento de ${holerite.nome} gerado com sucesso!`,
+      description:
+        ctx.mode === FinancialDocumentMode.OFFICIAL
+          ? `Adiantamento oficial (fechamento v${ctx.provenance.versao}${ctx.provenance.checksum ? ` | ${ctx.provenance.checksum.slice(0, 8)}…` : ''}).`
+          : `Adiantamento de ${holerite.nome} gerado com sucesso!`,
     });
   };
 
   const visualizarPDFDia20 = async (holerite: HoleriteItem) => {
-    const dadosDia20: DadosHoleriteDia20 = {
-      salarioBase: holerite.salario,
-      percentualAdiantamento: 40,
-    };
-
+    const ctx = await resolveDia20PdfContext(supabase, {
+      competenciaUi: competencia,
+      matricula: holerite.matricula,
+      salarioAtual: holerite.salario,
+      lojaId: holerite.loja_id,
+    });
+    if (ctx.mode === 'BLOCKED') {
+      toast({ title: 'PDF não permitido', description: ctx.message, variant: 'destructive' });
+      return;
+    }
+    const salBaseParaPdf = ctx.mode === FinancialDocumentMode.OFFICIAL ? ctx.dados.salarioBase : holerite.salario;
     const dados = gerarHoleriteDia20(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
-      holerite.salario,
+      salBaseParaPdf,
       competencia,
-      dadosDia20
+      ctx.dados
     );
-    
+
     const doc = gerarHoleritePDF(dados);
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
@@ -262,20 +420,26 @@ export default function Holerites() {
       const selecionadosArray = holeritesFiltrados.filter(h => selecionadosDia20.has(h.id));
       
       for (const holerite of selecionadosArray) {
-        const dadosDia20: DadosHoleriteDia20 = {
-          salarioBase: holerite.salario,
-          percentualAdiantamento: 40,
-        };
-
+        const ctx = await resolveDia20PdfContext(supabase, {
+          competenciaUi: competencia,
+          matricula: holerite.matricula,
+          salarioAtual: holerite.salario,
+          lojaId: holerite.loja_id,
+        });
+        if (ctx.mode === 'BLOCKED') {
+          toast({ title: `Pulado: ${holerite.matricula}`, description: ctx.message, variant: 'destructive' });
+          continue;
+        }
+        const salBaseParaPdf = ctx.mode === FinancialDocumentMode.OFFICIAL ? ctx.dados.salarioBase : holerite.salario;
         const dados = gerarHoleriteDia20(
           holerite.nome,
           holerite.matricula,
           holerite.loja,
-          holerite.salario,
+          salBaseParaPdf,
           competencia,
-          dadosDia20
+          ctx.dados
         );
-        
+
         const doc = gerarHoleritePDF(dados);
         const pdfBlob = doc.output('arraybuffer');
         const folderName = sanitizeFolderName(holerite.loja);
@@ -303,68 +467,95 @@ export default function Holerites() {
 
   // ========== FUNÇÕES DIA 5 (Saldo com descontos) ==========
   const gerarPDFDia5Individual = async (holerite: HoleriteItem) => {
-    const descontos = await buscarDescontosProfissional(
-      holerite.id,
-      competencia,
-      holerite.salario
-    );
+    const ctx = await resolveDia5PdfContext(supabase, {
+      competenciaUi: competencia,
+      matricula: holerite.matricula,
+      salarioAtual: holerite.salario,
+      lojaId: holerite.loja_id,
+    });
+    if (ctx.mode === 'BLOCKED') {
+      toast({ title: 'PDF não permitido', description: ctx.message, variant: 'destructive' });
+      return;
+    }
 
-    const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
-
-    const dadosDia5: DadosHoleriteDia5 = {
-      salarioBase: holerite.salario,
-      adiantamentoDia20,
-      faltas: descontos.faltas,
-      vales: descontos.vales,
-      emprestimos: descontos.emprestimos,
-      adiantamentoExtra: descontos.adiantamento,
-    };
+    let dadosDia5: DadosHoleriteDia5;
+    let salBaseParaPdf = holerite.salario;
+    if (ctx.mode === FinancialDocumentMode.OFFICIAL) {
+      dadosDia5 = ctx.dados;
+      salBaseParaPdf = ctx.salarioBasePdf;
+    } else {
+      const descontos = await buscarDescontosProfissional(holerite.id, competencia, holerite.salario);
+      const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+      dadosDia5 = {
+        salarioBase: holerite.salario,
+        adiantamentoDia20,
+        faltas: descontos.faltas,
+        vales: descontos.vales,
+        emprestimos: descontos.emprestimos,
+        adiantamentoExtra: descontos.adiantamento,
+      };
+    }
 
     const dados = gerarHoleriteDia5(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
-      holerite.salario,
+      salBaseParaPdf,
       competencia,
       dadosDia5
     );
-    
+
     const doc = gerarHoleritePDF(dados);
     doc.save(`holerite_dia5_${holerite.matricula}_${competencia}.pdf`);
-    
+
     toast({
       title: 'PDF Dia 5 Gerado',
-      description: `Saldo de ${holerite.nome} gerado com sucesso!`,
+      description:
+        ctx.mode === FinancialDocumentMode.OFFICIAL
+          ? `Saldo oficial (fechamento v${ctx.provenance.versao}).`
+          : `Saldo de ${holerite.nome} gerado com sucesso!`,
     });
   };
 
   const visualizarPDFDia5 = async (holerite: HoleriteItem) => {
-    const descontos = await buscarDescontosProfissional(
-      holerite.id,
-      competencia,
-      holerite.salario
-    );
+    const ctx = await resolveDia5PdfContext(supabase, {
+      competenciaUi: competencia,
+      matricula: holerite.matricula,
+      salarioAtual: holerite.salario,
+      lojaId: holerite.loja_id,
+    });
+    if (ctx.mode === 'BLOCKED') {
+      toast({ title: 'PDF não permitido', description: ctx.message, variant: 'destructive' });
+      return;
+    }
 
-    const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
-
-    const dadosDia5: DadosHoleriteDia5 = {
-      salarioBase: holerite.salario,
-      adiantamentoDia20,
-      faltas: descontos.faltas,
-      vales: descontos.vales,
-      emprestimos: descontos.emprestimos,
-      adiantamentoExtra: descontos.adiantamento,
-    };
+    let dadosDia5: DadosHoleriteDia5;
+    let salBaseParaPdf = holerite.salario;
+    if (ctx.mode === FinancialDocumentMode.OFFICIAL) {
+      dadosDia5 = ctx.dados;
+      salBaseParaPdf = ctx.salarioBasePdf;
+    } else {
+      const descontos = await buscarDescontosProfissional(holerite.id, competencia, holerite.salario);
+      const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+      dadosDia5 = {
+        salarioBase: holerite.salario,
+        adiantamentoDia20,
+        faltas: descontos.faltas,
+        vales: descontos.vales,
+        emprestimos: descontos.emprestimos,
+        adiantamentoExtra: descontos.adiantamento,
+      };
+    }
 
     const dados = gerarHoleriteDia5(
       holerite.nome,
       holerite.matricula,
       holerite.loja,
-      holerite.salario,
+      salBaseParaPdf,
       competencia,
       dadosDia5
     );
-    
+
     const doc = gerarHoleritePDF(dados);
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
@@ -388,32 +579,43 @@ export default function Holerites() {
       const selecionadosArray = holeritesFiltrados.filter(h => selecionadosDia5.has(h.id));
       
       for (const holerite of selecionadosArray) {
-        const descontos = await buscarDescontosProfissional(
-          holerite.id,
-          competencia,
-          holerite.salario
-        );
-
-        const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
-
-        const dadosDia5: DadosHoleriteDia5 = {
-          salarioBase: holerite.salario,
-          adiantamentoDia20,
-          faltas: descontos.faltas,
-          vales: descontos.vales,
-          emprestimos: descontos.emprestimos,
-          adiantamentoExtra: descontos.adiantamento,
-        };
+        const ctx = await resolveDia5PdfContext(supabase, {
+          competenciaUi: competencia,
+          matricula: holerite.matricula,
+          salarioAtual: holerite.salario,
+          lojaId: holerite.loja_id,
+        });
+        if (ctx.mode === 'BLOCKED') {
+          toast({ title: `Pulado: ${holerite.matricula}`, description: ctx.message, variant: 'destructive' });
+          continue;
+        }
+        let dadosDia5: DadosHoleriteDia5;
+        let salBaseParaPdf = holerite.salario;
+        if (ctx.mode === FinancialDocumentMode.OFFICIAL) {
+          dadosDia5 = ctx.dados;
+          salBaseParaPdf = ctx.salarioBasePdf;
+        } else {
+          const descontos = await buscarDescontosProfissional(holerite.id, competencia, holerite.salario);
+          const adiantamentoDia20 = Math.round(holerite.salario * 0.4);
+          dadosDia5 = {
+            salarioBase: holerite.salario,
+            adiantamentoDia20,
+            faltas: descontos.faltas,
+            vales: descontos.vales,
+            emprestimos: descontos.emprestimos,
+            adiantamentoExtra: descontos.adiantamento,
+          };
+        }
 
         const dados = gerarHoleriteDia5(
           holerite.nome,
           holerite.matricula,
           holerite.loja,
-          holerite.salario,
+          salBaseParaPdf,
           competencia,
           dadosDia5
         );
-        
+
         const doc = gerarHoleritePDF(dados);
         const pdfBlob = doc.output('arraybuffer');
         const folderName = sanitizeFolderName(holerite.loja);
@@ -480,7 +682,16 @@ export default function Holerites() {
   };
 
   const gerarPDFVTIndividual = async (holerite: HoleriteItem) => {
-    if (!holerite.valorDiarioVT) {
+    const ctx = await resolveVtPdfContext(supabase, {
+      competenciaUi: competencia,
+      matricula: holerite.matricula,
+      lojaId: holerite.loja_id,
+    });
+    if (ctx.mode === 'BLOCKED') {
+      toast({ title: 'PDF não permitido', description: ctx.message, variant: 'destructive' });
+      return;
+    }
+    if (ctx.mode !== FinancialDocumentMode.OFFICIAL && !holerite.valorDiarioVT) {
       toast({
         title: 'Erro',
         description: 'Profissional não possui valor diário de VT cadastrado.',
@@ -489,60 +700,68 @@ export default function Holerites() {
       return;
     }
 
-    const dadosVT = await buscarDadosVT(holerite.id);
-    const diasUteis = calcularDiasUteis();
-    const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+    let dadosHoleriteVT: DadosHoleriteVT;
+    if (ctx.mode === FinancialDocumentMode.OFFICIAL) {
+      dadosHoleriteVT = ctx.dados;
+    } else {
+      const dadosVT = await buscarDadosVT(holerite.id);
+      const diasUteis = calcularDiasUteis();
+      const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+      dadosHoleriteVT = {
+        valorDiario: holerite.valorDiarioVT,
+        diasUteisMes: diasUteis,
+        diasTrabalhados,
+        diasFalta: dadosVT.diasFalta,
+        diasAtestado: dadosVT.diasAtestado,
+        diasFerias: dadosVT.diasFerias,
+      };
+    }
 
-    const dadosHoleriteVT: DadosHoleriteVT = {
-      valorDiario: holerite.valorDiarioVT,
-      diasUteisMes: diasUteis,
-      diasTrabalhados,
-      diasFalta: dadosVT.diasFalta,
-      diasAtestado: dadosVT.diasAtestado,
-      diasFerias: dadosVT.diasFerias,
-    };
+    const dados = gerarHoleriteVT(holerite.nome, holerite.matricula, holerite.loja, competencia, dadosHoleriteVT);
 
-    const dados = gerarHoleriteVT(
-      holerite.nome,
-      holerite.matricula,
-      holerite.loja,
-      competencia,
-      dadosHoleriteVT
-    );
-    
     const doc = gerarHoleritePDF(dados);
     doc.save(`holerite_vt_${holerite.matricula}_${competencia}.pdf`);
-    
+
     toast({
       title: 'PDF VT Gerado',
-      description: `Holerite VT de ${holerite.nome} gerado com sucesso!`,
+      description:
+        ctx.mode === FinancialDocumentMode.OFFICIAL
+          ? `VT oficial (fechamento v${ctx.provenance.versao}).`
+          : `Holerite VT de ${holerite.nome} gerado com sucesso!`,
     });
   };
 
   const visualizarPDFVT = async (holerite: HoleriteItem) => {
-    if (!holerite.valorDiarioVT) return;
+    const ctx = await resolveVtPdfContext(supabase, {
+      competenciaUi: competencia,
+      matricula: holerite.matricula,
+      lojaId: holerite.loja_id,
+    });
+    if (ctx.mode === 'BLOCKED') {
+      toast({ title: 'PDF não permitido', description: ctx.message, variant: 'destructive' });
+      return;
+    }
+    if (ctx.mode !== FinancialDocumentMode.OFFICIAL && !holerite.valorDiarioVT) return;
 
-    const dadosVT = await buscarDadosVT(holerite.id);
-    const diasUteis = calcularDiasUteis();
-    const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+    let dadosHoleriteVT: DadosHoleriteVT;
+    if (ctx.mode === FinancialDocumentMode.OFFICIAL) {
+      dadosHoleriteVT = ctx.dados;
+    } else {
+      const dadosVT = await buscarDadosVT(holerite.id);
+      const diasUteis = calcularDiasUteis();
+      const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+      dadosHoleriteVT = {
+        valorDiario: holerite.valorDiarioVT,
+        diasUteisMes: diasUteis,
+        diasTrabalhados,
+        diasFalta: dadosVT.diasFalta,
+        diasAtestado: dadosVT.diasAtestado,
+        diasFerias: dadosVT.diasFerias,
+      };
+    }
 
-    const dadosHoleriteVT: DadosHoleriteVT = {
-      valorDiario: holerite.valorDiarioVT,
-      diasUteisMes: diasUteis,
-      diasTrabalhados,
-      diasFalta: dadosVT.diasFalta,
-      diasAtestado: dadosVT.diasAtestado,
-      diasFerias: dadosVT.diasFerias,
-    };
+    const dados = gerarHoleriteVT(holerite.nome, holerite.matricula, holerite.loja, competencia, dadosHoleriteVT);
 
-    const dados = gerarHoleriteVT(
-      holerite.nome,
-      holerite.matricula,
-      holerite.loja,
-      competencia,
-      dadosHoleriteVT
-    );
-    
     const doc = gerarHoleritePDF(dados);
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
@@ -567,19 +786,32 @@ export default function Holerites() {
       const selecionadosArray = holeritesVT.filter(h => selecionadosVT.has(h.id));
       
       for (const holerite of selecionadosArray) {
-        if (!holerite.valorDiarioVT) continue;
-        
-        const dadosVT = await buscarDadosVT(holerite.id);
-        const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+        const ctx = await resolveVtPdfContext(supabase, {
+          competenciaUi: competencia,
+          matricula: holerite.matricula,
+          lojaId: holerite.loja_id,
+        });
+        if (ctx.mode === 'BLOCKED') {
+          toast({ title: `Pulado: ${holerite.matricula}`, description: ctx.message, variant: 'destructive' });
+          continue;
+        }
+        if (ctx.mode !== FinancialDocumentMode.OFFICIAL && !holerite.valorDiarioVT) continue;
 
-        const dadosHoleriteVT: DadosHoleriteVT = {
-          valorDiario: holerite.valorDiarioVT,
-          diasUteisMes: diasUteis,
-          diasTrabalhados,
-          diasFalta: dadosVT.diasFalta,
-          diasAtestado: dadosVT.diasAtestado,
-          diasFerias: dadosVT.diasFerias,
-        };
+        let dadosHoleriteVT: DadosHoleriteVT;
+        if (ctx.mode === FinancialDocumentMode.OFFICIAL) {
+          dadosHoleriteVT = ctx.dados;
+        } else {
+          const dadosVT = await buscarDadosVT(holerite.id);
+          const diasTrabalhados = Math.max(0, diasUteis - dadosVT.diasFalta - dadosVT.diasAtestado - dadosVT.diasFerias);
+          dadosHoleriteVT = {
+            valorDiario: holerite.valorDiarioVT,
+            diasUteisMes: diasUteis,
+            diasTrabalhados,
+            diasFalta: dadosVT.diasFalta,
+            diasAtestado: dadosVT.diasAtestado,
+            diasFerias: dadosVT.diasFerias,
+          };
+        }
 
         const dados = gerarHoleriteVT(
           holerite.nome,
@@ -588,7 +820,7 @@ export default function Holerites() {
           competencia,
           dadosHoleriteVT
         );
-        
+
         const doc = gerarHoleritePDF(dados);
         const pdfBlob = doc.output('arraybuffer');
         const folderName = sanitizeFolderName(holerite.loja);
@@ -667,13 +899,19 @@ export default function Holerites() {
     }
   };
 
-  // Resumo financeiro
+  // Resumo financeiro (totais da lista filtrada): mesma regra dos PDFs — snapshot se houver fechamento oficial na loja.
   const resumo = useMemo(() => {
-    const totalSalarios = holeritesFiltrados.reduce((sum, h) => sum + h.salario, 0);
-    const adiantamentoDia20 = Math.round(totalSalarios * 0.4);
-    const saldoDia5 = totalSalarios - adiantamentoDia20;
+    let totalSalarios = 0;
+    let adiantamentoDia20 = 0;
+    let saldoDia5 = 0;
+    for (const h of holeritesFiltrados) {
+      const v = gerencialValoresPorColaborador(h, gerencialSnapMaps);
+      totalSalarios += v.totalMes;
+      adiantamentoDia20 += v.dia20;
+      saldoDia5 += v.saldoDia5;
+    }
     return { totalSalarios, adiantamentoDia20, saldoDia5 };
-  }, [holeritesFiltrados]);
+  }, [holeritesFiltrados, gerencialSnapMaps]);
   
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -735,7 +973,7 @@ export default function Holerites() {
             <div className="space-y-1 sm:col-span-2">
               <Label className="text-xs">Buscar</Label>
               <Input
-                placeholder="Nome ou matrícula..."
+                placeholder="Nome, matrícula, CPF, telefone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -743,6 +981,25 @@ export default function Holerites() {
           </div>
         </CardContent>
       </Card>
+
+      {/* PDFs Dia 20 / Dia 5 / VT usam financialDocumentService (oficial = snapshot). Listagens e CSV seguem os mesmos snapshots por loja quando existir fechamento fechado. */}
+      {tiposFechamentoOficial.length > 0 ? (
+        <Alert className="border-amber-500/50 bg-amber-500/5">
+          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <AlertTitle className="text-amber-800 font-semibold">Fechamento oficial detectado nesta competência</AlertTitle>
+          <AlertDescription className="text-sm space-y-2">
+            <p>
+              {FINANCIAL_ORIGIN_LABEL.simulacao} Tipos já fechados no banco:{' '}
+              <strong>{tiposFechamentoOficial.join(', ')}</strong>.
+            </p>
+            <p>
+              Onde houver fechamento <strong>fechado</strong> por loja, PDFs, totais desta tela e exportação CSV usam os
+              valores <strong>congelados no snapshot</strong> (mesma base que a tela <strong>Fechamentos</strong>). Sem
+              fechamento na loja, permanece simulação a partir do cadastro atual.
+            </p>
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {/* Tabs para os 3 tipos de holerite */}
       <Tabs defaultValue="dia20" className="w-full">
@@ -857,9 +1114,8 @@ export default function Holerites() {
                         <TableCell>
                           <Badge variant="outline" className="text-xs">{h.loja}</Badge>
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(h.salario)}</TableCell>
-                        <TableCell className="text-right font-bold text-warning">
-                          {formatCurrency(Math.round(h.salario * 0.4))}
+                        <TableCell className="text-right">
+                          {formatCurrency(gerencialValoresPorColaborador(h, gerencialSnapMaps).salarioBase)}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
@@ -994,9 +1250,11 @@ export default function Holerites() {
                         <TableCell>
                           <Badge variant="outline" className="text-xs">{h.loja}</Badge>
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(h.salario)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(gerencialValoresPorColaborador(h, gerencialSnapMaps).salarioBase)}
+                        </TableCell>
                         <TableCell className="text-right font-bold text-success">
-                          {formatCurrency(Math.round(h.salario * 0.6))}
+                          {formatCurrency(gerencialValoresPorColaborador(h, gerencialSnapMaps).saldoDia5)}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
@@ -1123,7 +1381,7 @@ export default function Holerites() {
                   <TableBody>
                     {holeritesVT
                       .filter(h => lojaFiltro === 'todas' || h.loja === lojaFiltro)
-                      .filter(h => !searchTerm || h.nome.toLowerCase().includes(searchTerm.toLowerCase()) || h.matricula.includes(searchTerm))
+                      .filter(h => !searchTerm || matchesSearch(searchTerm, [h.nome, h.matricula, h.cpf, h.telefone, h.celular, h.cargo]))
                       .map((h) => (
                         <TableRow key={h.id}>
                           <TableCell>
@@ -1267,8 +1525,7 @@ export default function Holerites() {
                   </TableHeader>
                   <TableBody>
                     {holeritesFiltrados.map((h) => {
-                      const dia20 = Math.round(h.salario * 0.4);
-                      const dia5 = h.salario - dia20;
+                      const v = gerencialValoresPorColaborador(h, gerencialSnapMaps);
                       return (
                         <TableRow key={h.id}>
                           <TableCell className="font-mono text-sm">{h.matricula}</TableCell>
@@ -1276,10 +1533,10 @@ export default function Holerites() {
                           <TableCell>
                             <Badge variant="outline" className="text-xs">{h.loja}</Badge>
                           </TableCell>
-                          <TableCell className="text-right">{formatCurrency(h.salario)}</TableCell>
-                          <TableCell className="text-right text-warning">{formatCurrency(dia20)}</TableCell>
-                          <TableCell className="text-right text-success">{formatCurrency(dia5)}</TableCell>
-                          <TableCell className="text-right font-bold text-primary">{formatCurrency(h.salario)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(v.salarioBase)}</TableCell>
+                          <TableCell className="text-right text-warning">{formatCurrency(v.dia20)}</TableCell>
+                          <TableCell className="text-right text-success">{formatCurrency(v.saldoDia5)}</TableCell>
+                          <TableCell className="text-right font-bold text-primary">{formatCurrency(v.totalMes)}</TableCell>
                         </TableRow>
                       );
                     })}
@@ -1313,8 +1570,9 @@ export default function Holerites() {
                 <div>
                   <p className="font-medium text-sm">Visão Gerencial</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Consolidação de todos os profissionais filtrados, com Dia 20 (40%), Dia 5 (60%) e total do mês. 
-                    Use o botão "Exportar CSV" para baixar o resumo em planilha.
+                    Consolidação dos profissionais filtrados. Com fechamento oficial na loja, Dia 20 / Dia 5 / totais
+                    refletem o snapshot persistido; caso contrário, estimativa a partir do cadastro (40% / 60%). Use
+                    &quot;Exportar CSV&quot; para o mesmo critério da tabela.
                   </p>
                 </div>
               </div>

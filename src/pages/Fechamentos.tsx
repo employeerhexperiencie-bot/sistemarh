@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -33,6 +33,10 @@ import {
   gerarRelatorioCesta, exportarCSV,
   type ProfissionalRelatorio, type ConfigRelatorio
 } from '@/lib/relatoriosPDF';
+import { buildFechamentoSnapshotPersisted, resolveNextFechamentoVersao } from '@/domain/folha';
+import { insertHistoricoAcao } from '@/lib/auditLogger';
+import { matchesSearch } from '@/lib/searchUtils';
+import { SELECT_PROFISSIONAIS_FOLHA_LISTAGEM } from '@/lib/profissionalQuery';
 
 type TipoFechamento = 'dia_20' | 'dia_5' | 'vt' | 'beneficios';
 type StatusFechamento = 'aberto' | 'fechado' | 'reaberto';
@@ -53,6 +57,7 @@ interface Fechamento {
   reaberto_em: string | null;
   observacoes: string | null;
   created_at: string;
+  updated_at?: string | null;
 }
 
 interface Loja {
@@ -132,6 +137,15 @@ export default function Fechamentos() {
   
   // Loja summary cache (pre-calculated totals for list view)
   const [lojaSummaries, setLojaSummaries] = useState<Record<string, { totalProf: number; totalValor: number; totalDescontos: number; profComDesconto: number; loading: boolean }>>({});
+  /** Busca flexível na lista de lojas (nome / id parcial). */
+  const [lojaSearchTerm, setLojaSearchTerm] = useState('');
+  /** CRITICAL: evita duplo submit / corrida no cliente enquanto o insert está em voo. */
+  const closingLockRef = useRef(false);
+
+  const lojasVisiveis = useMemo(() => {
+    if (!lojaSearchTerm.trim()) return lojas;
+    return lojas.filter((l) => matchesSearch(lojaSearchTerm, [l.nome, l.id]));
+  }, [lojas, lojaSearchTerm]);
 
   const competencias = getCompetenciasDisponiveis(6, 1);
 
@@ -141,7 +155,9 @@ export default function Fechamentos() {
       const [lojasRes, fechamentosRes] = await Promise.all([
         supabase.from('lojas').select('id, nome').order('nome'),
         supabase.from('fechamentos_folha')
-          .select('*')
+          .select(
+            'id, loja_id, competencia, tipo, status, versao, snapshot, total_profissionais, total_valor, fechado_por, fechado_em, reaberto_por, reaberto_em, observacoes, created_at, updated_at, tenant_id'
+          )
           .eq('competencia', `${competencia}-01`)
           .eq('tipo', tipoAtivo),
       ]);
@@ -237,7 +253,7 @@ export default function Fechamentos() {
     try {
       const { data: profissionais } = await supabase
         .from('profissionais')
-        .select('*')
+        .select(SELECT_PROFISSIONAIS_FOLHA_LISTAGEM)
         .eq('loja_id', loja.id)
         .not('status', 'in', '("demitido","inativo")');
 
@@ -287,7 +303,7 @@ export default function Fechamentos() {
       for (const loja of lojasToPreview) {
         const { data: profissionais } = await supabase
           .from('profissionais')
-          .select('*')
+          .select(SELECT_PROFISSIONAIS_FOLHA_LISTAGEM)
           .eq('loja_id', loja.id)
           .not('status', 'in', '("demitido","inativo")');
 
@@ -324,11 +340,16 @@ export default function Fechamentos() {
   };
 
   const toggleAllLojas = () => {
-    if (checkedLojaIds.size === lojas.length) {
-      setCheckedLojaIds(new Set());
+    const list = lojasVisiveis;
+    if (list.length === 0) return;
+    const allChecked = list.every((l) => checkedLojaIds.has(l.id));
+    const next = new Set(checkedLojaIds);
+    if (allChecked) {
+      list.forEach((l) => next.delete(l.id));
     } else {
-      setCheckedLojaIds(new Set(lojas.map(l => l.id)));
+      list.forEach((l) => next.add(l.id));
     }
+    setCheckedLojaIds(next);
   };
 
   // Recalculate a single professional with overrides and update previewData
@@ -390,14 +411,18 @@ export default function Fechamentos() {
     setViewMode('resumo');
   };
 
-  // Perform closing
+  // Perform closing — CRITICAL: versão vem do servidor + snapshot com checksum (auditoria / RPC futuro).
   const handleFechar = async () => {
     if (!selectedLoja || !previewData) return;
+    if (closingLockRef.current) {
+      toast.error('Fechamento já em andamento. Aguarde.');
+      return;
+    }
+    closingLockRef.current = true;
     setIsProcessing(true);
 
     try {
-      const existing = getFechamentoLoja(selectedLoja.id);
-      const config = { ...getDefaultConfig(competencia), tributosCLT };
+      const config = { ...getDefaultConfig(competencia), percentualDia20: globalPercentualDia20, tributosCLT };
 
       let totalValor = 0;
       switch (tipoAtivo) {
@@ -407,8 +432,16 @@ export default function Fechamentos() {
         case 'beneficios': totalValor = previewData.resultados.reduce((s, r) => s + r.valorVR + r.valorCesta, 0); break;
       }
 
-      const snapshot = {
-        resultados: previewData.resultados.map(r => ({
+      const newVersao = await resolveNextFechamentoVersao(
+        supabase,
+        selectedLoja.id,
+        `${competencia}-01`,
+        tipoAtivo
+      );
+
+      const resultadosLinhas = previewData.resultados.map((r, idx) => {
+        const input = previewData.inputs[idx];
+        return {
           profissionalId: r.profissionalId,
           profissionalNome: r.profissionalNome,
           matricula: r.matricula,
@@ -416,6 +449,10 @@ export default function Fechamentos() {
           salarioBase: r.salarioBase,
           diasUteis: r.diasUteis,
           diasTrabalhados: r.diasTrabalhados,
+          diasAbatidos: r.diasAbatidos,
+          faltas: input?.faltas ?? 0,
+          atestados: input?.atestados ?? 0,
+          diasFerias: input?.diasFerias ?? 0,
           recebeDia20: r.recebeDia20,
           valorDia20: r.valorDia20,
           motivoDia20: r.motivoDia20,
@@ -430,14 +467,17 @@ export default function Fechamentos() {
           salarioLiquido: r.salarioLiquido,
           totalMes: r.totalMes,
           detalhesCalculo: r.detalhesCalculo,
-        })),
-        config,
-        gerado_em: new Date().toISOString(),
+        };
+      });
+
+      const snapshot = await buildFechamentoSnapshotPersisted({
         tipo: tipoAtivo,
         competencia,
-      };
-
-      const newVersao = existing ? existing.versao + 1 : 1;
+        tenantId: user?.tenantId ?? null,
+        generatedBy: user?.email ?? null,
+        config,
+        resultados: resultadosLinhas,
+      });
 
       const { error } = await supabase.from('fechamentos_folha').insert({
         loja_id: selectedLoja.id,
@@ -453,9 +493,16 @@ export default function Fechamentos() {
         observacoes,
       });
 
-      if (error) throw error;
+      if (error) {
+        if ((error as { code?: string }).code === '23505') {
+          toast.error('Conflito de versão: outro fechamento foi registrado. Recarregamos os dados.');
+          await loadData();
+          return;
+        }
+        throw error;
+      }
 
-      await supabase.from('historico_acoes').insert({
+      const { error: histErr } = await insertHistoricoAcao(supabase, {
         usuario: user?.email || 'Sistema',
         acao: 'fechamento',
         modulo: 'folha',
@@ -463,8 +510,18 @@ export default function Fechamentos() {
         entidade_id: selectedLoja.id,
         entidade_nome: selectedLoja.nome,
         descricao: `Fechamento ${TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} v${newVersao} - ${formatCompetencia(competencia)} - ${previewData.resultados.length} profissionais - ${formatCurrency(totalValor)}`,
-        dados_novos: { tipo: tipoAtivo, competencia, versao: newVersao, total_valor: totalValor, total_profissionais: previewData.resultados.length },
+        dados_novos: {
+          tipo: tipoAtivo,
+          competencia,
+          versao: newVersao,
+          total_valor: totalValor,
+          total_profissionais: previewData.resultados.length,
+          snapshot_checksum: snapshot.checksum,
+        },
+        tenant_id: user?.tenantId ?? null,
+        actor_user_id: user?.id ?? null,
       });
+      if (histErr) console.error('Auditoria fechamento:', histErr);
 
       toast.success(`Fechamento v${newVersao} realizado — ${formatCurrency(totalValor)}`);
       setViewMode('lista');
@@ -476,6 +533,7 @@ export default function Fechamentos() {
       toast.error(error.message || 'Erro ao realizar fechamento');
     } finally {
       setIsProcessing(false);
+      closingLockRef.current = false;
     }
   };
 
@@ -499,7 +557,7 @@ export default function Fechamentos() {
 
       if (error) throw error;
 
-      await supabase.from('historico_acoes').insert({
+      const { error: auditErr } = await insertHistoricoAcao(supabase, {
         usuario: user?.email || 'Sistema',
         acao: 'reabertura',
         modulo: 'folha',
@@ -507,7 +565,12 @@ export default function Fechamentos() {
         entidade_id: reopenLoja.id,
         entidade_nome: reopenLoja.nome,
         descricao: `Reabertura ${TIPOS_FECHAMENTO.find(t => t.value === tipoAtivo)?.label} v${existing.versao} - ${formatCompetencia(competencia)}`,
+        dados_anteriores: { status: 'fechado' },
+        dados_novos: { status: 'reaberto' },
+        tenant_id: user?.tenantId ?? null,
+        actor_user_id: user?.id ?? null,
       });
+      if (auditErr) console.error('Auditoria reabertura:', auditErr);
 
       toast.success(`Fechamento reaberto para ${reopenLoja.nome}`);
       setReopenDialogOpen(false);
@@ -528,37 +591,56 @@ export default function Fechamentos() {
     }
 
     const resultados = fechamento.snapshot.resultados;
+    const compPdf =
+      (typeof fechamento.snapshot?.competencia === 'string' && fechamento.snapshot.competencia) || competencia;
+    const pctDia20 =
+      typeof fechamento.snapshot?.config?.percentualDia20 === 'number'
+        ? fechamento.snapshot.config.percentualDia20
+        : 40;
     let gerados = 0;
 
     for (const r of resultados) {
       try {
         if (fechamento.tipo === 'dia_20') {
-          const dados = gerarHoleriteDia20(r.profissionalNome, r.matricula, lojaNome, r.salarioBase, competencia, {
+          const dados = gerarHoleriteDia20(r.profissionalNome, r.matricula, lojaNome, r.salarioBase, compPdf, {
             salarioBase: r.salarioBase,
-            percentualAdiantamento: 40,
+            percentualAdiantamento: pctDia20,
+            valorAdiantamentoConformeFolha: r.valorDia20,
           });
           const doc = gerarHoleritePDF(dados);
-          doc.save(`holerite_dia20_${r.matricula}_${competencia}.pdf`);
+          doc.save(`holerite_dia20_${r.matricula}_${compPdf}.pdf`);
         } else if (fechamento.tipo === 'dia_5') {
-          const dados = gerarHoleriteDia5(r.profissionalNome, r.matricula, lojaNome, r.salarioBase, competencia, {
+          const diasFaltaPdf =
+            r.descontoFaltas > 0
+              ? r.faltas != null
+                ? r.faltas
+                : Math.round(r.descontoFaltas / (r.salarioBase / 30))
+              : 0;
+          const dados = gerarHoleriteDia5(r.profissionalNome, r.matricula, lojaNome, r.salarioBase, compPdf, {
             salarioBase: r.salarioBase,
             adiantamentoDia20: r.valorDia20,
-            faltas: r.descontoFaltas > 0 ? { dias: Math.round(r.descontoFaltas / (r.salarioBase / 30)), valor: r.descontoFaltas } : undefined,
+            faltas:
+              r.descontoFaltas > 0 ? { dias: diasFaltaPdf, valor: r.descontoFaltas } : undefined,
             vales: r.totalDescontos > r.descontoFaltas ? [{ descricao: 'Descontos operacionais', valor: r.totalDescontos - r.descontoFaltas }] : undefined,
           });
           const doc = gerarHoleritePDF(dados);
-          doc.save(`holerite_dia5_${r.matricula}_${competencia}.pdf`);
+          doc.save(`holerite_dia5_${r.matricula}_${compPdf}.pdf`);
         } else if (fechamento.tipo === 'vt' && r.valorVT > 0) {
-          const dados = gerarHoleriteVT(r.profissionalNome, r.matricula, lojaNome, competencia, {
+          const legacyVt =
+            r.faltas == null && r.atestados == null && r.diasFerias == null;
+          const diasFalta = legacyVt ? (r.diasAbatidos ?? 0) : (r.faltas ?? 0);
+          const diasAtestado = legacyVt ? 0 : (r.atestados ?? 0);
+          const diasFerias = legacyVt ? 0 : (r.diasFerias ?? 0);
+          const dados = gerarHoleriteVT(r.profissionalNome, r.matricula, lojaNome, compPdf, {
             valorDiario: r.valorVT / Math.max(1, r.diasTrabalhados),
             diasUteisMes: r.diasUteis,
             diasTrabalhados: r.diasTrabalhados,
-            diasFalta: 0,
-            diasAtestado: 0,
-            diasFerias: 0,
+            diasFalta,
+            diasAtestado,
+            diasFerias,
           });
           const doc = gerarHoleritePDF(dados);
-          doc.save(`holerite_vt_${r.matricula}_${competencia}.pdf`);
+          doc.save(`holerite_vt_${r.matricula}_${compPdf}.pdf`);
         }
         gerados++;
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -567,7 +649,7 @@ export default function Fechamentos() {
       }
     }
 
-    await supabase.from('historico_acoes').insert({
+    const { error: auditErr } = await insertHistoricoAcao(supabase, {
       usuario: user?.email || 'Sistema',
       acao: 'geracao_holerites',
       modulo: 'folha',
@@ -575,7 +657,10 @@ export default function Fechamentos() {
       entidade_id: fechamento.id,
       entidade_nome: lojaNome,
       descricao: `${gerados} holerites ${fechamento.tipo} gerados de snapshot v${fechamento.versao} - ${formatCompetencia(competencia)}`,
+      tenant_id: user?.tenantId ?? null,
+      actor_user_id: user?.id ?? null,
     });
+    if (auditErr) console.error('Auditoria holerites:', auditErr);
 
     toast.success(`${gerados} holerites gerados com sucesso!`);
   };
@@ -1403,6 +1488,19 @@ export default function Fechamentos() {
                     <CardDescription>
                       Selecione lojas para visualizar consolidado ou clique individualmente.
                     </CardDescription>
+                    <div className="mt-2 max-w-sm">
+                      <Input
+                        placeholder="Buscar loja (nome ou id)…"
+                        value={lojaSearchTerm}
+                        onChange={(e) => setLojaSearchTerm(e.target.value)}
+                        className="h-9"
+                      />
+                      {lojaSearchTerm.trim() ? (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Exibindo {lojasVisiveis.length} de {lojas.length} lojas
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -1411,8 +1509,17 @@ export default function Fechamentos() {
                       onClick={toggleAllLojas}
                       className="gap-1.5"
                     >
-                      <Checkbox checked={checkedLojaIds.size === lojas.length && lojas.length > 0} className="h-3.5 w-3.5" />
-                      {checkedLojaIds.size === lojas.length ? 'Desmarcar' : 'Todas'}
+                      <Checkbox
+                        checked={
+                          lojasVisiveis.length > 0 &&
+                          lojasVisiveis.every((l) => checkedLojaIds.has(l.id))
+                        }
+                        className="h-3.5 w-3.5"
+                      />
+                      {lojasVisiveis.length > 0 &&
+                      lojasVisiveis.every((l) => checkedLojaIds.has(l.id))
+                        ? 'Desmarcar'
+                        : 'Marcar visíveis'}
                     </Button>
                     {checkedLojaIds.size > 0 && (
                       <Button
@@ -1437,7 +1544,7 @@ export default function Fechamentos() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {lojas.map(loja => {
+                    {lojasVisiveis.map(loja => {
                       const fechamento = getFechamentoLoja(loja.id);
                       const status = fechamento?.status || 'aberto';
                       const cfg = statusConfig[status];
