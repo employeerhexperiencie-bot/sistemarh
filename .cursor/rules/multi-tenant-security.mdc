@@ -1,0 +1,22 @@
+---
+description: Multi-tenant e segurança — RLS, tenant, queries explícitas
+alwaysApply: false
+---
+
+# Multi-tenant security (Supabase / PostgREST)
+
+Ativar quando mexer em: migrations SQL, policies RLS, hooks `useSupabaseData`, páginas que consultam `profissionais` / `lojas` / dados sensíveis, ou novas tabelas em `public`.
+
+## Regras
+
+- Toda query que liste dados de negócio deve respeitar o **isolamento por tenant** já modelado no projeto (RLS + `tenant_id` / claims conforme o padrão existente). Não contornar RLS no cliente “por conveniência”.
+- **Evitar `select('*')`** em caminhos quentes (listagens dashboard, cadastros em massa, folha, auth). Preferir constantes de colunas (`SELECT_PROFISSIONAIS_*`, `profissionalQuery`, etc.) ou selects explícitos.
+- **Novas policies**: não introduzir `USING (true)` / `WITH CHECK (true)` / `FOR ALL ... USING (true)` sem comentário de risco aceito pelo time e plano de compensação (migração de correção).
+- Após alterar migrations: correr `npm run audit:migrations` e rever **novos** ficheiros ou novas ocorrências nos relatórios.
+- SQL manual de governança: `supabase/scripts/validate_rls_security.sql` é para execução/revisão no Postgres, não substitui review de policy.
+
+## Checklist
+
+- Nova tabela em `public` → RLS habilitado + policies mínimas documentadas.
+- Novo componente que lê Supabase em listagem → colunas explícitas, não `*`.
+- PR que toca em `supabase/migrations/*.sql` → diff legível; sem políticas permissivas “copiadas” de legado sem pensar.

@@ -1,0 +1,35 @@
+---
+description: Importação em massa — staging, validação, auditoria, sem insert direto ingénuo
+alwaysApply: false
+---
+
+# Import safety (dados em massa / RH)
+
+Ativar quando mexer em: importação XLSX/CSV, `CentralImportacao`, `ImportacaoDados`, cargas em lote de profissionais, ou qualquer fluxo que faça muitos `insert`/`upsert` seguidos.
+
+## Arquitetura desejada (não negociável para “enterprise”)
+
+Evitar: `frontend → insert direto em massa na tabela final` como único passo.
+
+Preferir o fluxo:
+
+1. **Upload** → armazenar ficheiro ou chunk.
+2. **Staging** (tabela ou estado “pendente”) com `batch_id` / correlacionador.
+3. **Validação** (CPF, duplicados no lote, duplicados no tenant, campos obrigatórios, formato).
+4. **Preview** para o utilizador (resumo de erros e amostra).
+5. **Dry-run** opcional mas recomendado (contar inserts sem commit final).
+6. **Confirmação explícita** humana antes de promover para definitivo.
+7. **Promoção** transacional (ou em batches com retry idempotente).
+8. **Auditoria**: quem importou, quando, `batch_id`, totais aceitos/rejeitados; idealmente `insertHistoricoAcao` ou equivalente alinhado ao padrão do projeto.
+
+## Proibições
+
+- Não apagar dados de produção sem backup / migração reversível documentada.
+- Não importar sem validar **duplicados** e **identificador único no tenant** (ex.: CPF + tenant).
+- Não tratar “importação concluída” só porque o ficheiro foi lido no browser.
+
+## Checklist
+
+- Rollback parcial: definir o que acontece se a importação falhar a meio (transação vs compensação).
+- Logs e mensagens de erro acionáveis (linha/coluna/registo).
+- Rate limiting / tamanho máximo de ficheiro se exposto a utilizadores finais.

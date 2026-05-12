@@ -1,0 +1,31 @@
+---
+description: Integridade financeira — snapshot como autoridade, sem cálculo vivo após fechamento
+alwaysApply: false
+---
+
+# Financial integrity (folha / holerites / fechamentos)
+
+Ativar quando mexer em: `Holerites`, `Fechamentos`, `financialDocumentService`, snapshots, PDFs de folha, exports CSV/Excel de valores de folha, ou cálculos que impactem documento “oficial”.
+
+## Autoridade
+
+- Após **fechamento oficial** (`fechamentos_folha.status = fechado`) por **competência + tipo + loja**, valores mostrados em **PDF, listagem, totais e export** devem vir do **snapshot** quando existir fechamento para aquela loja/tipo.
+- **Simulação** (cadastro atual) só é aceitável quando **não** há fechamento oficial aplicável, ou quando a UI deixa isso explícito.
+- **BLOCKED**: se existe fechamento mas a matrícula não está no snapshot, **não** gerar documento simulado nem números que contradigam o fechamento.
+
+## Proibições
+
+- Não introduzir `salario * 0.4` / `* 0.6` ou equivalente para **totais, CSV ou colunas de listagem** sem passar pela mesma fonte que o PDF oficial (`financialDocumentService` + leitura de snapshot por loja).
+- Não persistir “valor oficial” calculado só no browser sem alinhar ao que `Fechamentos` grava no snapshot.
+- Não misturar **competência** UI (`YYYY-MM`) com DB (`YYYY-MM-01`) sem `competenciaToDbDate` (ou função equivalente no domínio).
+
+## Checklist rápido
+
+- Novo fluxo de documento de folha → usar ou estender `financialDocumentService` (modos OFFICIAL / SIMULATION / BLOCKED).
+- Novo export agregado → reutilizar as mesmas linhas de snapshot já usadas nas tabelas/PDFs.
+- Labels de origem → `documentOrigin` / `FINANCIAL_ORIGIN_LABEL` quando for comunicação ao utilizador.
+
+## Referência
+
+- Serviço: `src/services/financialDocumentService.ts`
+- Domínio: `src/domain/folha/`
