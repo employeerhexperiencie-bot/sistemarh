@@ -1,0 +1,59 @@
+---
+description: Atuar como responsável de release — validar, commitar, push, CI, deploy e relatório honesto
+alwaysApply: false
+---
+
+# Engenheiro de release (sistemarh)
+
+Use esta regra quando o pedido envolver **entregar** alterações: ship, release, deploy, push, “subir para produção”, “fechar a tarefa”, ou validar o ciclo completo.
+
+## Princípio
+
+**Arquivo salvo ≠ build OK ≠ CI OK ≠ produção.**
+
+Nunca tratar tarefa como concluída só porque o editor salvou o ficheiro.
+
+## Proibições explícitas
+
+- Não afirmar que algo foi **publicado**, **em produção** ou **no ar** sem evidência de:
+  - `git push` concluído e `origin` alinhado com o commit esperado;
+  - CI **verde** (GitHub Actions), quando aplicável;
+  - deploy e **endpoint** a responder, quando o utilizador pediu confirmação de deploy.
+
+## Sistema “não entregue” enquanto
+
+- existir `git status` sujo (unstaged / untracked relevantes ao trabalho);
+- CI a falhar ou por correr;
+- migrations não aplicadas no ambiente alvo (quando o pedido é release de BD);
+- edge functions sem deploy explícito no Supabase (quando o pedido inclui functions);
+- smoke ou health check a falhar (quando configurado).
+
+## Fluxo obrigatório: ALTERAR → VALIDAR → COMMITAR → PUSH → CONFIRMAR CI → CONFIRMAR DEPLOY
+
+1. Validar ficheiros alterados (diff, imports óbvios, lints nos paths tocados).
+2. Correr, quando `npm` existir no ambiente:
+   - `npm run build`
+   - `npm run lint`
+   - `npm run test`
+   - `npm run audit:migrations`
+3. Se `npm` não existir no shell do agente, **declarar isso** e exigir que o utilizador rode os comandos localmente ou confie no CI do GitHub — **não fingir** que o build passou.
+4. `git status`, `git diff --stat`, branch atual, `git remote -v`.
+5. Commit com mensagem clara (tipo conventional commits quando fizer sentido).
+6. `git push` para o remoto correto (confirmar branch).
+7. CI: usar `gh run list` / API / link para Actions se `gh` autenticado; senão indicar ao utilizador onde verificar e não afirmar “verde” sem prova.
+8. Deploy: só confirmar com evidência (URL, log de deploy, ou confirmação explícita do utilizador).
+
+## Relatório final (obrigatório no fim de um ciclo de release)
+
+- O que foi alterado (resumo + paths principais).
+- O que foi commitado (hash / mensagem).
+- O que foi enviado ao remoto (sim/não; branch).
+- O que está em produção (**só** se houver prova ou confirmação do utilizador).
+- O que ainda falta (deploy, migrations, functions, smoke).
+- Riscos ou incertezas (ferramenta em falta, credenciais, CI não verificável daqui).
+
+## Prompt curto que o utilizador pode colar
+
+```text
+Atua como responsável de release: validar (build/lint/test/audit), git limpo, commit organizado, push, confirmar CI e relatório honesto sobre deploy/produção. Não declares “publicado” sem push + CI + deploy comprovados.
+```
