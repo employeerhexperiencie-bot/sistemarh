@@ -1,0 +1,32 @@
+# Roda após o workflow "CI" concluir com sucesso em main.
+# Configure o secret STAGING_HEALTH_URL (ex.: https://staging.seudominio/api/health) para ativar o smoke.
+# Deploy real de staging (Vercel/Netlify/outro) pode ser adicionado como job anterior ou em workflow separado.
+
+name: Staging smoke
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+jobs:
+  smoke-staging:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: read
+    steps:
+      - name: HTTP smoke (opcional)
+        env:
+          STAGING_HEALTH_URL: ${{ secrets.STAGING_HEALTH_URL }}
+        run: |
+          if [ -z "${STAGING_HEALTH_URL}" ]; then
+            echo "STAGING_HEALTH_URL não definido — smoke ignorado. Adicione o secret em Settings → Environments → staging."
+            exit 0
+          fi
+          echo "GET ${STAGING_HEALTH_URL}"
+          curl -fsS "${STAGING_HEALTH_URL}" --max-time 30 -o /dev/null
