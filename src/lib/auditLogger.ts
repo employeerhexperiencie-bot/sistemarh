@@ -37,7 +37,7 @@ function mergeDadosNovos(
   meta: HistoricoAcaoAuditMeta
 ): Json | null {
   const base = (dados && typeof dados === 'object' && !Array.isArray(dados) ? dados : {}) as Record<string, unknown>;
-  return { ...base, _audit: meta } as Json;
+  return { ...base, _audit: meta } as unknown as Json;
 }
 
 export function createAuditMeta(params: {

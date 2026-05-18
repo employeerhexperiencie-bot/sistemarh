@@ -54,7 +54,7 @@ export const AdvertenciasManager: React.FC<AdvertenciasManagerProps> = ({
         .order('data_ocorrencia', { ascending: false });
 
       if (error) throw error;
-      setAdvertencias(data || []);
+      setAdvertencias((data || []) as Advertencia[]);
     } catch (error) {
       console.error('Load advertencias error:', error);
     }
