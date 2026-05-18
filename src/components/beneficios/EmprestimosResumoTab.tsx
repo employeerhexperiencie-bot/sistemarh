@@ -237,7 +237,7 @@ export function EmprestimosResumoTab() {
 
       {/* Ação */}
       <div className="flex justify-end">
-        <Button variant="outline" onClick={() => navigate('/emprestimos')} className="gap-2">
+        <Button variant="outline" onClick={() => navigate('/gestao-emprestimos')} className="gap-2">
           <ExternalLink className="h-4 w-4" />
           Gestão Completa de Empréstimos
         </Button>
