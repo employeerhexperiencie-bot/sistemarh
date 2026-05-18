@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.partner-sync-profissionais]
 verify_jwt = true
+
+[functions.webhook-retry]
+verify_jwt = true
