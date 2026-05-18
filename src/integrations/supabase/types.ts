@@ -14,6 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
+      _stg_sync_prof: {
+        Row: {
+          agencia: string | null
+          bairro: string | null
+          banco: string | null
+          cargo: string | null
+          categoria_cnh: string | null
+          cbo: string | null
+          cep: string | null
+          cidade: string | null
+          cnh: string | null
+          conta: string | null
+          cor_etnia: string | null
+          cpf: string | null
+          data_admissao: string | null
+          data_inicio_loja: string | null
+          data_nascimento: string | null
+          dia_folga: string | null
+          endereco: string | null
+          escala_trabalho: string | null
+          estado_civil: string | null
+          gestor: string | null
+          horario_entrada: string | null
+          horario_intervalo: string | null
+          horario_saida: string | null
+          loja_id: string | null
+          loja_registro_id: string | null
+          matricula: string | null
+          nome: string | null
+          nome_mae: string | null
+          nome_pai: string | null
+          pis: string | null
+          primeiro_salario: number | null
+          rg: string | null
+          salario_nominal: number | null
+          sexo: string | null
+          status: string | null
+          telefone: string | null
+          validade_cnh: string | null
+        }
+        Insert: {
+          agencia?: string | null
+          bairro?: string | null
+          banco?: string | null
+          cargo?: string | null
+          categoria_cnh?: string | null
+          cbo?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnh?: string | null
+          conta?: string | null
+          cor_etnia?: string | null
+          cpf?: string | null
+          data_admissao?: string | null
+          data_inicio_loja?: string | null
+          data_nascimento?: string | null
+          dia_folga?: string | null
+          endereco?: string | null
+          escala_trabalho?: string | null
+          estado_civil?: string | null
+          gestor?: string | null
+          horario_entrada?: string | null
+          horario_intervalo?: string | null
+          horario_saida?: string | null
+          loja_id?: string | null
+          loja_registro_id?: string | null
+          matricula?: string | null
+          nome?: string | null
+          nome_mae?: string | null
+          nome_pai?: string | null
+          pis?: string | null
+          primeiro_salario?: number | null
+          rg?: string | null
+          salario_nominal?: number | null
+          sexo?: string | null
+          status?: string | null
+          telefone?: string | null
+          validade_cnh?: string | null
+        }
+        Update: {
+          agencia?: string | null
+          bairro?: string | null
+          banco?: string | null
+          cargo?: string | null
+          categoria_cnh?: string | null
+          cbo?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnh?: string | null
+          conta?: string | null
+          cor_etnia?: string | null
+          cpf?: string | null
+          data_admissao?: string | null
+          data_inicio_loja?: string | null
+          data_nascimento?: string | null
+          dia_folga?: string | null
+          endereco?: string | null
+          escala_trabalho?: string | null
+          estado_civil?: string | null
+          gestor?: string | null
+          horario_entrada?: string | null
+          horario_intervalo?: string | null
+          horario_saida?: string | null
+          loja_id?: string | null
+          loja_registro_id?: string | null
+          matricula?: string | null
+          nome?: string | null
+          nome_mae?: string | null
+          nome_pai?: string | null
+          pis?: string | null
+          primeiro_salario?: number | null
+          rg?: string | null
+          salario_nominal?: number | null
+          sexo?: string | null
+          status?: string | null
+          telefone?: string | null
+          validade_cnh?: string | null
+        }
+        Relationships: []
+      }
       adiantamentos: {
         Row: {
           created_at: string | null
