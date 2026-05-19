@@ -585,11 +585,11 @@ export default function ImportacaoDados() {
                 <Alert>
                   <FileSpreadsheet className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Campos obrigatórios:</strong> matricula, nome, cpf, rg, cargo, data_admissao, status
-                    <br />
-                    <strong>Campos opcionais:</strong> loja_id, salario, documentos
-                    <br />
-                    <strong>Coluna documentos:</strong> Liste os nomes dos arquivos separados por vírgula (ex: MAT001_cpf.pdf,MAT001_rg.pdf)
+                  <strong>Cabeçalhos aceitos (tolerante a acentos/maiúsculas):</strong> Nº MATRICULA, NOME, CPF, RG, PIS, CARGO, CBO, LOCAL TRABALHO, LOCAL REGISTRO, ADMISSÃO CTPS, INÍCIO LOJA, SALARIO CTPS, PENSÃO, NASCIMENTO, GÊNERO, ESTADO CIVIL, NOME DA MÃE, ENDEREÇO, BAIRRO, CIDADE, UF, CEP, TELEFONE, CNH, VALIDADE CNH, BANCO, AGÊNCIA, CONTA, STATUS.
+                  <br />
+                  <strong>Atualização:</strong> registros com matrícula já cadastrada são atualizados (upsert). Lojas novas são criadas automaticamente.
+                  <br />
+                  <strong>Linhas inválidas</strong> (sem matrícula nem CPF) são listadas como avisos — nunca bloqueiam o restante.
                   </AlertDescription>
                 </Alert>
               </div>
