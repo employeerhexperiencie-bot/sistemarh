@@ -489,6 +489,13 @@ export const CadastroProfissionais: React.FC = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState<number | null>(null);
+  // Totais globais (independem de filtros/paginação) — usados nos cards de resumo
+  const [totals, setTotals] = useState<{ ativos: number; demitidos: number; total: number; lojas: number }>({
+    ativos: 0,
+    demitidos: 0,
+    total: 0,
+    lojas: 0,
+  });
 
   // Verificar se veio matrícula/campo via URL (deep-link de alertas)
   const searchParams = new URLSearchParams(window.location.search);
@@ -581,6 +588,26 @@ export const CadastroProfissionais: React.FC = () => {
       setLojas(data || []);
     } catch (error) {
       console.error('Load lojas error:', error);
+    }
+  };
+
+  // Carrega contagens globais (sem filtros/paginação) para os cards de resumo.
+  const loadTotals = async () => {
+    try {
+      const [ativosRes, demitidosRes, totalRes, lojasRes] = await Promise.all([
+        supabase.from('profissionais').select('id', { count: 'exact', head: true }).eq('status', 'ativo'),
+        supabase.from('profissionais').select('id', { count: 'exact', head: true }).eq('status', 'demitido'),
+        supabase.from('profissionais').select('id', { count: 'exact', head: true }),
+        supabase.from('lojas').select('id', { count: 'exact', head: true }),
+      ]);
+      setTotals({
+        ativos: ativosRes.count || 0,
+        demitidos: demitidosRes.count || 0,
+        total: totalRes.count || 0,
+        lojas: lojasRes.count || 0,
+      });
+    } catch (e) {
+      console.error('Load totals error:', e);
     }
   };
 
@@ -1141,6 +1168,7 @@ export const CadastroProfissionais: React.FC = () => {
   useEffect(() => {
     loadProfessionals();
     loadLojas();
+    loadTotals();
   }, []);
 
   // Recarregar ao mudar página
@@ -2746,7 +2774,7 @@ export const CadastroProfissionais: React.FC = () => {
             <div className="flex items-center gap-2">
               <UserCheck className="h-6 w-6 sm:h-8 sm:w-8 text-success" />
               <div className="min-w-0 flex-1">
-                <p className="text-xl sm:text-2xl font-bold text-success">{activeProfessionals.length}</p>
+                 <p className="text-xl sm:text-2xl font-bold text-success">{totals.ativos}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">Ativos</p>
               </div>
             </div>
@@ -2758,7 +2786,7 @@ export const CadastroProfissionais: React.FC = () => {
             <div className="flex items-center gap-2">
               <UserX className="h-6 w-6 sm:h-8 sm:w-8 text-destructive" />
               <div className="min-w-0 flex-1">
-                <p className="text-xl sm:text-2xl font-bold text-destructive">{dismissedProfessionals.length}</p>
+                 <p className="text-xl sm:text-2xl font-bold text-destructive">{totals.demitidos}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">Demitidos</p>
               </div>
             </div>
@@ -2770,7 +2798,7 @@ export const CadastroProfissionais: React.FC = () => {
             <div className="flex items-center gap-2">
               <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               <div className="min-w-0 flex-1">
-                <p className="text-xl sm:text-2xl font-bold text-primary">{professionals.length}</p>
+                 <p className="text-xl sm:text-2xl font-bold text-primary">{totals.total}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">Total</p>
               </div>
             </div>
@@ -2782,7 +2810,7 @@ export const CadastroProfissionais: React.FC = () => {
             <div className="flex items-center gap-2">
               <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-secondary" />
               <div className="min-w-0 flex-1">
-                <p className="text-xl sm:text-2xl font-bold text-secondary">{uniqueStores}</p>
+                 <p className="text-xl sm:text-2xl font-bold text-secondary">{totals.lojas}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">Lojas</p>
               </div>
             </div>
