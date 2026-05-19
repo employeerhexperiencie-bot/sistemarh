@@ -197,26 +197,14 @@ export function buildProfissionalInput(
 }
 
 /**
- * Calcula dias úteis reais do mês baseado no calendário
- * 6x1: todos os dias menos domingos
- * 5x2: todos os dias menos sábados e domingos
+ * Base de cálculo de dias do mês.
+ * REGRA: usar o total de dias corridos do mês (28/29/30/31) como base,
+ * independentemente da escala (6x1 ou 5x2). Assim, se o mês tem 30 dias,
+ * a base é 30 — e não 22 dias úteis.
  */
 function calcularDiasUteisMes(competencia: string, escala: '6x1' | '5x2'): number {
   const [ano, mes] = competencia.split('-').map(Number);
-  const diasNoMes = new Date(ano, mes, 0).getDate();
-  let diasUteis = 0;
-
-  for (let dia = 1; dia <= diasNoMes; dia++) {
-    const date = new Date(ano, mes - 1, dia);
-    const diaSemana = date.getDay(); // 0=dom, 6=sab
-    if (escala === '6x1') {
-      if (diaSemana !== 0) diasUteis++; // exclui domingos
-    } else {
-      if (diaSemana !== 0 && diaSemana !== 6) diasUteis++; // exclui sab+dom
-    }
-  }
-
-  return diasUteis;
+  return new Date(ano, mes, 0).getDate();
 }
 
 export async function carregarTributosCLT(): Promise<TributosCLT> {
