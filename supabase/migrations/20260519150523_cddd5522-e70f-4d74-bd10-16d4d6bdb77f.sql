@@ -1,0 +1,2 @@
+ALTER TABLE public.profissionais ADD COLUMN IF NOT EXISTS salario_ctps numeric;
+COMMENT ON COLUMN public.profissionais.salario_ctps IS 'Salário registrado na CTPS (carteira de trabalho). Informativo apenas - base de cálculos é salario_nominal (salário à receber/combinado).';
