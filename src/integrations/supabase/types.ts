@@ -2299,6 +2299,7 @@ export type Database = {
           pis: string | null
           primeiro_salario: number | null
           rg: string | null
+          salario_ctps: number | null
           salario_nominal: number | null
           seguro_vida: boolean | null
           setor: string | null
@@ -2381,6 +2382,7 @@ export type Database = {
           pis?: string | null
           primeiro_salario?: number | null
           rg?: string | null
+          salario_ctps?: number | null
           salario_nominal?: number | null
           seguro_vida?: boolean | null
           setor?: string | null
@@ -2463,6 +2465,7 @@ export type Database = {
           pis?: string | null
           primeiro_salario?: number | null
           rg?: string | null
+          salario_ctps?: number | null
           salario_nominal?: number | null
           seguro_vida?: boolean | null
           setor?: string | null
