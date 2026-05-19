@@ -15,6 +15,133 @@ interface ImportResult {
   documentsUploaded?: number;
 }
 
+// ----- Helpers: parsing tolerante a cabeçalhos reais de planilhas -----
+const norm = (s: any): string =>
+  String(s ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+const SYN = {
+  matricula: ['matricula', 'n matricula', 'no matricula', 'numero matricula', 'cod', 'codigo'],
+  nome: ['nome', 'nome completo', 'colaborador', 'profissional', 'funcionario'],
+  cpf: ['cpf'],
+  rg: ['rg'],
+  pis: ['pis', 'pis pasep', 'nis'],
+  cargo: ['cargo', 'funcao'],
+  cbo: ['cbo'],
+  loja_trabalho: ['local trabalho', 'local de trabalho', 'loja', 'unidade', 'filial'],
+  loja_registro: ['local registro', 'local de registro', 'loja registro', 'loja ctps', 'registro ctps'],
+  data_admissao: ['admissao ctps', 'data admissao', 'admissao', 'data de admissao'],
+  inicio_loja: ['inicio loja', 'inicio na loja', 'data inicio loja'],
+  salario: ['salario ctps', 'salario a receber', 'salario receber', 'salario', 'remuneracao'],
+  pensao: ['pensao', 'pensao alimenticia'],
+  nascimento: ['nascimento', 'data nascimento', 'data de nascimento', 'dt nasc'],
+  genero: ['genero', 'sexo'],
+  estado_civil: ['estado civil'],
+  nome_mae: ['nome mae', 'nome da mae', 'mae'],
+  nome_pai: ['nome pai', 'nome do pai', 'pai'],
+  endereco: ['endereco', 'logradouro'],
+  numero: ['numero', 'n', 'no'],
+  bairro: ['bairro'],
+  cidade: ['cidade', 'municipio'],
+  estado: ['uf', 'estado'],
+  cep: ['cep'],
+  telefone: ['telefone', 'celular', 'fone', 'contato'],
+  gestor: ['gestor', 'lider', 'supervisor'],
+  cor_etnia: ['cor etnia', 'cor', 'etnia', 'raca'],
+  escala: ['escala', 'escala trabalho', 'escala de trabalho'],
+  horario: ['horario'],
+  cnh: ['cnh'],
+  validade_cnh: ['validade cnh', 'data vl cnh', 'venc cnh'],
+  categoria_cnh: ['categoria cnh', 'cat cnh', 'categoria'],
+  banco: ['banco'],
+  agencia: ['agencia', 'ag'],
+  conta: ['conta', 'conta corrente', 'cc'],
+  status: ['status', 'situacao'],
+  // Lojas
+  loja_nome: ['nome', 'loja', 'unidade', 'filial', 'nome loja', 'nome da loja'],
+  cnpj: ['cnpj'],
+  email: ['email', 'e mail'],
+};
+
+function buildHeaderMap(headerRow: any[]): Map<string, number> {
+  const map = new Map<string, number>();
+  headerRow.forEach((h, idx) => {
+    const n = norm(h);
+    if (n && !map.has(n)) map.set(n, idx);
+  });
+  return map;
+}
+
+function pick(row: any[], headerMap: Map<string, number>, key: keyof typeof SYN): any {
+  const synonyms = SYN[key] || [];
+  for (const syn of synonyms) {
+    const idx = headerMap.get(syn);
+    if (idx !== undefined && row[idx] !== undefined && row[idx] !== null && String(row[idx]).trim() !== '') {
+      return row[idx];
+    }
+    // partial match
+    for (const [hkey, hidx] of headerMap.entries()) {
+      if (hkey.includes(syn) || syn.includes(hkey)) {
+        const v = row[hidx];
+        if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+      }
+    }
+  }
+  return undefined;
+}
+
+function parseExcelDate(value: any): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value === 'number') {
+    const d = new Date((value - 25569) * 86400 * 1000);
+    return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+  }
+  const s = String(value).trim();
+  if (!s) return null;
+  // dd/mm/yyyy
+  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    let [, d, mo, y] = m;
+    if (y.length === 2) y = (parseInt(y) > 50 ? '19' : '20') + y;
+    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  // yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+}
+
+function parseSalario(v: any): number | null {
+  if (v === undefined || v === null || v === '') return null;
+  if (typeof v === 'number') return v;
+  const s = String(v).replace(/[R$\s.]/g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function detectHeaderRow(rows: any[][]): number {
+  for (let i = 0; i < Math.min(15, rows.length); i++) {
+    const r = rows[i];
+    if (!r) continue;
+    const joined = r.map(c => norm(c)).join('|');
+    if (joined.includes('matricula') || joined.includes('nome') || joined.includes('cpf') || joined.includes('cnpj')) {
+      return i;
+    }
+  }
+  return 0;
+}
+
+async function readSheetMatrix(file: File): Promise<any[][]> {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array', cellDates: false });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true }) as any[][];
+}
+
 export default function ImportacaoDados() {
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -51,33 +178,51 @@ export default function ImportacaoDados() {
     const result: ImportResult = { success: 0, errors: [] };
 
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const rows = await readSheetMatrix(file);
+      const headerIdx = detectHeaderRow(rows);
+      const headerMap = buildHeaderMap(rows[headerIdx] || []);
 
-      for (const row of jsonData as any[]) {
+      for (let i = headerIdx + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.every(c => c === null || c === undefined || String(c).trim() === '')) continue;
+
+        const nome = String(pick(row, headerMap, 'loja_nome') ?? pick(row, headerMap, 'nome') ?? '').trim();
+        if (!nome) continue;
+
         try {
-          const { error } = await supabase.from('lojas').insert({
-            nome: row.nome,
-            cnpj: row.cnpj,
-            endereco: row.endereco,
-            telefone: row.telefone,
-            email: row.email,
-            gerente: row.gerente,
-          });
+          // upsert por nome — evita duplicar lojas existentes
+          const { data: existente } = await supabase
+            .from('lojas')
+            .select('id')
+            .eq('nome', nome)
+            .maybeSingle();
 
-          if (error) throw error;
+          const payload: any = {
+            nome,
+            cnpj: pick(row, headerMap, 'cnpj') ? String(pick(row, headerMap, 'cnpj')).trim() : null,
+            endereco: pick(row, headerMap, 'endereco') ? String(pick(row, headerMap, 'endereco')).trim() : null,
+            telefone: pick(row, headerMap, 'telefone') ? String(pick(row, headerMap, 'telefone')).trim() : null,
+            email: pick(row, headerMap, 'email') ? String(pick(row, headerMap, 'email')).trim() : null,
+            gestor: pick(row, headerMap, 'gestor') ? String(pick(row, headerMap, 'gestor')).trim() : null,
+          };
+
+          if (existente) {
+            const { error } = await supabase.from('lojas').update(payload).eq('id', existente.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from('lojas').insert(payload);
+            if (error) throw error;
+          }
           result.success++;
         } catch (error: any) {
-          result.errors.push(`Linha ${result.success + result.errors.length + 1}: ${error.message}`);
+          result.errors.push(`Linha ${i + 1} (${nome}): ${error.message}`);
         }
       }
 
       setImportResult(result);
       toast({
-        title: result.errors.length === 0 ? "Importação concluída!" : "Importação concluída com erros",
-        description: `${result.success} lojas importadas. ${result.errors.length} erros.`,
+        title: result.errors.length === 0 ? "Importação concluída!" : "Importação concluída com avisos",
+        description: `${result.success} lojas processadas. ${result.errors.length} erros.`,
         variant: result.errors.length === 0 ? "default" : "destructive",
       });
     } catch (error: any) {
@@ -147,44 +292,130 @@ export default function ImportacaoDados() {
     const result: ImportResult = { success: 0, errors: [], documentsUploaded: 0 };
 
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const rows = await readSheetMatrix(file);
+      const headerIdx = detectHeaderRow(rows);
+      const headerMap = buildHeaderMap(rows[headerIdx] || []);
 
-      for (const row of jsonData as any[]) {
+      if (!headerMap.has('matricula') && !headerMap.has('nome') && !headerMap.has('cpf')) {
+        throw new Error('Cabeçalho não reconhecido. A planilha precisa conter ao menos colunas MATRICULA, NOME ou CPF.');
+      }
+
+      // Cache de lojas (resolve loja por nome → id; cria se não existir)
+      const { data: lojasExistentes } = await supabase.from('lojas').select('id, nome');
+      const lojasCache = new Map<string, string>();
+      (lojasExistentes || []).forEach(l => lojasCache.set(norm(l.nome), l.id));
+
+      const resolveLojaId = async (nomeLoja: any): Promise<string | null> => {
+        if (!nomeLoja) return null;
+        const key = norm(nomeLoja);
+        if (!key) return null;
+        if (lojasCache.has(key)) return lojasCache.get(key)!;
+        const { data: nova, error } = await supabase
+          .from('lojas')
+          .insert({ nome: String(nomeLoja).trim() })
+          .select('id')
+          .single();
+        if (error || !nova) return null;
+        lojasCache.set(key, nova.id);
+        return nova.id;
+      };
+
+      for (let i = headerIdx + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.every(c => c === null || c === undefined || String(c).trim() === '')) continue;
+
+        const nome = String(pick(row, headerMap, 'nome') ?? '').trim();
+        const matriculaRaw = pick(row, headerMap, 'matricula');
+        const matricula = matriculaRaw !== undefined && matriculaRaw !== null
+          ? String(matriculaRaw).trim()
+          : '';
+        const cpf = pick(row, headerMap, 'cpf') ? String(pick(row, headerMap, 'cpf')).replace(/[^\d]/g, '') : null;
+
+        if (!nome) continue;
+        if (!matricula && !cpf) {
+          result.errors.push(`Linha ${i + 1}: ${nome} sem matrícula nem CPF — ignorado`);
+          continue;
+        }
+
         try {
-          const { data: profissional, error } = await supabase.from('profissionais').insert({
-            matricula: row.matricula,
-            nome: row.nome,
-            cpf: row.cpf,
-            rg: row.rg,
-            cargo: row.cargo,
-            loja_id: row.loja_id || null,
-            data_admissao: row.data_admissao,
-            salario: row.salario ? parseFloat(row.salario) : null,
-            status: row.status || 'ativo',
-          }).select().single();
+          const lojaTrabId = await resolveLojaId(pick(row, headerMap, 'loja_trabalho'));
+          const lojaRegId = await resolveLojaId(pick(row, headerMap, 'loja_registro'));
+
+          const salarioCTPS = parseSalario(pick(row, headerMap, 'salario'));
+
+          const payload: any = {
+            matricula: matricula || `SEM-MAT-${cpf || i}`,
+            nome,
+            cpf: cpf || null,
+            rg: pick(row, headerMap, 'rg') ? String(pick(row, headerMap, 'rg')).trim() : null,
+            pis: pick(row, headerMap, 'pis') ? String(pick(row, headerMap, 'pis')).trim() : null,
+            cargo: pick(row, headerMap, 'cargo') ? String(pick(row, headerMap, 'cargo')).trim() : null,
+            cbo: pick(row, headerMap, 'cbo') ? String(pick(row, headerMap, 'cbo')).trim() : null,
+            loja_id: lojaTrabId,
+            loja_registro_id: lojaRegId,
+            data_admissao: parseExcelDate(pick(row, headerMap, 'data_admissao')),
+            data_inicio_loja: parseExcelDate(pick(row, headerMap, 'inicio_loja')),
+            data_nascimento: parseExcelDate(pick(row, headerMap, 'nascimento')),
+            sexo: pick(row, headerMap, 'genero') ? String(pick(row, headerMap, 'genero')).trim() : null,
+            estado_civil: pick(row, headerMap, 'estado_civil') ? String(pick(row, headerMap, 'estado_civil')).trim() : null,
+            nome_mae: pick(row, headerMap, 'nome_mae') ? String(pick(row, headerMap, 'nome_mae')).trim() : null,
+            nome_pai: pick(row, headerMap, 'nome_pai') ? String(pick(row, headerMap, 'nome_pai')).trim() : null,
+            endereco: pick(row, headerMap, 'endereco') ? String(pick(row, headerMap, 'endereco')).trim() : null,
+            bairro: pick(row, headerMap, 'bairro') ? String(pick(row, headerMap, 'bairro')).trim() : null,
+            cidade: pick(row, headerMap, 'cidade') ? String(pick(row, headerMap, 'cidade')).trim() : null,
+            estado: pick(row, headerMap, 'estado') ? String(pick(row, headerMap, 'estado')).trim() : null,
+            cep: pick(row, headerMap, 'cep') ? String(pick(row, headerMap, 'cep')).trim() : null,
+            telefone: pick(row, headerMap, 'telefone') ? String(pick(row, headerMap, 'telefone')).trim() : null,
+            cor_etnia: pick(row, headerMap, 'cor_etnia') ? String(pick(row, headerMap, 'cor_etnia')).trim() : null,
+            escala_trabalho: pick(row, headerMap, 'escala') ? String(pick(row, headerMap, 'escala')).trim() : null,
+            gestor: pick(row, headerMap, 'gestor') ? String(pick(row, headerMap, 'gestor')).trim() : null,
+            cnh: pick(row, headerMap, 'cnh') ? String(pick(row, headerMap, 'cnh')).trim() : null,
+            categoria_cnh: pick(row, headerMap, 'categoria_cnh') ? String(pick(row, headerMap, 'categoria_cnh')).trim() : null,
+            validade_cnh: parseExcelDate(pick(row, headerMap, 'validade_cnh')),
+            banco: pick(row, headerMap, 'banco') ? String(pick(row, headerMap, 'banco')).trim() : null,
+            agencia: pick(row, headerMap, 'agencia') ? String(pick(row, headerMap, 'agencia')).trim() : null,
+            conta: pick(row, headerMap, 'conta') ? String(pick(row, headerMap, 'conta')).trim() : null,
+            salario_nominal: salarioCTPS,
+            ultimo_salario: salarioCTPS,
+            pensao_alimenticia: parseSalario(pick(row, headerMap, 'pensao')),
+            status: (pick(row, headerMap, 'status') ? String(pick(row, headerMap, 'status')).toLowerCase().trim() : null) || 'ativo',
+          };
+
+          // Remove campos null para não sobrescrever dados existentes ao fazer upsert
+          Object.keys(payload).forEach(k => {
+            if (payload[k] === null || payload[k] === undefined) delete payload[k];
+          });
+          // Garantir campos obrigatórios
+          payload.matricula = payload.matricula || matricula;
+          payload.nome = nome;
+
+          // Upsert por matricula (chave única) - atualiza se existir
+          const { data: profissional, error } = await supabase
+            .from('profissionais')
+            .upsert(payload, { onConflict: 'matricula' })
+            .select('id, matricula')
+            .single();
 
           if (error) throw error;
           result.success++;
 
-          // Upload documents if specified
-          if (row.documentos && profissional) {
-            const documentNames = row.documentos.split(',');
-            const uploaded = await uploadDocuments(profissional.id, row.matricula, documentNames);
+          // Upload documentos opcionais (mantido)
+          const docs = pick(row, headerMap, 'matricula') && (row as any).documentos;
+          if (docs && profissional) {
+            const documentNames = String(docs).split(',');
+            const uploaded = await uploadDocuments(profissional.id, profissional.matricula, documentNames);
             result.documentsUploaded = (result.documentsUploaded || 0) + uploaded;
           }
         } catch (error: any) {
-          result.errors.push(`Linha ${result.success + result.errors.length + 1}: ${error.message}`);
+          result.errors.push(`Linha ${i + 1} (${nome}): ${error.message}`);
         }
       }
 
       setImportResult(result);
       toast({
-        title: result.errors.length === 0 ? "Importação concluída!" : "Importação concluída com erros",
-        description: `${result.success} profissionais e ${result.documentsUploaded} documentos importados. ${result.errors.length} erros.`,
-        variant: result.errors.length === 0 ? "default" : "destructive",
+        title: result.errors.length === 0 ? "Importação concluída!" : "Importação concluída com avisos",
+        description: `${result.success} profissionais processados. ${result.errors.length} avisos.`,
+        variant: result.errors.length === 0 ? "default" : (result.success > 0 ? "default" : "destructive"),
       });
     } catch (error: any) {
       toast({
@@ -354,11 +585,11 @@ export default function ImportacaoDados() {
                 <Alert>
                   <FileSpreadsheet className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Campos obrigatórios:</strong> matricula, nome, cpf, rg, cargo, data_admissao, status
-                    <br />
-                    <strong>Campos opcionais:</strong> loja_id, salario, documentos
-                    <br />
-                    <strong>Coluna documentos:</strong> Liste os nomes dos arquivos separados por vírgula (ex: MAT001_cpf.pdf,MAT001_rg.pdf)
+                  <strong>Cabeçalhos aceitos (tolerante a acentos/maiúsculas):</strong> Nº MATRICULA, NOME, CPF, RG, PIS, CARGO, CBO, LOCAL TRABALHO, LOCAL REGISTRO, ADMISSÃO CTPS, INÍCIO LOJA, SALARIO CTPS, PENSÃO, NASCIMENTO, GÊNERO, ESTADO CIVIL, NOME DA MÃE, ENDEREÇO, BAIRRO, CIDADE, UF, CEP, TELEFONE, CNH, VALIDADE CNH, BANCO, AGÊNCIA, CONTA, STATUS.
+                  <br />
+                  <strong>Atualização:</strong> registros com matrícula já cadastrada são atualizados (upsert). Lojas novas são criadas automaticamente.
+                  <br />
+                  <strong>Linhas inválidas</strong> (sem matrícula nem CPF) são listadas como avisos — nunca bloqueiam o restante.
                   </AlertDescription>
                 </Alert>
               </div>
