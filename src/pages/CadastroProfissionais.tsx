@@ -536,8 +536,9 @@ export const CadastroProfissionais: React.FC = () => {
       let q = supabase
         .from('profissionais')
         .select(
-          `id, nome, matricula, cpf, cargo, salario_nominal, primeiro_salario,
-           loja_id, loja_registro_id, status, foto_url,
+          `id, nome, matricula, cpf, rg, cargo, salario_nominal, primeiro_salario, ultimo_salario,
+           loja_id, loja_registro_id, status, foto_url, data_admissao, data_demissao,
+           vale_transporte, vale_refeicao, cesta_basica, valor_diario_rota, insalubridade,
            loja:lojas!profissionais_loja_id_fkey(nome),
            loja_registro:lojas!profissionais_loja_registro_id_fkey(nome)`,
           { count: 'exact' }
